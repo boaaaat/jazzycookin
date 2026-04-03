@@ -1,0 +1,13 @@
+{
+  "itemGroup.jazzycookin": "Example Mod Tab",
+  "block.jazzycookin.example_block": "Example Block",
+  "item.jazzycookin.example_item": "Example Item",
+
+  "jazzycookin.configuration.title": "jazzy cookin Configs",
+  "jazzycookin.configuration.section.jazzycookin.common.toml": "jazzy cookin Configs",
+  "jazzycookin.configuration.section.jazzycookin.common.toml.title": "jazzy cookin Configs",
+  "jazzycookin.configuration.items": "Item List",
+  "jazzycookin.configuration.logDirtBlock": "Log Dirt Block",
+  "jazzycookin.configuration.magicNumberIntroduction": "Magic Number Text",
+  "jazzycookin.configuration.magicNumber": "Magic Number"
+}
