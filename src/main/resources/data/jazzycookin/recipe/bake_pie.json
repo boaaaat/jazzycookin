@@ -1,0 +1,25 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "oven",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:apple_pie" },
+      "required_state": "raw_assembled_pie",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "pie_tin",
+  "duration": 140,
+  "preferred_heat": "high",
+  "requires_preheat": true,
+  "output": {
+    "result": { "id": "jazzycookin:apple_pie", "count": 1 },
+    "state": "baked_pie",
+    "quality_bonus": 0.08,
+    "flavor_delta": 0.18,
+    "texture_delta": 0.14,
+    "structure_delta": 0.14,
+    "nourishment": 8,
+    "enjoyment": 7
+  }
+}

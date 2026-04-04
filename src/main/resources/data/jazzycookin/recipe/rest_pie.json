@@ -1,0 +1,22 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "resting_board",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:apple_pie" },
+      "required_state": "cooled_pie",
+      "count": 1
+    }
+  ],
+  "duration": 80,
+  "output": {
+    "result": { "id": "jazzycookin:apple_pie", "count": 1 },
+    "state": "rested_pie",
+    "quality_bonus": 0.05,
+    "texture_delta": 0.08,
+    "structure_delta": 0.07,
+    "moisture_delta": 0.06,
+    "nourishment": 8,
+    "enjoyment": 7
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:orchard_apple" },
+      "required_state": "sliced_apple",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:cane_sugar" },
+      "required_state": "pantry_ready",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:baking_spice" },
+      "required_state": "ground_spice",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "pot",
+  "duration": 100,
+  "preferred_heat": "medium",
+  "output": {
+    "result": { "id": "jazzycookin:pie_filling", "count": 1 },
+    "state": "simmered_filling",
+    "quality_bonus": 0.06,
+    "flavor_delta": 0.16,
+    "moisture_delta": 0.12,
+    "nourishment": 5,
+    "enjoyment": 5
+  }
+}

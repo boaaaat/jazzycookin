@@ -1,0 +1,19 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:orchard_apple" },
+      "required_state": "peeled_apple",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "knife",
+  "duration": 30,
+  "output": {
+    "result": { "id": "jazzycookin:orchard_apple", "count": 1 },
+    "state": "sliced_apple",
+    "quality_bonus": 0.02,
+    "texture_delta": 0.06
+  }
+}

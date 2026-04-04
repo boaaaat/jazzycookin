@@ -1,0 +1,22 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:apple_pie" },
+      "required_state": "rested_pie",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "knife",
+  "duration": 40,
+  "output": {
+    "result": { "id": "jazzycookin:apple_pie_slice", "count": 2 },
+    "state": "sliced_pie",
+    "quality_bonus": 0.04,
+    "texture_delta": 0.06,
+    "structure_delta": 0.04,
+    "nourishment": 7,
+    "enjoyment": 7
+  }
+}

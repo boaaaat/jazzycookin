@@ -1,0 +1,23 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:pie_crust" },
+      "required_state": "crust_mix",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "rolling_pin",
+  "duration": 80,
+  "output": {
+    "result": { "id": "jazzycookin:pie_crust", "count": 1 },
+    "state": "dough",
+    "quality_bonus": 0.04,
+    "texture_delta": 0.04,
+    "structure_delta": 0.2,
+    "moisture_delta": 0.05,
+    "nourishment": 4,
+    "enjoyment": 2
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:pie_crust" },
+      "required_state": "dough",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:pie_filling" },
+      "required_state": "simmered_filling",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "pie_tin",
+  "duration": 70,
+  "output": {
+    "result": { "id": "jazzycookin:apple_pie", "count": 1 },
+    "state": "raw_assembled_pie",
+    "quality_bonus": 0.04,
+    "structure_delta": 0.14,
+    "moisture_delta": 0.08,
+    "nourishment": 7,
+    "enjoyment": 6
+  }
+}

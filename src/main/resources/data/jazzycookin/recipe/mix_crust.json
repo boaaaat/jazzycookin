@@ -1,0 +1,32 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:flour" },
+      "required_state": "pantry_ready",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:butter" },
+      "required_state": "pantry_ready",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:cane_sugar" },
+      "required_state": "pantry_ready",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "whisk",
+  "duration": 70,
+  "output": {
+    "result": { "id": "jazzycookin:pie_crust", "count": 1 },
+    "state": "crust_mix",
+    "quality_bonus": 0.05,
+    "structure_delta": 0.18,
+    "moisture_delta": 0.1,
+    "nourishment": 4,
+    "enjoyment": 2
+  }
+}

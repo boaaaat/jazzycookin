@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "cooling_rack",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:apple_pie" },
+      "required_state": "baked_pie",
+      "count": 1
+    }
+  ],
+  "duration": 60,
+  "output": {
+    "result": { "id": "jazzycookin:apple_pie", "count": 1 },
+    "state": "cooled_pie",
+    "quality_bonus": 0.03,
+    "texture_delta": 0.04,
+    "structure_delta": 0.03,
+    "nourishment": 8,
+    "enjoyment": 7
+  }
+}

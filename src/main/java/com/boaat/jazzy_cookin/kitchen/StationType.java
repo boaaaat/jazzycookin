@@ -1,0 +1,65 @@
+package com.boaat.jazzy_cookin.kitchen;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import com.mojang.serialization.Codec;
+
+import io.netty.buffer.ByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.StringRepresentable;
+
+public enum StationType implements StringRepresentable {
+    PREP_TABLE("prep_table", true, false),
+    SPICE_GRINDER("spice_grinder", true, false),
+    MIXING_BOWL("mixing_bowl", true, false),
+    STOVE("stove", true, true),
+    OVEN("oven", true, true),
+    COOLING_RACK("cooling_rack", false, false),
+    RESTING_BOARD("resting_board", false, false),
+    PLATING_STATION("plating_station", false, false);
+
+    private static final Map<String, StationType> BY_NAME = Arrays.stream(values())
+            .collect(Collectors.toMap(StationType::getSerializedName, Function.identity()));
+
+    public static final Codec<StationType> CODEC = Codec.STRING.xmap(StationType::byName, StationType::getSerializedName);
+    public static final StreamCodec<ByteBuf, StationType> STREAM_CODEC = ByteBufCodecs.STRING_UTF8.map(
+            StationType::byName,
+            StationType::getSerializedName
+    );
+
+    private final String serializedName;
+    private final boolean usesTools;
+    private final boolean supportsHeat;
+
+    StationType(String serializedName, boolean usesTools, boolean supportsHeat) {
+        this.serializedName = serializedName;
+        this.usesTools = usesTools;
+        this.supportsHeat = supportsHeat;
+    }
+
+    public static StationType byName(String name) {
+        return BY_NAME.getOrDefault(name, PREP_TABLE);
+    }
+
+    public boolean supportsHeat() {
+        return this.supportsHeat;
+    }
+
+    public boolean usesTools() {
+        return this.usesTools;
+    }
+
+    public Component displayName() {
+        return Component.translatable("station.jazzycookin." + this.serializedName);
+    }
+
+    @Override
+    public String getSerializedName() {
+        return this.serializedName;
+    }
+}

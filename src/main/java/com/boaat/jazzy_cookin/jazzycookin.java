@@ -2,71 +2,79 @@ package com.boaat.jazzy_cookin;
 
 import org.slf4j.Logger;
 
+import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
+import com.boaat.jazzy_cookin.registry.JazzyBlocks;
+import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
+import com.boaat.jazzy_cookin.registry.JazzyItems;
+import com.boaat.jazzy_cookin.registry.JazzyMenus;
+import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
-// The value here should match an entry in the META-INF/neoforge.mods.toml file
-@Mod(jazzycookin.MODID)
-public class jazzycookin {
-    // Define mod id in a common place for everything to reference
+@Mod(JazzyCookin.MODID)
+public class JazzyCookin {
     public static final String MODID = "jazzycookin";
-    // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
-    // Create a Deferred Register to hold Blocks which will all be registered under the "jazzycookin" namespace
-    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
-    // Create a Deferred Register to hold Items which will all be registered under the "jazzycookin" namespace
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
-    // Placeable frying pan block used for testing.
-    public static final DeferredBlock<Block> FRYING_PAN_BLOCK = BLOCKS.register("frying_pan", () ->
-            new FryingPanBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.METAL)
-                    .strength(0.8F)
-                    .sound(SoundType.METAL)
-                    .noOcclusion()));
-    // The item keeps the flat generated icon while placing the frying pan block.
-    public static final DeferredItem<BlockItem> FRYING_PAN_ITEM = ITEMS.registerSimpleBlockItem("frying_pan", FRYING_PAN_BLOCK);
 
-    // The constructor for the mod class is the first code that is run when your mod is loaded.
-    // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
-    public jazzycookin(IEventBus modEventBus, ModContainer modContainer) {
-        // Register the commonSetup method for modloading
-        modEventBus.addListener(this::commonSetup);
+    public JazzyCookin(IEventBus modEventBus) {
+        JazzyBlocks.BLOCKS.register(modEventBus);
+        JazzyItems.ITEMS.register(modEventBus);
+        JazzyBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        JazzyMenus.MENUS.register(modEventBus);
+        JazzyDataComponents.DATA_COMPONENTS.register(modEventBus);
+        JazzyRecipes.RECIPE_TYPES.register(modEventBus);
+        JazzyRecipes.RECIPE_SERIALIZERS.register(modEventBus);
 
-        // Register the Deferred Register to the mod event bus so blocks get registered
-        BLOCKS.register(modEventBus);
-        // Register the Deferred Register to the mod event bus so items get registered
-        ITEMS.register(modEventBus);
-
-        // Register the item to a creative tab
-        modEventBus.addListener(this::addCreative);
-
-        // Register our mod's ModConfigSpec so that FML can create and load the config file for us
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        modEventBus.addListener(this::addCreativeTabs);
     }
 
-    private void commonSetup(FMLCommonSetupEvent event) {
-        LOGGER.info("Loading jazzy cookin");
-    }
+    private void addCreativeTabs(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
+            event.accept(JazzyItems.ORCHARD_APPLE);
+            event.accept(JazzyItems.FLOUR);
+            event.accept(JazzyItems.CANE_SUGAR);
+            event.accept(JazzyItems.BUTTER);
+            event.accept(JazzyItems.BAKING_SPICE);
+            event.accept(JazzyItems.PIE_CRUST);
+            event.accept(JazzyItems.PIE_FILLING);
+            event.accept(JazzyItems.APPLE_PIE);
+            event.accept(JazzyItems.APPLE_PIE_SLICE);
+            event.accept(JazzyItems.PLATED_APPLE_PIE_SLICE);
+            event.accept(JazzyItems.CERAMIC_PLATE);
+        }
 
-    // Add the test frying pan to a vanilla creative tab so it can be pulled into the hotbar.
-    private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(JazzyItems.PANTRY_ITEM);
+            event.accept(JazzyItems.CELLAR_ITEM);
+            event.accept(JazzyItems.PREP_TABLE_ITEM);
+            event.accept(JazzyItems.SPICE_GRINDER_ITEM);
+            event.accept(JazzyItems.MIXING_BOWL_ITEM);
+            event.accept(JazzyItems.STOVE_ITEM);
+            event.accept(JazzyItems.OVEN_ITEM);
+            event.accept(JazzyItems.COOLING_RACK_ITEM);
+            event.accept(JazzyItems.RESTING_BOARD_ITEM);
+            event.accept(JazzyItems.PLATING_STATION_ITEM);
+        }
+
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(FRYING_PAN_ITEM);
+            event.accept(JazzyItems.PARING_KNIFE);
+            event.accept(JazzyItems.CHEF_KNIFE);
+            event.accept(JazzyItems.WHISK);
+            event.accept(JazzyItems.ROLLING_PIN);
+            event.accept(JazzyItems.STOCK_POT);
+            event.accept(JazzyItems.PIE_TIN);
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) {
+            event.accept(JazzyItems.APPLE_SAPLING_ITEM);
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
+            event.accept(JazzyItems.PLATED_APPLE_PIE_SLICE);
         }
     }
 }

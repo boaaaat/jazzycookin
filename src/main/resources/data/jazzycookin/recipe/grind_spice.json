@@ -1,0 +1,19 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "spice_grinder",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:baking_spice" },
+      "required_state": "whole_spice",
+      "count": 1
+    }
+  ],
+  "duration": 50,
+  "output": {
+    "result": { "id": "jazzycookin:baking_spice", "count": 1 },
+    "state": "ground_spice",
+    "quality_bonus": 0.04,
+    "flavor_delta": 0.12,
+    "purity_delta": 0.08
+  }
+}
