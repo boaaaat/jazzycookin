@@ -1,0 +1,27 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:dumpling_filling" },
+      "required_state": "dumpling_filling",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:dumpling_dough" },
+      "required_state": "dumpling_dough",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "rolling_pin",
+  "duration": 68,
+  "output": {
+    "result": { "id": "jazzycookin:raw_dumplings", "count": 2 },
+    "state": "raw_dumplings",
+    "quality_bonus": 0.05,
+    "structure_delta": 0.14,
+    "texture_delta": 0.04,
+    "nourishment": 6,
+    "enjoyment": 4
+  }
+}

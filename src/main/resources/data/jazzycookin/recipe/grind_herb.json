@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "spice_grinder",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:fresh_herb" },
+      "required_state": "whole_herb",
+      "count": 1
+    }
+  ],
+  "duration": 38,
+  "output": {
+    "result": { "id": "jazzycookin:ground_herb", "count": 1 },
+    "state": "ground_herb",
+    "quality_bonus": 0.04,
+    "flavor_delta": 0.12,
+    "purity_delta": 0.06,
+    "nourishment": 1,
+    "enjoyment": 2
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "oven",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:roast_cut" },
+      "required_state": "roast_cut",
+      "count": 1
+    }
+  ],
+  "duration": 120,
+  "preferred_heat": "medium",
+  "requires_preheat": true,
+  "output": {
+    "result": { "id": "jazzycookin:roasted_protein", "count": 1 },
+    "state": "roasted_protein",
+    "quality_bonus": 0.08,
+    "flavor_delta": 0.16,
+    "texture_delta": 0.14,
+    "moisture_delta": -0.04,
+    "nourishment": 8,
+    "enjoyment": 7
+  }
+}

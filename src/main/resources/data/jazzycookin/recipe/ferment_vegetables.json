@@ -1,0 +1,28 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "fermentation_crock",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:chopped_cabbage" },
+      "required_state": "chopped_cabbage",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:diced_onion" },
+      "required_state": "diced_onion",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "jar",
+  "duration": 120,
+  "mode": "passive",
+  "output": {
+    "result": { "id": "jazzycookin:fermented_vegetables", "count": 1 },
+    "state": "fermented_vegetable",
+    "quality_bonus": 0.06,
+    "flavor_delta": 0.16,
+    "purity_delta": 0.10,
+    "nourishment": 4,
+    "enjoyment": 4
+  }
+}

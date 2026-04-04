@@ -20,6 +20,10 @@ public enum ToolProfile implements StringRepresentable {
     WHISK("whisk"),
     ROLLING_PIN("rolling_pin"),
     POT("pot"),
+    SKILLET("skillet"),
+    STRAINER("strainer"),
+    STEAMER_BASKET("steamer_basket"),
+    JAR("jar"),
     PIE_TIN("pie_tin");
 
     private static final Map<String, ToolProfile> BY_NAME = Arrays.stream(values())

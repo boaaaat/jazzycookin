@@ -3,12 +3,15 @@ package com.boaat.jazzy_cookin.item;
 import java.util.List;
 
 import com.boaat.jazzy_cookin.kitchen.DishGrade;
+import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
+import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -98,5 +101,14 @@ public class KitchenIngredientItem extends Item {
                 .withStyle(ChatFormatting.GRAY));
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.quality", DishGrade.fromScore(data.quality()).displayName())
                 .withStyle(ChatFormatting.GOLD));
+        Level level = context.level();
+        if (level != null) {
+            QualityBreakdown breakdown = DishEvaluation.evaluateStack(stack, level);
+            tooltipComponents.add(breakdown.summary().withStyle(ChatFormatting.YELLOW));
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.freshness", Component.translatable("freshness.jazzycookin." + KitchenStackUtil.freshnessLabel(stack, level)))
+                    .withStyle(ChatFormatting.GREEN));
+        }
+        tooltipComponents.add(Component.translatable("tooltip.jazzycookin.nourishment", data.nourishment()).withStyle(ChatFormatting.BLUE));
+        tooltipComponents.add(Component.translatable("tooltip.jazzycookin.enjoyment", data.enjoyment()).withStyle(ChatFormatting.LIGHT_PURPLE));
     }
 }

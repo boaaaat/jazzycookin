@@ -191,7 +191,7 @@ public final class DishEvaluation {
         float prep = (data.texture() + data.purity()) * 0.5F;
         float cooking = (data.flavor() + data.moisture()) * 0.5F;
         float finishing = data.processDepth() >= 4 ? 0.85F : 0.45F;
-        float plating = data.state() == IngredientState.PLATED_SLICE ? 1.0F : 0.3F;
+        float plating = data.state().isPlatedState() ? 1.0F : 0.3F;
         float total = Mth.clamp(
                 data.quality() * 0.35F + freshness * 0.15F + prep * 0.15F + cooking * 0.2F + finishing * 0.1F + plating * 0.05F,
                 0.0F,

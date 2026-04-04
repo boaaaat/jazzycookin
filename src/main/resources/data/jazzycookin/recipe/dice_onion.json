@@ -1,0 +1,22 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:onion" },
+      "required_state": "whole_onion",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "knife",
+  "duration": 38,
+  "output": {
+    "result": { "id": "jazzycookin:diced_onion", "count": 1 },
+    "state": "diced_onion",
+    "quality_bonus": 0.03,
+    "texture_delta": 0.06,
+    "flavor_delta": 0.03,
+    "nourishment": 2,
+    "enjoyment": 1
+  }
+}

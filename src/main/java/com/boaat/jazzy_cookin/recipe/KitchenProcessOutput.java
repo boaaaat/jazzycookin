@@ -11,6 +11,7 @@ import net.minecraft.world.item.ItemStack;
 
 public record KitchenProcessOutput(
         ItemStack result,
+        ItemStack byproduct,
         IngredientState state,
         float qualityBonus,
         float flavorDelta,
@@ -24,6 +25,7 @@ public record KitchenProcessOutput(
 ) {
     public static final Codec<KitchenProcessOutput> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ItemStack.CODEC.fieldOf("result").forGetter(KitchenProcessOutput::result),
+            ItemStack.CODEC.optionalFieldOf("byproduct", ItemStack.EMPTY).forGetter(KitchenProcessOutput::byproduct),
             IngredientState.CODEC.fieldOf("state").forGetter(KitchenProcessOutput::state),
             Codec.FLOAT.optionalFieldOf("quality_bonus", 0.0F).forGetter(KitchenProcessOutput::qualityBonus),
             Codec.FLOAT.optionalFieldOf("flavor_delta", 0.0F).forGetter(KitchenProcessOutput::flavorDelta),
@@ -38,6 +40,7 @@ public record KitchenProcessOutput(
 
     public static final StreamCodec<RegistryFriendlyByteBuf, KitchenProcessOutput> STREAM_CODEC = StreamCodec.composite(
             ItemStack.STREAM_CODEC, KitchenProcessOutput::result,
+            ItemStack.STREAM_CODEC, KitchenProcessOutput::byproduct,
             IngredientState.STREAM_CODEC, KitchenProcessOutput::state,
             ByteBufCodecs.FLOAT, KitchenProcessOutput::qualityBonus,
             ByteBufCodecs.FLOAT, KitchenProcessOutput::flavorDelta,

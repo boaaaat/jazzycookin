@@ -1,0 +1,24 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "smoker",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:roast_cut" },
+      "required_state": "roast_cut",
+      "count": 1
+    }
+  ],
+  "duration": 140,
+  "preferred_heat": "low",
+  "mode": "passive",
+  "output": {
+    "result": { "id": "jazzycookin:smoked_protein", "count": 1 },
+    "state": "smoked_protein",
+    "quality_bonus": 0.10,
+    "flavor_delta": 0.24,
+    "texture_delta": 0.10,
+    "moisture_delta": -0.06,
+    "nourishment": 8,
+    "enjoyment": 8
+  }
+}

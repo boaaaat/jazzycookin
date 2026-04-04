@@ -1,0 +1,30 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:battered_protein" },
+      "required_state": "battered_protein",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:frying_oil" },
+      "required_state": "fresh_oil",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "pot",
+  "duration": 72,
+  "preferred_heat": "high",
+  "output": {
+    "result": { "id": "jazzycookin:fried_protein", "count": 1 },
+    "byproduct": { "id": "jazzycookin:used_oil", "count": 1 },
+    "state": "fried_protein",
+    "quality_bonus": 0.09,
+    "flavor_delta": 0.20,
+    "texture_delta": 0.22,
+    "moisture_delta": -0.10,
+    "nourishment": 8,
+    "enjoyment": 9
+  }
+}

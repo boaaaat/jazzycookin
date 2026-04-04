@@ -12,8 +12,8 @@ import net.minecraft.world.entity.player.Inventory;
 public class KitchenStationScreen extends AbstractContainerScreen<KitchenStationMenu> {
     public KitchenStationScreen(KitchenStationMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 176;
+        this.imageWidth = 196;
+        this.imageHeight = 184;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
@@ -50,18 +50,18 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
         guiGraphics.fill(left, top, left + this.imageWidth, top + this.imageHeight, 0xFF201A14);
         guiGraphics.fill(left + 4, top + 4, left + this.imageWidth - 4, top + this.imageHeight - 4, 0xFF3A2F26);
-        guiGraphics.fill(left + 18, top + 18, left + 86, top + 74, 0xFF1A1410);
-        guiGraphics.fill(left + 114, top + 30, left + 146, top + 62, 0xFF1A1410);
+        guiGraphics.fill(left + 12, top + 18, left + 92, top + 74, 0xFF1A1410);
+        guiGraphics.fill(left + 120, top + 22, left + 172, top + 66, 0xFF1A1410);
 
         int maxProgress = this.menu.maxProgress();
         if (maxProgress > 0) {
             int progressWidth = Math.max(0, Math.min(54, Math.round((this.menu.progress() / (float) maxProgress) * 54.0F)));
-            guiGraphics.fill(left + 100, top + 46, left + 100 + progressWidth, top + 52, 0xFFD99B3B);
+            guiGraphics.fill(left + 104, top + 74, left + 104 + progressWidth, top + 80, 0xFFD99B3B);
         }
 
         if (this.menu.stationType() == StationType.OVEN) {
             int preheatWidth = Math.max(0, Math.min(54, Math.round(this.menu.preheatProgress() * 0.54F)));
-            guiGraphics.fill(left + 100, top + 58, left + 100 + preheatWidth, top + 64, 0xFFD15A32);
+            guiGraphics.fill(left + 104, top + 86, left + 104 + preheatWidth, top + 92, 0xFFD15A32);
         }
     }
 
@@ -69,11 +69,13 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(this.font, this.title, 8, 6, 0xF2E7D5, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, 0xF2E7D5, false);
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.current_heat", Component.translatable("heat.jazzycookin." + this.menu.heatLevel().getSerializedName())), 96, 24, 0xE3CFAE, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.current_heat", Component.translatable("heat.jazzycookin." + this.menu.heatLevel().getSerializedName())), 100, 22, 0xE3CFAE, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.output"), 118, 14, 0xD6C4A7, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.byproduct"), 118, 58, 0xD6C4A7, false);
         if (this.menu.stationType() == StationType.OVEN) {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.preheat", this.menu.preheatProgress()), 96, 58, 0xE3CFAE, false);
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.preheat", this.menu.preheatProgress()), 100, 82, 0xE3CFAE, false);
         } else {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.progress", this.menu.progress(), this.menu.maxProgress()), 96, 58, 0xE3CFAE, false);
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.progress", this.menu.progress(), this.menu.maxProgress()), 100, 82, 0xE3CFAE, false);
         }
     }
 

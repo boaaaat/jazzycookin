@@ -48,6 +48,10 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
             case 1 -> JazzyItems.CANE_SUGAR.get().createStack(1, this.level.getGameTime());
             case 2 -> JazzyItems.BUTTER.get().createStack(1, this.level.getGameTime());
             case 3 -> JazzyItems.BAKING_SPICE.get().createStack(1, this.level.getGameTime());
+            case 4 -> JazzyItems.FRYING_OIL.get().createStack(1, this.level.getGameTime());
+            case 5 -> JazzyItems.CERAMIC_PLATE.get().createStack(1, this.level.getGameTime());
+            case 6 -> new ItemStack(JazzyItems.CANNING_JAR.get());
+            case 7 -> new ItemStack(JazzyItems.PIE_TIN.get());
             default -> ItemStack.EMPTY;
         };
 

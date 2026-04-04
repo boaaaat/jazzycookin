@@ -1,0 +1,24 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "oven",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:bread_dough" },
+      "required_state": "bread_dough",
+      "count": 1
+    }
+  ],
+  "duration": 118,
+  "preferred_heat": "medium",
+  "requires_preheat": true,
+  "output": {
+    "result": { "id": "jazzycookin:bread_loaf", "count": 1 },
+    "state": "baked_bread",
+    "quality_bonus": 0.08,
+    "flavor_delta": 0.12,
+    "texture_delta": 0.16,
+    "structure_delta": 0.14,
+    "nourishment": 6,
+    "enjoyment": 5
+  }
+}

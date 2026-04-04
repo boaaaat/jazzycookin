@@ -16,7 +16,13 @@ import net.minecraft.util.StringRepresentable;
 public enum StationType implements StringRepresentable {
     PREP_TABLE("prep_table", true, false),
     SPICE_GRINDER("spice_grinder", true, false),
+    STRAINER("strainer", true, false),
     MIXING_BOWL("mixing_bowl", true, false),
+    CANNING_STATION("canning_station", true, true),
+    DRYING_RACK("drying_rack", false, false),
+    SMOKER("smoker", true, true),
+    FERMENTATION_CROCK("fermentation_crock", false, false),
+    STEAMER("steamer", true, true),
     STOVE("stove", true, true),
     OVEN("oven", true, true),
     COOLING_RACK("cooling_rack", false, false),

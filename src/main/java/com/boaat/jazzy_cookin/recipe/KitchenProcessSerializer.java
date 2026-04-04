@@ -3,6 +3,7 @@ package com.boaat.jazzy_cookin.recipe;
 import java.util.ArrayList;
 
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
+import com.boaat.jazzy_cookin.kitchen.ProcessMode;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.mojang.serialization.Codec;
@@ -22,6 +23,8 @@ public class KitchenProcessSerializer implements RecipeSerializer<KitchenProcess
             Codec.INT.optionalFieldOf("duration", 60).forGetter(KitchenProcessRecipe::duration),
             HeatLevel.CODEC.optionalFieldOf("preferred_heat", HeatLevel.OFF).forGetter(KitchenProcessRecipe::preferredHeat),
             Codec.BOOL.optionalFieldOf("requires_preheat", false).forGetter(KitchenProcessRecipe::requiresPreheat),
+            ProcessMode.CODEC.optionalFieldOf("mode", ProcessMode.ACTIVE).forGetter(KitchenProcessRecipe::mode),
+            Codec.BOOL.optionalFieldOf("requires_nearby_water", false).forGetter(KitchenProcessRecipe::requiresNearbyWater),
             KitchenProcessOutput.CODEC.fieldOf("output").forGetter(KitchenProcessRecipe::output)
     ).apply(instance, KitchenProcessRecipe::new));
 
@@ -32,6 +35,8 @@ public class KitchenProcessSerializer implements RecipeSerializer<KitchenProcess
             ByteBufCodecs.VAR_INT, KitchenProcessRecipe::duration,
             HeatLevel.STREAM_CODEC, KitchenProcessRecipe::preferredHeat,
             ByteBufCodecs.BOOL, KitchenProcessRecipe::requiresPreheat,
+            ProcessMode.STREAM_CODEC, KitchenProcessRecipe::mode,
+            ByteBufCodecs.BOOL, KitchenProcessRecipe::requiresNearbyWater,
             KitchenProcessOutput.STREAM_CODEC, KitchenProcessRecipe::output,
             KitchenProcessRecipe::new
     );

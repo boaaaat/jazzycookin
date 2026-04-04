@@ -1,0 +1,33 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:ground_herb" },
+      "required_state": "ground_herb",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:baking_spice" },
+      "required_state": "ground_spice",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:fresh_milk" },
+      "required_state": "fresh_milk",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "whisk",
+  "duration": 54,
+  "output": {
+    "result": { "id": "jazzycookin:marinade", "count": 1 },
+    "state": "marinade",
+    "quality_bonus": 0.05,
+    "flavor_delta": 0.16,
+    "moisture_delta": 0.10,
+    "purity_delta": 0.08,
+    "nourishment": 1,
+    "enjoyment": 2
+  }
+}

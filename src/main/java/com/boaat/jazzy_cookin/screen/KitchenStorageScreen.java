@@ -21,16 +21,28 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         super.init();
         if (this.menu.isPantry()) {
             this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.flour"), button -> this.sendButton(0))
-                    .bounds(this.leftPos + 8, this.topPos + 4, 44, 18)
+                    .bounds(this.leftPos + 8, this.topPos + 4, 40, 18)
                     .build());
             this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.cane_sugar"), button -> this.sendButton(1))
-                    .bounds(this.leftPos + 54, this.topPos + 4, 54, 18)
+                    .bounds(this.leftPos + 50, this.topPos + 4, 54, 18)
                     .build());
             this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.butter"), button -> this.sendButton(2))
-                    .bounds(this.leftPos + 110, this.topPos + 4, 28, 18)
+                    .bounds(this.leftPos + 106, this.topPos + 4, 28, 18)
                     .build());
             this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.baking_spice"), button -> this.sendButton(3))
-                    .bounds(this.leftPos + 140, this.topPos + 4, 28, 18)
+                    .bounds(this.leftPos + 136, this.topPos + 4, 32, 18)
+                    .build());
+            this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.frying_oil"), button -> this.sendButton(4))
+                    .bounds(this.leftPos + 8, this.topPos + 24, 40, 18)
+                    .build());
+            this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.ceramic_plate"), button -> this.sendButton(5))
+                    .bounds(this.leftPos + 50, this.topPos + 24, 54, 18)
+                    .build());
+            this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.canning_jar"), button -> this.sendButton(6))
+                    .bounds(this.leftPos + 106, this.topPos + 24, 28, 18)
+                    .build());
+            this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.pie_tin"), button -> this.sendButton(7))
+                    .bounds(this.leftPos + 136, this.topPos + 24, 32, 18)
                     .build());
         }
     }

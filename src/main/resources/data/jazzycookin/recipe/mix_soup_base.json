@@ -1,0 +1,35 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:chopped_tomato" },
+      "required_state": "chopped_tomato",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:diced_onion" },
+      "required_state": "diced_onion",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:ground_herb" },
+      "required_state": "ground_herb",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "pot",
+  "duration": 96,
+  "preferred_heat": "low",
+  "requires_nearby_water": true,
+  "output": {
+    "result": { "id": "jazzycookin:tomato_soup_base", "count": 1 },
+    "state": "soup_base",
+    "quality_bonus": 0.06,
+    "flavor_delta": 0.14,
+    "moisture_delta": 0.16,
+    "purity_delta": 0.04,
+    "nourishment": 5,
+    "enjoyment": 4
+  }
+}

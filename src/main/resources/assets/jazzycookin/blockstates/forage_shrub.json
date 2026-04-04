@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "age=0": { "model": "jazzycookin:block/forage_shrub" },
+    "age=1": { "model": "jazzycookin:block/forage_shrub" },
+    "age=2": { "model": "jazzycookin:block/forage_shrub" },
+    "age=3": { "model": "jazzycookin:block/forage_shrub" },
+    "age=4": { "model": "jazzycookin:block/forage_shrub" },
+    "age=5": { "model": "jazzycookin:block/forage_shrub" },
+    "age=6": { "model": "jazzycookin:block/forage_shrub" },
+    "age=7": { "model": "jazzycookin:block/forage_shrub" }
+  }
+}

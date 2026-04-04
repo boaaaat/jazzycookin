@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:bread_loaf" },
+      "required_state": "rested_bread",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "knife",
+  "duration": 34,
+  "output": {
+    "result": { "id": "jazzycookin:sliced_bread", "count": 2 },
+    "state": "sliced_bread",
+    "quality_bonus": 0.02,
+    "texture_delta": 0.03,
+    "nourishment": 4,
+    "enjoyment": 4
+  }
+}

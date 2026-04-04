@@ -29,7 +29,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this(
                 containerId,
                 playerInventory,
-                new SimpleContainer(5),
+                new SimpleContainer(7),
                 new SimpleContainerData(4),
                 readStationType(extraData),
                 ContainerLevelAccess.NULL
@@ -61,20 +61,27 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this.stationType = stationType;
         this.access = access;
 
-        checkContainerSize(container, 5);
+        checkContainerSize(container, 7);
         checkContainerDataCount(data, 4);
         container.startOpen(playerInventory.player);
 
-        this.addSlot(new Slot(container, 0, 30, 22));
-        this.addSlot(new Slot(container, 1, 48, 22));
-        this.addSlot(new Slot(container, 2, 66, 22));
-        this.addSlot(new Slot(container, 3, 48, 54) {
+        this.addSlot(new Slot(container, 0, 18, 22));
+        this.addSlot(new Slot(container, 1, 36, 22));
+        this.addSlot(new Slot(container, 2, 54, 22));
+        this.addSlot(new Slot(container, 3, 72, 22));
+        this.addSlot(new Slot(container, 4, 45, 54) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof KitchenToolItem;
             }
         });
-        this.addSlot(new Slot(container, 4, 126, 38) {
+        this.addSlot(new Slot(container, 5, 128, 28) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return false;
+            }
+        });
+        this.addSlot(new Slot(container, 6, 128, 50) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -134,15 +141,15 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
         ItemStack slotStack = slot.getItem();
         quickMoved = slotStack.copy();
-        if (index < 5) {
-            if (!this.moveItemStackTo(slotStack, 5, this.slots.size(), true)) {
+        if (index < 7) {
+            if (!this.moveItemStackTo(slotStack, 7, this.slots.size(), true)) {
                 return ItemStack.EMPTY;
             }
         } else if (slotStack.getItem() instanceof KitchenToolItem) {
-            if (!this.moveItemStackTo(slotStack, 3, 4, false)) {
+            if (!this.moveItemStackTo(slotStack, 4, 5, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!this.moveItemStackTo(slotStack, 0, 3, false)) {
+        } else if (!this.moveItemStackTo(slotStack, 0, 4, false)) {
             return ItemStack.EMPTY;
         }
 

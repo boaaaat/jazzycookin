@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:cabbage" },
+      "required_state": "whole_cabbage",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "knife",
+  "duration": 38,
+  "output": {
+    "result": { "id": "jazzycookin:chopped_cabbage", "count": 1 },
+    "state": "chopped_cabbage",
+    "quality_bonus": 0.03,
+    "texture_delta": 0.06,
+    "nourishment": 3,
+    "enjoyment": 1
+  }
+}

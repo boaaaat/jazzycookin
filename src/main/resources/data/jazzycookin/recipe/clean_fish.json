@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:raw_fish" },
+      "required_state": "raw_fish",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "knife",
+  "duration": 42,
+  "output": {
+    "result": { "id": "jazzycookin:cleaned_fish", "count": 1 },
+    "state": "cleaned_fish",
+    "quality_bonus": 0.03,
+    "purity_delta": 0.12,
+    "nourishment": 4,
+    "enjoyment": 2
+  }
+}

@@ -24,6 +24,15 @@ public class JazzyCookinClient {
             MenuScreens.register(JazzyMenus.KITCHEN_STATION.get(), KitchenStationScreen::new);
             MenuScreens.register(JazzyMenus.KITCHEN_STORAGE.get(), KitchenStorageScreen::new);
             ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.APPLE_SAPLING.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.TOMATO_VINE.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.HERB_BED.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.WHEAT_PATCH.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.CABBAGE_PATCH.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.ONION_PATCH.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.CHICKEN_COOP.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.DAIRY_STALL.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.FISHING_TRAP.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(JazzyBlocks.FORAGE_SHRUB.get(), RenderType.cutout());
         });
     }
 }

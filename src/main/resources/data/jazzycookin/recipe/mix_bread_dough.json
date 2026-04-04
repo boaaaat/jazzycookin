@@ -1,0 +1,28 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:flour" },
+      "required_state": "pantry_ready",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:fresh_milk" },
+      "required_state": "fresh_milk",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "whisk",
+  "duration": 70,
+  "output": {
+    "result": { "id": "jazzycookin:bread_dough", "count": 1 },
+    "state": "bread_dough",
+    "quality_bonus": 0.05,
+    "structure_delta": 0.20,
+    "moisture_delta": 0.14,
+    "aeration_delta": 0.08,
+    "nourishment": 4,
+    "enjoyment": 2
+  }
+}

@@ -11,15 +11,18 @@ import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
+import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
 import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.MenuProvider;
@@ -34,10 +37,11 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class KitchenStationBlockEntity extends BlockEntity implements Container, MenuProvider {
     public static final int INPUT_START = 0;
-    public static final int INPUT_END = 2;
-    public static final int TOOL_SLOT = 3;
-    public static final int OUTPUT_SLOT = 4;
-    private static final int CONTAINER_SIZE = 5;
+    public static final int INPUT_END = 3;
+    public static final int TOOL_SLOT = 4;
+    public static final int OUTPUT_SLOT = 5;
+    public static final int BYPRODUCT_SLOT = 6;
+    private static final int CONTAINER_SIZE = 7;
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private final ContainerData dataAccess = new ContainerData() {
@@ -99,15 +103,27 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return;
         }
 
-        Optional<KitchenProcessRecipe> recipe = blockEntity.currentRecipe();
-        if (recipe.isEmpty() || !blockEntity.getItem(OUTPUT_SLOT).isEmpty()) {
-            blockEntity.stopProcessing();
-            return;
+        if (blockEntity.getStationType() == StationType.PLATING_STATION) {
+            Optional<KitchenPlateRecipe> plateRecipe = blockEntity.currentPlateRecipe();
+            if (plateRecipe.isEmpty() || !blockEntity.canAcceptOutputs(plateRecipe.get())) {
+                blockEntity.stopProcessing();
+                return;
+            }
+        } else {
+            Optional<KitchenProcessRecipe> recipe = blockEntity.currentRecipe();
+            if (recipe.isEmpty() || !blockEntity.canAcceptOutputs(recipe.get())) {
+                blockEntity.stopProcessing();
+                return;
+            }
         }
 
         blockEntity.progress++;
         if (blockEntity.progress >= blockEntity.maxProgress) {
-            blockEntity.finishRecipe(recipe.get());
+            if (blockEntity.getStationType() == StationType.PLATING_STATION) {
+                blockEntity.currentPlateRecipe().ifPresent(blockEntity::finishPlate);
+            } else {
+                blockEntity.currentRecipe().ifPresent(blockEntity::finishRecipe);
+            }
         }
 
         blockEntity.setChanged();
@@ -145,12 +161,25 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     private boolean startProcessing() {
-        if (this.level == null || this.processing || !this.getItem(OUTPUT_SLOT).isEmpty()) {
+        if (this.level == null || this.processing) {
             return false;
         }
 
+        if (this.getStationType() == StationType.PLATING_STATION) {
+            Optional<KitchenPlateRecipe> plateRecipe = this.currentPlateRecipe();
+            if (plateRecipe.isEmpty() || !this.canAcceptOutputs(plateRecipe.get())) {
+                return false;
+            }
+
+            this.processing = true;
+            this.progress = 0;
+            this.maxProgress = 24;
+            this.setChanged();
+            return true;
+        }
+
         Optional<KitchenProcessRecipe> recipe = this.currentRecipe();
-        if (recipe.isEmpty()) {
+        if (recipe.isEmpty() || !this.environmentAllows(recipe.get()) || !this.canAcceptOutputs(recipe.get())) {
             return false;
         }
 
@@ -176,11 +205,33 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return JazzyRecipes.findProcessRecipe(
                 this.level,
                 this.getStationType(),
-                List.of(this.getItem(0), this.getItem(1), this.getItem(2)),
+                List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)),
                 this.getItem(TOOL_SLOT),
                 this.heatLevel,
                 this.preheatProgress >= 100
         );
+    }
+
+    private Optional<KitchenPlateRecipe> currentPlateRecipe() {
+        if (this.level == null) {
+            return Optional.empty();
+        }
+
+        return JazzyRecipes.findPlateRecipe(this.level, List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)));
+    }
+
+    private boolean environmentAllows(KitchenProcessRecipe recipe) {
+        if (!recipe.requiresNearbyWater() || this.level == null) {
+            return true;
+        }
+
+        for (Direction direction : Direction.values()) {
+            if (this.level.getFluidState(this.worldPosition.relative(direction)).is(FluidTags.WATER)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private float toolSpeedMultiplier(KitchenProcessRecipe recipe) {
@@ -195,6 +246,52 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return this.getItem(TOOL_SLOT).isEmpty() ? 0.75F : 0.92F;
     }
 
+    private boolean canAcceptOutputs(KitchenProcessRecipe recipe) {
+        if (!this.canAcceptStack(OUTPUT_SLOT, recipe.output().result())) {
+            return false;
+        }
+        return recipe.output().byproduct().isEmpty() || this.canAcceptStack(BYPRODUCT_SLOT, recipe.output().byproduct());
+    }
+
+    private boolean canAcceptOutputs(KitchenPlateRecipe recipe) {
+        if (!this.canAcceptStack(OUTPUT_SLOT, recipe.output().result())) {
+            return false;
+        }
+        return recipe.output().byproduct().isEmpty() || this.canAcceptStack(BYPRODUCT_SLOT, recipe.output().byproduct());
+    }
+
+    private boolean canAcceptStack(int slot, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return true;
+        }
+
+        ItemStack existing = this.getItem(slot);
+        if (existing.isEmpty()) {
+            return true;
+        }
+
+        if (!ItemStack.isSameItemSameComponents(existing, stack)) {
+            return false;
+        }
+
+        return existing.getCount() + stack.getCount() <= existing.getMaxStackSize();
+    }
+
+    private void mergeIntoSlot(int slot, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        ItemStack existing = this.getItem(slot);
+        if (existing.isEmpty()) {
+            this.setItem(slot, stack);
+            return;
+        }
+
+        existing.grow(stack.getCount());
+        this.setChanged();
+    }
+
     private void finishRecipe(KitchenProcessRecipe recipe) {
         if (this.level == null) {
             return;
@@ -203,7 +300,8 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         List<ItemStack> consumedInputs = List.of(
                 copySized(this.getItem(0), recipe.inputs().size() > 0 ? recipe.inputs().get(0).count() : 0),
                 copySized(this.getItem(1), recipe.inputs().size() > 1 ? recipe.inputs().get(1).count() : 0),
-                copySized(this.getItem(2), recipe.inputs().size() > 2 ? recipe.inputs().get(2).count() : 0)
+                copySized(this.getItem(2), recipe.inputs().size() > 2 ? recipe.inputs().get(2).count() : 0),
+                copySized(this.getItem(3), recipe.inputs().size() > 3 ? recipe.inputs().get(3).count() : 0)
         );
 
         IngredientStateData outputData = DishEvaluation.evaluateProcess(
@@ -224,11 +322,48 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             outputStack = ingredientItem.createStack(outputStack.getCount(), this.level.getGameTime(), outputData);
         }
 
-        this.setItem(OUTPUT_SLOT, outputStack);
+        this.mergeIntoSlot(OUTPUT_SLOT, outputStack);
+        ItemStack byproduct = recipe.output().byproduct().copy();
+        if (!byproduct.isEmpty() && byproduct.getItem() instanceof KitchenIngredientItem ingredientItem) {
+            byproduct = ingredientItem.createStack(byproduct.getCount(), this.level.getGameTime());
+        }
+        this.mergeIntoSlot(BYPRODUCT_SLOT, byproduct);
         this.stopProcessing();
         if (this.getStationType() == StationType.OVEN) {
             this.preheatProgress = Math.max(0, this.preheatProgress - 30);
         }
+        this.setChanged();
+    }
+
+    private void finishPlate(KitchenPlateRecipe recipe) {
+        if (this.level == null) {
+            return;
+        }
+
+        List<ItemStack> consumedInputs = List.of(
+                copySized(this.getItem(0), recipe.inputs().size() > 0 ? recipe.inputs().get(0).count() : 0),
+                copySized(this.getItem(1), recipe.inputs().size() > 1 ? recipe.inputs().get(1).count() : 0),
+                copySized(this.getItem(2), recipe.inputs().size() > 2 ? recipe.inputs().get(2).count() : 0),
+                copySized(this.getItem(3), recipe.inputs().size() > 3 ? recipe.inputs().get(3).count() : 0)
+        );
+
+        IngredientStateData outputData = DishEvaluation.evaluatePlate(this.level, recipe, consumedInputs);
+        for (int i = 0; i < recipe.inputs().size(); i++) {
+            this.removeItem(i, recipe.inputs().get(i).count());
+        }
+
+        ItemStack outputStack = recipe.output().result().copy();
+        if (outputStack.getItem() instanceof KitchenIngredientItem ingredientItem) {
+            outputStack = ingredientItem.createStack(outputStack.getCount(), this.level.getGameTime(), outputData);
+        }
+
+        this.mergeIntoSlot(OUTPUT_SLOT, outputStack);
+        ItemStack byproduct = recipe.output().byproduct().copy();
+        if (!byproduct.isEmpty() && byproduct.getItem() instanceof KitchenIngredientItem ingredientItem) {
+            byproduct = ingredientItem.createStack(byproduct.getCount(), this.level.getGameTime());
+        }
+        this.mergeIntoSlot(BYPRODUCT_SLOT, byproduct);
+        this.stopProcessing();
         this.setChanged();
     }
 
@@ -289,7 +424,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         if (stack.getCount() > this.getMaxStackSize()) {
             stack.setCount(this.getMaxStackSize());
         }
-        if (slot != OUTPUT_SLOT) {
+        if (slot != OUTPUT_SLOT && slot != BYPRODUCT_SLOT) {
             this.stopProcessing();
         }
         this.setChanged();
@@ -305,7 +440,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        if (slot == OUTPUT_SLOT) {
+        if (slot == OUTPUT_SLOT || slot == BYPRODUCT_SLOT) {
             return false;
         }
         if (slot == TOOL_SLOT) {

@@ -1,0 +1,28 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "canning_station",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:orchard_apple" },
+      "required_state": "sliced_apple",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:cane_sugar" },
+      "required_state": "pantry_ready",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "jar",
+  "duration": 90,
+  "preferred_heat": "medium",
+  "output": {
+    "result": { "id": "jazzycookin:apple_preserve", "count": 1 },
+    "state": "apple_preserve",
+    "quality_bonus": 0.06,
+    "flavor_delta": 0.18,
+    "purity_delta": 0.10,
+    "nourishment": 3,
+    "enjoyment": 6
+  }
+}

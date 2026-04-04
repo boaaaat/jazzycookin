@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
+import com.boaat.jazzy_cookin.kitchen.MasteryProgress;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
@@ -57,11 +58,17 @@ public class KitchenMealItem extends KitchenIngredientItem {
 
         if (!level.isClientSide && livingEntity instanceof Player player) {
             QualityBreakdown breakdown = DishEvaluation.evaluateStack(stack, level);
+            MasteryProgress.awardForMeal(player, stack, breakdown);
             player.sendSystemMessage(Component.translatable(
                     "message.jazzycookin.served",
                     breakdown.grade().displayName(),
                     breakdown.nourishment(),
                     breakdown.enjoyment()
+            ));
+            player.sendSystemMessage(Component.translatable(
+                    "message.jazzycookin.mastery",
+                    MasteryProgress.totalServes(player),
+                    MasteryProgress.forMeal(player, stack.getItemHolder().unwrapKey().map(reference -> reference.location().getPath()).orElse("unknown_meal"))
             ));
         }
 

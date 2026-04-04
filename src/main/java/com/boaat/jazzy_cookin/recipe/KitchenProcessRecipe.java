@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
+import com.boaat.jazzy_cookin.kitchen.ProcessMode;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
@@ -22,6 +23,8 @@ public record KitchenProcessRecipe(
         int duration,
         HeatLevel preferredHeat,
         boolean requiresPreheat,
+        ProcessMode mode,
+        boolean requiresNearbyWater,
         KitchenProcessOutput output
 ) implements Recipe<KitchenProcessInput> {
     @Override

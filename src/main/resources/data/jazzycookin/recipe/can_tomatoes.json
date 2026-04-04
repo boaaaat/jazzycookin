@@ -1,0 +1,23 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "canning_station",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:chopped_tomato" },
+      "required_state": "chopped_tomato",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "jar",
+  "duration": 92,
+  "preferred_heat": "medium",
+  "output": {
+    "result": { "id": "jazzycookin:canned_tomato", "count": 1 },
+    "state": "canned_tomato",
+    "quality_bonus": 0.05,
+    "moisture_delta": 0.10,
+    "purity_delta": 0.10,
+    "nourishment": 4,
+    "enjoyment": 3
+  }
+}

@@ -4,8 +4,10 @@ import java.util.function.Supplier;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.block.AppleSaplingBlock;
+import com.boaat.jazzy_cookin.block.KitchenSourceBlock;
 import com.boaat.jazzy_cookin.block.KitchenStationBlock;
 import com.boaat.jazzy_cookin.block.KitchenStorageBlock;
+import com.boaat.jazzy_cookin.kitchen.KitchenSourceProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
 
@@ -26,12 +28,27 @@ public final class JazzyBlocks {
                     .instabreak()
                     .randomTicks()
                     .sound(SoundType.GRASS)));
+    public static final DeferredBlock<Block> TOMATO_VINE = source("tomato_vine", KitchenSourceProfile.TOMATO_VINE, MapColor.COLOR_RED, SoundType.CROP);
+    public static final DeferredBlock<Block> HERB_BED = source("herb_bed", KitchenSourceProfile.HERB_BED, MapColor.COLOR_GREEN, SoundType.CROP);
+    public static final DeferredBlock<Block> WHEAT_PATCH = source("wheat_patch", KitchenSourceProfile.WHEAT_PATCH, MapColor.COLOR_YELLOW, SoundType.CROP);
+    public static final DeferredBlock<Block> CABBAGE_PATCH = source("cabbage_patch", KitchenSourceProfile.CABBAGE_PATCH, MapColor.COLOR_GREEN, SoundType.CROP);
+    public static final DeferredBlock<Block> ONION_PATCH = source("onion_patch", KitchenSourceProfile.ONION_PATCH, MapColor.COLOR_LIGHT_GRAY, SoundType.CROP);
+    public static final DeferredBlock<Block> CHICKEN_COOP = source("chicken_coop", KitchenSourceProfile.CHICKEN_COOP, MapColor.WOOD, SoundType.WOOD);
+    public static final DeferredBlock<Block> DAIRY_STALL = source("dairy_stall", KitchenSourceProfile.DAIRY_STALL, MapColor.WOOD, SoundType.WOOD);
+    public static final DeferredBlock<Block> FISHING_TRAP = source("fishing_trap", KitchenSourceProfile.FISHING_TRAP, MapColor.WOOD, SoundType.WOOD);
+    public static final DeferredBlock<Block> FORAGE_SHRUB = source("forage_shrub", KitchenSourceProfile.FORAGE_SHRUB, MapColor.COLOR_PURPLE, SoundType.GRASS);
 
     public static final DeferredBlock<Block> PANTRY = storage("pantry", StorageType.PANTRY, MapColor.WOOD, SoundType.WOOD);
     public static final DeferredBlock<Block> CELLAR = storage("cellar", StorageType.CELLAR, MapColor.STONE, SoundType.STONE);
     public static final DeferredBlock<Block> PREP_TABLE = station("prep_table", StationType.PREP_TABLE, MapColor.WOOD, SoundType.WOOD);
     public static final DeferredBlock<Block> SPICE_GRINDER = station("spice_grinder", StationType.SPICE_GRINDER, MapColor.STONE, SoundType.STONE);
+    public static final DeferredBlock<Block> STRAINER = station("strainer", StationType.STRAINER, MapColor.METAL, SoundType.METAL);
     public static final DeferredBlock<Block> MIXING_BOWL = station("mixing_bowl", StationType.MIXING_BOWL, MapColor.TERRACOTTA_ORANGE, SoundType.WOOD);
+    public static final DeferredBlock<Block> CANNING_STATION = station("canning_station", StationType.CANNING_STATION, MapColor.WOOD, SoundType.WOOD);
+    public static final DeferredBlock<Block> DRYING_RACK = station("drying_rack", StationType.DRYING_RACK, MapColor.WOOD, SoundType.WOOD);
+    public static final DeferredBlock<Block> SMOKER = station("smoker", StationType.SMOKER, MapColor.WOOD, SoundType.WOOD);
+    public static final DeferredBlock<Block> FERMENTATION_CROCK = station("fermentation_crock", StationType.FERMENTATION_CROCK, MapColor.TERRACOTTA_BROWN, SoundType.STONE);
+    public static final DeferredBlock<Block> STEAMER = station("steamer", StationType.STEAMER, MapColor.METAL, SoundType.METAL);
     public static final DeferredBlock<Block> STOVE = station("stove", StationType.STOVE, MapColor.METAL, SoundType.METAL);
     public static final DeferredBlock<Block> OVEN = station("oven", StationType.OVEN, MapColor.STONE, SoundType.STONE);
     public static final DeferredBlock<Block> COOLING_RACK = station("cooling_rack", StationType.COOLING_RACK, MapColor.METAL, SoundType.METAL);
@@ -49,6 +66,16 @@ public final class JazzyBlocks {
                         .sound(soundType)));
     }
 
+    private static DeferredBlock<Block> source(String name, KitchenSourceProfile profile, MapColor mapColor, SoundType soundType) {
+        return BLOCKS.register(name, () ->
+                new KitchenSourceBlock(profile, BlockBehaviour.Properties.of()
+                        .mapColor(mapColor)
+                        .noCollission()
+                        .instabreak()
+                        .randomTicks()
+                        .sound(soundType)));
+    }
+
     private static DeferredBlock<Block> storage(String name, StorageType storageType, MapColor mapColor, SoundType soundType) {
         return BLOCKS.register(name, () ->
                 new KitchenStorageBlock(storageType, BlockBehaviour.Properties.of()
@@ -61,7 +88,13 @@ public final class JazzyBlocks {
         return switch (stationType) {
             case PREP_TABLE -> PREP_TABLE;
             case SPICE_GRINDER -> SPICE_GRINDER;
+            case STRAINER -> STRAINER;
             case MIXING_BOWL -> MIXING_BOWL;
+            case CANNING_STATION -> CANNING_STATION;
+            case DRYING_RACK -> DRYING_RACK;
+            case SMOKER -> SMOKER;
+            case FERMENTATION_CROCK -> FERMENTATION_CROCK;
+            case STEAMER -> STEAMER;
             case STOVE -> STOVE;
             case OVEN -> OVEN;
             case COOLING_RACK -> COOLING_RACK;

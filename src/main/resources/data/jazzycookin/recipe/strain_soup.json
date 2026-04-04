@@ -1,0 +1,22 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "strainer",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:tomato_soup_base" },
+      "required_state": "soup_base",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "strainer",
+  "duration": 36,
+  "output": {
+    "result": { "id": "jazzycookin:strained_soup", "count": 1 },
+    "state": "strained_soup",
+    "quality_bonus": 0.04,
+    "purity_delta": 0.18,
+    "texture_delta": 0.02,
+    "nourishment": 5,
+    "enjoyment": 4
+  }
+}

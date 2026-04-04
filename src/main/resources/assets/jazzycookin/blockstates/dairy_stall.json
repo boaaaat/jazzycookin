@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "age=0": { "model": "jazzycookin:block/dairy_stall" },
+    "age=1": { "model": "jazzycookin:block/dairy_stall" },
+    "age=2": { "model": "jazzycookin:block/dairy_stall" },
+    "age=3": { "model": "jazzycookin:block/dairy_stall" },
+    "age=4": { "model": "jazzycookin:block/dairy_stall" },
+    "age=5": { "model": "jazzycookin:block/dairy_stall" },
+    "age=6": { "model": "jazzycookin:block/dairy_stall" },
+    "age=7": { "model": "jazzycookin:block/dairy_stall" }
+  }
+}
