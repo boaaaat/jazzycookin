@@ -1,0 +1,22 @@
+s=14181D
+m=2A3038
+l=4C5661
+h=7C8792
+b=111318
+
+. . . s s s m m m m m s s s . .
+. . s m l l l l l l l l m s . .
+. s m l m m m m m m m m l m s .
+s m l m b b b b b b b m m l m s
+s l m b b b b b b b b b m m l s
+s l m b b b b b b b b b b m l s
+m l m b b b b b b b b b b m l m
+m l m b b b b b b b b b b m l m
+m l m b b b b b b b b b b m l m
+m l m b b b b b b b b b b m l m
+s l m b b b b b b b b b b m l s
+s l m m b b b b b b b b m m l s
+s m l m m m m m m m m m l m s .
+. s m l l l l l l l l l m s . .
+. . s s s m m m m m m s s . . .
+. . . . s s s s s s s s . . . .

@@ -1,7 +1,6 @@
 {
-  "itemGroup.jazzycookin": "Example Mod Tab",
-  "block.jazzycookin.example_block": "Example Block",
-  "item.jazzycookin.example_item": "Example Item",
+  "block.jazzycookin.frying_pan": "Frying Pan",
+  "item.jazzycookin.frying_pan": "Frying Pan",
 
   "jazzycookin.configuration.title": "jazzy cookin Configs",
   "jazzycookin.configuration.section.jazzycookin.common.toml": "jazzy cookin Configs",

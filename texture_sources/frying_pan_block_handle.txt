@@ -1,0 +1,21 @@
+s=3D2416
+m=5C3824
+l=835536
+h=C08A5A
+
+s s s s s s s s s s s s s s s s
+s s s s s s s s s s s s s s s s
+m m m m m m m m m m m m m m m m
+m m m l m m m m m l m m m m m m
+m m l h l m m m l h l m m m m m
+m m m l m m m m m l m m m m m m
+m m m m m m m m m m m m m m m m
+s s s s s s s s s s s s s s s s
+s s s s s s s s s s s s s s s s
+m m m m m m m m m m m m m m m m
+m m m l m m m m m l m m m m m m
+m l h h l m m m l h h l m m m m
+m m l h l m m m l h l m m m m m
+m m m l m m m m m l m m m m m m
+s s s s s s s s s s s s s s s s
+s s s s s s s s s s s s s s s s

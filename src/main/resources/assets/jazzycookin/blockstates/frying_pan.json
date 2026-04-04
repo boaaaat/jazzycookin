@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "jazzycookin:block/frying_pan"
+    },
+    "facing=east": {
+      "model": "jazzycookin:block/frying_pan",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "jazzycookin:block/frying_pan",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "jazzycookin:block/frying_pan",
+      "y": 270
+    }
+  }
+}
