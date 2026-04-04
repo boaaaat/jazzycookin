@@ -39,7 +39,7 @@ public class FryingPanBlock extends HorizontalDirectionalBlock {
     }
 
     @Override
-    protected MapCodec<? extends Block> codec() {
+    protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
         return CODEC;
     }
 
