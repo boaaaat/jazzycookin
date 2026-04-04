@@ -21,16 +21,32 @@ public class FryingPanBlock extends HorizontalDirectionalBlock {
     public static final MapCodec<FryingPanBlock> CODEC = simpleCodec(FryingPanBlock::new);
 
     private static final VoxelShape SHAPE_NORTH = Shapes.or(
-            Block.box(2.0D, 0.0D, 3.0D, 14.0D, 2.0D, 15.0D),
+            Block.box(3.0D, 0.0D, 4.0D, 13.0D, 1.0D, 14.0D),
+            Block.box(2.0D, 0.0D, 3.0D, 14.0D, 3.0D, 4.0D),
+            Block.box(2.0D, 0.0D, 14.0D, 14.0D, 3.0D, 15.0D),
+            Block.box(2.0D, 0.0D, 4.0D, 3.0D, 3.0D, 14.0D),
+            Block.box(13.0D, 0.0D, 4.0D, 14.0D, 3.0D, 14.0D),
             Block.box(6.0D, 0.0D, 0.0D, 10.0D, 1.0D, 3.0D));
     private static final VoxelShape SHAPE_EAST = Shapes.or(
-            Block.box(1.0D, 0.0D, 2.0D, 13.0D, 2.0D, 14.0D),
+            Block.box(2.0D, 0.0D, 3.0D, 12.0D, 1.0D, 13.0D),
+            Block.box(12.0D, 0.0D, 2.0D, 13.0D, 3.0D, 14.0D),
+            Block.box(1.0D, 0.0D, 2.0D, 2.0D, 3.0D, 14.0D),
+            Block.box(2.0D, 0.0D, 2.0D, 12.0D, 3.0D, 3.0D),
+            Block.box(2.0D, 0.0D, 13.0D, 12.0D, 3.0D, 14.0D),
             Block.box(13.0D, 0.0D, 6.0D, 16.0D, 1.0D, 10.0D));
     private static final VoxelShape SHAPE_SOUTH = Shapes.or(
-            Block.box(2.0D, 0.0D, 1.0D, 14.0D, 2.0D, 13.0D),
+            Block.box(3.0D, 0.0D, 2.0D, 13.0D, 1.0D, 12.0D),
+            Block.box(2.0D, 0.0D, 12.0D, 14.0D, 3.0D, 13.0D),
+            Block.box(2.0D, 0.0D, 1.0D, 14.0D, 3.0D, 2.0D),
+            Block.box(2.0D, 0.0D, 2.0D, 3.0D, 3.0D, 12.0D),
+            Block.box(13.0D, 0.0D, 2.0D, 14.0D, 3.0D, 12.0D),
             Block.box(6.0D, 0.0D, 13.0D, 10.0D, 1.0D, 16.0D));
     private static final VoxelShape SHAPE_WEST = Shapes.or(
-            Block.box(3.0D, 0.0D, 2.0D, 15.0D, 2.0D, 14.0D),
+            Block.box(4.0D, 0.0D, 3.0D, 14.0D, 1.0D, 13.0D),
+            Block.box(14.0D, 0.0D, 2.0D, 15.0D, 3.0D, 14.0D),
+            Block.box(3.0D, 0.0D, 2.0D, 4.0D, 3.0D, 14.0D),
+            Block.box(4.0D, 0.0D, 2.0D, 14.0D, 3.0D, 3.0D),
+            Block.box(4.0D, 0.0D, 13.0D, 14.0D, 3.0D, 14.0D),
             Block.box(0.0D, 0.0D, 6.0D, 3.0D, 1.0D, 10.0D));
 
     public FryingPanBlock(BlockBehaviour.Properties properties) {

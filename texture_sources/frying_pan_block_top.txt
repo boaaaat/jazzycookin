@@ -1,23 +1,30 @@
-s=21262D
-m=58606A
-l=99A2AD
-h=DEE4EB
-b=1B1E24
-c=2C3139
+a=0A0D11
+b=12171D
+c=1A2027
+d=232C35
+e=2D3741
+f=3D4956
+g=566374
+h=768395
+i=A4B0BC
+j=CCD6DF
+k=EEF3F8
+l=5F6C7C
+m=8E99A5
 
-. . . s s s m m m m m s s s . .
-. . s m l l l l l l l l m s . .
-. s m l b b b b b b b b l m s .
-s m l b c c c c c c c b b l m s
-s l b c c c c c c c c c b b l s
-s l b c c c c c c c c c c b l s
-m l b c c c c c c c c c c b l m
-m l b c c c c c c c c c c b l m
-m l b c c c c c c c c c c b l m
-m l b c c c c c c c c c c b l m
-s l b c c c c c c c c c c b l s
-s l b b c c c c c c c c b b l s
-s m l b b b b b b b b b l m s .
-. s m l l l l l l l l l m s . .
-. . s s s m m m m m m s s . . .
-. . . . s s s s s s s s . . . .
+. . . . a g i j j i g a . . . .
+. . . a g j k k k k j g a . . .
+. . a g j f e e e e f j g a . .
+. a g j f d c c c c c d j g a .
+a g j f d c b b b b c d f j g a
+g j f d c b l m m l b c d f j g
+i k e c b l m h h m l b c e k i
+j k e c b m h g g h m b c e k j
+j k e c b m h g g h m b c e k j
+i k e c b l m h h m l b c e k i
+g j f d c b l m m l b c d f j g
+a g j f d c b b b b c d f j g a
+. a g j f d c c c c d f j g a .
+. . a g j f e e f e f j g a . .
+. . . a g j k j j k j g a . . .
+. . . . a g g g g g g a . . . .

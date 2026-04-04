@@ -1,21 +1,27 @@
-s=3D2416
-m=5C3824
-l=835536
-h=C08A5A
+a=26160E
+b=3B2416
+c=533221
+d=6E4730
+e=8D6142
+f=B4855E
+g=D5AC84
+m=454E59
+n=798694
+o=C4CFD9
 
-s s s s s s s s s s s s s s s s
-s s s s s s s s s s s s s s s s
-m m m m m m m m m m m m m m m m
-m m m l m m m m m l m m m m m m
-m m l h l m m m l h l m m m m m
-m m m l m m m m m l m m m m m m
-m m m m m m m m m m m m m m m m
-s s s s s s s s s s s s s s s s
-s s s s s s s s s s s s s s s s
-m m m m m m m m m m m m m m m m
-m m m l m m m m m l m m m m m m
-m l h h l m m m l h h l m m m m
-m m l h l m m m l h l m m m m m
-m m m l m m m m m l m m m m m m
-s s s s s s s s s s s s s s s s
-s s s s s s s s s s s s s s s s
+. . . . . . . . . . . . . . . .
+. . . . m n o n . . . . . . . .
+a a a a m m n m a a a a a a a a
+b b c d c b c d c b b c d c b b
+b c e f e c b c e f e c b c e b
+c d f g f d c c d f g f d c d c
+c d e f e d c b c e f e d c c c
+b c d e d c b b c d e d c b b b
+b c e f e c b c e f e c b c e b
+c d f g f d c c d f g f d c d c
+c d e f e d c b c e f e d c c c
+b c d e d c b b c d e d c b b b
+b c e f e c b c e f e c b c e b
+b c d c d b b b c d c d b b b b
+a a a a a a a a a a a a a a a a
+. . . . . . . . . . . . . . . .
