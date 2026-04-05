@@ -319,7 +319,10 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
         @Override
         public boolean mayPlace(ItemStack stack) {
             int actualSlot = this.actualSlot();
-            return actualSlot >= 0 && KitchenStorageMenu.this.container.canPlaceItem(actualSlot, stack);
+            if (actualSlot < 0 || !KitchenStorageMenu.this.container.canPlaceItem(actualSlot, stack)) {
+                return false;
+            }
+            return KitchenStorageMenu.this.selectedPantryTab == null || PantrySortTab.classify(stack) == KitchenStorageMenu.this.selectedPantryTab;
         }
 
         @Override

@@ -184,6 +184,10 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
     @Override
     public void setItem(int slot, ItemStack stack) {
+        if (!stack.isEmpty() && !this.canPlaceItem(slot, stack)) {
+            return;
+        }
+
         ItemStack previous = this.items.get(slot);
         this.items.set(slot, stack);
         if (stack.getCount() > this.getMaxStackSize()) {
@@ -209,7 +213,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return true;
+        return this.getStorageType() != StorageType.PANTRY || PantrySortTab.classify(stack) != PantrySortTab.OTHER;
     }
 
     @Override

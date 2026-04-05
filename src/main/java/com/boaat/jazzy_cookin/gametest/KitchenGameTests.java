@@ -247,8 +247,13 @@ public final class KitchenGameTests {
 
         KitchenStorageBlockEntity pantry = blockEntity(level, pantryPos, KitchenStorageBlockEntity.class);
         KitchenStorageBlockEntity cellar = blockEntity(level, cellarPos, KitchenStorageBlockEntity.class);
-        ItemStack pantryStored = JazzyItems.TOMATO.get().createStack(1, level.getGameTime());
-        ItemStack cellarStored = JazzyItems.TOMATO.get().createStack(1, level.getGameTime());
+        ItemStack invalidPantryItem = new ItemStack(JazzyItems.PREP_TABLE_ITEM.get());
+        require(!pantry.canPlaceItem(1, invalidPantryItem), "Pantry should reject uncategorized items");
+        pantry.setItem(1, invalidPantryItem);
+        require(pantry.getItem(1).isEmpty(), "Pantry should not store uncategorized items");
+
+        ItemStack pantryStored = JazzyItems.ORCHARD_APPLE.get().createStack(1, level.getGameTime());
+        ItemStack cellarStored = JazzyItems.ORCHARD_APPLE.get().createStack(1, level.getGameTime());
         IngredientStateData pantryStoredData = KitchenStackUtil.getOrCreateData(pantryStored, level.getGameTime());
         IngredientStateData cellarStoredData = KitchenStackUtil.getOrCreateData(cellarStored, level.getGameTime());
         KitchenStackUtil.setData(pantryStored, pantryStoredData.withCreatedTick(level.getGameTime() - 400L));

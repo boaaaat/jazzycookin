@@ -14,7 +14,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.StringRepresentable;
 
 public enum StorageType implements StringRepresentable {
-    PANTRY("pantry", 0.85F),
+    PANTRY("pantry", 0.90F),
     CELLAR("cellar", 0.35F);
 
     private static final Map<String, StorageType> BY_NAME = Arrays.stream(values())
