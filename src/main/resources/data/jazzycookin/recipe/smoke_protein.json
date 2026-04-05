@@ -14,6 +14,7 @@
   "minimum_heat": "low",
   "maximum_heat": "low",
   "mode": "passive",
+  "passive_duration_ticks": 320,
   "output": {
     "result": { "id": "jazzycookin:smoked_protein", "count": 1 },
     "state": "smoked_protein",

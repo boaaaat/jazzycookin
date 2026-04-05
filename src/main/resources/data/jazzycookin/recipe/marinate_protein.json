@@ -14,8 +14,12 @@
       "count": 1
     }
   ],
+  "preferred_tool": "jar",
+  "allowed_tools": ["jar"],
+  "tool_required": true,
   "mode": "passive",
   "duration": 76,
+  "passive_duration_ticks": 220,
   "output": {
     "result": { "id": "jazzycookin:marinated_protein", "count": 1 },
     "state": "marinated_protein",

@@ -31,7 +31,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 containerId,
                 playerInventory,
                 new SimpleContainer(7),
-                new SimpleContainerData(5),
+                new SimpleContainerData(7),
                 readStationType(extraData),
                 ContainerLevelAccess.NULL
         );
@@ -63,7 +63,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this.access = access;
 
         checkContainerSize(container, 7);
-        checkContainerDataCount(data, 5);
+        checkContainerDataCount(data, 7);
         container.startOpen(playerInventory.player);
 
         this.addSlot(new Slot(container, 0, 18, 22));
@@ -129,6 +129,14 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
     public KitchenMethod currentMethod() {
         return KitchenMethod.values()[Math.max(0, Math.min(KitchenMethod.values().length - 1, this.data.get(4)))];
+    }
+
+    public int controlSetting() {
+        return Math.max(0, Math.min(2, this.data.get(5)));
+    }
+
+    public int environmentStatus() {
+        return this.data.get(6);
     }
 
     @Override

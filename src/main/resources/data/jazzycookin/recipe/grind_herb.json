@@ -9,7 +9,36 @@
       "count": 1
     }
   ],
+  "preferred_tool": "mortar_pestle",
+  "allowed_tools": ["mortar_pestle"],
+  "tool_required": true,
   "duration": 38,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": { "id": "jazzycookin:ground_herb", "count": 1 },
+        "state": "coarse_paste",
+        "quality_bonus": -0.03,
+        "flavor_delta": 0.04,
+        "purity_delta": -0.02,
+        "nourishment": 1,
+        "enjoyment": 2
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": { "id": "jazzycookin:ground_herb", "count": 1 },
+        "state": "overworked_paste",
+        "quality_bonus": -0.03,
+        "flavor_delta": -0.02,
+        "purity_delta": 0.02,
+        "nourishment": 1,
+        "enjoyment": 2
+      }
+    }
+  ],
   "output": {
     "result": { "id": "jazzycookin:ground_herb", "count": 1 },
     "state": "ground_herb",

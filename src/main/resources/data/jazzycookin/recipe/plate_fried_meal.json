@@ -3,7 +3,7 @@
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:fried_protein" },
-      "required_state": "fried_protein",
+      "required_state": "rested",
       "count": 1
     },
     {

@@ -9,7 +9,32 @@
       "count": 1
     }
   ],
+  "preferred_tool": "mortar_pestle",
+  "allowed_tools": ["mortar_pestle"],
+  "tool_required": true,
   "duration": 50,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": { "id": "jazzycookin:baking_spice", "count": 1 },
+        "state": "coarse_powder",
+        "quality_bonus": -0.03,
+        "flavor_delta": 0.04,
+        "purity_delta": -0.02
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": { "id": "jazzycookin:baking_spice", "count": 1 },
+        "state": "fine_powder",
+        "quality_bonus": -0.01,
+        "flavor_delta": 0.08,
+        "purity_delta": 0.02
+      }
+    }
+  ],
   "output": {
     "result": { "id": "jazzycookin:baking_spice", "count": 1 },
     "state": "ground_spice",

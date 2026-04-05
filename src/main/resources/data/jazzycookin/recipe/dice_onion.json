@@ -9,14 +9,42 @@
       "count": 1
     }
   ],
-  "preferred_tool": "knife",
-  "duration": 38,
+  "preferred_tool": "chef_knife",
+  "allowed_tools": ["chef_knife", "paring_knife"],
+  "tool_required": true,
+  "duration": 40,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": { "id": "jazzycookin:diced_onion", "count": 1 },
+        "state": "rough_cut",
+        "quality_bonus": -0.03,
+        "texture_delta": -0.03,
+        "flavor_delta": -0.02,
+        "nourishment": 2,
+        "enjoyment": 1
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": { "id": "jazzycookin:diced_onion", "count": 1 },
+        "state": "minced",
+        "quality_bonus": -0.02,
+        "texture_delta": -0.04,
+        "flavor_delta": -0.01,
+        "nourishment": 2,
+        "enjoyment": 1
+      }
+    }
+  ],
   "output": {
     "result": { "id": "jazzycookin:diced_onion", "count": 1 },
     "state": "diced_onion",
-    "quality_bonus": 0.03,
-    "texture_delta": 0.06,
-    "flavor_delta": 0.03,
+    "quality_bonus": 0.04,
+    "texture_delta": 0.08,
+    "flavor_delta": 0.04,
     "nourishment": 2,
     "enjoyment": 1
   }

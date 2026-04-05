@@ -10,6 +10,8 @@
     }
   ],
   "duration": 60,
+  "mode": "passive",
+  "passive_duration_ticks": 90,
   "output": {
     "result": { "id": "jazzycookin:apple_pie", "count": 1 },
     "state": "cooled_pie",

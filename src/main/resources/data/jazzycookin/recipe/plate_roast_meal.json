@@ -3,7 +3,7 @@
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:broiled_protein" },
-      "required_state": "broiled_protein",
+      "required_state": "rested",
       "count": 1
     },
     {

@@ -41,7 +41,7 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
             this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.canning_jar"), button -> this.sendButton(6))
                     .bounds(this.leftPos + 106, this.topPos + 24, 28, 18)
                     .build());
-            this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.pie_tin"), button -> this.sendButton(7))
+            this.addRenderableWidget(Button.builder(Component.translatable("item.jazzycookin.salt"), button -> this.sendButton(7))
                     .bounds(this.leftPos + 136, this.topPos + 24, 32, 18)
                     .build());
         }

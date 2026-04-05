@@ -15,9 +15,11 @@
     }
   ],
   "preferred_tool": "jar",
+  "allowed_tools": ["jar"],
   "tool_required": true,
   "duration": 120,
   "mode": "passive",
+  "passive_duration_ticks": 300,
   "output": {
     "result": { "id": "jazzycookin:fermented_vegetables", "count": 1 },
     "state": "fermented_vegetable",

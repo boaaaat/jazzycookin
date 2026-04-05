@@ -10,12 +10,15 @@
     }
   ],
   "preferred_tool": "steamer_basket",
+  "allowed_tools": ["steamer_basket"],
   "tool_required": true,
   "duration": 88,
   "preferred_heat": "medium",
   "minimum_heat": "low",
   "maximum_heat": "medium",
-  "requires_nearby_water": true,
+  "environment_requirements": {
+    "nearby_water": true
+  },
   "output": {
     "result": { "id": "jazzycookin:steamed_dumplings", "count": 1 },
     "state": "steamed_dumplings",

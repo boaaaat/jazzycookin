@@ -5,7 +5,7 @@
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:bread_dough" },
-      "required_state": "bread_dough",
+      "required_state": "developed_dough",
       "count": 1
     }
   ],
@@ -17,7 +17,7 @@
   "output": {
     "result": { "id": "jazzycookin:bread_loaf", "count": 1 },
     "state": "baked_bread",
-    "quality_bonus": 0.08,
+    "quality_bonus": 0.09,
     "flavor_delta": 0.12,
     "texture_delta": 0.16,
     "structure_delta": 0.14,

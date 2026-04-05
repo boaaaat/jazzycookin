@@ -9,12 +9,36 @@
       "count": 1
     }
   ],
-  "preferred_tool": "knife",
-  "duration": 30,
+  "preferred_tool": "paring_knife",
+  "allowed_tools": ["paring_knife", "chef_knife"],
+  "tool_required": true,
+  "duration": 34,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": { "id": "jazzycookin:orchard_apple", "count": 1 },
+        "state": "rough_cut",
+        "quality_bonus": -0.03,
+        "texture_delta": -0.04,
+        "purity_delta": -0.02
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": { "id": "jazzycookin:orchard_apple", "count": 1 },
+        "state": "chopped",
+        "quality_bonus": -0.02,
+        "texture_delta": -0.03,
+        "moisture_delta": -0.02
+      }
+    }
+  ],
   "output": {
     "result": { "id": "jazzycookin:orchard_apple", "count": 1 },
     "state": "sliced_apple",
-    "quality_bonus": 0.02,
-    "texture_delta": 0.06
+    "quality_bonus": 0.03,
+    "texture_delta": 0.08
   }
 }

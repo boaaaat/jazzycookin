@@ -9,12 +9,16 @@
       "count": 1
     }
   ],
-  "preferred_tool": "pot",
+  "preferred_tool": "stock_pot",
+  "allowed_tools": ["stock_pot"],
   "tool_required": true,
   "duration": 64,
   "preferred_heat": "high",
   "minimum_heat": "medium",
   "maximum_heat": "high",
+  "environment_requirements": {
+    "nearby_water": true
+  },
   "output": {
     "result": { "id": "jazzycookin:boiled_egg", "count": 1 },
     "state": "boiled",

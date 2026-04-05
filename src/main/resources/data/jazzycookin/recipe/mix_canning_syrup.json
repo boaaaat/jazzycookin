@@ -1,0 +1,26 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "method": "mix",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:cane_sugar" },
+      "required_state": "pantry_ready",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "whisk",
+  "allowed_tools": ["whisk"],
+  "tool_required": true,
+  "duration": 34,
+  "environment_requirements": {
+    "nearby_water": true
+  },
+  "output": {
+    "result": { "id": "jazzycookin:canning_syrup", "count": 1 },
+    "state": "canning_syrup",
+    "quality_bonus": 0.03,
+    "purity_delta": 0.08,
+    "flavor_delta": 0.04
+  }
+}

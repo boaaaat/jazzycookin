@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
+import com.boaat.jazzy_cookin.recipe.KitchenProcessOutput;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
 
 import net.minecraft.util.Mth;
@@ -46,6 +47,7 @@ public final class DishEvaluation {
     public static IngredientStateData evaluateProcess(
             Level level,
             KitchenProcessRecipe recipe,
+            KitchenProcessOutput output,
             List<ItemStack> inputs,
             ItemStack toolStack,
             HeatLevel actualHeat,
@@ -53,13 +55,17 @@ public final class DishEvaluation {
     ) {
         AggregateStats stats = aggregate(level, inputs);
         ToolProfile actualProfile = ToolProfile.fromStack(toolStack);
+        List<ToolProfile> allowedTools = recipe.allowedToolsOrPreferred();
 
         float toolAccuracy = 0.0F;
         float toolQuality = 0.0F;
-        if (recipe.preferredTool().isPresent()) {
-            if (actualProfile == recipe.preferredTool().get() && toolStack.getItem() instanceof KitchenToolItem toolItem) {
+        if (!allowedTools.isEmpty()) {
+            if (recipe.preferredTool().isPresent() && actualProfile == recipe.preferredTool().get() && toolStack.getItem() instanceof KitchenToolItem toolItem) {
                 toolAccuracy = 0.12F;
                 toolQuality = toolItem.qualityBonus();
+            } else if (actualProfile != ToolProfile.NONE && recipe.allowsTool(actualProfile) && toolStack.getItem() instanceof KitchenToolItem toolItem) {
+                toolAccuracy = -0.04F;
+                toolQuality = toolItem.qualityBonus() * 0.35F;
             } else if (actualProfile == ToolProfile.NONE) {
                 toolAccuracy = recipe.toolRequired() ? -0.22F : -0.10F;
                 toolQuality = recipe.toolRequired() ? -0.14F : -0.06F;
@@ -80,7 +86,7 @@ public final class DishEvaluation {
                         + heatAccuracy
                         + preheatAccuracy
                         + adjustment.recipeAccuracy()
-                        + recipe.output().recipeAccuracyDelta(),
+                        + output.recipeAccuracyDelta(),
                 0.0F,
                 1.0F
         );
@@ -89,7 +95,7 @@ public final class DishEvaluation {
                 stats.quality() * 0.34F
                         + stats.freshness() * 0.15F
                         + recipeAccuracy * 0.18F
-                        + recipe.output().qualityBonus()
+                        + output.qualityBonus()
                         + toolQuality
                         + heatQuality
                         + adjustment.quality()
@@ -99,19 +105,19 @@ public final class DishEvaluation {
         );
 
         return new IngredientStateData(
-                recipe.output().state(),
+                output.state(),
                 stats.createdTick(),
                 finalQuality,
                 recipeAccuracy,
-                Mth.clamp(stats.flavor() + recipe.output().flavorDelta() + adjustment.flavor() + heatQuality * 0.3F, 0.0F, 1.0F),
-                Mth.clamp(stats.texture() + recipe.output().textureDelta() + adjustment.texture() + toolQuality * 0.2F, 0.0F, 1.0F),
-                Mth.clamp(stats.structure() + recipe.output().structureDelta() + adjustment.structure(), 0.0F, 1.0F),
-                Mth.clamp(stats.moisture() + recipe.output().moistureDelta() + adjustment.moisture(), 0.0F, 1.0F),
-                Mth.clamp(stats.purity() + recipe.output().purityDelta() + adjustment.purity(), 0.0F, 1.0F),
-                Mth.clamp(stats.aeration() + recipe.output().aerationDelta() + adjustment.aeration(), 0.0F, 1.0F),
+                Mth.clamp(stats.flavor() + output.flavorDelta() + adjustment.flavor() + heatQuality * 0.3F, 0.0F, 1.0F),
+                Mth.clamp(stats.texture() + output.textureDelta() + adjustment.texture() + toolQuality * 0.2F, 0.0F, 1.0F),
+                Mth.clamp(stats.structure() + output.structureDelta() + adjustment.structure(), 0.0F, 1.0F),
+                Mth.clamp(stats.moisture() + output.moistureDelta() + adjustment.moisture(), 0.0F, 1.0F),
+                Mth.clamp(stats.purity() + output.purityDelta() + adjustment.purity(), 0.0F, 1.0F),
+                Mth.clamp(stats.aeration() + output.aerationDelta() + adjustment.aeration(), 0.0F, 1.0F),
                 stats.maxDepth() + 1,
-                Math.max(recipe.output().nourishment(), stats.nourishment()),
-                Math.max(recipe.output().enjoyment(), stats.enjoyment())
+                Math.max(output.nourishment(), stats.nourishment()),
+                Math.max(output.enjoyment(), stats.enjoyment())
         );
     }
 
@@ -147,7 +153,13 @@ public final class DishEvaluation {
         float prep = Mth.clamp((data.texture() + data.purity()) * 0.5F, 0.0F, 1.0F);
         float combine = Mth.clamp((data.structure() + data.aeration() + data.moisture()) / 3.0F, 0.0F, 1.0F);
         float cooking = Mth.clamp((data.flavor() + data.moisture() + data.texture()) / 3.0F, 0.0F, 1.0F);
-        float finishing = isFinishedState(effectiveState) ? 0.95F : data.processDepth() >= 4 ? 0.7F : 0.45F;
+        float finishing = isFinishedState(effectiveState)
+                ? 0.95F
+                : requiresFinishing(effectiveState)
+                ? 0.18F
+                : data.processDepth() >= 4
+                ? 0.7F
+                : 0.45F;
         float plating = effectiveState.isPlatedState() ? 1.0F : 0.7F;
         float total = Mth.clamp(
                 data.quality() * 0.22F
@@ -324,6 +336,13 @@ public final class DishEvaluation {
         return switch (state) {
             case COOLED, RESTED, PLATED, COOLED_PIE, RESTED_PIE, RESTED_BREAD, SLICED_BREAD, SLICED_PIE,
                     PLATED_SLICE, PLATED_SOUP_MEAL, PLATED_DUMPLING_MEAL, PLATED_FRIED_MEAL, PLATED_ROAST_MEAL -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean requiresFinishing(IngredientState state) {
+        return switch (state) {
+            case BAKED_BREAD, BAKED_PIE, COOLED_PIE, FRIED_PROTEIN, BROILED_PROTEIN, ROASTED_PROTEIN -> true;
             default -> false;
         };
     }

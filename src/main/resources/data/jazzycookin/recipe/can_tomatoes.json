@@ -7,9 +7,15 @@
       "ingredient": { "item": "jazzycookin:chopped_tomato" },
       "required_state": "chopped_tomato",
       "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:brine" },
+      "required_state": "brine",
+      "count": 1
     }
   ],
   "preferred_tool": "jar",
+  "allowed_tools": ["jar"],
   "tool_required": true,
   "duration": 92,
   "preferred_heat": "medium",
@@ -17,7 +23,7 @@
   "maximum_heat": "high",
   "output": {
     "result": { "id": "jazzycookin:canned_tomato", "count": 1 },
-    "state": "canned_tomato",
+    "state": "hot_preserve",
     "quality_bonus": 0.05,
     "moisture_delta": 0.10,
     "purity_delta": 0.10,

@@ -19,12 +19,16 @@
       "count": 1
     }
   ],
-  "preferred_tool": "pot",
+  "preferred_tool": "stock_pot",
+  "allowed_tools": ["stock_pot"],
   "tool_required": true,
   "duration": 100,
   "preferred_heat": "medium",
   "minimum_heat": "low",
   "maximum_heat": "medium",
+  "environment_requirements": {
+    "nearby_water": true
+  },
   "output": {
     "result": { "id": "jazzycookin:pie_filling", "count": 1 },
     "state": "simmered_filling",

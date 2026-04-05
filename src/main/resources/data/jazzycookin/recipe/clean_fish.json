@@ -9,13 +9,15 @@
       "count": 1
     }
   ],
-  "preferred_tool": "knife",
-  "duration": 42,
+  "preferred_tool": "paring_knife",
+  "allowed_tools": ["paring_knife", "chef_knife"],
+  "tool_required": true,
+  "duration": 44,
   "output": {
     "result": { "id": "jazzycookin:cleaned_fish", "count": 1 },
     "state": "cleaned_fish",
-    "quality_bonus": 0.03,
-    "purity_delta": 0.12,
+    "quality_bonus": 0.04,
+    "purity_delta": 0.14,
     "nourishment": 4,
     "enjoyment": 2
   }

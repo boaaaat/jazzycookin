@@ -11,6 +11,7 @@
   ],
   "duration": 52,
   "mode": "passive",
+  "passive_duration_ticks": 120,
   "output": {
     "result": { "id": "jazzycookin:bread_loaf", "count": 1 },
     "state": "rested_bread",

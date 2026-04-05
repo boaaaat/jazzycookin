@@ -14,7 +14,8 @@
       "count": 1
     }
   ],
-  "preferred_tool": "skillet",
+  "preferred_tool": "frying_skillet",
+  "allowed_tools": ["frying_skillet"],
   "tool_required": true,
   "duration": 58,
   "preferred_heat": "medium",

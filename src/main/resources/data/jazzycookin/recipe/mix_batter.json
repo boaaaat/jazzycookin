@@ -15,7 +15,37 @@
     }
   ],
   "preferred_tool": "whisk",
+  "allowed_tools": ["whisk"],
+  "tool_required": true,
   "duration": 52,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": { "id": "jazzycookin:batter", "count": 1 },
+        "state": "lumpy_mixture",
+        "quality_bonus": -0.04,
+        "structure_delta": 0.04,
+        "moisture_delta": 0.04,
+        "aeration_delta": 0.02,
+        "nourishment": 3,
+        "enjoyment": 2
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": { "id": "jazzycookin:batter", "count": 1 },
+        "state": "separated",
+        "quality_bonus": -0.05,
+        "structure_delta": -0.02,
+        "moisture_delta": -0.04,
+        "aeration_delta": -0.04,
+        "nourishment": 3,
+        "enjoyment": 2
+      }
+    }
+  ],
   "output": {
     "result": { "id": "jazzycookin:batter", "count": 1 },
     "state": "batter",

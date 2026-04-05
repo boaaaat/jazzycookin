@@ -51,11 +51,15 @@ public class JazzyCookin {
             event.accept(JazzyItems.CLEANED_FISH);
             event.accept(JazzyItems.RAW_PROTEIN);
             event.accept(JazzyItems.ROAST_CUT);
+            event.accept(JazzyItems.EGG_WASH);
             event.accept(JazzyItems.MARINADE);
+            event.accept(JazzyItems.BRINE);
+            event.accept(JazzyItems.CANNING_SYRUP);
             event.accept(JazzyItems.BATTER);
             event.accept(JazzyItems.FRYING_OIL);
             event.accept(JazzyItems.USED_OIL_ITEM);
             event.accept(JazzyItems.FLOUR);
+            event.accept(JazzyItems.SALT);
             event.accept(JazzyItems.CANE_SUGAR);
             event.accept(JazzyItems.BUTTER);
             event.accept(JazzyItems.BAKING_SPICE);
@@ -114,11 +118,14 @@ public class JazzyCookin {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(JazzyItems.PARING_KNIFE);
             event.accept(JazzyItems.CHEF_KNIFE);
+            event.accept(JazzyItems.CLEAVER);
             event.accept(JazzyItems.WHISK);
             event.accept(JazzyItems.ROLLING_PIN);
+            event.accept(JazzyItems.MORTAR_PESTLE);
             event.accept(JazzyItems.STOCK_POT);
             event.accept(JazzyItems.FRYING_SKILLET);
             event.accept(JazzyItems.FINE_STRAINER);
+            event.accept(JazzyItems.COARSE_STRAINER);
             event.accept(JazzyItems.STEAMER_BASKET);
             event.accept(JazzyItems.CANNING_JAR);
             event.accept(JazzyItems.PIE_TIN);

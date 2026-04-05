@@ -96,8 +96,17 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenIngredientItem> ROAST_CUT = ingredient(
             "roast_cut", IngredientState.ROAST_CUT, 0.78F, 0.52F, 0.58F, 0.30F, 0.72F, 0.46F, 0.04F, 26_000L, 5, 3
     );
+    public static final DeferredItem<KitchenIngredientItem> EGG_WASH = ingredient(
+            "egg_wash", IngredientState.WHISKED, 0.78F, 0.24F, 0.22F, 0.14F, 0.72F, 0.74F, 0.26F, 12_000L, 1, 1
+    );
     public static final DeferredItem<KitchenIngredientItem> MARINADE = ingredient(
             "marinade", IngredientState.MARINADE, 0.80F, 0.76F, 0.18F, 0.10F, 0.80F, 0.68F, 0.08F, 18_000L, 1, 2
+    );
+    public static final DeferredItem<KitchenIngredientItem> BRINE = ingredient(
+            "brine", IngredientState.BRINE, 0.74F, 0.22F, 0.08F, 0.00F, 0.92F, 0.96F, 0.00F, Long.MAX_VALUE / 4L, 0, 0
+    );
+    public static final DeferredItem<KitchenIngredientItem> CANNING_SYRUP = ingredient(
+            "canning_syrup", IngredientState.CANNING_SYRUP, 0.76F, 0.60F, 0.10F, 0.00F, 0.88F, 0.94F, 0.00F, Long.MAX_VALUE / 4L, 0, 2
     );
     public static final DeferredItem<KitchenIngredientItem> BATTER = ingredient(
             "batter", IngredientState.BATTER, 0.76F, 0.30F, 0.42F, 0.52F, 0.72F, 0.74F, 0.16F, 18_000L, 3, 2
@@ -119,6 +128,9 @@ public final class JazzyItems {
     );
     public static final DeferredItem<KitchenIngredientItem> FLOUR = ingredient(
             "flour", IngredientState.PANTRY_READY, 0.76F, 0.18F, 0.32F, 0.40F, 0.10F, 0.92F, 0.00F, Long.MAX_VALUE / 4L, 1, 0
+    );
+    public static final DeferredItem<KitchenIngredientItem> SALT = ingredient(
+            "salt", IngredientState.PANTRY_READY, 0.74F, 0.12F, 0.04F, 0.00F, 0.00F, 0.98F, 0.00F, Long.MAX_VALUE / 4L, 0, 0
     );
     public static final DeferredItem<KitchenIngredientItem> CANE_SUGAR = ingredient(
             "cane_sugar", IngredientState.PANTRY_READY, 0.78F, 0.42F, 0.15F, 0.00F, 0.00F, 0.98F, 0.00F, Long.MAX_VALUE / 4L, 0, 1
@@ -224,13 +236,16 @@ public final class JazzyItems {
             "plated_roast_meal", IngredientState.PLATED_ROAST_MEAL, 0.88F, 0.88F, 0.78F, 0.58F, 0.60F, 0.72F, 0.06F, 16_000L, 11, 9, true
     );
 
-    public static final DeferredItem<KitchenToolItem> PARING_KNIFE = tool("paring_knife", ToolProfile.KNIFE, 0.06F, 1.10F, 128);
-    public static final DeferredItem<KitchenToolItem> CHEF_KNIFE = tool("chef_knife", ToolProfile.KNIFE, 0.09F, 1.20F, 192);
+    public static final DeferredItem<KitchenToolItem> PARING_KNIFE = tool("paring_knife", ToolProfile.PARING_KNIFE, 0.06F, 1.10F, 128);
+    public static final DeferredItem<KitchenToolItem> CHEF_KNIFE = tool("chef_knife", ToolProfile.CHEF_KNIFE, 0.09F, 1.20F, 192);
+    public static final DeferredItem<KitchenToolItem> CLEAVER = tool("cleaver", ToolProfile.CLEAVER, 0.07F, 1.05F, 224);
     public static final DeferredItem<KitchenToolItem> WHISK = tool("whisk", ToolProfile.WHISK, 0.05F, 1.08F, 160);
     public static final DeferredItem<KitchenToolItem> ROLLING_PIN = tool("rolling_pin", ToolProfile.ROLLING_PIN, 0.07F, 1.12F, 192);
-    public static final DeferredItem<KitchenToolItem> STOCK_POT = tool("stock_pot", ToolProfile.POT, 0.05F, 1.00F, 256);
-    public static final DeferredItem<KitchenToolItem> FRYING_SKILLET = tool("frying_skillet", ToolProfile.SKILLET, 0.08F, 1.10F, 256);
-    public static final DeferredItem<KitchenToolItem> FINE_STRAINER = tool("fine_strainer", ToolProfile.STRAINER, 0.08F, 1.06F, 192);
+    public static final DeferredItem<KitchenToolItem> MORTAR_PESTLE = tool("mortar_pestle", ToolProfile.MORTAR_PESTLE, 0.08F, 1.06F, 192);
+    public static final DeferredItem<KitchenToolItem> STOCK_POT = tool("stock_pot", ToolProfile.STOCK_POT, 0.05F, 1.00F, 256);
+    public static final DeferredItem<KitchenToolItem> FRYING_SKILLET = tool("frying_skillet", ToolProfile.FRYING_SKILLET, 0.08F, 1.10F, 256);
+    public static final DeferredItem<KitchenToolItem> FINE_STRAINER = tool("fine_strainer", ToolProfile.FINE_STRAINER, 0.08F, 1.06F, 192);
+    public static final DeferredItem<KitchenToolItem> COARSE_STRAINER = tool("coarse_strainer", ToolProfile.COARSE_STRAINER, 0.03F, 0.98F, 176);
     public static final DeferredItem<KitchenToolItem> STEAMER_BASKET = tool("steamer_basket", ToolProfile.STEAMER_BASKET, 0.05F, 1.04F, 192);
     public static final DeferredItem<KitchenToolItem> CANNING_JAR = tool("canning_jar", ToolProfile.JAR, 0.04F, 0.98F, 96);
     public static final DeferredItem<KitchenToolItem> PIE_TIN = tool("pie_tin", ToolProfile.PIE_TIN, 0.05F, 1.00F, 256);

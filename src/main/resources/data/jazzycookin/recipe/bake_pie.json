@@ -10,6 +10,7 @@
     }
   ],
   "preferred_tool": "pie_tin",
+  "allowed_tools": ["pie_tin"],
   "tool_required": true,
   "duration": 140,
   "preferred_heat": "high",

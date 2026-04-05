@@ -11,6 +11,7 @@
   ],
   "duration": 110,
   "mode": "passive",
+  "passive_duration_ticks": 240,
   "output": {
     "result": { "id": "jazzycookin:dried_apple", "count": 1 },
     "state": "dried_fruit",

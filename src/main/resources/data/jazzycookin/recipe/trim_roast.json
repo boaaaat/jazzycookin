@@ -9,14 +9,16 @@
       "count": 1
     }
   ],
-  "preferred_tool": "knife",
-  "duration": 40,
+  "preferred_tool": "cleaver",
+  "allowed_tools": ["cleaver", "chef_knife"],
+  "tool_required": true,
+  "duration": 44,
   "output": {
     "result": { "id": "jazzycookin:roast_cut", "count": 1 },
     "state": "roast_cut",
-    "quality_bonus": 0.04,
-    "structure_delta": 0.06,
-    "purity_delta": 0.08,
+    "quality_bonus": 0.05,
+    "structure_delta": 0.08,
+    "purity_delta": 0.10,
     "nourishment": 5,
     "enjoyment": 3
   }

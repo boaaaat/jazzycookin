@@ -14,7 +14,8 @@
       "count": 1
     }
   ],
-  "preferred_tool": "pot",
+  "preferred_tool": "stock_pot",
+  "allowed_tools": ["stock_pot"],
   "tool_required": true,
   "duration": 72,
   "preferred_heat": "high",

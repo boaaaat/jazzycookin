@@ -19,13 +19,16 @@
       "count": 1
     }
   ],
-  "preferred_tool": "pot",
+  "preferred_tool": "stock_pot",
+  "allowed_tools": ["stock_pot"],
   "tool_required": true,
   "duration": 96,
   "preferred_heat": "low",
   "minimum_heat": "low",
   "maximum_heat": "medium",
-  "requires_nearby_water": true,
+  "environment_requirements": {
+    "nearby_water": true
+  },
   "output": {
     "result": { "id": "jazzycookin:tomato_soup_base", "count": 1 },
     "state": "soup_base",

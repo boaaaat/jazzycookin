@@ -73,7 +73,7 @@ public class KitchenStationBlock extends BaseEntityBlock implements EntityBlock 
     }
 
     @Override
-    protected <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
         return level.isClientSide ? null : createTickerHelper(blockEntityType, JazzyBlockEntities.KITCHEN_STATION.get(), KitchenStationBlockEntity::serverTick);
     }
 }

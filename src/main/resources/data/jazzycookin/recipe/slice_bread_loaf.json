@@ -9,7 +9,9 @@
       "count": 1
     }
   ],
-  "preferred_tool": "knife",
+  "preferred_tool": "chef_knife",
+  "allowed_tools": ["chef_knife", "paring_knife"],
+  "tool_required": true,
   "duration": 34,
   "output": {
     "result": { "id": "jazzycookin:sliced_bread", "count": 2 },

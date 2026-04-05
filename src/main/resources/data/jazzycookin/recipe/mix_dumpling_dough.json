@@ -9,16 +9,49 @@
       "count": 1
     },
     {
-      "ingredient": { "item": "jazzycookin:fresh_milk" },
-      "required_state": "fresh_milk",
+      "ingredient": { "item": "jazzycookin:salt" },
+      "required_state": "pantry_ready",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:farm_egg" },
+      "required_state": "whole_egg",
       "count": 1
     }
   ],
-  "preferred_tool": "rolling_pin",
+  "preferred_tool": "whisk",
+  "allowed_tools": ["whisk"],
+  "tool_required": true,
   "duration": 58,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": { "id": "jazzycookin:dumpling_dough", "count": 1 },
+        "state": "lumpy_mixture",
+        "quality_bonus": -0.04,
+        "structure_delta": 0.08,
+        "moisture_delta": 0.08,
+        "nourishment": 4,
+        "enjoyment": 2
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": { "id": "jazzycookin:dumpling_dough", "count": 1 },
+        "state": "smooth_mixture",
+        "quality_bonus": -0.03,
+        "structure_delta": 0.10,
+        "moisture_delta": -0.02,
+        "nourishment": 4,
+        "enjoyment": 2
+      }
+    }
+  ],
   "output": {
     "result": { "id": "jazzycookin:dumpling_dough", "count": 1 },
-    "state": "dumpling_dough",
+    "state": "shaggy_dough",
     "quality_bonus": 0.04,
     "structure_delta": 0.16,
     "moisture_delta": 0.12,

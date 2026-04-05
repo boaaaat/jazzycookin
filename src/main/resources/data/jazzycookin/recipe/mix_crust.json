@@ -20,13 +20,41 @@
     }
   ],
   "preferred_tool": "whisk",
-  "duration": 70,
+  "allowed_tools": ["whisk"],
+  "tool_required": true,
+  "duration": 72,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": { "id": "jazzycookin:pie_crust", "count": 1 },
+        "state": "lumpy_mixture",
+        "quality_bonus": -0.04,
+        "structure_delta": 0.08,
+        "moisture_delta": 0.04,
+        "nourishment": 4,
+        "enjoyment": 2
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": { "id": "jazzycookin:pie_crust", "count": 1 },
+        "state": "smooth_mixture",
+        "quality_bonus": -0.03,
+        "structure_delta": 0.10,
+        "moisture_delta": -0.02,
+        "nourishment": 4,
+        "enjoyment": 2
+      }
+    }
+  ],
   "output": {
     "result": { "id": "jazzycookin:pie_crust", "count": 1 },
     "state": "crust_mix",
     "quality_bonus": 0.05,
     "structure_delta": 0.18,
-    "moisture_delta": 0.1,
+    "moisture_delta": 0.10,
     "nourishment": 4,
     "enjoyment": 2
   }

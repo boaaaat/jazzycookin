@@ -51,7 +51,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
             case 4 -> JazzyItems.FRYING_OIL.get().createStack(1, this.level.getGameTime());
             case 5 -> JazzyItems.CERAMIC_PLATE.get().createStack(1, this.level.getGameTime());
             case 6 -> new ItemStack(JazzyItems.CANNING_JAR.get());
-            case 7 -> new ItemStack(JazzyItems.PIE_TIN.get());
+            case 7 -> JazzyItems.SALT.get().createStack(1, this.level.getGameTime());
             default -> ItemStack.EMPTY;
         };
 
@@ -92,9 +92,13 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
     @Override
     public ItemStack removeItem(int slot, int amount) {
+        if (this.level != null && !this.items.get(slot).isEmpty()) {
+            this.applyStorageModifier(slot, this.items.get(slot));
+            this.insertedAt[slot] = this.level.getGameTime();
+        }
+
         ItemStack removed = ContainerHelper.removeItem(this.items, slot, amount);
         if (!removed.isEmpty()) {
-            this.applyStorageModifier(slot, removed);
             if (this.items.get(slot).isEmpty()) {
                 this.insertedAt[slot] = 0L;
             }
@@ -105,11 +109,12 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
     @Override
     public ItemStack removeItemNoUpdate(int slot) {
+        if (this.level != null && !this.items.get(slot).isEmpty()) {
+            this.applyStorageModifier(slot, this.items.get(slot));
+        }
+
         ItemStack removed = this.items.get(slot);
         this.items.set(slot, ItemStack.EMPTY);
-        if (!removed.isEmpty()) {
-            this.applyStorageModifier(slot, removed);
-        }
         this.insertedAt[slot] = 0L;
         return removed;
     }

@@ -10,9 +10,11 @@
     }
   ],
   "preferred_tool": "jar",
+  "allowed_tools": ["jar"],
   "tool_required": true,
   "duration": 110,
   "mode": "passive",
+  "passive_duration_ticks": 280,
   "output": {
     "result": { "id": "jazzycookin:cultured_dairy", "count": 1 },
     "state": "cultured_dairy",

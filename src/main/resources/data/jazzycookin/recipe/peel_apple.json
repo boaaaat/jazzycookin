@@ -9,12 +9,15 @@
       "count": 1
     }
   ],
-  "preferred_tool": "knife",
-  "duration": 40,
+  "preferred_tool": "paring_knife",
+  "allowed_tools": ["paring_knife", "chef_knife"],
+  "tool_required": true,
+  "duration": 44,
   "output": {
     "result": { "id": "jazzycookin:orchard_apple", "count": 1 },
     "state": "peeled_apple",
-    "quality_bonus": 0.03,
-    "texture_delta": 0.02
+    "quality_bonus": 0.04,
+    "texture_delta": 0.02,
+    "purity_delta": 0.03
   }
 }

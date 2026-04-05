@@ -35,6 +35,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                     .bounds(this.leftPos + 116, this.topPos + 70, 44, 20)
                     .build());
         }
+
+        if (this.menu.stationType().supportsStationControl()) {
+            this.addRenderableWidget(Button.builder(Component.literal("<"), button -> this.sendButton(4))
+                    .bounds(this.leftPos + 8, this.topPos + 46, 18, 18)
+                    .build());
+            this.addRenderableWidget(Button.builder(Component.literal(">"), button -> this.sendButton(5))
+                    .bounds(this.leftPos + 74, this.topPos + 46, 18, 18)
+                    .build());
+        }
     }
 
     private void sendButton(int buttonId) {
@@ -71,8 +80,30 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, 0xF2E7D5, false);
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.method", this.menu.currentMethod().displayName()), 100, 8, 0xE3CFAE, false);
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.current_heat", Component.translatable("heat.jazzycookin." + this.menu.heatLevel().getSerializedName())), 100, 20, 0xE3CFAE, false);
+        if (this.menu.stationType().supportsStationControl()) {
+            guiGraphics.drawString(
+                    this.font,
+                    Component.translatable("screen.jazzycookin.control", this.menu.stationType().controlLabel(this.menu.controlSetting())),
+                    28,
+                    50,
+                    0xE3CFAE,
+                    false
+            );
+        }
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.output"), 118, 40, 0xD6C4A7, false);
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.byproduct"), 112, 62, 0xD6C4A7, false);
+        if (this.menu.environmentStatus() != 2) {
+            guiGraphics.drawString(
+                    this.font,
+                    Component.translatable(this.menu.environmentStatus() == 1
+                            ? "screen.jazzycookin.environment_ready"
+                            : "screen.jazzycookin.environment_blocked"),
+                    8,
+                    82,
+                    this.menu.environmentStatus() == 1 ? 0x8ED18E : 0xD36C5A,
+                    false
+            );
+        }
         if (this.menu.stationType() == StationType.OVEN) {
             guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.preheat", this.menu.preheatProgress()), 100, 82, 0xE3CFAE, false);
         } else {

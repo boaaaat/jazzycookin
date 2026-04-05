@@ -9,7 +9,8 @@
       "count": 1
     }
   ],
-  "preferred_tool": "strainer",
+  "preferred_tool": "fine_strainer",
+  "allowed_tools": ["fine_strainer", "coarse_strainer"],
   "tool_required": true,
   "duration": 36,
   "output": {

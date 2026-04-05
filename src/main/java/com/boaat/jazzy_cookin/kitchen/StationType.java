@@ -60,6 +60,26 @@ public enum StationType implements StringRepresentable {
         return this.usesTools;
     }
 
+    public boolean supportsStationControl() {
+        return this == PREP_TABLE || this == SPICE_GRINDER || this == MIXING_BOWL;
+    }
+
+    public Component controlLabel(int controlIndex) {
+        int clamped = Math.max(0, Math.min(2, controlIndex));
+        String band = switch (clamped) {
+            case 0 -> "low";
+            case 2 -> "high";
+            default -> "medium";
+        };
+        String family = switch (this) {
+            case PREP_TABLE -> "prep";
+            case SPICE_GRINDER -> "grind";
+            case MIXING_BOWL -> "mix";
+            default -> "generic";
+        };
+        return Component.translatable("control.jazzycookin." + family + "." + band);
+    }
+
     public Component displayName() {
         return Component.translatable("station.jazzycookin." + this.serializedName);
     }

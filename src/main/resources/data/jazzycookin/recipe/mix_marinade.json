@@ -20,7 +20,37 @@
     }
   ],
   "preferred_tool": "whisk",
-  "duration": 54,
+  "allowed_tools": ["whisk"],
+  "tool_required": true,
+  "duration": 56,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": { "id": "jazzycookin:marinade", "count": 1 },
+        "state": "lumpy_mixture",
+        "quality_bonus": -0.04,
+        "flavor_delta": 0.04,
+        "moisture_delta": 0.04,
+        "purity_delta": -0.04,
+        "nourishment": 1,
+        "enjoyment": 2
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": { "id": "jazzycookin:marinade", "count": 1 },
+        "state": "separated",
+        "quality_bonus": -0.05,
+        "flavor_delta": -0.02,
+        "moisture_delta": -0.02,
+        "purity_delta": -0.02,
+        "nourishment": 1,
+        "enjoyment": 2
+      }
+    }
+  ],
   "output": {
     "result": { "id": "jazzycookin:marinade", "count": 1 },
     "state": "marinade",

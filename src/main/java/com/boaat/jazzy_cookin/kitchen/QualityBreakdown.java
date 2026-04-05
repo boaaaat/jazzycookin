@@ -1,6 +1,7 @@
 package com.boaat.jazzy_cookin.kitchen;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
 public record QualityBreakdown(
         DishGrade grade,
@@ -16,7 +17,7 @@ public record QualityBreakdown(
         int nourishment,
         int enjoyment
 ) {
-    public Component summary() {
+    public MutableComponent summary() {
         return Component.translatable(
                 "tooltip.jazzycookin.grade_summary",
                 this.grade.displayName(),

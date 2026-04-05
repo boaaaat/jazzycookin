@@ -128,7 +128,7 @@ public enum KitchenMethod implements StringRepresentable {
     }
 
     private static KitchenMethod inferOvenMethod(IngredientState outputState, HeatLevel preferredHeat, boolean requiresPreheat) {
-        if (outputState == IngredientState.BROILED_PROTEIN || outputState == IngredientState.BROILED) {
+        if (outputState == IngredientState.BROILED_PROTEIN) {
             return BROIL;
         }
         if (outputState == IngredientState.ROASTED_PROTEIN || outputState == IngredientState.ROAST_VEGETABLES || outputState == IngredientState.ROASTED) {
@@ -147,7 +147,7 @@ public enum KitchenMethod implements StringRepresentable {
             ProcessMode mode,
             boolean requiresNearbyWater
     ) {
-        if (preferredTool == ToolProfile.SKILLET || outputState == IngredientState.PAN_FRIED) {
+        if (preferredTool == ToolProfile.FRYING_SKILLET || preferredTool == ToolProfile.SKILLET || outputState == IngredientState.PAN_FRIED) {
             return PAN_FRY;
         }
         if (outputState == IngredientState.FRIED_PROTEIN || outputState == IngredientState.DEEP_FRIED
@@ -164,7 +164,7 @@ public enum KitchenMethod implements StringRepresentable {
                 || outputState == IngredientState.SIMMERED) {
             return SIMMER;
         }
-        if (preferredHeat == HeatLevel.HIGH && preferredTool == ToolProfile.POT) {
+        if (preferredHeat == HeatLevel.HIGH && (preferredTool == ToolProfile.STOCK_POT || preferredTool == ToolProfile.POT)) {
             return BOIL;
         }
         return SIMMER;

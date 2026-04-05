@@ -10,11 +10,13 @@
     },
     {
       "ingredient": { "item": "jazzycookin:dumpling_dough" },
-      "required_state": "dumpling_dough",
+      "required_state": "developed_dough",
       "count": 1
     }
   ],
   "preferred_tool": "rolling_pin",
+  "allowed_tools": ["rolling_pin"],
+  "tool_required": true,
   "duration": 68,
   "output": {
     "result": { "id": "jazzycookin:raw_dumplings", "count": 2 },

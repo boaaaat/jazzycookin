@@ -9,10 +9,14 @@ import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
+import com.boaat.jazzy_cookin.kitchen.KitchenOutcomeBand;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
+import com.boaat.jazzy_cookin.recipe.KitchenEnvironmentRequirements;
 import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
+import com.boaat.jazzy_cookin.recipe.KitchenProcessOutput;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
 import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
@@ -54,6 +58,8 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 2 -> KitchenStationBlockEntity.this.heatLevel.ordinal();
                 case 3 -> KitchenStationBlockEntity.this.preheatProgress;
                 case 4 -> KitchenStationBlockEntity.this.currentMethod().ordinal();
+                case 5 -> KitchenStationBlockEntity.this.controlSetting;
+                case 6 -> KitchenStationBlockEntity.this.environmentStatus();
                 default -> 0;
             };
         }
@@ -65,6 +71,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 1 -> KitchenStationBlockEntity.this.maxProgress = value;
                 case 2 -> KitchenStationBlockEntity.this.heatLevel = HeatLevel.values()[Math.max(0, Math.min(HeatLevel.values().length - 1, value))];
                 case 3 -> KitchenStationBlockEntity.this.preheatProgress = value;
+                case 5 -> KitchenStationBlockEntity.this.controlSetting = Math.max(0, Math.min(2, value));
                 default -> {
                 }
             }
@@ -72,13 +79,14 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
         @Override
         public int getCount() {
-            return 5;
+            return 7;
         }
     };
 
     private int progress;
     private int maxProgress;
     private int preheatProgress;
+    private int controlSetting = 1;
     private boolean processing;
     private HeatLevel heatLevel = HeatLevel.OFF;
 
@@ -113,7 +121,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             }
         } else {
             Optional<KitchenProcessRecipe> recipe = blockEntity.currentRecipe();
-            if (recipe.isEmpty() || !blockEntity.canAcceptOutputs(recipe.get())) {
+            if (recipe.isEmpty() || !blockEntity.environmentAllows(recipe.get()) || !blockEntity.canAcceptOutputs(recipe.get())) {
                 blockEntity.stopProcessing();
                 return;
             }
@@ -159,6 +167,19 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return true;
         }
 
+        if (this.getStationType().supportsStationControl()) {
+            if (buttonId == 4) {
+                this.controlSetting = Math.max(0, this.controlSetting - 1);
+                this.setChanged();
+                return true;
+            }
+            if (buttonId == 5) {
+                this.controlSetting = Math.min(2, this.controlSetting + 1);
+                this.setChanged();
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -187,7 +208,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
         this.processing = true;
         this.progress = 0;
-        this.maxProgress = Math.max(20, Math.round(recipe.get().duration() / this.toolSpeedMultiplier(recipe.get())));
+        this.maxProgress = recipe.get().mode() == com.boaat.jazzy_cookin.kitchen.ProcessMode.PASSIVE
+                ? Math.max(40, recipe.get().effectiveDuration())
+                : Math.max(20, Math.round(recipe.get().effectiveDuration() / this.toolSpeedMultiplier(recipe.get())));
         this.setChanged();
         return true;
     }
@@ -230,38 +253,54 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     private boolean environmentAllows(KitchenProcessRecipe recipe) {
+        ToolProfile actualProfile = ToolProfile.fromStack(this.getItem(TOOL_SLOT));
+        List<ToolProfile> allowedTools = recipe.allowedToolsOrPreferred();
         if (recipe.toolRequired()) {
-            if (recipe.preferredTool().isEmpty()) {
+            if (allowedTools.isEmpty()) {
                 return false;
             }
-            if (!(this.getItem(TOOL_SLOT).getItem() instanceof KitchenToolItem toolItem) || toolItem.profile() != recipe.preferredTool().get()) {
+            if (actualProfile == ToolProfile.NONE || !recipe.allowsTool(actualProfile)) {
                 return false;
             }
         }
 
-        if (!recipe.requiresNearbyWater() || this.level == null) {
+        if (this.level == null) {
             return true;
         }
 
-        for (Direction direction : Direction.values()) {
-            if (this.level.getFluidState(this.worldPosition.relative(direction)).is(FluidTags.WATER)) {
-                return true;
+        KitchenEnvironmentRequirements requirements = recipe.environmentRequirements();
+        if (requirements.nearbyWater()) {
+            boolean hasWater = false;
+            for (Direction direction : Direction.values()) {
+                if (this.level.getFluidState(this.worldPosition.relative(direction)).is(FluidTags.WATER)) {
+                    hasWater = true;
+                    break;
+                }
+            }
+            if (!hasWater) {
+                return false;
             }
         }
 
-        return false;
+        return !requirements.sheltered() || !this.level.canSeeSky(this.worldPosition.above());
     }
 
     private float toolSpeedMultiplier(KitchenProcessRecipe recipe) {
-        if (recipe.preferredTool().isEmpty()) {
+        List<ToolProfile> allowedTools = recipe.allowedToolsOrPreferred();
+        if (allowedTools.isEmpty()) {
             return 1.0F;
         }
 
-        if (this.getItem(TOOL_SLOT).getItem() instanceof KitchenToolItem toolItem && toolItem.profile() == recipe.preferredTool().get()) {
-            return toolItem.speedMultiplier();
+        if (this.getItem(TOOL_SLOT).getItem() instanceof KitchenToolItem toolItem) {
+            if (recipe.preferredTool().isPresent() && toolItem.profile() == recipe.preferredTool().get()) {
+                return toolItem.speedMultiplier();
+            }
+            if (recipe.allowsTool(toolItem.profile())) {
+                return toolItem.speedMultiplier() * 0.88F;
+            }
         }
 
-        return this.getItem(TOOL_SLOT).isEmpty() ? 0.75F : 0.92F;
+        return this.getItem(TOOL_SLOT).isEmpty() ? 0.75F : 0.82F;
     }
 
     private boolean canAcceptOutputs(KitchenProcessRecipe recipe) {
@@ -322,9 +361,12 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 copySized(this.getItem(3), recipe.inputs().size() > 3 ? recipe.inputs().get(3).count() : 0)
         );
 
+        KitchenOutcomeBand outcomeBand = this.currentOutcomeBand(recipe);
+        KitchenProcessOutput resolvedOutput = recipe.outputForBand(outcomeBand);
         IngredientStateData outputData = DishEvaluation.evaluateProcess(
                 this.level,
                 recipe,
+                resolvedOutput,
                 consumedInputs,
                 this.getItem(TOOL_SLOT),
                 this.heatLevel,
@@ -335,17 +377,18 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             this.removeItem(i, recipe.inputs().get(i).count());
         }
 
-        ItemStack outputStack = recipe.output().result().copy();
+        ItemStack outputStack = resolvedOutput.result().copy();
         if (outputStack.getItem() instanceof KitchenIngredientItem ingredientItem) {
             outputStack = ingredientItem.createStack(outputStack.getCount(), this.level.getGameTime(), outputData);
         }
 
         this.mergeIntoSlot(OUTPUT_SLOT, outputStack);
-        ItemStack byproduct = recipe.output().byproduct().copy();
+        ItemStack byproduct = resolvedOutput.byproduct().copy();
         if (!byproduct.isEmpty() && byproduct.getItem() instanceof KitchenIngredientItem ingredientItem) {
             byproduct = ingredientItem.createStack(byproduct.getCount(), this.level.getGameTime());
         }
         this.mergeIntoSlot(BYPRODUCT_SLOT, byproduct);
+        this.damageTool(recipe);
         this.stopProcessing();
         if (this.getStationType() == StationType.OVEN) {
             this.preheatProgress = Math.max(0, this.preheatProgress - 30);
@@ -393,6 +436,44 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         ItemStack copy = stack.copy();
         copy.setCount(count);
         return copy;
+    }
+
+    private KitchenOutcomeBand currentOutcomeBand(KitchenProcessRecipe recipe) {
+        if (!this.getStationType().supportsStationControl() || recipe.outcomes().isEmpty()) {
+            return KitchenOutcomeBand.IDEAL;
+        }
+        return KitchenOutcomeBand.fromControlIndex(this.controlSetting);
+    }
+
+    private int environmentStatus() {
+        if (this.getStationType() == StationType.PLATING_STATION) {
+            return 2;
+        }
+
+        Optional<KitchenProcessRecipe> recipe = this.currentRecipe();
+        if (recipe.isEmpty() || recipe.get().environmentRequirements().isEmpty()) {
+            return 2;
+        }
+
+        return this.environmentAllows(recipe.get()) ? 1 : 0;
+    }
+
+    private void damageTool(KitchenProcessRecipe recipe) {
+        if (recipe.allowedToolsOrPreferred().isEmpty()) {
+            return;
+        }
+
+        ItemStack tool = this.getItem(TOOL_SLOT);
+        if (!tool.isDamageableItem()) {
+            return;
+        }
+
+        tool.setDamageValue(tool.getDamageValue() + 1);
+        if (tool.getDamageValue() >= tool.getMaxDamage()) {
+            this.setItem(TOOL_SLOT, ItemStack.EMPTY);
+        } else {
+            this.setChanged();
+        }
     }
 
     @Override
@@ -487,6 +568,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         tag.putInt("Progress", this.progress);
         tag.putInt("MaxProgress", this.maxProgress);
         tag.putInt("PreheatProgress", this.preheatProgress);
+        tag.putInt("ControlSetting", this.controlSetting);
         tag.putBoolean("Processing", this.processing);
         tag.putString("HeatLevel", this.heatLevel.getSerializedName());
     }
@@ -498,6 +580,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.progress = tag.getInt("Progress");
         this.maxProgress = tag.getInt("MaxProgress");
         this.preheatProgress = tag.getInt("PreheatProgress");
+        this.controlSetting = Math.max(0, Math.min(2, tag.getInt("ControlSetting")));
         this.processing = tag.getBoolean("Processing");
         this.heatLevel = HeatLevel.byName(tag.getString("HeatLevel"));
     }

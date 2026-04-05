@@ -9,13 +9,39 @@
       "count": 1
     }
   ],
-  "preferred_tool": "knife",
-  "duration": 38,
+  "preferred_tool": "chef_knife",
+  "allowed_tools": ["chef_knife", "cleaver"],
+  "tool_required": true,
+  "duration": 40,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": { "id": "jazzycookin:chopped_cabbage", "count": 1 },
+        "state": "rough_cut",
+        "quality_bonus": -0.03,
+        "texture_delta": -0.03,
+        "nourishment": 3,
+        "enjoyment": 1
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": { "id": "jazzycookin:chopped_cabbage", "count": 1 },
+        "state": "minced",
+        "quality_bonus": -0.02,
+        "texture_delta": -0.04,
+        "nourishment": 3,
+        "enjoyment": 1
+      }
+    }
+  ],
   "output": {
     "result": { "id": "jazzycookin:chopped_cabbage", "count": 1 },
     "state": "chopped_cabbage",
-    "quality_bonus": 0.03,
-    "texture_delta": 0.06,
+    "quality_bonus": 0.04,
+    "texture_delta": 0.08,
     "nourishment": 3,
     "enjoyment": 1
   }
