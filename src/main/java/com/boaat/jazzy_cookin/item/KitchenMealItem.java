@@ -5,6 +5,7 @@ import java.util.List;
 import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.MasteryProgress;
+import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
@@ -38,6 +39,7 @@ public class KitchenMealItem extends KitchenIngredientItem {
         super(
                 properties.food(new FoodProperties.Builder().nutrition(nourishment).saturationModifier(Math.max(0.2F, nourishment / 10.0F)).alwaysEdible().build()),
                 defaultState,
+                PantrySortTab.OTHER,
                 baseQuality,
                 baseFlavor,
                 baseTexture,
@@ -46,8 +48,11 @@ public class KitchenMealItem extends KitchenIngredientItem {
                 basePurity,
                 baseAeration,
                 decayTicks,
+                0,
                 nourishment,
-                enjoyment
+                enjoyment,
+                true,
+                true
         );
         this.returnsPlate = returnsPlate;
     }

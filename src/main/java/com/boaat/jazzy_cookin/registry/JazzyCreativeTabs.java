@@ -1,10 +1,12 @@
 package com.boaat.jazzy_cookin.registry;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
+import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -18,85 +20,12 @@ public final class JazzyCreativeTabs {
             "ingredients",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.jazzycookin.ingredients"))
-                    .icon(() -> JazzyItems.ORCHARD_APPLE.get().getDefaultInstance())
-                    .displayItems((parameters, output) -> acceptAll(
-                            output,
-                            JazzyItems.ORCHARD_APPLE,
-                            JazzyItems.WILD_BERRIES_ITEM,
-                            JazzyItems.TOMATO,
-                            JazzyItems.CHOPPED_TOMATO,
-                            JazzyItems.FRESH_HERB,
-                            JazzyItems.GROUND_HERB,
-                            JazzyItems.WHEAT_SHEAF,
-                            JazzyItems.CABBAGE,
-                            JazzyItems.CHOPPED_CABBAGE,
-                            JazzyItems.ONION,
-                            JazzyItems.DICED_ONION,
-                            JazzyItems.FARM_EGG,
-                            JazzyItems.BOILED_EGG_ITEM,
-                            JazzyItems.FRESH_MILK,
-                            JazzyItems.RAW_FISH_ITEM,
-                            JazzyItems.CLEANED_FISH,
-                            JazzyItems.PAN_FRIED_FISH,
-                            JazzyItems.RAW_PROTEIN,
-                            JazzyItems.ROAST_CUT,
-                            JazzyItems.EGG_WASH,
-                            JazzyItems.MARINADE,
-                            JazzyItems.BRINE,
-                            JazzyItems.CANNING_SYRUP,
-                            JazzyItems.BATTER,
-                            JazzyItems.FRYING_OIL,
-                            JazzyItems.USED_OIL_ITEM,
-                            JazzyItems.DIRTY_OIL_ITEM,
-                            JazzyItems.BURNT_OIL_ITEM,
-                            JazzyItems.FLOUR,
-                            JazzyItems.SALT,
-                            JazzyItems.CANE_SUGAR,
-                            JazzyItems.BUTTER,
-                            JazzyItems.BAKING_SPICE,
-                            JazzyItems.PIE_CRUST,
-                            JazzyItems.PIE_FILLING,
-                            JazzyItems.APPLE_PIE,
-                            JazzyItems.APPLE_PIE_SLICE,
-                            JazzyItems.BREAD_DOUGH,
-                            JazzyItems.BREAD_LOAF,
-                            JazzyItems.SLICED_BREAD,
-                            JazzyItems.TOMATO_SOUP_BASE,
-                            JazzyItems.STRAINED_SOUP,
-                            JazzyItems.DUMPLING_FILLING_ITEM,
-                            JazzyItems.DUMPLING_DOUGH_ITEM,
-                            JazzyItems.RAW_DUMPLINGS_ITEM,
-                            JazzyItems.STEAMED_DUMPLINGS_ITEM,
-                            JazzyItems.MARINATED_PROTEIN_ITEM,
-                            JazzyItems.BATTERED_PROTEIN_ITEM,
-                            JazzyItems.FRIED_PROTEIN_ITEM,
-                            JazzyItems.ROASTED_PROTEIN_ITEM,
-                            JazzyItems.BROILED_PROTEIN_ITEM,
-                            JazzyItems.SMOKED_PROTEIN_ITEM,
-                            JazzyItems.ROAST_VEGETABLES_ITEM,
-                            JazzyItems.CANNED_TOMATO_ITEM,
-                            JazzyItems.APPLE_PRESERVE_ITEM,
-                            JazzyItems.DRIED_APPLE_ITEM,
-                            JazzyItems.FERMENTED_VEGETABLES_ITEM,
-                            JazzyItems.CULTURED_DAIRY_ITEM
-                    ))
-                    .build()
-    );
-
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MEALS = CREATIVE_MODE_TABS.register(
-            "meals",
-            () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.jazzycookin.meals"))
-                    .icon(() -> JazzyItems.PLATED_APPLE_PIE_SLICE.get().getDefaultInstance())
-                    .displayItems((parameters, output) -> acceptAll(
-                            output,
-                            JazzyItems.CERAMIC_PLATE,
-                            JazzyItems.PLATED_APPLE_PIE_SLICE,
-                            JazzyItems.PLATED_TOMATO_SOUP_MEAL,
-                            JazzyItems.PLATED_DUMPLING_MEAL,
-                            JazzyItems.PLATED_FRIED_MEAL,
-                            JazzyItems.PLATED_ROAST_MEAL
-                    ))
+                    .icon(() -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.APPLES))
+                    .displayItems((parameters, output) -> {
+                        for (DeferredItem<KitchenIngredientItem> ingredient : JazzyItems.ingredientItems()) {
+                            output.accept(ingredient.get().createCreativeStack(1));
+                        }
+                    })
                     .build()
     );
 
@@ -107,6 +36,7 @@ public final class JazzyCreativeTabs {
                     .icon(() -> JazzyItems.CHEF_KNIFE.get().getDefaultInstance())
                     .displayItems((parameters, output) -> acceptAll(
                             output,
+                            JazzyItems.CERAMIC_PLATE,
                             JazzyItems.PARING_KNIFE,
                             JazzyItems.CHEF_KNIFE,
                             JazzyItems.CLEAVER,
@@ -177,9 +107,16 @@ public final class JazzyCreativeTabs {
     }
 
     @SafeVarargs
-    private static void acceptAll(CreativeModeTab.Output output, DeferredItem<?>... items) {
-        for (DeferredItem<?> item : items) {
+    private static void acceptAll(CreativeModeTab.Output output, DeferredItem<? extends Item>... items) {
+        for (DeferredItem<? extends Item> item : items) {
             output.accept(item.get());
         }
+    }
+
+    public static ItemStack creativeStackFor(Item item) {
+        if (item instanceof KitchenIngredientItem ingredientItem) {
+            return ingredientItem.createCreativeStack(1);
+        }
+        return item.getDefaultInstance();
     }
 }

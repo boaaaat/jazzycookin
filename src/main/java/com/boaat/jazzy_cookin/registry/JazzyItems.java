@@ -1,19 +1,25 @@
 package com.boaat.jazzy_cookin.registry;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
-import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
+import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class JazzyItems {
-    private static final long HALF_DAY = 12_000L;
     private static final long DAY = 24_000L;
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(JazzyCookin.MODID);
@@ -47,198 +53,179 @@ public final class JazzyItems {
     public static final DeferredItem<BlockItem> RESTING_BOARD_ITEM = ITEMS.registerSimpleBlockItem("resting_board", JazzyBlocks.RESTING_BOARD);
     public static final DeferredItem<BlockItem> PLATING_STATION_ITEM = ITEMS.registerSimpleBlockItem("plating_station", JazzyBlocks.PLATING_STATION);
 
-    public static final DeferredItem<KitchenIngredientItem> ORCHARD_APPLE = ingredient(
-            "orchard_apple", IngredientState.WHOLE_APPLE, 0.82F, 0.70F, 0.66F, 0.20F, 0.76F, 0.30F, 0.10F, DAY * 5L, 3, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> WILD_BERRIES_ITEM = ingredient(
-            "wild_berries", IngredientState.WILD_BERRIES, 0.80F, 0.78F, 0.52F, 0.12F, 0.62F, 0.20F, 0.02F, DAY * 2L, 2, 3
-    );
-    public static final DeferredItem<KitchenIngredientItem> TOMATO = ingredient(
-            "tomato", IngredientState.WHOLE_TOMATO, 0.78F, 0.72F, 0.56F, 0.12F, 0.70F, 0.28F, 0.03F, DAY * 3L, 3, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> CHOPPED_TOMATO = ingredient(
-            "chopped_tomato", IngredientState.CHOPPED_TOMATO, 0.76F, 0.74F, 0.58F, 0.14F, 0.72F, 0.30F, 0.03F, DAY, 3, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> FRESH_HERB = ingredient(
-            "fresh_herb", IngredientState.WHOLE_HERB, 0.80F, 0.80F, 0.40F, 0.08F, 0.54F, 0.24F, 0.05F, HALF_DAY, 1, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> GROUND_HERB = ingredient(
-            "ground_herb", IngredientState.GROUND_HERB, 0.82F, 0.86F, 0.38F, 0.06F, 0.42F, 0.30F, 0.08F, HALF_DAY, 1, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> WHEAT_SHEAF = ingredient(
-            "wheat_sheaf", IngredientState.WHOLE_WHEAT, 0.74F, 0.22F, 0.34F, 0.46F, 0.20F, 0.76F, 0.00F, DAY * 20L, 2, 1
-    );
-    public static final DeferredItem<KitchenIngredientItem> CABBAGE = ingredient(
-            "cabbage", IngredientState.WHOLE_CABBAGE, 0.78F, 0.46F, 0.54F, 0.20F, 0.66F, 0.26F, 0.02F, DAY * 6L, 3, 1
-    );
-    public static final DeferredItem<KitchenIngredientItem> CHOPPED_CABBAGE = ingredient(
-            "chopped_cabbage", IngredientState.CHOPPED_CABBAGE, 0.76F, 0.48F, 0.52F, 0.18F, 0.62F, 0.26F, 0.02F, DAY * 2L, 3, 1
-    );
-    public static final DeferredItem<KitchenIngredientItem> ONION = ingredient(
-            "onion", IngredientState.WHOLE_ONION, 0.76F, 0.58F, 0.48F, 0.18F, 0.58F, 0.30F, 0.02F, DAY * 10L, 2, 1
-    );
-    public static final DeferredItem<KitchenIngredientItem> DICED_ONION = ingredient(
-            "diced_onion", IngredientState.DICED_ONION, 0.78F, 0.62F, 0.54F, 0.20F, 0.58F, 0.32F, 0.02F, DAY * 2L, 2, 1
-    );
-    public static final DeferredItem<KitchenIngredientItem> FARM_EGG = ingredient(
-            "farm_egg", IngredientState.WHOLE_EGG, 0.80F, 0.34F, 0.56F, 0.42F, 0.68F, 0.64F, 0.18F, DAY * 6L, 4, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> FRESH_MILK = ingredient(
-            "fresh_milk", IngredientState.FRESH_MILK, 0.82F, 0.38F, 0.52F, 0.32F, 0.84F, 0.72F, 0.10F, DAY * 3L, 4, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> RAW_FISH_ITEM = ingredient(
-            "raw_fish", IngredientState.RAW_FISH, 0.78F, 0.44F, 0.56F, 0.22F, 0.70F, 0.52F, 0.04F, DAY, 4, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> CLEANED_FISH = ingredient(
-            "cleaned_fish", IngredientState.CLEANED_FISH, 0.80F, 0.46F, 0.58F, 0.22F, 0.68F, 0.60F, 0.04F, HALF_DAY, 4, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> PAN_FRIED_FISH = ingredient(
-            "pan_fried_fish", IngredientState.PAN_FRIED, 0.84F, 0.82F, 0.74F, 0.28F, 0.58F, 0.62F, 0.04F, DAY, 7, 6
-    );
-    public static final DeferredItem<KitchenIngredientItem> RAW_PROTEIN = ingredient(
-            "raw_protein", IngredientState.RAW_PROTEIN, 0.76F, 0.48F, 0.56F, 0.26F, 0.72F, 0.42F, 0.04F, DAY * 2L, 5, 3
-    );
-    public static final DeferredItem<KitchenIngredientItem> ROAST_CUT = ingredient(
-            "roast_cut", IngredientState.ROAST_CUT, 0.78F, 0.52F, 0.58F, 0.30F, 0.72F, 0.46F, 0.04F, DAY, 5, 3
-    );
-    public static final DeferredItem<KitchenIngredientItem> EGG_WASH = ingredient(
-            "egg_wash", IngredientState.WHISKED, 0.78F, 0.24F, 0.22F, 0.14F, 0.72F, 0.74F, 0.26F, HALF_DAY, 1, 1
-    );
-    public static final DeferredItem<KitchenIngredientItem> MARINADE = ingredient(
-            "marinade", IngredientState.MARINADE, 0.80F, 0.76F, 0.18F, 0.10F, 0.80F, 0.68F, 0.08F, DAY * 3L, 1, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> BRINE = ingredient(
-            "brine", IngredientState.BRINE, 0.74F, 0.22F, 0.08F, 0.00F, 0.92F, 0.96F, 0.00F, DAY * 45L, 0, 0
-    );
-    public static final DeferredItem<KitchenIngredientItem> CANNING_SYRUP = ingredient(
-            "canning_syrup", IngredientState.CANNING_SYRUP, 0.76F, 0.60F, 0.10F, 0.00F, 0.88F, 0.94F, 0.00F, DAY * 45L, 0, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> BATTER = ingredient(
-            "batter", IngredientState.BATTER, 0.76F, 0.30F, 0.42F, 0.52F, 0.72F, 0.74F, 0.16F, HALF_DAY, 3, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> FRYING_OIL = ingredient(
-            "frying_oil", IngredientState.FRESH_OIL, 0.80F, 0.18F, 0.22F, 0.00F, 0.90F, 0.90F, 0.00F, DAY * 30L, 0, 1
-    );
-    public static final DeferredItem<KitchenIngredientItem> USED_OIL_ITEM = ingredient(
-            "used_oil", IngredientState.USED_OIL, 0.46F, 0.10F, 0.10F, 0.00F, 0.86F, 0.30F, 0.00F, DAY * 5L, 0, 0
-    );
-    public static final DeferredItem<KitchenIngredientItem> DIRTY_OIL_ITEM = ingredient(
-            "dirty_oil", IngredientState.DIRTY_OIL, 0.30F, 0.06F, 0.06F, 0.00F, 0.82F, 0.18F, 0.00F, DAY * 3L, 0, 0
-    );
-    public static final DeferredItem<KitchenIngredientItem> BURNT_OIL_ITEM = ingredient(
-            "burnt_oil", IngredientState.BURNT_OIL, 0.12F, 0.00F, 0.02F, 0.00F, 0.74F, 0.08F, 0.00F, DAY, 0, 0
-    );
-    public static final DeferredItem<KitchenIngredientItem> BOILED_EGG_ITEM = ingredient(
-            "boiled_egg", IngredientState.BOILED, 0.82F, 0.42F, 0.66F, 0.48F, 0.68F, 0.72F, 0.04F, DAY * 3L, 6, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> FLOUR = ingredient(
-            "flour", IngredientState.PANTRY_READY, 0.76F, 0.18F, 0.32F, 0.40F, 0.10F, 0.92F, 0.00F, DAY * 45L, 1, 0
-    );
-    public static final DeferredItem<KitchenIngredientItem> SALT = ingredient(
-            "salt", IngredientState.PANTRY_READY, 0.74F, 0.12F, 0.04F, 0.00F, 0.00F, 0.98F, 0.00F, DAY * 90L, 0, 0
-    );
-    public static final DeferredItem<KitchenIngredientItem> CANE_SUGAR = ingredient(
-            "cane_sugar", IngredientState.PANTRY_READY, 0.78F, 0.42F, 0.15F, 0.00F, 0.00F, 0.98F, 0.00F, DAY * 60L, 0, 1
-    );
-    public static final DeferredItem<KitchenIngredientItem> BUTTER = ingredient(
-            "butter", IngredientState.PANTRY_READY, 0.82F, 0.58F, 0.60F, 0.15F, 0.75F, 0.90F, 0.00F, DAY * 10L, 2, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> BAKING_SPICE = ingredient(
-            "baking_spice", IngredientState.WHOLE_SPICE, 0.80F, 0.66F, 0.20F, 0.05F, 0.00F, 0.84F, 0.00F, DAY * 60L, 0, 1
-    );
-    public static final DeferredItem<KitchenIngredientItem> PIE_CRUST = ingredient(
-            "pie_crust", IngredientState.CRUST_MIX, 0.72F, 0.28F, 0.34F, 0.62F, 0.24F, 0.82F, 0.04F, DAY * 2L, 4, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> PIE_FILLING = ingredient(
-            "pie_filling", IngredientState.SIMMERED_FILLING, 0.78F, 0.74F, 0.50F, 0.18F, 0.68F, 0.70F, 0.00F, DAY * 3L, 4, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> APPLE_PIE = ingredient(
-            "apple_pie", IngredientState.RAW_ASSEMBLED_PIE, 0.80F, 0.74F, 0.55F, 0.72F, 0.60F, 0.72F, 0.12F, DAY * 4L, 7, 6
-    );
-    public static final DeferredItem<KitchenIngredientItem> APPLE_PIE_SLICE = ingredient(
-            "apple_pie_slice", IngredientState.SLICED_PIE, 0.82F, 0.78F, 0.60F, 0.68F, 0.60F, 0.74F, 0.15F, DAY * 2L, 7, 6
-    );
-    public static final DeferredItem<KitchenIngredientItem> BREAD_DOUGH = ingredient(
-            "bread_dough", IngredientState.BREAD_DOUGH, 0.74F, 0.20F, 0.38F, 0.62F, 0.68F, 0.88F, 0.10F, DAY, 4, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> BREAD_LOAF = ingredient(
-            "bread_loaf", IngredientState.BAKED_BREAD, 0.80F, 0.52F, 0.70F, 0.76F, 0.48F, 0.88F, 0.16F, DAY * 4L, 6, 5
-    );
-    public static final DeferredItem<KitchenIngredientItem> SLICED_BREAD = ingredient(
-            "sliced_bread", IngredientState.SLICED_BREAD, 0.82F, 0.54F, 0.68F, 0.64F, 0.46F, 0.90F, 0.16F, DAY * 2L, 4, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> TOMATO_SOUP_BASE = ingredient(
-            "tomato_soup_base", IngredientState.SOUP_BASE, 0.80F, 0.78F, 0.48F, 0.20F, 0.82F, 0.52F, 0.04F, DAY * 2L, 5, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> STRAINED_SOUP = ingredient(
-            "strained_soup", IngredientState.STRAINED_SOUP, 0.84F, 0.80F, 0.50F, 0.18F, 0.82F, 0.86F, 0.04F, DAY * 2L, 5, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> DUMPLING_FILLING_ITEM = ingredient(
-            "dumpling_filling", IngredientState.DUMPLING_FILLING, 0.78F, 0.72F, 0.50F, 0.28F, 0.66F, 0.48F, 0.06F, DAY, 5, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> DUMPLING_DOUGH_ITEM = ingredient(
-            "dumpling_dough", IngredientState.DUMPLING_DOUGH, 0.76F, 0.18F, 0.42F, 0.66F, 0.64F, 0.84F, 0.10F, DAY, 4, 2
-    );
-    public static final DeferredItem<KitchenIngredientItem> RAW_DUMPLINGS_ITEM = ingredient(
-            "raw_dumplings", IngredientState.RAW_DUMPLINGS, 0.78F, 0.58F, 0.46F, 0.66F, 0.70F, 0.68F, 0.10F, DAY, 6, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> STEAMED_DUMPLINGS_ITEM = ingredient(
-            "steamed_dumplings", IngredientState.STEAMED_DUMPLINGS, 0.84F, 0.72F, 0.66F, 0.70F, 0.76F, 0.72F, 0.10F, DAY, 7, 6
-    );
-    public static final DeferredItem<KitchenIngredientItem> MARINATED_PROTEIN_ITEM = ingredient(
-            "marinated_protein", IngredientState.MARINATED_PROTEIN, 0.80F, 0.78F, 0.56F, 0.32F, 0.76F, 0.52F, 0.06F, DAY, 5, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> BATTERED_PROTEIN_ITEM = ingredient(
-            "battered_protein", IngredientState.BATTERED_PROTEIN, 0.80F, 0.74F, 0.60F, 0.36F, 0.78F, 0.60F, 0.08F, HALF_DAY, 6, 5
-    );
-    public static final DeferredItem<KitchenIngredientItem> FRIED_PROTEIN_ITEM = ingredient(
-            "fried_protein", IngredientState.FRIED_PROTEIN, 0.86F, 0.86F, 0.84F, 0.48F, 0.52F, 0.64F, 0.06F, DAY, 8, 9
-    );
-    public static final DeferredItem<KitchenIngredientItem> ROASTED_PROTEIN_ITEM = ingredient(
-            "roasted_protein", IngredientState.ROASTED_PROTEIN, 0.84F, 0.84F, 0.74F, 0.50F, 0.58F, 0.60F, 0.04F, DAY * 2L, 8, 7
-    );
-    public static final DeferredItem<KitchenIngredientItem> BROILED_PROTEIN_ITEM = ingredient(
-            "broiled_protein", IngredientState.BROILED_PROTEIN, 0.88F, 0.90F, 0.78F, 0.52F, 0.56F, 0.62F, 0.04F, DAY, 8, 8
-    );
-    public static final DeferredItem<KitchenIngredientItem> SMOKED_PROTEIN_ITEM = ingredient(
-            "smoked_protein", IngredientState.SMOKED_PROTEIN, 0.88F, 0.92F, 0.70F, 0.52F, 0.50F, 0.66F, 0.04F, DAY * 10L, 8, 8
-    );
-    public static final DeferredItem<KitchenIngredientItem> ROAST_VEGETABLES_ITEM = ingredient(
-            "roast_vegetables", IngredientState.ROAST_VEGETABLES, 0.82F, 0.76F, 0.62F, 0.24F, 0.54F, 0.40F, 0.04F, DAY * 2L, 5, 5
-    );
-    public static final DeferredItem<KitchenIngredientItem> CANNED_TOMATO_ITEM = ingredient(
-            "canned_tomato", IngredientState.CANNED_TOMATO, 0.80F, 0.70F, 0.50F, 0.22F, 0.80F, 0.74F, 0.02F, DAY * 60L, 4, 3
-    );
-    public static final DeferredItem<KitchenIngredientItem> APPLE_PRESERVE_ITEM = ingredient(
-            "apple_preserve", IngredientState.APPLE_PRESERVE, 0.82F, 0.82F, 0.38F, 0.14F, 0.76F, 0.82F, 0.00F, DAY * 75L, 3, 6
-    );
-    public static final DeferredItem<KitchenIngredientItem> DRIED_APPLE_ITEM = ingredient(
-            "dried_apple", IngredientState.DRIED_FRUIT, 0.78F, 0.84F, 0.48F, 0.16F, 0.18F, 0.74F, 0.00F, DAY * 45L, 2, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> FERMENTED_VEGETABLES_ITEM = ingredient(
-            "fermented_vegetables", IngredientState.FERMENTED_VEGETABLE, 0.82F, 0.78F, 0.58F, 0.18F, 0.70F, 0.78F, 0.02F, DAY * 30L, 4, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> CULTURED_DAIRY_ITEM = ingredient(
-            "cultured_dairy", IngredientState.CULTURED_DAIRY, 0.84F, 0.62F, 0.62F, 0.22F, 0.82F, 0.84F, 0.06F, DAY * 14L, 5, 4
-    );
-    public static final DeferredItem<KitchenIngredientItem> CERAMIC_PLATE = ingredient(
-            "ceramic_plate", IngredientState.PANTRY_READY, 0.80F, 0.00F, 0.70F, 0.90F, 0.00F, 1.00F, 0.00F, Long.MAX_VALUE / 4L, 0, 0
-    );
+    public enum IngredientId {
+        WHITE_SUGAR("white_sugar", sweetener(0, 1)),
+        LIGHT_BROWN_SUGAR("light_brown_sugar", sweetener(0, 1)),
+        DARK_BROWN_SUGAR("dark_brown_sugar", sweetener(0, 2)),
+        POWDERED_SUGAR("powdered_sugar", sweetener(0, 1)),
+        HONEY("honey", syrupSweetener(DAY * 90L, 0, 1, 2)),
+        MAPLE_SYRUP("maple_syrup", syrupSweetener(DAY * 120L, 0, 0, 2)),
+        MOLASSES("molasses", syrupSweetener(DAY * 150L, 0, 0, 1)),
+        CORN_SYRUP("corn_syrup", syrupSweetener(DAY * 150L, 0, 0, 1)),
+        AGAVE_NECTAR("agave_nectar", syrupSweetener(DAY * 120L, 0, 0, 2)),
 
-    public static final DeferredItem<KitchenMealItem> PLATED_APPLE_PIE_SLICE = meal(
-            "plated_apple_pie_slice", IngredientState.PLATED_SLICE, 0.86F, 0.82F, 0.68F, 0.72F, 0.68F, 0.78F, 0.18F, DAY, 8, 8, true
-    );
-    public static final DeferredItem<KitchenMealItem> PLATED_TOMATO_SOUP_MEAL = meal(
-            "plated_tomato_soup_meal", IngredientState.PLATED_SOUP_MEAL, 0.84F, 0.84F, 0.64F, 0.44F, 0.80F, 0.84F, 0.08F, HALF_DAY, 10, 7, true
-    );
-    public static final DeferredItem<KitchenMealItem> PLATED_DUMPLING_MEAL = meal(
-            "plated_dumpling_meal", IngredientState.PLATED_DUMPLING_MEAL, 0.86F, 0.82F, 0.72F, 0.62F, 0.74F, 0.78F, 0.10F, HALF_DAY, 10, 8, true
-    );
-    public static final DeferredItem<KitchenMealItem> PLATED_FRIED_MEAL = meal(
-            "plated_fried_meal", IngredientState.PLATED_FRIED_MEAL, 0.88F, 0.90F, 0.86F, 0.56F, 0.56F, 0.72F, 0.06F, HALF_DAY, 11, 10, true
-    );
-    public static final DeferredItem<KitchenMealItem> PLATED_ROAST_MEAL = meal(
-            "plated_roast_meal", IngredientState.PLATED_ROAST_MEAL, 0.88F, 0.88F, 0.78F, 0.58F, 0.60F, 0.72F, 0.06F, HALF_DAY, 11, 9, true
+        ALL_PURPOSE_FLOUR("all_purpose_flour", flour(DAY * 90L, 0, 1, 0)),
+        BREAD_FLOUR("bread_flour", flour(DAY * 90L, 0, 1, 0)),
+        CAKE_FLOUR("cake_flour", flour(DAY * 90L, 0, 1, 0)),
+        WHOLE_WHEAT_FLOUR("whole_wheat_flour", flour(DAY * 60L, 0, 1, 0)),
+        CORN_FLOUR("corn_flour", flour(DAY * 75L, 0, 1, 0)),
+        CORNMEAL("cornmeal", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 75L, 30, 2, 0)),
+        WHITE_RICE_FLOUR("white_rice_flour", flour(DAY * 90L, 0, 1, 0)),
+        BROWN_RICE_FLOUR("brown_rice_flour", flour(DAY * 60L, 0, 1, 0)),
+        ROLLED_OATS("rolled_oats", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 90L, 40, 2, 1)),
+        QUICK_OATS("quick_oats", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 75L, 30, 2, 1)),
+        PASTA("pasta", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 120L, 100, 2, 1)),
+        QUINOA("quinoa", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 120L, 90, 3, 1)),
+        SEMOLINA("semolina", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 120L, 30, 1, 0)),
+        BREADCRUMBS("breadcrumbs", flour(DAY * 60L, 0, 1, 0)),
+
+        BAKING_SODA("baking_soda", leavener(DAY * 180L)),
+        BAKING_POWDER("baking_powder", leavener(DAY * 120L)),
+        ACTIVE_DRY_YEAST("active_dry_yeast", leavener(DAY * 120L)),
+        INSTANT_YEAST("instant_yeast", leavener(DAY * 120L)),
+        SOURDOUGH_STARTER("sourdough_starter", starter(DAY * 10L, 1, 1)),
+        CREAM_OF_TARTAR("cream_of_tartar", leavener(DAY * 180L)),
+
+        TABLE_SALT("table_salt", seasoning(DAY * 180L, 0, 0)),
+        KOSHER_SALT("kosher_salt", seasoning(DAY * 180L, 0, 0)),
+        SEA_SALT("sea_salt", seasoning(DAY * 180L, 0, 0)),
+        BLACK_PEPPER("black_pepper", seasoning(DAY * 180L, 0, 1)),
+        CINNAMON("cinnamon", seasoning(DAY * 180L, 0, 2)),
+        NUTMEG("nutmeg", seasoning(DAY * 180L, 0, 2)),
+        PAPRIKA("paprika", seasoning(DAY * 180L, 0, 2)),
+        CUMIN("cumin", seasoning(DAY * 180L, 0, 2)),
+        CLOVES("cloves", seasoning(DAY * 180L, 0, 2)),
+        CHILI_POWDER("chili_powder", seasoning(DAY * 180L, 0, 2)),
+        GARLIC_POWDER("garlic_powder", seasoning(DAY * 180L, 0, 1)),
+        ONION_POWDER("onion_powder", seasoning(DAY * 180L, 0, 1)),
+
+        BASIL("basil", herb(DAY * 45L, 18, 0, 2)),
+        THYME("thyme", herb(DAY * 60L, 18, 0, 2)),
+        ROSEMARY("rosemary", herb(DAY * 60L, 18, 0, 2)),
+        PARSLEY("parsley", herb(DAY * 45L, 18, 0, 2)),
+        DILL("dill", herb(DAY * 45L, 18, 0, 2)),
+        OREGANO("oregano", herb(DAY * 60L, 18, 0, 2)),
+        MINT("mint", herb(DAY * 45L, 18, 0, 2)),
+        SAGE("sage", herb(DAY * 60L, 18, 0, 2)),
+
+        VEGETABLE_OIL("vegetable_oil", oil(DAY * 120L, 0)),
+        OLIVE_OIL("olive_oil", oil(DAY * 120L, 1)),
+        CANOLA_OIL("canola_oil", oil(DAY * 120L, 0)),
+        COCONUT_OIL("coconut_oil", oil(DAY * 90L, 0)),
+        BUTTER("butter", refrigeratedFat(DAY * 20L, 12, 2, 2)),
+        SHORTENING("shortening", pantryFat(DAY * 180L, 0, 0)),
+        LARD("lard", chilledFat(DAY * 60L, 0, 1, 0)),
+
+        POWDERED_MILK("powdered_milk", stableDairy(DAY * 90L, 0, 1, 1, false, false)),
+        EVAPORATED_MILK("evaporated_milk", stableDairy(DAY * 60L, 24, 2, 1, true, false)),
+        SWEETENED_CONDENSED_MILK("sweetened_condensed_milk", stableDairy(DAY * 90L, 24, 2, 2, true, false)),
+        SHELF_STABLE_CREAM("shelf_stable_cream", stableDairy(DAY * 45L, 24, 3, 2, true, false)),
+        ALMOND_MILK("almond_milk", stableDairy(DAY * 30L, 20, 2, 1, true, false)),
+        OAT_MILK("oat_milk", stableDairy(DAY * 30L, 20, 2, 1, true, false)),
+        SOY_MILK("soy_milk", stableDairy(DAY * 30L, 20, 2, 1, true, false)),
+
+        CHICKEN("chicken", protein(DAY * 4L, 120, 6, 2, true)),
+        FISH_FILLET("fish_fillet", protein(DAY * 3L, 70, 5, 2, true)),
+        PORK("pork", protein(DAY * 4L, 110, 6, 2, true)),
+        BEEF("beef", protein(DAY * 5L, 120, 6, 2, true)),
+        EGGS("eggs", protein(DAY * 18L, 64, 4, 2, false)),
+        TOFU("tofu", protein(DAY * 7L, 50, 4, 2, true)),
+
+        APPLES("apples", produce(DAY * 10L, 32, 2, 2, false)),
+        TOMATOES("tomatoes", produce(DAY * 6L, 40, 2, 2, false)),
+        CARROTS("carrots", produce(DAY * 12L, 45, 2, 1, true)),
+        ONIONS("onions", produce(DAY * 18L, 35, 1, 1, false)),
+        POTATOES("potatoes", produce(DAY * 20L, 80, 3, 1, true)),
+        LEMONS("lemons", produce(DAY * 12L, 20, 1, 2, false)),
+        CABBAGE("cabbage", produce(DAY * 8L, 60, 2, 1, true)),
+        GARLIC("garlic", produce(DAY * 20L, 18, 1, 1, false)),
+        GINGER("ginger", produce(DAY * 14L, 18, 1, 1, false)),
+        SHALLOTS("shallots", produce(DAY * 16L, 28, 1, 1, false)),
+
+        CANNED_TOMATOES("canned_tomatoes", canned(DAY * 120L, 30, 2, 1)),
+        TOMATO_PASTE("tomato_paste", canned(DAY * 90L, 20, 1, 1)),
+        BLACK_BEANS("black_beans", canned(DAY * 120L, 36, 3, 1)),
+        KIDNEY_BEANS("kidney_beans", canned(DAY * 120L, 36, 3, 1)),
+        CHICKPEAS("chickpeas", canned(DAY * 120L, 36, 3, 1)),
+        BROTH("broth", canned(DAY * 60L, 24, 1, 1)),
+        STOCK("stock", canned(DAY * 60L, 24, 1, 1)),
+        COCONUT_MILK("coconut_milk", canned(DAY * 90L, 24, 2, 1)),
+        PEANUT_BUTTER("peanut_butter", canned(DAY * 120L, 0, 3, 2)),
+        JAM("jam", canned(DAY * 120L, 0, 1, 2)),
+        JELLY("jelly", canned(DAY * 120L, 0, 1, 2)),
+        PICKLES("pickles", canned(DAY * 120L, 0, 1, 1)),
+        BRINED_VEGETABLES("brined_vegetables", canned(DAY * 90L, 0, 2, 1)),
+        SYRUP_PRESERVES("syrup_preserves", canned(DAY * 120L, 0, 1, 2)),
+
+        CHOCOLATE_CHIPS("chocolate_chips", addIn(DAY * 180L, 0, 1, 2)),
+        COCOA_POWDER("cocoa_powder", addIn(DAY * 180L, 0, 0, 1)),
+        VANILLA_EXTRACT("vanilla_extract", bakingExtract(DAY * 180L, 2)),
+        SPRINKLES("sprinkles", addIn(DAY * 180L, 0, 0, 2)),
+        CARAMEL_BITS("caramel_bits", addIn(DAY * 120L, 0, 1, 2)),
+        ALMONDS("almonds", addIn(DAY * 120L, 0, 2, 1)),
+        WALNUTS("walnuts", addIn(DAY * 90L, 0, 2, 1)),
+        PECANS("pecans", addIn(DAY * 90L, 0, 2, 1)),
+        RAISINS("raisins", addIn(DAY * 120L, 0, 1, 2)),
+        DRIED_CRANBERRIES("dried_cranberries", addIn(DAY * 120L, 0, 1, 2)),
+
+        SPAGHETTI("spaghetti", dryGood(DAY * 180L, 110, 3, 1)),
+        MACARONI("macaroni", dryGood(DAY * 180L, 100, 3, 1)),
+        RAMEN("ramen", dryGood(DAY * 120L, 70, 2, 2)),
+        COUSCOUS("couscous", dryGood(DAY * 150L, 60, 2, 1)),
+        LENTILS("lentils", dryGood(DAY * 180L, 90, 3, 1)),
+        DRY_BEANS("dry_beans", dryGood(DAY * 210L, 140, 3, 1)),
+
+        KETCHUP("ketchup", condiment(DAY * 90L, 0, 0, 1, true)),
+        MUSTARD("mustard", condiment(DAY * 120L, 0, 0, 1, true)),
+        MAYONNAISE("mayonnaise", condiment(DAY * 45L, 0, 1, 1, true)),
+        SOY_SAUCE("soy_sauce", condiment(DAY * 180L, 0, 0, 1, false)),
+        WHITE_VINEGAR("white_vinegar", condiment(DAY * 180L, 0, 0, 0, false)),
+        APPLE_CIDER_VINEGAR("apple_cider_vinegar", condiment(DAY * 180L, 0, 0, 0, false)),
+        BALSAMIC_VINEGAR("balsamic_vinegar", condiment(DAY * 180L, 0, 0, 1, false)),
+        HOT_SAUCE("hot_sauce", condiment(DAY * 180L, 0, 0, 2, false)),
+        WORCESTERSHIRE_SAUCE("worcestershire_sauce", condiment(DAY * 180L, 0, 0, 1, false)),
+
+        DRIED_GARLIC("dried_garlic", seasoning(DAY * 180L, 0, 1)),
+        DRIED_ONIONS("dried_onions", seasoning(DAY * 180L, 0, 1)),
+
+        CRACKERS("crackers", snack(DAY * 90L, 0, 1, 1)),
+        COOKIES("cookies", snack(DAY * 45L, 0, 2, 2)),
+        CANDY("candy", snack(DAY * 120L, 0, 0, 3)),
+        CHIPS("chips", snack(DAY * 75L, 0, 1, 2)),
+
+        ITALIAN_SEASONING("italian_seasoning", seasoning(DAY * 180L, 0, 2)),
+        CURRY_POWDER("curry_powder", seasoning(DAY * 180L, 0, 2)),
+        PANCAKE_MIX("pancake_mix", bakingMix(DAY * 120L, 40, 2, 1)),
+        CAKE_MIX("cake_mix", bakingMix(DAY * 120L, 50, 2, 1)),
+        FERMENTATION_STARTER("fermentation_starter", starter(DAY * 20L, 1, 1)),
+        VINEGAR_MOTHER("vinegar_mother", condiment(DAY * 60L, 0, 0, 0, true)),
+        MATCHA("matcha", addIn(DAY * 180L, 0, 0, 2)),
+        ROSE_WATER("rose_water", bakingExtract(DAY * 180L, 2)),
+        FOOD_COLORING("food_coloring", addIn(DAY * 240L, 0, 0, 1));
+
+        private final String id;
+        private final IngredientSpec spec;
+
+        IngredientId(String id, IngredientSpec spec) {
+            this.id = id;
+            this.spec = spec;
+        }
+
+        public String id() {
+            return this.id;
+        }
+
+        public IngredientState defaultState() {
+            return IngredientState.byName(this.id);
+        }
+    }
+
+    private static final Map<IngredientId, DeferredItem<KitchenIngredientItem>> INGREDIENTS = registerIngredients();
+    private static final List<DeferredItem<KitchenIngredientItem>> INGREDIENT_LIST = Collections.unmodifiableList(new ArrayList<>(INGREDIENTS.values()));
+
+    public static final DeferredItem<Item> CERAMIC_PLATE = ITEMS.register(
+            "ceramic_plate",
+            () -> new Item(new Item.Properties().stacksTo(16))
     );
 
     public static final DeferredItem<KitchenToolItem> PARING_KNIFE = tool("paring_knife", ToolProfile.PARING_KNIFE, 0.06F, 1.10F, 128);
@@ -258,39 +245,47 @@ public final class JazzyItems {
     private JazzyItems() {
     }
 
-    private static DeferredItem<KitchenIngredientItem> ingredient(
-            String name,
-            IngredientState defaultState,
-            float baseQuality,
-            float baseFlavor,
-            float baseTexture,
-            float baseStructure,
-            float baseMoisture,
-            float basePurity,
-            float baseAeration,
-            long decayTicks,
-            int nourishment,
-            int enjoyment
-    ) {
-        return ITEMS.register(name, () -> new KitchenIngredientItem(
-                new Item.Properties(),
-                defaultState,
-                baseQuality,
-                baseFlavor,
-                baseTexture,
-                baseStructure,
-                baseMoisture,
-                basePurity,
-                baseAeration,
-                decayTicks,
-                nourishment,
-                enjoyment
-        ));
+    public static DeferredItem<KitchenIngredientItem> ingredient(IngredientId ingredientId) {
+        return INGREDIENTS.get(ingredientId);
     }
 
-    private static DeferredItem<KitchenMealItem> meal(
-            String name,
-            IngredientState defaultState,
+    public static List<DeferredItem<KitchenIngredientItem>> ingredientItems() {
+        return INGREDIENT_LIST;
+    }
+
+    public static ItemStack creativeIngredientStack(IngredientId ingredientId) {
+        return ingredient(ingredientId).get().createCreativeStack(1);
+    }
+
+    private static Map<IngredientId, DeferredItem<KitchenIngredientItem>> registerIngredients() {
+        Map<IngredientId, DeferredItem<KitchenIngredientItem>> ingredients = new EnumMap<>(IngredientId.class);
+        for (IngredientId ingredientId : IngredientId.values()) {
+            IngredientSpec spec = ingredientId.spec;
+            DeferredItem<KitchenIngredientItem> registered = ITEMS.register(ingredientId.id(), () -> new KitchenIngredientItem(
+                    new Item.Properties(),
+                    ingredientId.defaultState(),
+                    spec.pantryTab(),
+                    spec.baseQuality(),
+                    spec.baseFlavor(),
+                    spec.baseTexture(),
+                    spec.baseStructure(),
+                    spec.baseMoisture(),
+                    spec.basePurity(),
+                    spec.baseAeration(),
+                    spec.decayTicks(),
+                    spec.cookTimeTicks(),
+                    spec.nourishment(),
+                    spec.enjoyment(),
+                    spec.fridgeSafe(),
+                    spec.freezerSafe()
+            ));
+            ingredients.put(ingredientId, registered);
+        }
+        return ingredients;
+    }
+
+    private record IngredientSpec(
+            PantrySortTab pantryTab,
             float baseQuality,
             float baseFlavor,
             float baseTexture,
@@ -299,13 +294,32 @@ public final class JazzyItems {
             float basePurity,
             float baseAeration,
             long decayTicks,
+            int cookTimeTicks,
             int nourishment,
             int enjoyment,
-            boolean returnsPlate
+            boolean fridgeSafe,
+            boolean freezerSafe
     ) {
-        return ITEMS.register(name, () -> new KitchenMealItem(
-                new Item.Properties().stacksTo(16),
-                defaultState,
+    }
+
+    private static IngredientSpec spec(
+            PantrySortTab pantryTab,
+            float baseQuality,
+            float baseFlavor,
+            float baseTexture,
+            float baseStructure,
+            float baseMoisture,
+            float basePurity,
+            float baseAeration,
+            long decayTicks,
+            int cookTimeTicks,
+            int nourishment,
+            int enjoyment,
+            boolean fridgeSafe,
+            boolean freezerSafe
+    ) {
+        return new IngredientSpec(
+                pantryTab,
                 baseQuality,
                 baseFlavor,
                 baseTexture,
@@ -314,10 +328,100 @@ public final class JazzyItems {
                 basePurity,
                 baseAeration,
                 decayTicks,
+                cookTimeTicks,
                 nourishment,
                 enjoyment,
-                returnsPlate
-        ));
+                fridgeSafe,
+                freezerSafe
+        );
+    }
+
+    private static IngredientSpec sweetener(int nourishment, int enjoyment) {
+        return spec(PantrySortTab.SWEETENERS, 0.80F, 0.56F, 0.16F, 0.00F, 0.06F, 0.98F, 0.00F, DAY * 180L, 0, nourishment, enjoyment, false, false);
+    }
+
+    private static IngredientSpec syrupSweetener(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.SWEETENERS, 0.82F, 0.60F, 0.18F, 0.00F, 0.54F, 0.96F, 0.00F, decayTicks, cookTimeTicks, nourishment, enjoyment, false, false);
+    }
+
+    private static IngredientSpec flour(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.GRAINS_AND_FLOURS, 0.76F, 0.28F, 0.34F, 0.42F, 0.18F, 0.90F, 0.02F, decayTicks, cookTimeTicks, nourishment, enjoyment, false, false);
+    }
+
+    private static IngredientSpec grain(PantrySortTab pantryTab, long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(pantryTab, 0.76F, 0.34F, 0.30F, 0.44F, 0.18F, 0.90F, 0.02F, decayTicks, cookTimeTicks, nourishment, enjoyment, false, false);
+    }
+
+    private static IngredientSpec leavener(long decayTicks) {
+        return spec(PantrySortTab.LEAVENING_AGENTS, 0.74F, 0.08F, 0.12F, 0.24F, 0.06F, 0.94F, 0.30F, decayTicks, 0, 0, 0, false, false);
+    }
+
+    private static IngredientSpec starter(long decayTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.LEAVENING_AGENTS, 0.74F, 0.12F, 0.18F, 0.22F, 0.34F, 0.88F, 0.24F, decayTicks, 0, nourishment, enjoyment, true, false);
+    }
+
+    private static IngredientSpec seasoning(long decayTicks, int cookTimeTicks, int enjoyment) {
+        return spec(PantrySortTab.SEASONINGS, 0.80F, 0.72F, 0.20F, 0.04F, 0.08F, 0.88F, 0.00F, decayTicks, cookTimeTicks, 0, enjoyment, false, false);
+    }
+
+    private static IngredientSpec herb(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.SEASONINGS, 0.82F, 0.74F, 0.28F, 0.08F, 0.30F, 0.84F, 0.02F, decayTicks, cookTimeTicks, nourishment, enjoyment, true, false);
+    }
+
+    private static IngredientSpec oil(long decayTicks, int enjoyment) {
+        return spec(PantrySortTab.OILS_AND_FATS, 0.80F, 0.34F, 0.22F, 0.00F, 0.28F, 0.92F, 0.00F, decayTicks, 0, 0, enjoyment, false, false);
+    }
+
+    private static IngredientSpec pantryFat(long decayTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.OILS_AND_FATS, 0.78F, 0.30F, 0.26F, 0.04F, 0.22F, 0.90F, 0.00F, decayTicks, 0, nourishment, enjoyment, false, false);
+    }
+
+    private static IngredientSpec chilledFat(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.OILS_AND_FATS, 0.80F, 0.34F, 0.30F, 0.04F, 0.28F, 0.88F, 0.00F, decayTicks, cookTimeTicks, nourishment, enjoyment, true, true);
+    }
+
+    private static IngredientSpec refrigeratedFat(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.OILS_AND_FATS, 0.82F, 0.42F, 0.36F, 0.08F, 0.46F, 0.88F, 0.00F, decayTicks, cookTimeTicks, nourishment, enjoyment, true, true);
+    }
+
+    private static IngredientSpec stableDairy(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment, boolean fridgeSafe, boolean freezerSafe) {
+        return spec(PantrySortTab.DAIRY_AND_ALTERNATIVES, 0.80F, 0.42F, 0.40F, 0.20F, 0.68F, 0.78F, 0.08F, decayTicks, cookTimeTicks, nourishment, enjoyment, fridgeSafe, freezerSafe);
+    }
+
+    private static IngredientSpec protein(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment, boolean freezerSafe) {
+        return spec(PantrySortTab.OTHER, 0.78F, 0.48F, 0.58F, 0.34F, 0.74F, 0.58F, 0.04F, decayTicks, cookTimeTicks, nourishment, enjoyment, true, freezerSafe);
+    }
+
+    private static IngredientSpec produce(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment, boolean freezerSafe) {
+        return spec(PantrySortTab.OTHER, 0.80F, 0.58F, 0.52F, 0.18F, 0.76F, 0.54F, 0.04F, decayTicks, cookTimeTicks, nourishment, enjoyment, true, freezerSafe);
+    }
+
+    private static IngredientSpec canned(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.CANNED_GOODS, 0.78F, 0.50F, 0.38F, 0.18F, 0.54F, 0.88F, 0.00F, decayTicks, cookTimeTicks, nourishment, enjoyment, true, false);
+    }
+
+    private static IngredientSpec addIn(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.BAKING_ADD_INS, 0.80F, 0.60F, 0.32F, 0.14F, 0.30F, 0.86F, 0.06F, decayTicks, cookTimeTicks, nourishment, enjoyment, false, false);
+    }
+
+    private static IngredientSpec bakingExtract(long decayTicks, int enjoyment) {
+        return spec(PantrySortTab.BAKING_ADD_INS, 0.80F, 0.64F, 0.12F, 0.00F, 0.40F, 0.92F, 0.00F, decayTicks, 0, 0, enjoyment, false, false);
+    }
+
+    private static IngredientSpec dryGood(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.DRY_GOODS, 0.76F, 0.34F, 0.30F, 0.42F, 0.12F, 0.92F, 0.02F, decayTicks, cookTimeTicks, nourishment, enjoyment, false, false);
+    }
+
+    private static IngredientSpec condiment(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment, boolean fridgeSafe) {
+        return spec(PantrySortTab.SAUCES_AND_CONDIMENTS, 0.78F, 0.68F, 0.12F, 0.04F, 0.52F, 0.90F, 0.00F, decayTicks, cookTimeTicks, nourishment, enjoyment, fridgeSafe, false);
+    }
+
+    private static IngredientSpec snack(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.SNACKS, 0.74F, 0.62F, 0.46F, 0.36F, 0.18F, 0.78F, 0.06F, decayTicks, cookTimeTicks, nourishment, enjoyment, false, false);
+    }
+
+    private static IngredientSpec bakingMix(long decayTicks, int cookTimeTicks, int nourishment, int enjoyment) {
+        return spec(PantrySortTab.BAKING_ADD_INS, 0.76F, 0.32F, 0.34F, 0.42F, 0.20F, 0.90F, 0.04F, decayTicks, cookTimeTicks, nourishment, enjoyment, false, false);
     }
 
     private static DeferredItem<KitchenToolItem> tool(String name, ToolProfile profile, float qualityBonus, float speedMultiplier, int durability) {

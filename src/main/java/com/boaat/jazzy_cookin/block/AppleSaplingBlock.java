@@ -1,7 +1,6 @@
 package com.boaat.jazzy_cookin.block;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
-import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.mojang.serialization.MapCodec;
@@ -87,21 +86,23 @@ public class AppleSaplingBlock extends BushBlock implements BonemealableBlock {
         }
 
         if (!level.isClientSide) {
-            KitchenIngredientItem appleItem = JazzyItems.ORCHARD_APPLE.get();
+            KitchenIngredientItem appleItem = JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get();
             float quality = this.harvestQuality(level, pos, age);
-            IngredientStateData harvestData = appleItem.defaultData(level.getGameTime()).withMetrics(
-                    IngredientState.WHOLE_APPLE,
+            IngredientStateData baseData = appleItem.defaultData(level.getGameTime());
+            IngredientStateData harvestData = baseData.withMetrics(
+                    baseData.state(),
                     level.getGameTime(),
                     quality,
-                    0.72F,
-                    0.68F,
-                    0.2F,
-                    0.78F,
-                    0.3F,
-                    0.1F,
+                    Math.min(1.0F, baseData.recipeAccuracy() + 0.06F),
+                    Math.min(1.0F, baseData.flavor() + 0.05F),
+                    baseData.texture(),
+                    baseData.structure(),
+                    baseData.moisture(),
+                    baseData.purity(),
+                    baseData.aeration(),
                     1,
-                    3,
-                    2
+                    baseData.nourishment(),
+                    baseData.enjoyment()
             );
             Containers.dropItemStack(level, pos.getX(), pos.getY() + 0.75D, pos.getZ(), appleItem.createStack(1, level.getGameTime(), harvestData));
             level.setBlock(pos, state.setValue(AGE, 4), 2);

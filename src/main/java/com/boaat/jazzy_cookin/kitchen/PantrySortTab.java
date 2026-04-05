@@ -2,12 +2,12 @@ package com.boaat.jazzy_cookin.kitchen;
 
 import java.util.List;
 
+import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 public enum PantrySortTab {
     SWEETENERS(0, "screen.jazzycookin.pantry_tab.sweeteners"),
@@ -55,17 +55,17 @@ public enum PantrySortTab {
 
     public ItemStack iconStack() {
         return switch (this) {
-            case SWEETENERS -> new ItemStack(JazzyItems.CANE_SUGAR.get());
-            case GRAINS_AND_FLOURS -> new ItemStack(JazzyItems.FLOUR.get());
-            case LEAVENING_AGENTS -> new ItemStack(Items.BONE_MEAL);
-            case SEASONINGS -> new ItemStack(JazzyItems.BAKING_SPICE.get());
-            case OILS_AND_FATS -> new ItemStack(JazzyItems.FRYING_OIL.get());
-            case DAIRY_AND_ALTERNATIVES -> new ItemStack(JazzyItems.FRESH_MILK.get());
-            case CANNED_GOODS -> new ItemStack(JazzyItems.CANNING_JAR.get());
-            case BAKING_ADD_INS -> new ItemStack(JazzyItems.FARM_EGG.get());
-            case DRY_GOODS -> new ItemStack(JazzyItems.DRIED_APPLE_ITEM.get());
-            case SAUCES_AND_CONDIMENTS -> new ItemStack(JazzyItems.BRINE.get());
-            case SNACKS -> new ItemStack(JazzyItems.APPLE_PIE_SLICE.get());
+            case SWEETENERS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.WHITE_SUGAR);
+            case GRAINS_AND_FLOURS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.ALL_PURPOSE_FLOUR);
+            case LEAVENING_AGENTS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.BAKING_POWDER);
+            case SEASONINGS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.BLACK_PEPPER);
+            case OILS_AND_FATS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.OLIVE_OIL);
+            case DAIRY_AND_ALTERNATIVES -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.SHELF_STABLE_CREAM);
+            case CANNED_GOODS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.CANNED_TOMATOES);
+            case BAKING_ADD_INS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.CHOCOLATE_CHIPS);
+            case DRY_GOODS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.LENTILS);
+            case SAUCES_AND_CONDIMENTS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.SOY_SAUCE);
+            case SNACKS -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.CRACKERS);
             case OTHER -> ItemStack.EMPTY;
         };
     }
@@ -88,35 +88,8 @@ public enum PantrySortTab {
             return OTHER;
         }
 
-        if (stack.is(JazzyItems.CANE_SUGAR.get()) || stack.is(JazzyItems.CANNING_SYRUP.get())) {
-            return SWEETENERS;
-        }
-        if (stack.is(JazzyItems.FLOUR.get()) || stack.is(JazzyItems.WHEAT_SHEAF.get())) {
-            return GRAINS_AND_FLOURS;
-        }
-        if (stack.is(JazzyItems.SALT.get()) || stack.is(JazzyItems.BAKING_SPICE.get()) || stack.is(JazzyItems.FRESH_HERB.get()) || stack.is(JazzyItems.GROUND_HERB.get())) {
-            return SEASONINGS;
-        }
-        if (stack.is(JazzyItems.FRYING_OIL.get()) || stack.is(JazzyItems.USED_OIL_ITEM.get()) || stack.is(JazzyItems.DIRTY_OIL_ITEM.get()) || stack.is(JazzyItems.BURNT_OIL_ITEM.get()) || stack.is(JazzyItems.BUTTER.get())) {
-            return OILS_AND_FATS;
-        }
-        if (stack.is(JazzyItems.FRESH_MILK.get()) || stack.is(JazzyItems.CULTURED_DAIRY_ITEM.get())) {
-            return DAIRY_AND_ALTERNATIVES;
-        }
-        if (stack.is(JazzyItems.CANNED_TOMATO_ITEM.get()) || stack.is(JazzyItems.APPLE_PRESERVE_ITEM.get()) || stack.is(JazzyItems.CANNING_JAR.get())) {
-            return CANNED_GOODS;
-        }
-        if (stack.is(JazzyItems.FARM_EGG.get()) || stack.is(JazzyItems.WILD_BERRIES_ITEM.get()) || stack.is(JazzyItems.ORCHARD_APPLE.get()) || stack.is(JazzyItems.PIE_FILLING.get())) {
-            return BAKING_ADD_INS;
-        }
-        if (stack.is(JazzyItems.DRIED_APPLE_ITEM.get())) {
-            return DRY_GOODS;
-        }
-        if (stack.is(JazzyItems.MARINADE.get()) || stack.is(JazzyItems.BRINE.get())) {
-            return SAUCES_AND_CONDIMENTS;
-        }
-        if (stack.is(JazzyItems.APPLE_PIE.get()) || stack.is(JazzyItems.APPLE_PIE_SLICE.get()) || stack.is(JazzyItems.BOILED_EGG_ITEM.get()) || stack.is(JazzyItems.SLICED_BREAD.get())) {
-            return SNACKS;
+        if (stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
+            return ingredientItem.pantryTab();
         }
 
         String path = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
@@ -132,25 +105,25 @@ public enum PantrySortTab {
         if (containsAny(path, "season", "spice", "salt", "pepper", "herb")) {
             return SEASONINGS;
         }
-        if (containsAny(path, "oil", "butter", "fat", "lard", "ghee", "shortening")) {
+        if (containsAny(path, "oil", "butter", "fat", "lard", "shortening")) {
             return OILS_AND_FATS;
         }
-        if (containsAny(path, "milk", "cream", "dairy", "yogurt", "cheese", "almond", "oat_milk", "soy")) {
+        if (containsAny(path, "milk", "cream", "dairy", "almond", "oat_milk", "soy")) {
             return DAIRY_AND_ALTERNATIVES;
         }
         if (containsAny(path, "canned", "pickle", "preserve", "jar")) {
             return CANNED_GOODS;
         }
-        if (containsAny(path, "chip", "cocoa", "vanilla", "berry", "apple", "egg", "nut")) {
+        if (containsAny(path, "chip", "cocoa", "vanilla", "nut", "raisin", "cranberry")) {
             return BAKING_ADD_INS;
         }
-        if (containsAny(path, "dry", "dried", "bean", "lentil", "pasta")) {
+        if (containsAny(path, "dry", "bean", "lentil", "pasta", "ramen", "couscous")) {
             return DRY_GOODS;
         }
-        if (containsAny(path, "sauce", "condiment", "marinade", "brine", "vinegar", "mustard", "ketchup")) {
+        if (containsAny(path, "sauce", "condiment", "vinegar", "mustard", "ketchup", "mayo")) {
             return SAUCES_AND_CONDIMENTS;
         }
-        if (containsAny(path, "snack", "cookie", "cracker", "pie", "slice", "bread")) {
+        if (containsAny(path, "snack", "cookie", "cracker", "candy", "chips")) {
             return SNACKS;
         }
 

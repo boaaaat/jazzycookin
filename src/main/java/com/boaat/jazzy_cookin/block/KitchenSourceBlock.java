@@ -1,7 +1,6 @@
 package com.boaat.jazzy_cookin.block;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
-import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenSourceProfile;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
@@ -112,15 +111,27 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
 
     private ItemStack createHarvestStack(Level level, BlockState state, BlockPos pos) {
         KitchenIngredientItem ingredientItem = switch (this.profile) {
-            case TOMATO_VINE -> JazzyItems.TOMATO.get();
-            case HERB_BED -> JazzyItems.FRESH_HERB.get();
-            case WHEAT_PATCH -> JazzyItems.WHEAT_SHEAF.get();
-            case CABBAGE_PATCH -> JazzyItems.CABBAGE.get();
-            case ONION_PATCH -> JazzyItems.ONION.get();
-            case CHICKEN_COOP -> level.random.nextFloat() < 0.25F ? JazzyItems.RAW_PROTEIN.get() : JazzyItems.FARM_EGG.get();
-            case DAIRY_STALL -> JazzyItems.FRESH_MILK.get();
-            case FISHING_TRAP -> JazzyItems.RAW_FISH_ITEM.get();
-            case FORAGE_SHRUB -> JazzyItems.WILD_BERRIES_ITEM.get();
+            case TOMATO_VINE -> JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get();
+            case HERB_BED -> randomIngredient(level,
+                    JazzyItems.IngredientId.BASIL,
+                    JazzyItems.IngredientId.PARSLEY,
+                    JazzyItems.IngredientId.DILL,
+                    JazzyItems.IngredientId.OREGANO
+            );
+            case WHEAT_PATCH -> JazzyItems.ingredient(JazzyItems.IngredientId.WHOLE_WHEAT_FLOUR).get();
+            case CABBAGE_PATCH -> JazzyItems.ingredient(JazzyItems.IngredientId.CABBAGE).get();
+            case ONION_PATCH -> JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get();
+            case CHICKEN_COOP -> level.random.nextFloat() < 0.35F
+                    ? JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get()
+                    : JazzyItems.ingredient(JazzyItems.IngredientId.EGGS).get();
+            case DAIRY_STALL -> level.random.nextFloat() < 0.40F
+                    ? JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get()
+                    : JazzyItems.ingredient(JazzyItems.IngredientId.SHELF_STABLE_CREAM).get();
+            case FISHING_TRAP -> JazzyItems.ingredient(JazzyItems.IngredientId.FISH_FILLET).get();
+            case FORAGE_SHRUB -> randomIngredient(level,
+                    JazzyItems.IngredientId.MINT,
+                    JazzyItems.IngredientId.ROSEMARY
+            );
         };
 
         float quality = harvestQuality(level, state, pos);
@@ -140,6 +151,10 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
                 baseData.enjoyment()
         );
         return ingredientItem.createStack(1, level.getGameTime(), harvestData);
+    }
+
+    private static KitchenIngredientItem randomIngredient(Level level, JazzyItems.IngredientId... candidates) {
+        return JazzyItems.ingredient(candidates[level.random.nextInt(candidates.length)]).get();
     }
 
     private float harvestQuality(Level level, BlockState state, BlockPos pos) {
