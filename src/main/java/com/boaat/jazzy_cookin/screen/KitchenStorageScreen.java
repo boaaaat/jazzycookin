@@ -29,7 +29,6 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     private static final int INVENTORY_CARD_Y = 164;
     private static final int INVENTORY_CARD_WIDTH = 202;
     private static final int INVENTORY_CARD_HEIGHT = 84;
-    private static final int SLOT_COUNT = 45;
     private static final int TAB_SIZE = 20;
     private static final int TAB_GAP_X = 8;
     private static final int TAB_GAP_Y = 2;
@@ -130,7 +129,7 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         JazzyGuiRenderer.drawCard(guiGraphics, left + SHORTCUT_CARD_X, top + SHORTCUT_CARD_Y, SHORTCUT_CARD_WIDTH, SHORTCUT_CARD_HEIGHT);
         JazzyGuiRenderer.drawCard(guiGraphics, left + INVENTORY_CARD_X, top + INVENTORY_CARD_Y, INVENTORY_CARD_WIDTH, INVENTORY_CARD_HEIGHT);
 
-        for (int slotIndex = 0; slotIndex < SLOT_COUNT; slotIndex++) {
+        for (int slotIndex = 0; slotIndex < this.menu.slots.size(); slotIndex++) {
             JazzyGuiRenderer.drawSlot(guiGraphics, left + this.menu.getSlot(slotIndex).x, top + this.menu.getSlot(slotIndex).y);
         }
     }

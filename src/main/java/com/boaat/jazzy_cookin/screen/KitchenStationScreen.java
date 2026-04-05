@@ -39,7 +39,6 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private static final int INVENTORY_CARD_Y = 124;
     private static final int INVENTORY_CARD_WIDTH = 202;
     private static final int INVENTORY_CARD_HEIGHT = 84;
-    private static final int SLOT_COUNT = 43;
 
     private Button startButton;
     private Button lowHeatButton;
@@ -216,7 +215,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             );
         }
 
-        for (int slotIndex = 0; slotIndex < SLOT_COUNT; slotIndex++) {
+        for (int slotIndex = 0; slotIndex < this.menu.slots.size(); slotIndex++) {
             Slot slot = this.menu.getSlot(slotIndex);
             if (slotIndex == 4 && !this.menu.stationType().usesTools()) {
                 JazzyGuiRenderer.drawDisabledSlot(guiGraphics, left + slot.x, top + slot.y);
