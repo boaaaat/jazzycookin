@@ -21,6 +21,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class KitchenStationMenu extends AbstractContainerMenu {
+    private static final int PLAYER_INVENTORY_START_Y = 104;
+    private static final int HOTBAR_Y = 162;
+
     private final Container container;
     private final ContainerData data;
     private final StationType stationType;
@@ -66,23 +69,30 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         checkContainerDataCount(data, 7);
         container.startOpen(playerInventory.player);
 
-        this.addSlot(new Slot(container, 0, 18, 22));
-        this.addSlot(new Slot(container, 1, 36, 22));
-        this.addSlot(new Slot(container, 2, 54, 22));
-        this.addSlot(new Slot(container, 3, 72, 22));
-        this.addSlot(new Slot(container, 4, 45, 54) {
+        SlotLayout layout = SlotLayout.forStation(this.stationType);
+        for (int inputIndex = 0; inputIndex < 4; inputIndex++) {
+            SlotPosition position = layout.inputs()[inputIndex];
+            this.addSlot(new Slot(container, inputIndex, position.x(), position.y()) {
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return !(stack.getItem() instanceof KitchenToolItem);
+                }
+            });
+        }
+
+        this.addSlot(new Slot(container, 4, layout.tool().x(), layout.tool().y()) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return stack.getItem() instanceof KitchenToolItem;
+                return KitchenStationMenu.this.stationType.usesTools() && stack.getItem() instanceof KitchenToolItem;
             }
         });
-        this.addSlot(new Slot(container, 5, 128, 28) {
+        this.addSlot(new Slot(container, 5, layout.output().x(), layout.output().y()) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        this.addSlot(new Slot(container, 6, 128, 50) {
+        this.addSlot(new Slot(container, 6, layout.byproduct().x(), layout.byproduct().y()) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -91,12 +101,12 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 94 + row * 18));
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, PLAYER_INVENTORY_START_Y + row * 18));
             }
         }
 
         for (int hotbarSlot = 0; hotbarSlot < 9; hotbarSlot++) {
-            this.addSlot(new Slot(playerInventory, hotbarSlot, 8 + hotbarSlot * 18, 152));
+            this.addSlot(new Slot(playerInventory, hotbarSlot, 8 + hotbarSlot * 18, HOTBAR_Y));
         }
 
         this.addDataSlots(data);
@@ -159,6 +169,9 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else if (slotStack.getItem() instanceof KitchenToolItem) {
+            if (!this.stationType.usesTools()) {
+                return ItemStack.EMPTY;
+            }
             if (!this.moveItemStackTo(slotStack, 4, 5, false)) {
                 return ItemStack.EMPTY;
             }
@@ -188,5 +201,78 @@ public class KitchenStationMenu extends AbstractContainerMenu {
     public void removed(Player player) {
         super.removed(player);
         this.container.stopOpen(player);
+    }
+
+    private record SlotLayout(SlotPosition[] inputs, SlotPosition tool, SlotPosition output, SlotPosition byproduct) {
+        private static final SlotPosition RESULT_SLOT = new SlotPosition(138, 30);
+        private static final SlotPosition BYPRODUCT_SLOT = new SlotPosition(138, 52);
+
+        private static SlotLayout forStation(StationType stationType) {
+            return switch (stationType) {
+                case PREP_TABLE -> new SlotLayout(
+                        positions(
+                                new SlotPosition(18, 28),
+                                new SlotPosition(36, 28),
+                                new SlotPosition(54, 28),
+                                new SlotPosition(72, 28)
+                        ),
+                        new SlotPosition(45, 56),
+                        RESULT_SLOT,
+                        BYPRODUCT_SLOT
+                );
+                case SPICE_GRINDER, MIXING_BOWL, STRAINER, FERMENTATION_CROCK, PLATING_STATION -> new SlotLayout(
+                        positions(
+                                new SlotPosition(18, 24),
+                                new SlotPosition(38, 24),
+                                new SlotPosition(18, 44),
+                                new SlotPosition(38, 44)
+                        ),
+                        toolPosition(stationType),
+                        RESULT_SLOT,
+                        BYPRODUCT_SLOT
+                );
+                case OVEN -> new SlotLayout(
+                        positions(
+                                new SlotPosition(18, 24),
+                                new SlotPosition(38, 24),
+                                new SlotPosition(18, 44),
+                                new SlotPosition(38, 44)
+                        ),
+                        new SlotPosition(58, 56),
+                        RESULT_SLOT,
+                        BYPRODUCT_SLOT
+                );
+                default -> new SlotLayout(
+                        positions(
+                                new SlotPosition(18, 26),
+                                new SlotPosition(36, 26),
+                                new SlotPosition(54, 26),
+                                new SlotPosition(72, 26)
+                        ),
+                        toolPosition(stationType),
+                        RESULT_SLOT,
+                        BYPRODUCT_SLOT
+                );
+            };
+        }
+
+        private static SlotPosition toolPosition(StationType stationType) {
+            return switch (stationType) {
+                case PREP_TABLE -> new SlotPosition(45, 56);
+                case SPICE_GRINDER -> new SlotPosition(60, 34);
+                case MIXING_BOWL -> new SlotPosition(58, 58);
+                case STRAINER -> new SlotPosition(60, 42);
+                case CANNING_STATION, SMOKER, STEAMER, STOVE -> new SlotPosition(54, 54);
+                case OVEN -> new SlotPosition(58, 56);
+                default -> new SlotPosition(82, 56);
+            };
+        }
+
+        private static SlotPosition[] positions(SlotPosition first, SlotPosition second, SlotPosition third, SlotPosition fourth) {
+            return new SlotPosition[] { first, second, third, fourth };
+        }
+    }
+
+    private record SlotPosition(int x, int y) {
     }
 }
