@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "QQQ",
+    "PCP",
+    "S S"
+  ],
+  "key": {
+    "Q": {
+      "item": "minecraft:quartz_block"
+    },
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "C": {
+      "item": "jazzycookin:ceramic_plate"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:plating_station",
+    "count": 1
+  }
+}

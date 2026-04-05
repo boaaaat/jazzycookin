@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BBB",
+    "BFB",
+    "SSS"
+  ],
+  "key": {
+    "B": {
+      "item": "minecraft:brick"
+    },
+    "F": {
+      "item": "minecraft:furnace"
+    },
+    "S": {
+      "item": "minecraft:smooth_stone"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:oven",
+    "count": 1
+  }
+}

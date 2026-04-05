@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "III",
+    "BUB",
+    " C "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "B": {
+      "item": "jazzycookin:steamer_basket"
+    },
+    "U": {
+      "item": "minecraft:bucket"
+    },
+    "C": {
+      "item": "minecraft:campfire"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:steamer",
+    "count": 1
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " L ",
+    " B ",
+    " D "
+  ],
+  "key": {
+    "L": {
+      "item": "minecraft:oak_leaves"
+    },
+    "B": {
+      "item": "minecraft:sweet_berries"
+    },
+    "D": {
+      "item": "minecraft:dirt"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:forage_shrub",
+    "count": 1
+  }
+}

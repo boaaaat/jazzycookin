@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " F ",
+    " S ",
+    " D "
+  ],
+  "key": {
+    "F": {
+      "item": "minecraft:fern"
+    },
+    "S": {
+      "item": "minecraft:wheat_seeds"
+    },
+    "D": {
+      "item": "minecraft:dirt"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:herb_bed",
+    "count": 1
+  }
+}

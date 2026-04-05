@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "FEF",
+    "FHF",
+    "PPP"
+  ],
+  "key": {
+    "F": {
+      "item": "minecraft:oak_fence"
+    },
+    "E": {
+      "item": "minecraft:egg"
+    },
+    "H": {
+      "item": "minecraft:hay_block"
+    },
+    "P": {
+      "tag": "minecraft:planks"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:chicken_coop",
+    "count": 1
+  }
+}

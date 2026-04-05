@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BBB",
+    "BAB",
+    "BBB"
+  ],
+  "key": {
+    "B": {
+      "item": "minecraft:brick"
+    },
+    "A": {
+      "item": "minecraft:barrel"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:fermentation_crock",
+    "count": 1
+  }
+}

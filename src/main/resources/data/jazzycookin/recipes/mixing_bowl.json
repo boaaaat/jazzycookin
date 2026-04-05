@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "R R",
+    " B ",
+    "RRR"
+  ],
+  "key": {
+    "R": {
+      "item": "minecraft:brick"
+    },
+    "B": {
+      "item": "minecraft:bowl"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:mixing_bowl",
+    "count": 1
+  }
+}

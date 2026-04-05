@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "III",
+    "ICI",
+    "PIP"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "item": "minecraft:chest"
+    },
+    "P": {
+      "item": "minecraft:packed_ice"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:freezer",
+    "count": 1
+  }
+}

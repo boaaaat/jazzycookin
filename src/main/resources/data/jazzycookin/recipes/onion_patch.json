@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " A ",
+    " S ",
+    " D "
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:allium"
+    },
+    "S": {
+      "item": "minecraft:wheat_seeds"
+    },
+    "D": {
+      "item": "minecraft:dirt"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:onion_patch",
+    "count": 1
+  }
+}

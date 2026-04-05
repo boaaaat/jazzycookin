@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IGI",
+    "ICI",
+    "ISI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "C": {
+      "item": "minecraft:chest"
+    },
+    "S": {
+      "item": "minecraft:ice"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:fridge",
+    "count": 1
+  }
+}

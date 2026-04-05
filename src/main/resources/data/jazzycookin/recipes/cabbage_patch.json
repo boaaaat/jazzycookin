@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " M ",
+    " S ",
+    " D "
+  ],
+  "key": {
+    "M": {
+      "item": "minecraft:moss_block"
+    },
+    "S": {
+      "item": "minecraft:wheat_seeds"
+    },
+    "D": {
+      "item": "minecraft:dirt"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:cabbage_patch",
+    "count": 1
+  }
+}

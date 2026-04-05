@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " I ",
+    "MSM",
+    " C "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "M": {
+      "tag": "minecraft:logs"
+    },
+    "S": {
+      "item": "minecraft:smoker"
+    },
+    "C": {
+      "item": "minecraft:campfire"
+    }
+  },
+  "result": {
+    "id": "jazzycookin:smoker",
+    "count": 1
+  }
+}
