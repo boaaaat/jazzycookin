@@ -130,6 +130,12 @@
   "item.jazzycookin.canning_jar": "Canning Jar",
   "item.jazzycookin.pie_tin": "Pie Tin",
 
+  "itemGroup.jazzycookin.ingredients": "Jazzy Cookin: Ingredients",
+  "itemGroup.jazzycookin.meals": "Jazzy Cookin: Meals",
+  "itemGroup.jazzycookin.tools": "Jazzy Cookin: Tools",
+  "itemGroup.jazzycookin.kitchen": "Jazzy Cookin: Kitchen",
+  "itemGroup.jazzycookin.sources": "Jazzy Cookin: Sources",
+
   "station.jazzycookin.prep_table": "Prep Table",
   "station.jazzycookin.spice_grinder": "Spice Grinder",
   "station.jazzycookin.strainer": "Strainer",

@@ -43,7 +43,9 @@ public record KitchenProcessOutput(
         @Override
         public KitchenProcessOutput decode(RegistryFriendlyByteBuf buffer) {
             ItemStack result = ItemStack.STREAM_CODEC.decode(buffer);
-            ItemStack byproduct = ItemStack.STREAM_CODEC.decode(buffer);
+            ItemStack byproduct = buffer.readBoolean()
+                    ? ItemStack.STREAM_CODEC.decode(buffer)
+                    : ItemStack.EMPTY;
             IngredientState state = IngredientState.STREAM_CODEC.decode(buffer);
             float qualityBonus = buffer.readFloat();
             float recipeAccuracyDelta = buffer.readFloat();
@@ -75,7 +77,10 @@ public record KitchenProcessOutput(
         @Override
         public void encode(RegistryFriendlyByteBuf buffer, KitchenProcessOutput value) {
             ItemStack.STREAM_CODEC.encode(buffer, value.result());
-            ItemStack.STREAM_CODEC.encode(buffer, value.byproduct());
+            buffer.writeBoolean(!value.byproduct().isEmpty());
+            if (!value.byproduct().isEmpty()) {
+                ItemStack.STREAM_CODEC.encode(buffer, value.byproduct());
+            }
             IngredientState.STREAM_CODEC.encode(buffer, value.state());
             buffer.writeFloat(value.qualityBonus());
             buffer.writeFloat(value.recipeAccuracyDelta());
