@@ -35,7 +35,6 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     private static final int TAB_START_Y = 119;
 
     private final List<PantryTabButton> pantryTabs = new ArrayList<>();
-    private PantrySortTab selectedPantryTab;
     private Button previousPageButton;
     private Button nextPageButton;
 
@@ -86,14 +85,15 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     }
 
     private void selectTab(PantrySortTab tab) {
-        this.selectedPantryTab = tab;
+        this.menu.togglePantryFilter(tab);
         this.updateTabStates();
+        this.updatePageButtons();
         this.sendButton(tab.buttonId());
     }
 
     private void updateTabStates() {
         for (PantryTabButton tab : this.pantryTabs) {
-            tab.button().active = this.selectedPantryTab != tab.tab();
+            tab.button().active = true;
         }
     }
 
@@ -181,8 +181,8 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
         PantryTabButton hoveredTab = null;
         for (PantryTabButton tab : this.pantryTabs) {
-            this.drawPantryTab(guiGraphics, tab);
-            if (tab.button().isMouseOver(mouseX, mouseY)) {
+            this.drawPantryTab(guiGraphics, tab, mouseX, mouseY);
+            if (this.isMouseOverTab(tab, mouseX, mouseY)) {
                 hoveredTab = tab;
             }
         }
@@ -217,15 +217,21 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         return mouseX >= left && mouseX < left + STORAGE_CARD_WIDTH && mouseY >= top && mouseY < top + STORAGE_CARD_HEIGHT;
     }
 
-    private void drawPantryTab(GuiGraphics guiGraphics, PantryTabButton tab) {
+    private void drawPantryTab(GuiGraphics guiGraphics, PantryTabButton tab, int mouseX, int mouseY) {
         int x = tab.button().getX();
         int y = tab.button().getY();
-        JazzyGuiRenderer.drawIconTab(guiGraphics, x, y, tab.button().isHoveredOrFocused(), this.selectedPantryTab == tab.tab());
+        JazzyGuiRenderer.drawIconTab(guiGraphics, x, y, this.isMouseOverTab(tab, mouseX, mouseY), this.menu.selectedPantryTab() == tab.tab());
 
         ItemStack icon = tab.tab().iconStack();
         if (!icon.isEmpty()) {
             guiGraphics.renderItem(icon, x + 2, y + 2);
         }
+    }
+
+    private boolean isMouseOverTab(PantryTabButton tab, double mouseX, double mouseY) {
+        int x = tab.button().getX();
+        int y = tab.button().getY();
+        return mouseX >= x && mouseX < x + TAB_SIZE && mouseY >= y && mouseY < y + TAB_SIZE;
     }
 
     private record PantryTabButton(Button button, PantrySortTab tab) {

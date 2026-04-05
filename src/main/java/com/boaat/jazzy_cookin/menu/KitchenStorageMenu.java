@@ -1,6 +1,7 @@
 package com.boaat.jazzy_cookin.menu;
 
 import com.boaat.jazzy_cookin.block.entity.KitchenStorageBlockEntity;
+import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyMenus;
@@ -31,6 +32,7 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
     private final ContainerLevelAccess access;
     private final int storageSlotCount;
     private int pantryPage;
+    private PantrySortTab selectedPantryTab;
 
     public KitchenStorageMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
         this(containerId, playerInventory, readClientInit(extraData));
@@ -116,11 +118,15 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
     }
 
     public int currentPage() {
+        this.clampPantryPage();
         return this.pantryPage;
     }
 
     public int pageCount() {
-        return this.isPantry() ? Math.max(1, this.storageSlotCount / PAGE_SIZE) : 1;
+        if (!this.isPantry()) {
+            return 1;
+        }
+        return Math.max(1, (this.visibleStorageSlots().size() + PAGE_SIZE - 1) / PAGE_SIZE);
     }
 
     public boolean canPageBackward() {
@@ -136,6 +142,7 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
             return false;
         }
 
+        this.clampPantryPage();
         int nextPage = Math.max(0, Math.min(this.pageCount() - 1, this.pantryPage + delta));
         if (nextPage == this.pantryPage) {
             return false;
@@ -148,6 +155,54 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
 
     private int currentPageOffset() {
         return this.pantryPage * PAGE_SIZE;
+    }
+
+    public PantrySortTab selectedPantryTab() {
+        return this.selectedPantryTab;
+    }
+
+    public boolean togglePantryFilter(PantrySortTab tab) {
+        if (!this.isPantry() || tab == null) {
+            return false;
+        }
+
+        this.selectedPantryTab = this.selectedPantryTab == tab ? null : tab;
+        this.clampPantryPage();
+        this.broadcastChanges();
+        return true;
+    }
+
+    private void clampPantryPage() {
+        this.pantryPage = Math.max(0, Math.min(this.pageCount() - 1, this.pantryPage));
+    }
+
+    private java.util.List<Integer> visibleStorageSlots() {
+        java.util.ArrayList<Integer> visible = new java.util.ArrayList<>(this.storageSlotCount);
+        if (!this.isPantry() || this.selectedPantryTab == null) {
+            for (int slot = 0; slot < this.storageSlotCount; slot++) {
+                visible.add(slot);
+            }
+            return visible;
+        }
+
+        for (int slot = 0; slot < this.storageSlotCount; slot++) {
+            ItemStack stack = this.container.getItem(slot);
+            if (!stack.isEmpty() && PantrySortTab.classify(stack) == this.selectedPantryTab) {
+                visible.add(slot);
+            }
+        }
+        for (int slot = 0; slot < this.storageSlotCount; slot++) {
+            if (this.container.getItem(slot).isEmpty()) {
+                visible.add(slot);
+            }
+        }
+        return visible;
+    }
+
+    private int visibleSlotToActualSlot(int visibleIndex) {
+        java.util.List<Integer> visibleSlots = this.visibleStorageSlots();
+        int absoluteIndex = this.currentPageOffset() + visibleIndex;
+        return absoluteIndex >= 0 && absoluteIndex < visibleSlots.size() ? visibleSlots.get(absoluteIndex) : -1;
     }
 
     @Override
@@ -191,6 +246,10 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
         if (id == NEXT_PAGE_BUTTON_ID) {
             return this.changePantryPage(1);
         }
+        PantrySortTab pantrySortTab = PantrySortTab.byButtonId(id);
+        if (pantrySortTab != null) {
+            return this.togglePantryFilter(pantrySortTab);
+        }
         if (this.container instanceof KitchenStorageBlockEntity blockEntity) {
             return blockEntity.handleButton(id, player);
         }
@@ -215,17 +274,18 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
         }
 
         private int actualSlot() {
-            return KitchenStorageMenu.this.currentPageOffset() + this.visibleIndex;
+            return KitchenStorageMenu.this.visibleSlotToActualSlot(this.visibleIndex);
         }
 
         @Override
         public int getContainerSlot() {
-            return this.actualSlot();
+            return Math.max(0, this.actualSlot());
         }
 
         @Override
         public ItemStack getItem() {
-            return KitchenStorageMenu.this.container.getItem(this.actualSlot());
+            int actualSlot = this.actualSlot();
+            return actualSlot >= 0 ? KitchenStorageMenu.this.container.getItem(actualSlot) : ItemStack.EMPTY;
         }
 
         @Override
@@ -235,23 +295,36 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
 
         @Override
         public void set(ItemStack stack) {
-            KitchenStorageMenu.this.container.setItem(this.actualSlot(), stack);
-            this.setChanged();
+            int actualSlot = this.actualSlot();
+            if (actualSlot >= 0) {
+                KitchenStorageMenu.this.container.setItem(actualSlot, stack);
+                this.setChanged();
+            }
         }
 
         @Override
         public void setByPlayer(ItemStack stack) {
-            KitchenStorageMenu.this.container.setItem(this.actualSlot(), stack);
+            int actualSlot = this.actualSlot();
+            if (actualSlot >= 0) {
+                KitchenStorageMenu.this.container.setItem(actualSlot, stack);
+            }
         }
 
         @Override
         public ItemStack remove(int amount) {
-            return KitchenStorageMenu.this.container.removeItem(this.actualSlot(), amount);
+            int actualSlot = this.actualSlot();
+            return actualSlot >= 0 ? KitchenStorageMenu.this.container.removeItem(actualSlot, amount) : ItemStack.EMPTY;
         }
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return KitchenStorageMenu.this.container.canPlaceItem(this.actualSlot(), stack);
+            int actualSlot = this.actualSlot();
+            return actualSlot >= 0 && KitchenStorageMenu.this.container.canPlaceItem(actualSlot, stack);
+        }
+
+        @Override
+        public boolean mayPickup(Player player) {
+            return this.actualSlot() >= 0;
         }
 
         @Override
