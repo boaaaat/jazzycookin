@@ -25,17 +25,28 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class KitchenStorageBlockEntity extends BlockEntity implements Container, MenuProvider {
-    private static final int CONTAINER_SIZE = 18;
+    private static final int PANTRY_CONTAINER_SIZE = 54;
+    private static final int CELLAR_CONTAINER_SIZE = 18;
 
-    private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
-    private long[] insertedAt = new long[CONTAINER_SIZE];
+    private final NonNullList<ItemStack> items;
+    private long[] insertedAt;
 
     public KitchenStorageBlockEntity(BlockPos pos, BlockState blockState) {
         super(JazzyBlockEntities.KITCHEN_STORAGE.get(), pos, blockState);
+        int size = storageSize(blockState);
+        this.items = NonNullList.withSize(size, ItemStack.EMPTY);
+        this.insertedAt = new long[size];
     }
 
     public StorageType getStorageType() {
         return this.getBlockState().getBlock() instanceof KitchenStorageBlock block ? block.storageType() : StorageType.PANTRY;
+    }
+
+    private static int storageSize(BlockState blockState) {
+        if (blockState.getBlock() instanceof KitchenStorageBlock block && block.storageType() == StorageType.CELLAR) {
+            return CELLAR_CONTAINER_SIZE;
+        }
+        return PANTRY_CONTAINER_SIZE;
     }
 
     public boolean handleButton(int buttonId, Player player) {
@@ -53,8 +64,8 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
     }
 
     private void sortByCategory(PantrySortTab selectedTab) {
-        java.util.List<StorageEntry> entries = new java.util.ArrayList<>(CONTAINER_SIZE);
-        for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
+        java.util.List<StorageEntry> entries = new java.util.ArrayList<>(this.getContainerSize());
+        for (int slot = 0; slot < this.getContainerSize(); slot++) {
             entries.add(new StorageEntry(this.items.get(slot), this.insertedAt[slot]));
         }
 
@@ -84,7 +95,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
             return Long.compare(left.insertedAt(), right.insertedAt());
         });
 
-        for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
+        for (int slot = 0; slot < this.getContainerSize(); slot++) {
             StorageEntry entry = entries.get(slot);
             this.items.set(slot, entry.stack());
             this.insertedAt[slot] = entry.insertedAt();
@@ -114,7 +125,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
     @Override
     public int getContainerSize() {
-        return CONTAINER_SIZE;
+        return this.items.size();
     }
 
     @Override
@@ -203,7 +214,10 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
     @Override
     public void clearContent() {
-        this.items.clear();
+        for (int slot = 0; slot < this.items.size(); slot++) {
+            this.items.set(slot, ItemStack.EMPTY);
+            this.insertedAt[slot] = 0L;
+        }
     }
 
     @Override
@@ -226,8 +240,9 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
         super.loadAdditional(tag, registries);
         ContainerHelper.loadAllItems(tag, this.items, registries);
         long[] loaded = tag.getLongArray("InsertedAt");
-        if (loaded.length == CONTAINER_SIZE) {
-            this.insertedAt = loaded;
+        if (loaded.length > 0) {
+            this.insertedAt = new long[this.items.size()];
+            System.arraycopy(loaded, 0, this.insertedAt, 0, Math.min(loaded.length, this.insertedAt.length));
         }
     }
 

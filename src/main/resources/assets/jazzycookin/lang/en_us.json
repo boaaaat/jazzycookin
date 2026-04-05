@@ -372,6 +372,7 @@
   "screen.jazzycookin.storage_short": "Storage",
   "screen.jazzycookin.shelves_short": "Shelves",
   "screen.jazzycookin.sort_tabs": "Sort Pantry",
+  "screen.jazzycookin.page_short": "Page %s/%s",
   "screen.jazzycookin.quick_supply": "Quick Supply",
   "screen.jazzycookin.tool_short": "Tool",
   "screen.jazzycookin.progress_short": "Progress",
