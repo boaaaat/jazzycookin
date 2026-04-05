@@ -132,7 +132,8 @@ public final class JazzyCreativeTabs {
                     .displayItems((parameters, output) -> acceptAll(
                             output,
                             JazzyItems.PANTRY_ITEM,
-                            JazzyItems.CELLAR_ITEM,
+                            JazzyItems.FRIDGE_ITEM,
+                            JazzyItems.FREEZER_ITEM,
                             JazzyItems.PREP_TABLE_ITEM,
                             JazzyItems.SPICE_GRINDER_ITEM,
                             JazzyItems.STRAINER_ITEM,

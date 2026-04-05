@@ -241,39 +241,56 @@ public final class KitchenGameTests {
         require(prepTable.getItem(KitchenStationBlockEntity.TOOL_SLOT).getDamageValue() == beforeDamage + 1, "Successful station use should damage the tool");
 
         BlockPos pantryPos = helper.absolutePos(new BlockPos(3, 2, 1));
-        BlockPos cellarPos = helper.absolutePos(new BlockPos(5, 2, 1));
+        BlockPos fridgePos = helper.absolutePos(new BlockPos(5, 2, 1));
+        BlockPos freezerPos = helper.absolutePos(new BlockPos(7, 2, 1));
         level.setBlock(pantryPos, JazzyBlocks.PANTRY.get().defaultBlockState(), Block.UPDATE_ALL);
-        level.setBlock(cellarPos, JazzyBlocks.CELLAR.get().defaultBlockState(), Block.UPDATE_ALL);
+        level.setBlock(fridgePos, JazzyBlocks.FRIDGE.get().defaultBlockState(), Block.UPDATE_ALL);
+        level.setBlock(freezerPos, JazzyBlocks.FREEZER.get().defaultBlockState(), Block.UPDATE_ALL);
 
         KitchenStorageBlockEntity pantry = blockEntity(level, pantryPos, KitchenStorageBlockEntity.class);
-        KitchenStorageBlockEntity cellar = blockEntity(level, cellarPos, KitchenStorageBlockEntity.class);
+        KitchenStorageBlockEntity fridge = blockEntity(level, fridgePos, KitchenStorageBlockEntity.class);
+        KitchenStorageBlockEntity freezer = blockEntity(level, freezerPos, KitchenStorageBlockEntity.class);
         ItemStack invalidPantryItem = new ItemStack(JazzyItems.PREP_TABLE_ITEM.get());
         require(!pantry.canPlaceItem(1, invalidPantryItem), "Pantry should reject uncategorized items");
         pantry.setItem(1, invalidPantryItem);
         require(pantry.getItem(1).isEmpty(), "Pantry should not store uncategorized items");
+        require(!fridge.canPlaceItem(1, JazzyItems.FLOUR.get().createStack(1, level.getGameTime())), "Fridge should reject dry pantry staples");
+        require(!freezer.canPlaceItem(1, JazzyItems.FRESH_HERB.get().createStack(1, level.getGameTime())), "Freezer should reject delicate herbs");
 
-        ItemStack pantryStored = JazzyItems.ORCHARD_APPLE.get().createStack(1, level.getGameTime());
-        ItemStack cellarStored = JazzyItems.ORCHARD_APPLE.get().createStack(1, level.getGameTime());
+        ItemStack pantryStored = JazzyItems.BUTTER.get().createStack(1, level.getGameTime());
+        ItemStack fridgeStored = JazzyItems.BUTTER.get().createStack(1, level.getGameTime());
+        ItemStack freezerStored = JazzyItems.BUTTER.get().createStack(1, level.getGameTime());
         IngredientStateData pantryStoredData = KitchenStackUtil.getOrCreateData(pantryStored, level.getGameTime());
-        IngredientStateData cellarStoredData = KitchenStackUtil.getOrCreateData(cellarStored, level.getGameTime());
-        KitchenStackUtil.setData(pantryStored, pantryStoredData.withCreatedTick(level.getGameTime() - 400L));
-        KitchenStackUtil.setData(cellarStored, cellarStoredData.withCreatedTick(level.getGameTime() - 400L));
+        IngredientStateData fridgeStoredData = KitchenStackUtil.getOrCreateData(fridgeStored, level.getGameTime());
+        IngredientStateData freezerStoredData = KitchenStackUtil.getOrCreateData(freezerStored, level.getGameTime());
+        KitchenStackUtil.setData(pantryStored, pantryStoredData.withCreatedTick(level.getGameTime() - 800L));
+        KitchenStackUtil.setData(fridgeStored, fridgeStoredData.withCreatedTick(level.getGameTime() - 800L));
+        KitchenStackUtil.setData(freezerStored, freezerStoredData.withCreatedTick(level.getGameTime() - 800L));
         pantry.setItem(0, pantryStored);
-        cellar.setItem(0, cellarStored);
+        fridge.setItem(0, fridgeStored);
+        freezer.setItem(0, freezerStored);
         long storedSince = Math.max(1L, level.getGameTime() - 10L);
         setInsertedAt(pantry, 0, storedSince);
-        setInsertedAt(cellar, 0, storedSince);
+        setInsertedAt(fridge, 0, storedSince);
+        setInsertedAt(freezer, 0, storedSince);
 
-        ItemStack pantryTomato = pantry.removeItem(0, 1);
-        ItemStack cellarTomato = cellar.removeItem(0, 1);
-        IngredientStateData pantryData = KitchenStackUtil.getOrCreateData(pantryTomato, level.getGameTime());
-        IngredientStateData cellarData = KitchenStackUtil.getOrCreateData(cellarTomato, level.getGameTime());
-        float pantryFreshness = KitchenStackUtil.currentFreshnessScore(pantryTomato, level);
-        float cellarFreshness = KitchenStackUtil.currentFreshnessScore(cellarTomato, level);
-        require(cellarData != null && pantryData != null && cellarData.createdTick() > pantryData.createdTick(),
-                "Cellar storage should reduce effective ingredient age more than pantry storage");
-        require(cellarFreshness > pantryFreshness,
-                "Cellar storage should preserve freshness better than pantry storage");
+        ItemStack pantryButter = pantry.removeItem(0, 1);
+        ItemStack fridgeButter = fridge.removeItem(0, 1);
+        ItemStack freezerButter = freezer.removeItem(0, 1);
+        IngredientStateData pantryData = KitchenStackUtil.getOrCreateData(pantryButter, level.getGameTime());
+        IngredientStateData fridgeData = KitchenStackUtil.getOrCreateData(fridgeButter, level.getGameTime());
+        IngredientStateData freezerData = KitchenStackUtil.getOrCreateData(freezerButter, level.getGameTime());
+        float pantryFreshness = KitchenStackUtil.currentFreshnessScore(pantryButter, level);
+        float fridgeFreshness = KitchenStackUtil.currentFreshnessScore(fridgeButter, level);
+        float freezerFreshness = KitchenStackUtil.currentFreshnessScore(freezerButter, level);
+        require(fridgeData != null && pantryData != null && fridgeData.createdTick() > pantryData.createdTick(),
+                "Fridge storage should reduce effective ingredient age more than pantry storage");
+        require(freezerData != null && fridgeData != null && freezerData.createdTick() > fridgeData.createdTick(),
+                "Freezer storage should reduce effective ingredient age more than fridge storage");
+        require(fridgeFreshness > pantryFreshness,
+                "Fridge storage should preserve freshness better than pantry storage");
+        require(freezerFreshness > fridgeFreshness,
+                "Freezer storage should preserve freshness better than fridge storage");
         helper.succeed();
     }
 

@@ -207,7 +207,17 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(this.access, player, JazzyBlocks.blockForStorage(this.storageType).get());
+        return this.access.evaluate((level, pos) -> {
+            boolean matchesStorage = switch (this.storageType) {
+                case PANTRY -> level.getBlockState(pos).is(JazzyBlocks.PANTRY.get());
+                case FRIDGE -> level.getBlockState(pos).is(JazzyBlocks.FRIDGE.get()) || level.getBlockState(pos).is(JazzyBlocks.CELLAR.get());
+                case FREEZER -> level.getBlockState(pos).is(JazzyBlocks.FREEZER.get());
+            };
+            if (!matchesStorage) {
+                return false;
+            }
+            return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        }, true);
     }
 
     @Override

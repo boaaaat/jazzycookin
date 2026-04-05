@@ -13,6 +13,9 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class JazzyItems {
+    private static final long HALF_DAY = 12_000L;
+    private static final long DAY = 24_000L;
+
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(JazzyCookin.MODID);
 
     public static final DeferredItem<BlockItem> APPLE_SAPLING_ITEM = ITEMS.registerSimpleBlockItem("apple_sapling", JazzyBlocks.APPLE_SAPLING);
@@ -26,6 +29,8 @@ public final class JazzyItems {
     public static final DeferredItem<BlockItem> FISHING_TRAP_ITEM = ITEMS.registerSimpleBlockItem("fishing_trap", JazzyBlocks.FISHING_TRAP);
     public static final DeferredItem<BlockItem> FORAGE_SHRUB_ITEM = ITEMS.registerSimpleBlockItem("forage_shrub", JazzyBlocks.FORAGE_SHRUB);
     public static final DeferredItem<BlockItem> PANTRY_ITEM = ITEMS.registerSimpleBlockItem("pantry", JazzyBlocks.PANTRY);
+    public static final DeferredItem<BlockItem> FRIDGE_ITEM = ITEMS.registerSimpleBlockItem("fridge", JazzyBlocks.FRIDGE);
+    public static final DeferredItem<BlockItem> FREEZER_ITEM = ITEMS.registerSimpleBlockItem("freezer", JazzyBlocks.FREEZER);
     public static final DeferredItem<BlockItem> CELLAR_ITEM = ITEMS.registerSimpleBlockItem("cellar", JazzyBlocks.CELLAR);
     public static final DeferredItem<BlockItem> PREP_TABLE_ITEM = ITEMS.registerSimpleBlockItem("prep_table", JazzyBlocks.PREP_TABLE);
     public static final DeferredItem<BlockItem> SPICE_GRINDER_ITEM = ITEMS.registerSimpleBlockItem("spice_grinder", JazzyBlocks.SPICE_GRINDER);
@@ -43,197 +48,197 @@ public final class JazzyItems {
     public static final DeferredItem<BlockItem> PLATING_STATION_ITEM = ITEMS.registerSimpleBlockItem("plating_station", JazzyBlocks.PLATING_STATION);
 
     public static final DeferredItem<KitchenIngredientItem> ORCHARD_APPLE = ingredient(
-            "orchard_apple", IngredientState.WHOLE_APPLE, 0.82F, 0.70F, 0.66F, 0.20F, 0.76F, 0.30F, 0.10F, 72_000L, 3, 2
+            "orchard_apple", IngredientState.WHOLE_APPLE, 0.82F, 0.70F, 0.66F, 0.20F, 0.76F, 0.30F, 0.10F, DAY * 5L, 3, 2
     );
     public static final DeferredItem<KitchenIngredientItem> WILD_BERRIES_ITEM = ingredient(
-            "wild_berries", IngredientState.WILD_BERRIES, 0.80F, 0.78F, 0.52F, 0.12F, 0.62F, 0.20F, 0.02F, 48_000L, 2, 3
+            "wild_berries", IngredientState.WILD_BERRIES, 0.80F, 0.78F, 0.52F, 0.12F, 0.62F, 0.20F, 0.02F, DAY * 2L, 2, 3
     );
     public static final DeferredItem<KitchenIngredientItem> TOMATO = ingredient(
-            "tomato", IngredientState.WHOLE_TOMATO, 0.78F, 0.72F, 0.56F, 0.12F, 0.70F, 0.28F, 0.03F, 52_000L, 3, 2
+            "tomato", IngredientState.WHOLE_TOMATO, 0.78F, 0.72F, 0.56F, 0.12F, 0.70F, 0.28F, 0.03F, DAY * 3L, 3, 2
     );
     public static final DeferredItem<KitchenIngredientItem> CHOPPED_TOMATO = ingredient(
-            "chopped_tomato", IngredientState.CHOPPED_TOMATO, 0.76F, 0.74F, 0.58F, 0.14F, 0.72F, 0.30F, 0.03F, 30_000L, 3, 2
+            "chopped_tomato", IngredientState.CHOPPED_TOMATO, 0.76F, 0.74F, 0.58F, 0.14F, 0.72F, 0.30F, 0.03F, DAY, 3, 2
     );
     public static final DeferredItem<KitchenIngredientItem> FRESH_HERB = ingredient(
-            "fresh_herb", IngredientState.WHOLE_HERB, 0.80F, 0.80F, 0.40F, 0.08F, 0.54F, 0.24F, 0.05F, 28_000L, 1, 2
+            "fresh_herb", IngredientState.WHOLE_HERB, 0.80F, 0.80F, 0.40F, 0.08F, 0.54F, 0.24F, 0.05F, HALF_DAY, 1, 2
     );
     public static final DeferredItem<KitchenIngredientItem> GROUND_HERB = ingredient(
-            "ground_herb", IngredientState.GROUND_HERB, 0.82F, 0.86F, 0.38F, 0.06F, 0.42F, 0.30F, 0.08F, 20_000L, 1, 2
+            "ground_herb", IngredientState.GROUND_HERB, 0.82F, 0.86F, 0.38F, 0.06F, 0.42F, 0.30F, 0.08F, HALF_DAY, 1, 2
     );
     public static final DeferredItem<KitchenIngredientItem> WHEAT_SHEAF = ingredient(
-            "wheat_sheaf", IngredientState.WHOLE_WHEAT, 0.74F, 0.22F, 0.34F, 0.46F, 0.20F, 0.76F, 0.00F, 96_000L, 2, 1
+            "wheat_sheaf", IngredientState.WHOLE_WHEAT, 0.74F, 0.22F, 0.34F, 0.46F, 0.20F, 0.76F, 0.00F, DAY * 20L, 2, 1
     );
     public static final DeferredItem<KitchenIngredientItem> CABBAGE = ingredient(
-            "cabbage", IngredientState.WHOLE_CABBAGE, 0.78F, 0.46F, 0.54F, 0.20F, 0.66F, 0.26F, 0.02F, 86_000L, 3, 1
+            "cabbage", IngredientState.WHOLE_CABBAGE, 0.78F, 0.46F, 0.54F, 0.20F, 0.66F, 0.26F, 0.02F, DAY * 6L, 3, 1
     );
     public static final DeferredItem<KitchenIngredientItem> CHOPPED_CABBAGE = ingredient(
-            "chopped_cabbage", IngredientState.CHOPPED_CABBAGE, 0.76F, 0.48F, 0.52F, 0.18F, 0.62F, 0.26F, 0.02F, 40_000L, 3, 1
+            "chopped_cabbage", IngredientState.CHOPPED_CABBAGE, 0.76F, 0.48F, 0.52F, 0.18F, 0.62F, 0.26F, 0.02F, DAY * 2L, 3, 1
     );
     public static final DeferredItem<KitchenIngredientItem> ONION = ingredient(
-            "onion", IngredientState.WHOLE_ONION, 0.76F, 0.58F, 0.48F, 0.18F, 0.58F, 0.30F, 0.02F, 90_000L, 2, 1
+            "onion", IngredientState.WHOLE_ONION, 0.76F, 0.58F, 0.48F, 0.18F, 0.58F, 0.30F, 0.02F, DAY * 10L, 2, 1
     );
     public static final DeferredItem<KitchenIngredientItem> DICED_ONION = ingredient(
-            "diced_onion", IngredientState.DICED_ONION, 0.78F, 0.62F, 0.54F, 0.20F, 0.58F, 0.32F, 0.02F, 42_000L, 2, 1
+            "diced_onion", IngredientState.DICED_ONION, 0.78F, 0.62F, 0.54F, 0.20F, 0.58F, 0.32F, 0.02F, DAY * 2L, 2, 1
     );
     public static final DeferredItem<KitchenIngredientItem> FARM_EGG = ingredient(
-            "farm_egg", IngredientState.WHOLE_EGG, 0.80F, 0.34F, 0.56F, 0.42F, 0.68F, 0.64F, 0.18F, 52_000L, 4, 2
+            "farm_egg", IngredientState.WHOLE_EGG, 0.80F, 0.34F, 0.56F, 0.42F, 0.68F, 0.64F, 0.18F, DAY * 6L, 4, 2
     );
     public static final DeferredItem<KitchenIngredientItem> FRESH_MILK = ingredient(
-            "fresh_milk", IngredientState.FRESH_MILK, 0.82F, 0.38F, 0.52F, 0.32F, 0.84F, 0.72F, 0.10F, 44_000L, 4, 2
+            "fresh_milk", IngredientState.FRESH_MILK, 0.82F, 0.38F, 0.52F, 0.32F, 0.84F, 0.72F, 0.10F, DAY * 3L, 4, 2
     );
     public static final DeferredItem<KitchenIngredientItem> RAW_FISH_ITEM = ingredient(
-            "raw_fish", IngredientState.RAW_FISH, 0.78F, 0.44F, 0.56F, 0.22F, 0.70F, 0.52F, 0.04F, 34_000L, 4, 2
+            "raw_fish", IngredientState.RAW_FISH, 0.78F, 0.44F, 0.56F, 0.22F, 0.70F, 0.52F, 0.04F, DAY, 4, 2
     );
     public static final DeferredItem<KitchenIngredientItem> CLEANED_FISH = ingredient(
-            "cleaned_fish", IngredientState.CLEANED_FISH, 0.80F, 0.46F, 0.58F, 0.22F, 0.68F, 0.60F, 0.04F, 28_000L, 4, 2
+            "cleaned_fish", IngredientState.CLEANED_FISH, 0.80F, 0.46F, 0.58F, 0.22F, 0.68F, 0.60F, 0.04F, HALF_DAY, 4, 2
     );
     public static final DeferredItem<KitchenIngredientItem> PAN_FRIED_FISH = ingredient(
-            "pan_fried_fish", IngredientState.PAN_FRIED, 0.84F, 0.82F, 0.74F, 0.28F, 0.58F, 0.62F, 0.04F, 18_000L, 7, 6
+            "pan_fried_fish", IngredientState.PAN_FRIED, 0.84F, 0.82F, 0.74F, 0.28F, 0.58F, 0.62F, 0.04F, DAY, 7, 6
     );
     public static final DeferredItem<KitchenIngredientItem> RAW_PROTEIN = ingredient(
-            "raw_protein", IngredientState.RAW_PROTEIN, 0.76F, 0.48F, 0.56F, 0.26F, 0.72F, 0.42F, 0.04F, 34_000L, 5, 3
+            "raw_protein", IngredientState.RAW_PROTEIN, 0.76F, 0.48F, 0.56F, 0.26F, 0.72F, 0.42F, 0.04F, DAY * 2L, 5, 3
     );
     public static final DeferredItem<KitchenIngredientItem> ROAST_CUT = ingredient(
-            "roast_cut", IngredientState.ROAST_CUT, 0.78F, 0.52F, 0.58F, 0.30F, 0.72F, 0.46F, 0.04F, 26_000L, 5, 3
+            "roast_cut", IngredientState.ROAST_CUT, 0.78F, 0.52F, 0.58F, 0.30F, 0.72F, 0.46F, 0.04F, DAY, 5, 3
     );
     public static final DeferredItem<KitchenIngredientItem> EGG_WASH = ingredient(
-            "egg_wash", IngredientState.WHISKED, 0.78F, 0.24F, 0.22F, 0.14F, 0.72F, 0.74F, 0.26F, 12_000L, 1, 1
+            "egg_wash", IngredientState.WHISKED, 0.78F, 0.24F, 0.22F, 0.14F, 0.72F, 0.74F, 0.26F, HALF_DAY, 1, 1
     );
     public static final DeferredItem<KitchenIngredientItem> MARINADE = ingredient(
-            "marinade", IngredientState.MARINADE, 0.80F, 0.76F, 0.18F, 0.10F, 0.80F, 0.68F, 0.08F, 18_000L, 1, 2
+            "marinade", IngredientState.MARINADE, 0.80F, 0.76F, 0.18F, 0.10F, 0.80F, 0.68F, 0.08F, DAY * 3L, 1, 2
     );
     public static final DeferredItem<KitchenIngredientItem> BRINE = ingredient(
-            "brine", IngredientState.BRINE, 0.74F, 0.22F, 0.08F, 0.00F, 0.92F, 0.96F, 0.00F, Long.MAX_VALUE / 4L, 0, 0
+            "brine", IngredientState.BRINE, 0.74F, 0.22F, 0.08F, 0.00F, 0.92F, 0.96F, 0.00F, DAY * 45L, 0, 0
     );
     public static final DeferredItem<KitchenIngredientItem> CANNING_SYRUP = ingredient(
-            "canning_syrup", IngredientState.CANNING_SYRUP, 0.76F, 0.60F, 0.10F, 0.00F, 0.88F, 0.94F, 0.00F, Long.MAX_VALUE / 4L, 0, 2
+            "canning_syrup", IngredientState.CANNING_SYRUP, 0.76F, 0.60F, 0.10F, 0.00F, 0.88F, 0.94F, 0.00F, DAY * 45L, 0, 2
     );
     public static final DeferredItem<KitchenIngredientItem> BATTER = ingredient(
-            "batter", IngredientState.BATTER, 0.76F, 0.30F, 0.42F, 0.52F, 0.72F, 0.74F, 0.16F, 18_000L, 3, 2
+            "batter", IngredientState.BATTER, 0.76F, 0.30F, 0.42F, 0.52F, 0.72F, 0.74F, 0.16F, HALF_DAY, 3, 2
     );
     public static final DeferredItem<KitchenIngredientItem> FRYING_OIL = ingredient(
-            "frying_oil", IngredientState.FRESH_OIL, 0.80F, 0.18F, 0.22F, 0.00F, 0.90F, 0.90F, 0.00F, Long.MAX_VALUE / 4L, 0, 1
+            "frying_oil", IngredientState.FRESH_OIL, 0.80F, 0.18F, 0.22F, 0.00F, 0.90F, 0.90F, 0.00F, DAY * 30L, 0, 1
     );
     public static final DeferredItem<KitchenIngredientItem> USED_OIL_ITEM = ingredient(
-            "used_oil", IngredientState.USED_OIL, 0.46F, 0.10F, 0.10F, 0.00F, 0.86F, 0.30F, 0.00F, 12_000L, 0, 0
+            "used_oil", IngredientState.USED_OIL, 0.46F, 0.10F, 0.10F, 0.00F, 0.86F, 0.30F, 0.00F, DAY * 5L, 0, 0
     );
     public static final DeferredItem<KitchenIngredientItem> DIRTY_OIL_ITEM = ingredient(
-            "dirty_oil", IngredientState.DIRTY_OIL, 0.30F, 0.06F, 0.06F, 0.00F, 0.82F, 0.18F, 0.00F, 8_000L, 0, 0
+            "dirty_oil", IngredientState.DIRTY_OIL, 0.30F, 0.06F, 0.06F, 0.00F, 0.82F, 0.18F, 0.00F, DAY * 3L, 0, 0
     );
     public static final DeferredItem<KitchenIngredientItem> BURNT_OIL_ITEM = ingredient(
-            "burnt_oil", IngredientState.BURNT_OIL, 0.12F, 0.00F, 0.02F, 0.00F, 0.74F, 0.08F, 0.00F, 4_000L, 0, 0
+            "burnt_oil", IngredientState.BURNT_OIL, 0.12F, 0.00F, 0.02F, 0.00F, 0.74F, 0.08F, 0.00F, DAY, 0, 0
     );
     public static final DeferredItem<KitchenIngredientItem> BOILED_EGG_ITEM = ingredient(
-            "boiled_egg", IngredientState.BOILED, 0.82F, 0.42F, 0.66F, 0.48F, 0.68F, 0.72F, 0.04F, 20_000L, 6, 4
+            "boiled_egg", IngredientState.BOILED, 0.82F, 0.42F, 0.66F, 0.48F, 0.68F, 0.72F, 0.04F, DAY * 3L, 6, 4
     );
     public static final DeferredItem<KitchenIngredientItem> FLOUR = ingredient(
-            "flour", IngredientState.PANTRY_READY, 0.76F, 0.18F, 0.32F, 0.40F, 0.10F, 0.92F, 0.00F, Long.MAX_VALUE / 4L, 1, 0
+            "flour", IngredientState.PANTRY_READY, 0.76F, 0.18F, 0.32F, 0.40F, 0.10F, 0.92F, 0.00F, DAY * 45L, 1, 0
     );
     public static final DeferredItem<KitchenIngredientItem> SALT = ingredient(
-            "salt", IngredientState.PANTRY_READY, 0.74F, 0.12F, 0.04F, 0.00F, 0.00F, 0.98F, 0.00F, Long.MAX_VALUE / 4L, 0, 0
+            "salt", IngredientState.PANTRY_READY, 0.74F, 0.12F, 0.04F, 0.00F, 0.00F, 0.98F, 0.00F, DAY * 90L, 0, 0
     );
     public static final DeferredItem<KitchenIngredientItem> CANE_SUGAR = ingredient(
-            "cane_sugar", IngredientState.PANTRY_READY, 0.78F, 0.42F, 0.15F, 0.00F, 0.00F, 0.98F, 0.00F, Long.MAX_VALUE / 4L, 0, 1
+            "cane_sugar", IngredientState.PANTRY_READY, 0.78F, 0.42F, 0.15F, 0.00F, 0.00F, 0.98F, 0.00F, DAY * 60L, 0, 1
     );
     public static final DeferredItem<KitchenIngredientItem> BUTTER = ingredient(
-            "butter", IngredientState.PANTRY_READY, 0.82F, 0.58F, 0.60F, 0.15F, 0.75F, 0.90F, 0.00F, 144_000L, 2, 2
+            "butter", IngredientState.PANTRY_READY, 0.82F, 0.58F, 0.60F, 0.15F, 0.75F, 0.90F, 0.00F, DAY * 10L, 2, 2
     );
     public static final DeferredItem<KitchenIngredientItem> BAKING_SPICE = ingredient(
-            "baking_spice", IngredientState.WHOLE_SPICE, 0.80F, 0.66F, 0.20F, 0.05F, 0.00F, 0.84F, 0.00F, Long.MAX_VALUE / 4L, 0, 1
+            "baking_spice", IngredientState.WHOLE_SPICE, 0.80F, 0.66F, 0.20F, 0.05F, 0.00F, 0.84F, 0.00F, DAY * 60L, 0, 1
     );
     public static final DeferredItem<KitchenIngredientItem> PIE_CRUST = ingredient(
-            "pie_crust", IngredientState.CRUST_MIX, 0.72F, 0.28F, 0.34F, 0.62F, 0.24F, 0.82F, 0.04F, 36_000L, 4, 2
+            "pie_crust", IngredientState.CRUST_MIX, 0.72F, 0.28F, 0.34F, 0.62F, 0.24F, 0.82F, 0.04F, DAY * 2L, 4, 2
     );
     public static final DeferredItem<KitchenIngredientItem> PIE_FILLING = ingredient(
-            "pie_filling", IngredientState.SIMMERED_FILLING, 0.78F, 0.74F, 0.50F, 0.18F, 0.68F, 0.70F, 0.00F, 36_000L, 4, 4
+            "pie_filling", IngredientState.SIMMERED_FILLING, 0.78F, 0.74F, 0.50F, 0.18F, 0.68F, 0.70F, 0.00F, DAY * 3L, 4, 4
     );
     public static final DeferredItem<KitchenIngredientItem> APPLE_PIE = ingredient(
-            "apple_pie", IngredientState.RAW_ASSEMBLED_PIE, 0.80F, 0.74F, 0.55F, 0.72F, 0.60F, 0.72F, 0.12F, 48_000L, 7, 6
+            "apple_pie", IngredientState.RAW_ASSEMBLED_PIE, 0.80F, 0.74F, 0.55F, 0.72F, 0.60F, 0.72F, 0.12F, DAY * 4L, 7, 6
     );
     public static final DeferredItem<KitchenIngredientItem> APPLE_PIE_SLICE = ingredient(
-            "apple_pie_slice", IngredientState.SLICED_PIE, 0.82F, 0.78F, 0.60F, 0.68F, 0.60F, 0.74F, 0.15F, 24_000L, 7, 6
+            "apple_pie_slice", IngredientState.SLICED_PIE, 0.82F, 0.78F, 0.60F, 0.68F, 0.60F, 0.74F, 0.15F, DAY * 2L, 7, 6
     );
     public static final DeferredItem<KitchenIngredientItem> BREAD_DOUGH = ingredient(
-            "bread_dough", IngredientState.BREAD_DOUGH, 0.74F, 0.20F, 0.38F, 0.62F, 0.68F, 0.88F, 0.10F, 24_000L, 4, 2
+            "bread_dough", IngredientState.BREAD_DOUGH, 0.74F, 0.20F, 0.38F, 0.62F, 0.68F, 0.88F, 0.10F, DAY, 4, 2
     );
     public static final DeferredItem<KitchenIngredientItem> BREAD_LOAF = ingredient(
-            "bread_loaf", IngredientState.BAKED_BREAD, 0.80F, 0.52F, 0.70F, 0.76F, 0.48F, 0.88F, 0.16F, 28_000L, 6, 5
+            "bread_loaf", IngredientState.BAKED_BREAD, 0.80F, 0.52F, 0.70F, 0.76F, 0.48F, 0.88F, 0.16F, DAY * 4L, 6, 5
     );
     public static final DeferredItem<KitchenIngredientItem> SLICED_BREAD = ingredient(
-            "sliced_bread", IngredientState.SLICED_BREAD, 0.82F, 0.54F, 0.68F, 0.64F, 0.46F, 0.90F, 0.16F, 18_000L, 4, 4
+            "sliced_bread", IngredientState.SLICED_BREAD, 0.82F, 0.54F, 0.68F, 0.64F, 0.46F, 0.90F, 0.16F, DAY * 2L, 4, 4
     );
     public static final DeferredItem<KitchenIngredientItem> TOMATO_SOUP_BASE = ingredient(
-            "tomato_soup_base", IngredientState.SOUP_BASE, 0.80F, 0.78F, 0.48F, 0.20F, 0.82F, 0.52F, 0.04F, 24_000L, 5, 4
+            "tomato_soup_base", IngredientState.SOUP_BASE, 0.80F, 0.78F, 0.48F, 0.20F, 0.82F, 0.52F, 0.04F, DAY * 2L, 5, 4
     );
     public static final DeferredItem<KitchenIngredientItem> STRAINED_SOUP = ingredient(
-            "strained_soup", IngredientState.STRAINED_SOUP, 0.84F, 0.80F, 0.50F, 0.18F, 0.82F, 0.86F, 0.04F, 24_000L, 5, 4
+            "strained_soup", IngredientState.STRAINED_SOUP, 0.84F, 0.80F, 0.50F, 0.18F, 0.82F, 0.86F, 0.04F, DAY * 2L, 5, 4
     );
     public static final DeferredItem<KitchenIngredientItem> DUMPLING_FILLING_ITEM = ingredient(
-            "dumpling_filling", IngredientState.DUMPLING_FILLING, 0.78F, 0.72F, 0.50F, 0.28F, 0.66F, 0.48F, 0.06F, 24_000L, 5, 4
+            "dumpling_filling", IngredientState.DUMPLING_FILLING, 0.78F, 0.72F, 0.50F, 0.28F, 0.66F, 0.48F, 0.06F, DAY, 5, 4
     );
     public static final DeferredItem<KitchenIngredientItem> DUMPLING_DOUGH_ITEM = ingredient(
-            "dumpling_dough", IngredientState.DUMPLING_DOUGH, 0.76F, 0.18F, 0.42F, 0.66F, 0.64F, 0.84F, 0.10F, 24_000L, 4, 2
+            "dumpling_dough", IngredientState.DUMPLING_DOUGH, 0.76F, 0.18F, 0.42F, 0.66F, 0.64F, 0.84F, 0.10F, DAY, 4, 2
     );
     public static final DeferredItem<KitchenIngredientItem> RAW_DUMPLINGS_ITEM = ingredient(
-            "raw_dumplings", IngredientState.RAW_DUMPLINGS, 0.78F, 0.58F, 0.46F, 0.66F, 0.70F, 0.68F, 0.10F, 22_000L, 6, 4
+            "raw_dumplings", IngredientState.RAW_DUMPLINGS, 0.78F, 0.58F, 0.46F, 0.66F, 0.70F, 0.68F, 0.10F, DAY, 6, 4
     );
     public static final DeferredItem<KitchenIngredientItem> STEAMED_DUMPLINGS_ITEM = ingredient(
-            "steamed_dumplings", IngredientState.STEAMED_DUMPLINGS, 0.84F, 0.72F, 0.66F, 0.70F, 0.76F, 0.72F, 0.10F, 18_000L, 7, 6
+            "steamed_dumplings", IngredientState.STEAMED_DUMPLINGS, 0.84F, 0.72F, 0.66F, 0.70F, 0.76F, 0.72F, 0.10F, DAY, 7, 6
     );
     public static final DeferredItem<KitchenIngredientItem> MARINATED_PROTEIN_ITEM = ingredient(
-            "marinated_protein", IngredientState.MARINATED_PROTEIN, 0.80F, 0.78F, 0.56F, 0.32F, 0.76F, 0.52F, 0.06F, 18_000L, 5, 4
+            "marinated_protein", IngredientState.MARINATED_PROTEIN, 0.80F, 0.78F, 0.56F, 0.32F, 0.76F, 0.52F, 0.06F, DAY, 5, 4
     );
     public static final DeferredItem<KitchenIngredientItem> BATTERED_PROTEIN_ITEM = ingredient(
-            "battered_protein", IngredientState.BATTERED_PROTEIN, 0.80F, 0.74F, 0.60F, 0.36F, 0.78F, 0.60F, 0.08F, 16_000L, 6, 5
+            "battered_protein", IngredientState.BATTERED_PROTEIN, 0.80F, 0.74F, 0.60F, 0.36F, 0.78F, 0.60F, 0.08F, HALF_DAY, 6, 5
     );
     public static final DeferredItem<KitchenIngredientItem> FRIED_PROTEIN_ITEM = ingredient(
-            "fried_protein", IngredientState.FRIED_PROTEIN, 0.86F, 0.86F, 0.84F, 0.48F, 0.52F, 0.64F, 0.06F, 16_000L, 8, 9
+            "fried_protein", IngredientState.FRIED_PROTEIN, 0.86F, 0.86F, 0.84F, 0.48F, 0.52F, 0.64F, 0.06F, DAY, 8, 9
     );
     public static final DeferredItem<KitchenIngredientItem> ROASTED_PROTEIN_ITEM = ingredient(
-            "roasted_protein", IngredientState.ROASTED_PROTEIN, 0.84F, 0.84F, 0.74F, 0.50F, 0.58F, 0.60F, 0.04F, 18_000L, 8, 7
+            "roasted_protein", IngredientState.ROASTED_PROTEIN, 0.84F, 0.84F, 0.74F, 0.50F, 0.58F, 0.60F, 0.04F, DAY * 2L, 8, 7
     );
     public static final DeferredItem<KitchenIngredientItem> BROILED_PROTEIN_ITEM = ingredient(
-            "broiled_protein", IngredientState.BROILED_PROTEIN, 0.88F, 0.90F, 0.78F, 0.52F, 0.56F, 0.62F, 0.04F, 16_000L, 8, 8
+            "broiled_protein", IngredientState.BROILED_PROTEIN, 0.88F, 0.90F, 0.78F, 0.52F, 0.56F, 0.62F, 0.04F, DAY, 8, 8
     );
     public static final DeferredItem<KitchenIngredientItem> SMOKED_PROTEIN_ITEM = ingredient(
-            "smoked_protein", IngredientState.SMOKED_PROTEIN, 0.88F, 0.92F, 0.70F, 0.52F, 0.50F, 0.66F, 0.04F, 72_000L, 8, 8
+            "smoked_protein", IngredientState.SMOKED_PROTEIN, 0.88F, 0.92F, 0.70F, 0.52F, 0.50F, 0.66F, 0.04F, DAY * 10L, 8, 8
     );
     public static final DeferredItem<KitchenIngredientItem> ROAST_VEGETABLES_ITEM = ingredient(
-            "roast_vegetables", IngredientState.ROAST_VEGETABLES, 0.82F, 0.76F, 0.62F, 0.24F, 0.54F, 0.40F, 0.04F, 24_000L, 5, 5
+            "roast_vegetables", IngredientState.ROAST_VEGETABLES, 0.82F, 0.76F, 0.62F, 0.24F, 0.54F, 0.40F, 0.04F, DAY * 2L, 5, 5
     );
     public static final DeferredItem<KitchenIngredientItem> CANNED_TOMATO_ITEM = ingredient(
-            "canned_tomato", IngredientState.CANNED_TOMATO, 0.80F, 0.70F, 0.50F, 0.22F, 0.80F, 0.74F, 0.02F, Long.MAX_VALUE / 4L, 4, 3
+            "canned_tomato", IngredientState.CANNED_TOMATO, 0.80F, 0.70F, 0.50F, 0.22F, 0.80F, 0.74F, 0.02F, DAY * 60L, 4, 3
     );
     public static final DeferredItem<KitchenIngredientItem> APPLE_PRESERVE_ITEM = ingredient(
-            "apple_preserve", IngredientState.APPLE_PRESERVE, 0.82F, 0.82F, 0.38F, 0.14F, 0.76F, 0.82F, 0.00F, Long.MAX_VALUE / 4L, 3, 6
+            "apple_preserve", IngredientState.APPLE_PRESERVE, 0.82F, 0.82F, 0.38F, 0.14F, 0.76F, 0.82F, 0.00F, DAY * 75L, 3, 6
     );
     public static final DeferredItem<KitchenIngredientItem> DRIED_APPLE_ITEM = ingredient(
-            "dried_apple", IngredientState.DRIED_FRUIT, 0.78F, 0.84F, 0.48F, 0.16F, 0.18F, 0.74F, 0.00F, Long.MAX_VALUE / 4L, 2, 4
+            "dried_apple", IngredientState.DRIED_FRUIT, 0.78F, 0.84F, 0.48F, 0.16F, 0.18F, 0.74F, 0.00F, DAY * 45L, 2, 4
     );
     public static final DeferredItem<KitchenIngredientItem> FERMENTED_VEGETABLES_ITEM = ingredient(
-            "fermented_vegetables", IngredientState.FERMENTED_VEGETABLE, 0.82F, 0.78F, 0.58F, 0.18F, 0.70F, 0.78F, 0.02F, Long.MAX_VALUE / 4L, 4, 4
+            "fermented_vegetables", IngredientState.FERMENTED_VEGETABLE, 0.82F, 0.78F, 0.58F, 0.18F, 0.70F, 0.78F, 0.02F, DAY * 30L, 4, 4
     );
     public static final DeferredItem<KitchenIngredientItem> CULTURED_DAIRY_ITEM = ingredient(
-            "cultured_dairy", IngredientState.CULTURED_DAIRY, 0.84F, 0.62F, 0.62F, 0.22F, 0.82F, 0.84F, 0.06F, Long.MAX_VALUE / 4L, 5, 4
+            "cultured_dairy", IngredientState.CULTURED_DAIRY, 0.84F, 0.62F, 0.62F, 0.22F, 0.82F, 0.84F, 0.06F, DAY * 14L, 5, 4
     );
     public static final DeferredItem<KitchenIngredientItem> CERAMIC_PLATE = ingredient(
             "ceramic_plate", IngredientState.PANTRY_READY, 0.80F, 0.00F, 0.70F, 0.90F, 0.00F, 1.00F, 0.00F, Long.MAX_VALUE / 4L, 0, 0
     );
 
     public static final DeferredItem<KitchenMealItem> PLATED_APPLE_PIE_SLICE = meal(
-            "plated_apple_pie_slice", IngredientState.PLATED_SLICE, 0.86F, 0.82F, 0.68F, 0.72F, 0.68F, 0.78F, 0.18F, 18_000L, 8, 8, true
+            "plated_apple_pie_slice", IngredientState.PLATED_SLICE, 0.86F, 0.82F, 0.68F, 0.72F, 0.68F, 0.78F, 0.18F, DAY, 8, 8, true
     );
     public static final DeferredItem<KitchenMealItem> PLATED_TOMATO_SOUP_MEAL = meal(
-            "plated_tomato_soup_meal", IngredientState.PLATED_SOUP_MEAL, 0.84F, 0.84F, 0.64F, 0.44F, 0.80F, 0.84F, 0.08F, 16_000L, 10, 7, true
+            "plated_tomato_soup_meal", IngredientState.PLATED_SOUP_MEAL, 0.84F, 0.84F, 0.64F, 0.44F, 0.80F, 0.84F, 0.08F, HALF_DAY, 10, 7, true
     );
     public static final DeferredItem<KitchenMealItem> PLATED_DUMPLING_MEAL = meal(
-            "plated_dumpling_meal", IngredientState.PLATED_DUMPLING_MEAL, 0.86F, 0.82F, 0.72F, 0.62F, 0.74F, 0.78F, 0.10F, 16_000L, 10, 8, true
+            "plated_dumpling_meal", IngredientState.PLATED_DUMPLING_MEAL, 0.86F, 0.82F, 0.72F, 0.62F, 0.74F, 0.78F, 0.10F, HALF_DAY, 10, 8, true
     );
     public static final DeferredItem<KitchenMealItem> PLATED_FRIED_MEAL = meal(
-            "plated_fried_meal", IngredientState.PLATED_FRIED_MEAL, 0.88F, 0.90F, 0.86F, 0.56F, 0.56F, 0.72F, 0.06F, 16_000L, 11, 10, true
+            "plated_fried_meal", IngredientState.PLATED_FRIED_MEAL, 0.88F, 0.90F, 0.86F, 0.56F, 0.56F, 0.72F, 0.06F, HALF_DAY, 11, 10, true
     );
     public static final DeferredItem<KitchenMealItem> PLATED_ROAST_MEAL = meal(
-            "plated_roast_meal", IngredientState.PLATED_ROAST_MEAL, 0.88F, 0.88F, 0.78F, 0.58F, 0.60F, 0.72F, 0.06F, 16_000L, 11, 9, true
+            "plated_roast_meal", IngredientState.PLATED_ROAST_MEAL, 0.88F, 0.88F, 0.78F, 0.58F, 0.60F, 0.72F, 0.06F, HALF_DAY, 11, 9, true
     );
 
     public static final DeferredItem<KitchenToolItem> PARING_KNIFE = tool("paring_knife", ToolProfile.PARING_KNIFE, 0.06F, 1.10F, 128);

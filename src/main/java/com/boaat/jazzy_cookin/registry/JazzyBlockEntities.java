@@ -35,6 +35,8 @@ public final class JazzyBlockEntities {
             BLOCK_ENTITIES.register("kitchen_storage", () -> BlockEntityType.Builder.of(
                     KitchenStorageBlockEntity::new,
                     JazzyBlocks.PANTRY.get(),
+                    JazzyBlocks.FRIDGE.get(),
+                    JazzyBlocks.FREEZER.get(),
                     JazzyBlocks.CELLAR.get()
             ).build(null));
 

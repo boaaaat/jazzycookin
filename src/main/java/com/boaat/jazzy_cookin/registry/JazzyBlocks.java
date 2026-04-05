@@ -39,7 +39,9 @@ public final class JazzyBlocks {
     public static final DeferredBlock<Block> FORAGE_SHRUB = source("forage_shrub", KitchenSourceProfile.FORAGE_SHRUB, MapColor.COLOR_PURPLE, SoundType.GRASS);
 
     public static final DeferredBlock<Block> PANTRY = storage("pantry", StorageType.PANTRY, MapColor.WOOD, SoundType.WOOD);
-    public static final DeferredBlock<Block> CELLAR = storage("cellar", StorageType.CELLAR, MapColor.STONE, SoundType.STONE);
+    public static final DeferredBlock<Block> FRIDGE = storage("fridge", StorageType.FRIDGE, MapColor.METAL, SoundType.METAL);
+    public static final DeferredBlock<Block> FREEZER = storage("freezer", StorageType.FREEZER, MapColor.COLOR_LIGHT_BLUE, SoundType.GLASS);
+    public static final DeferredBlock<Block> CELLAR = storage("cellar", StorageType.FRIDGE, MapColor.STONE, SoundType.STONE);
     public static final DeferredBlock<Block> PREP_TABLE = station("prep_table", StationType.PREP_TABLE, MapColor.WOOD, SoundType.WOOD);
     public static final DeferredBlock<Block> SPICE_GRINDER = station("spice_grinder", StationType.SPICE_GRINDER, MapColor.STONE, SoundType.STONE);
     public static final DeferredBlock<Block> STRAINER = station("strainer", StationType.STRAINER, MapColor.METAL, SoundType.METAL);
@@ -106,7 +108,8 @@ public final class JazzyBlocks {
     public static Supplier<Block> blockForStorage(StorageType storageType) {
         return switch (storageType) {
             case PANTRY -> PANTRY;
-            case CELLAR -> CELLAR;
+            case FRIDGE -> FRIDGE;
+            case FREEZER -> FREEZER;
         };
     }
 }

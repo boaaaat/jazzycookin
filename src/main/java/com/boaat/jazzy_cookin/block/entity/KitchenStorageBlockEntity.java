@@ -3,9 +3,9 @@ package com.boaat.jazzy_cookin.block.entity;
 import com.boaat.jazzy_cookin.block.KitchenStorageBlock;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
-import com.boaat.jazzy_cookin.kitchen.StorageType;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
-import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
+import com.boaat.jazzy_cookin.kitchen.StorageRules;
+import com.boaat.jazzy_cookin.kitchen.StorageType;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
 
@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class KitchenStorageBlockEntity extends BlockEntity implements Container, MenuProvider {
     private static final int PANTRY_CONTAINER_SIZE = 54;
-    private static final int CELLAR_CONTAINER_SIZE = 18;
+    private static final int COLD_STORAGE_CONTAINER_SIZE = 18;
 
     private final NonNullList<ItemStack> items;
     private long[] insertedAt;
@@ -43,74 +43,14 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
     }
 
     private static int storageSize(BlockState blockState) {
-        if (blockState.getBlock() instanceof KitchenStorageBlock block && block.storageType() == StorageType.CELLAR) {
-            return CELLAR_CONTAINER_SIZE;
+        if (blockState.getBlock() instanceof KitchenStorageBlock block && block.storageType() != StorageType.PANTRY) {
+            return COLD_STORAGE_CONTAINER_SIZE;
         }
         return PANTRY_CONTAINER_SIZE;
     }
 
     public boolean handleButton(int buttonId, Player player) {
-        if (this.getStorageType() != StorageType.PANTRY || this.level == null) {
-            return false;
-        }
-
-        PantrySortTab sortTab = PantrySortTab.byButtonId(buttonId);
-        if (sortTab == null) {
-            return false;
-        }
-
-        this.sortByCategory(sortTab);
-        return true;
-    }
-
-    private void sortByCategory(PantrySortTab selectedTab) {
-        java.util.List<StorageEntry> entries = new java.util.ArrayList<>(this.getContainerSize());
-        for (int slot = 0; slot < this.getContainerSize(); slot++) {
-            entries.add(new StorageEntry(this.items.get(slot), this.insertedAt[slot]));
-        }
-
-        entries.sort((left, right) -> {
-            if (left.stack().isEmpty() != right.stack().isEmpty()) {
-                return left.stack().isEmpty() ? 1 : -1;
-            }
-
-            PantrySortTab leftTab = PantrySortTab.classify(left.stack());
-            PantrySortTab rightTab = PantrySortTab.classify(right.stack());
-            int leftPriority = this.sortPriority(selectedTab, leftTab);
-            int rightPriority = this.sortPriority(selectedTab, rightTab);
-            if (leftPriority != rightPriority) {
-                return Integer.compare(leftPriority, rightPriority);
-            }
-
-            int categoryOrder = Integer.compare(leftTab.ordinal(), rightTab.ordinal());
-            if (categoryOrder != 0) {
-                return categoryOrder;
-            }
-
-            int descriptionOrder = left.stack().getDescriptionId().compareTo(right.stack().getDescriptionId());
-            if (descriptionOrder != 0) {
-                return descriptionOrder;
-            }
-
-            return Long.compare(left.insertedAt(), right.insertedAt());
-        });
-
-        for (int slot = 0; slot < this.getContainerSize(); slot++) {
-            StorageEntry entry = entries.get(slot);
-            this.items.set(slot, entry.stack());
-            this.insertedAt[slot] = entry.insertedAt();
-        }
-        this.setChanged();
-    }
-
-    private int sortPriority(PantrySortTab selectedTab, PantrySortTab tab) {
-        if (tab == selectedTab) {
-            return 0;
-        }
-        if (tab == PantrySortTab.OTHER) {
-            return PantrySortTab.tabs().size() + 1;
-        }
-        return PantrySortTab.tabs().indexOf(tab) + 1;
+        return false;
     }
 
     @Override
@@ -213,7 +153,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return this.getStorageType() != StorageType.PANTRY || PantrySortTab.classify(stack) != PantrySortTab.OTHER;
+        return StorageRules.canStore(this.getStorageType(), stack);
     }
 
     @Override
@@ -248,8 +188,5 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
             this.insertedAt = new long[this.items.size()];
             System.arraycopy(loaded, 0, this.insertedAt, 0, Math.min(loaded.length, this.insertedAt.length));
         }
-    }
-
-    private record StorageEntry(ItemStack stack, long insertedAt) {
     }
 }

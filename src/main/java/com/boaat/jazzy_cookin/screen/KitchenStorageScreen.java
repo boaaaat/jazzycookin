@@ -162,7 +162,7 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         } else {
             this.drawCenteredLabel(
                     guiGraphics,
-                    Component.translatable("screen.jazzycookin.cellar_hint"),
+                    Component.translatable(this.menu.storageType().hintTranslationKey()),
                     this.imageWidth / 2,
                     123,
                     JazzyGuiRenderer.TEXT_MUTED

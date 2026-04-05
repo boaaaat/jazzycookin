@@ -15,7 +15,8 @@ import net.minecraft.util.StringRepresentable;
 
 public enum StorageType implements StringRepresentable {
     PANTRY("pantry", 0.90F),
-    CELLAR("cellar", 0.35F);
+    FRIDGE("fridge", 0.25F),
+    FREEZER("freezer", 0.05F);
 
     private static final Map<String, StorageType> BY_NAME = Arrays.stream(values())
             .collect(Collectors.toMap(StorageType::getSerializedName, Function.identity()));
@@ -35,6 +36,9 @@ public enum StorageType implements StringRepresentable {
     }
 
     public static StorageType byName(String name) {
+        if ("cellar".equals(name)) {
+            return FRIDGE;
+        }
         return BY_NAME.getOrDefault(name, PANTRY);
     }
 
@@ -44,6 +48,10 @@ public enum StorageType implements StringRepresentable {
 
     public Component displayName() {
         return Component.translatable("storage.jazzycookin." + this.serializedName);
+    }
+
+    public String hintTranslationKey() {
+        return "screen.jazzycookin." + this.serializedName + "_hint";
     }
 
     @Override
