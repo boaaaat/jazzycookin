@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -28,21 +29,11 @@ public final class JazzyRecipes {
 
     public static final DeferredHolder<RecipeType<?>, RecipeType<KitchenProcessRecipe>> KITCHEN_PROCESS_TYPE = RECIPE_TYPES.register(
             "kitchen_process",
-            () -> new RecipeType<>() {
-                @Override
-                public String toString() {
-                    return JazzyCookin.MODID + ":kitchen_process";
-                }
-            }
+            () -> namedRecipeType("kitchen_process")
     );
     public static final DeferredHolder<RecipeType<?>, RecipeType<KitchenPlateRecipe>> KITCHEN_PLATE_TYPE = RECIPE_TYPES.register(
             "kitchen_plate",
-            () -> new RecipeType<>() {
-                @Override
-                public String toString() {
-                    return JazzyCookin.MODID + ":kitchen_plate";
-                }
-            }
+            () -> namedRecipeType("kitchen_plate")
     );
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<KitchenProcessRecipe>> KITCHEN_PROCESS_SERIALIZER =
@@ -51,6 +42,15 @@ public final class JazzyRecipes {
             RECIPE_SERIALIZERS.register("kitchen_plate", KitchenPlateSerializer::new);
 
     private JazzyRecipes() {
+    }
+
+    private static <T extends Recipe<?>> RecipeType<T> namedRecipeType(String name) {
+        return new RecipeType<>() {
+            @Override
+            public String toString() {
+                return JazzyCookin.MODID + ":" + name;
+            }
+        };
     }
 
     public static Optional<KitchenProcessRecipe> findProcessRecipe(
