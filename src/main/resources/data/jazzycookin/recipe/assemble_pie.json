@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "prep_table",
+  "method": "mix",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:pie_crust" },
@@ -14,6 +15,7 @@
     }
   ],
   "preferred_tool": "pie_tin",
+  "tool_required": true,
   "duration": 70,
   "output": {
     "result": { "id": "jazzycookin:apple_pie", "count": 1 },

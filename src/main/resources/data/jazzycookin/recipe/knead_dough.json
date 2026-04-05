@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "mixing_bowl",
+  "method": "knead",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:pie_crust" },

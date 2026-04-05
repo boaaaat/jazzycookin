@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "oven",
+  "method": "roast",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:roast_cut" },
@@ -10,6 +11,8 @@
   ],
   "duration": 120,
   "preferred_heat": "medium",
+  "minimum_heat": "medium",
+  "maximum_heat": "high",
   "requires_preheat": true,
   "output": {
     "result": { "id": "jazzycookin:roasted_protein", "count": 1 },

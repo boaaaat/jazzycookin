@@ -8,9 +8,11 @@ public record QualityBreakdown(
         float ingredientQuality,
         float freshness,
         float prepScore,
+        float combineScore,
         float cookingScore,
         float finishingScore,
         float platingScore,
+        float recipeAccuracy,
         int nourishment,
         int enjoyment
 ) {

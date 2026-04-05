@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "cooling_rack",
+  "method": "cool",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:apple_pie" },

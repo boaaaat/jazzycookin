@@ -8,6 +8,7 @@ import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionResult;
@@ -87,7 +88,7 @@ public class AppleSaplingBlock extends BushBlock implements BonemealableBlock {
 
         if (!level.isClientSide) {
             KitchenIngredientItem appleItem = JazzyItems.ORCHARD_APPLE.get();
-            float quality = age == 5 ? 0.92F : 0.72F;
+            float quality = this.harvestQuality(level, pos, age);
             IngredientStateData harvestData = appleItem.defaultData(level.getGameTime()).withMetrics(
                     IngredientState.WHOLE_APPLE,
                     level.getGameTime(),
@@ -107,6 +108,22 @@ public class AppleSaplingBlock extends BushBlock implements BonemealableBlock {
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    private float harvestQuality(Level level, BlockPos pos, int age) {
+        float ripeness = age == 5 ? 0.84F : 0.68F;
+        float lightBonus = level.getRawBrightness(pos.above(), 0) >= 9 ? 0.05F : -0.05F;
+        float hydrationBonus = hasNearbyWater(level, pos) ? 0.04F : -0.03F;
+        return Math.max(0.2F, Math.min(1.0F, ripeness + lightBonus + hydrationBonus));
+    }
+
+    private static boolean hasNearbyWater(Level level, BlockPos pos) {
+        for (BlockPos checkPos : BlockPos.betweenClosed(pos.offset(-2, -1, -2), pos.offset(2, 0, 2))) {
+            if (level.getFluidState(checkPos).is(FluidTags.WATER)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

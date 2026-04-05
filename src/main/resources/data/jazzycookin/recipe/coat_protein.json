@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "prep_table",
+  "method": "batter",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:marinated_protein" },

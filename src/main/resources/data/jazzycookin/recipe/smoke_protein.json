@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "smoker",
+  "method": "smoke",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:roast_cut" },
@@ -10,6 +11,8 @@
   ],
   "duration": 140,
   "preferred_heat": "low",
+  "minimum_heat": "low",
+  "maximum_heat": "low",
   "mode": "passive",
   "output": {
     "result": { "id": "jazzycookin:smoked_protein", "count": 1 },

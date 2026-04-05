@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "steamer",
+  "method": "steam",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:raw_dumplings" },
@@ -9,8 +10,11 @@
     }
   ],
   "preferred_tool": "steamer_basket",
+  "tool_required": true,
   "duration": 88,
   "preferred_heat": "medium",
+  "minimum_heat": "low",
+  "maximum_heat": "medium",
   "requires_nearby_water": true,
   "output": {
     "result": { "id": "jazzycookin:steamed_dumplings", "count": 1 },

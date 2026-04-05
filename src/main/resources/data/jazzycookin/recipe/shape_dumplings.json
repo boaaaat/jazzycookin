@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "prep_table",
+  "method": "mix",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:dumpling_filling" },

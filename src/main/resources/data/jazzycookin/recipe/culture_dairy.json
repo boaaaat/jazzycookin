@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "fermentation_crock",
+  "method": "ferment",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:fresh_milk" },
@@ -9,6 +10,7 @@
     }
   ],
   "preferred_tool": "jar",
+  "tool_required": true,
   "duration": 110,
   "mode": "passive",
   "output": {

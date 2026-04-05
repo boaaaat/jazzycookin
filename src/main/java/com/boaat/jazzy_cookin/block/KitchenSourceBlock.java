@@ -10,6 +10,7 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionResult;
@@ -84,7 +85,7 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
             return;
         }
 
-        if (this.profile.plantLike() && level.getRawBrightness(pos.above(), 0) < 8) {
+        if (this.profile.plantLike() && level.getRawBrightness(pos.above(), 0) < this.profile.minimumLight()) {
             return;
         }
 
@@ -101,7 +102,7 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
         }
 
         if (!level.isClientSide) {
-            Containers.dropItemStack(level, pos.getX(), pos.getY() + 0.75D, pos.getZ(), this.createHarvestStack(level, state));
+            Containers.dropItemStack(level, pos.getX(), pos.getY() + 0.75D, pos.getZ(), this.createHarvestStack(level, state, pos));
             int resetAge = this.profile.plantLike() ? Math.max(0, this.profile.ripeAge() - 2) : 0;
             level.setBlock(pos, state.setValue(AGE, resetAge), 2);
         }
@@ -109,7 +110,7 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    private ItemStack createHarvestStack(Level level, BlockState state) {
+    private ItemStack createHarvestStack(Level level, BlockState state, BlockPos pos) {
         KitchenIngredientItem ingredientItem = switch (this.profile) {
             case TOMATO_VINE -> JazzyItems.TOMATO.get();
             case HERB_BED -> JazzyItems.FRESH_HERB.get();
@@ -122,7 +123,7 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
             case FORAGE_SHRUB -> JazzyItems.WILD_BERRIES_ITEM.get();
         };
 
-        float quality = harvestQuality(state.getValue(AGE));
+        float quality = harvestQuality(level, state, pos);
         IngredientStateData baseData = ingredientItem.defaultData(level.getGameTime());
         IngredientStateData harvestData = baseData.withMetrics(
                 baseData.state(),
@@ -141,14 +142,30 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
         return ingredientItem.createStack(1, level.getGameTime(), harvestData);
     }
 
-    private float harvestQuality(int age) {
+    private float harvestQuality(Level level, BlockState state, BlockPos pos) {
+        int age = state.getValue(AGE);
+        float lightBonus = this.profile.plantLike() && level.getRawBrightness(pos.above(), 0) >= this.profile.minimumLight() ? 0.05F : -0.06F;
+        float hydrationBonus = this.profile.prefersHydration() ? (hasNearbyWater(level, pos) ? 0.05F : -0.05F) : 0.0F;
         if (age == this.profile.ripeAge()) {
-            return 0.92F;
+            return clampQuality(0.82F + lightBonus + hydrationBonus);
         }
         if (age > this.profile.ripeAge()) {
-            return 0.76F;
+            return clampQuality(0.68F + lightBonus + hydrationBonus);
         }
-        return 0.68F;
+        return clampQuality(0.60F + lightBonus + hydrationBonus);
+    }
+
+    private static boolean hasNearbyWater(LevelReader level, BlockPos pos) {
+        for (BlockPos checkPos : BlockPos.betweenClosed(pos.offset(-2, -1, -2), pos.offset(2, 0, 2))) {
+            if (level.getFluidState(checkPos).is(FluidTags.WATER)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static float clampQuality(float quality) {
+        return Math.max(0.2F, Math.min(1.0F, quality));
     }
 
     @Override

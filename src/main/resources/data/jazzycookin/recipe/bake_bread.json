@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "oven",
+  "method": "bake",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:bread_dough" },
@@ -10,6 +11,8 @@
   ],
   "duration": 118,
   "preferred_heat": "medium",
+  "minimum_heat": "medium",
+  "maximum_heat": "high",
   "requires_preheat": true,
   "output": {
     "result": { "id": "jazzycookin:bread_loaf", "count": 1 },

@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "mixing_bowl",
+  "method": "mix",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:chopped_cabbage" },

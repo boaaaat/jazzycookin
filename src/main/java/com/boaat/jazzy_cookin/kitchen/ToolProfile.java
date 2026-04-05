@@ -17,12 +17,22 @@ import net.minecraft.world.item.ItemStack;
 public enum ToolProfile implements StringRepresentable {
     NONE("none"),
     KNIFE("knife"),
+    CLEAVER("cleaver"),
     WHISK("whisk"),
+    HEAVY_WHISK("heavy_whisk"),
     ROLLING_PIN("rolling_pin"),
+    MORTAR_PESTLE("mortar_pestle"),
     POT("pot"),
+    PAN("pan"),
     SKILLET("skillet"),
+    GRIDDLE("griddle"),
     STRAINER("strainer"),
+    COARSE_STRAINER("coarse_strainer"),
     STEAMER_BASKET("steamer_basket"),
+    LADLE("ladle"),
+    TONGS("tongs"),
+    SPATULA("spatula"),
+    BAKING_TRAY("baking_tray"),
     JAR("jar"),
     PIE_TIN("pie_tin");
 

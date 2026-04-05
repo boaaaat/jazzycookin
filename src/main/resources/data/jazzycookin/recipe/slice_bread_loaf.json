@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "prep_table",
+  "method": "slice",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:bread_loaf" },

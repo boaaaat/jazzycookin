@@ -7,6 +7,7 @@ public record IngredientStateData(
         IngredientState state,
         long createdTick,
         float quality,
+        float recipeAccuracy,
         float flavor,
         float texture,
         float structure,
@@ -21,6 +22,7 @@ public record IngredientStateData(
             IngredientState.CODEC.fieldOf("state").forGetter(IngredientStateData::state),
             Codec.LONG.fieldOf("created_tick").forGetter(IngredientStateData::createdTick),
             Codec.FLOAT.fieldOf("quality").forGetter(IngredientStateData::quality),
+            Codec.FLOAT.optionalFieldOf("recipe_accuracy", 0.72F).forGetter(IngredientStateData::recipeAccuracy),
             Codec.FLOAT.fieldOf("flavor").forGetter(IngredientStateData::flavor),
             Codec.FLOAT.fieldOf("texture").forGetter(IngredientStateData::texture),
             Codec.FLOAT.fieldOf("structure").forGetter(IngredientStateData::structure),
@@ -37,6 +39,7 @@ public record IngredientStateData(
                 newState,
                 this.createdTick,
                 this.quality,
+                this.recipeAccuracy,
                 this.flavor,
                 this.texture,
                 this.structure,
@@ -54,6 +57,7 @@ public record IngredientStateData(
                 this.state,
                 newCreatedTick,
                 this.quality,
+                this.recipeAccuracy,
                 this.flavor,
                 this.texture,
                 this.structure,
@@ -63,6 +67,38 @@ public record IngredientStateData(
                 this.processDepth,
                 this.nourishment,
                 this.enjoyment
+        );
+    }
+
+    public IngredientStateData withMetrics(
+            IngredientState newState,
+            long newCreatedTick,
+            float newQuality,
+            float newRecipeAccuracy,
+            float newFlavor,
+            float newTexture,
+            float newStructure,
+            float newMoisture,
+            float newPurity,
+            float newAeration,
+            int newProcessDepth,
+            int newNourishment,
+            int newEnjoyment
+    ) {
+        return new IngredientStateData(
+                newState,
+                newCreatedTick,
+                newQuality,
+                newRecipeAccuracy,
+                newFlavor,
+                newTexture,
+                newStructure,
+                newMoisture,
+                newPurity,
+                newAeration,
+                newProcessDepth,
+                newNourishment,
+                newEnjoyment
         );
     }
 
@@ -80,10 +116,11 @@ public record IngredientStateData(
             int newNourishment,
             int newEnjoyment
     ) {
-        return new IngredientStateData(
+        return this.withMetrics(
                 newState,
                 newCreatedTick,
                 newQuality,
+                this.recipeAccuracy,
                 newFlavor,
                 newTexture,
                 newStructure,

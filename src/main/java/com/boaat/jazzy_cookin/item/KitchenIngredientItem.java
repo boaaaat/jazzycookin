@@ -66,6 +66,7 @@ public class KitchenIngredientItem extends Item {
                 this.defaultState,
                 gameTime,
                 this.baseQuality,
+                0.72F,
                 this.baseFlavor,
                 this.baseTexture,
                 this.baseStructure,
@@ -97,16 +98,24 @@ public class KitchenIngredientItem extends Item {
             data = this.defaultData(0L);
         }
 
-        tooltipComponents.add(Component.translatable("tooltip.jazzycookin.state", Component.translatable("state.jazzycookin." + data.state().getSerializedName()))
+        Level level = context.level();
+        IngredientState displayState = level != null ? KitchenStackUtil.effectiveState(stack, level.getGameTime()) : data.state();
+        tooltipComponents.add(Component.translatable("tooltip.jazzycookin.state", Component.translatable("state.jazzycookin." + displayState.getSerializedName()))
                 .withStyle(ChatFormatting.GRAY));
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.quality", DishGrade.fromScore(data.quality()).displayName())
                 .withStyle(ChatFormatting.GOLD));
-        Level level = context.level();
+        tooltipComponents.add(Component.translatable("tooltip.jazzycookin.recipe_accuracy", Math.round(data.recipeAccuracy() * 100.0F))
+                .withStyle(ChatFormatting.AQUA));
         if (level != null) {
             QualityBreakdown breakdown = DishEvaluation.evaluateStack(stack, level);
             tooltipComponents.add(breakdown.summary().withStyle(ChatFormatting.YELLOW));
             tooltipComponents.add(Component.translatable("tooltip.jazzycookin.freshness", Component.translatable("freshness.jazzycookin." + KitchenStackUtil.freshnessLabel(stack, level)))
                     .withStyle(ChatFormatting.GREEN));
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.prep_score", Math.round(breakdown.prepScore() * 100.0F)).withStyle(ChatFormatting.DARK_GREEN));
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.combine_score", Math.round(breakdown.combineScore() * 100.0F)).withStyle(ChatFormatting.DARK_AQUA));
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.cooking_score", Math.round(breakdown.cookingScore() * 100.0F)).withStyle(ChatFormatting.RED));
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.finishing_score", Math.round(breakdown.finishingScore() * 100.0F)).withStyle(ChatFormatting.BLUE));
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.plating_score", Math.round(breakdown.platingScore() * 100.0F)).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.nourishment", data.nourishment()).withStyle(ChatFormatting.BLUE));
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.enjoyment", data.enjoyment()).withStyle(ChatFormatting.LIGHT_PURPLE));

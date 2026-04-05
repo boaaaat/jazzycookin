@@ -13,15 +13,15 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.StringRepresentable;
 
 public enum KitchenSourceProfile implements StringRepresentable {
-    TOMATO_VINE("tomato_vine", true, 5, 4),
-    HERB_BED("herb_bed", true, 4, 3),
-    WHEAT_PATCH("wheat_patch", true, 5, 4),
-    CABBAGE_PATCH("cabbage_patch", true, 5, 4),
-    ONION_PATCH("onion_patch", true, 5, 4),
-    CHICKEN_COOP("chicken_coop", false, 5, 4),
-    DAIRY_STALL("dairy_stall", false, 5, 4),
-    FISHING_TRAP("fishing_trap", false, 5, 4),
-    FORAGE_SHRUB("forage_shrub", true, 4, 3);
+    TOMATO_VINE("tomato_vine", true, 5, 4, 8, true),
+    HERB_BED("herb_bed", true, 4, 3, 8, false),
+    WHEAT_PATCH("wheat_patch", true, 5, 4, 8, false),
+    CABBAGE_PATCH("cabbage_patch", true, 5, 4, 8, true),
+    ONION_PATCH("onion_patch", true, 5, 4, 7, false),
+    CHICKEN_COOP("chicken_coop", false, 5, 4, 0, false),
+    DAIRY_STALL("dairy_stall", false, 5, 4, 0, false),
+    FISHING_TRAP("fishing_trap", false, 5, 4, 0, false),
+    FORAGE_SHRUB("forage_shrub", true, 4, 3, 7, false);
 
     private static final Map<String, KitchenSourceProfile> BY_NAME = Arrays.stream(values())
             .collect(Collectors.toMap(KitchenSourceProfile::getSerializedName, Function.identity()));
@@ -36,12 +36,16 @@ public enum KitchenSourceProfile implements StringRepresentable {
     private final boolean plantLike;
     private final int maxAge;
     private final int ripeAge;
+    private final int minimumLight;
+    private final boolean prefersHydration;
 
-    KitchenSourceProfile(String serializedName, boolean plantLike, int maxAge, int ripeAge) {
+    KitchenSourceProfile(String serializedName, boolean plantLike, int maxAge, int ripeAge, int minimumLight, boolean prefersHydration) {
         this.serializedName = serializedName;
         this.plantLike = plantLike;
         this.maxAge = maxAge;
         this.ripeAge = ripeAge;
+        this.minimumLight = minimumLight;
+        this.prefersHydration = prefersHydration;
     }
 
     public static KitchenSourceProfile byName(String name) {
@@ -58,6 +62,14 @@ public enum KitchenSourceProfile implements StringRepresentable {
 
     public int ripeAge() {
         return this.ripeAge;
+    }
+
+    public int minimumLight() {
+        return this.minimumLight;
+    }
+
+    public boolean prefersHydration() {
+        return this.prefersHydration;
     }
 
     @Override

@@ -87,6 +87,9 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenIngredientItem> CLEANED_FISH = ingredient(
             "cleaned_fish", IngredientState.CLEANED_FISH, 0.80F, 0.46F, 0.58F, 0.22F, 0.68F, 0.60F, 0.04F, 28_000L, 4, 2
     );
+    public static final DeferredItem<KitchenIngredientItem> PAN_FRIED_FISH = ingredient(
+            "pan_fried_fish", IngredientState.PAN_FRIED, 0.84F, 0.82F, 0.74F, 0.28F, 0.58F, 0.62F, 0.04F, 18_000L, 7, 6
+    );
     public static final DeferredItem<KitchenIngredientItem> RAW_PROTEIN = ingredient(
             "raw_protein", IngredientState.RAW_PROTEIN, 0.76F, 0.48F, 0.56F, 0.26F, 0.72F, 0.42F, 0.04F, 34_000L, 5, 3
     );
@@ -104,6 +107,15 @@ public final class JazzyItems {
     );
     public static final DeferredItem<KitchenIngredientItem> USED_OIL_ITEM = ingredient(
             "used_oil", IngredientState.USED_OIL, 0.46F, 0.10F, 0.10F, 0.00F, 0.86F, 0.30F, 0.00F, 12_000L, 0, 0
+    );
+    public static final DeferredItem<KitchenIngredientItem> DIRTY_OIL_ITEM = ingredient(
+            "dirty_oil", IngredientState.DIRTY_OIL, 0.30F, 0.06F, 0.06F, 0.00F, 0.82F, 0.18F, 0.00F, 8_000L, 0, 0
+    );
+    public static final DeferredItem<KitchenIngredientItem> BURNT_OIL_ITEM = ingredient(
+            "burnt_oil", IngredientState.BURNT_OIL, 0.12F, 0.00F, 0.02F, 0.00F, 0.74F, 0.08F, 0.00F, 4_000L, 0, 0
+    );
+    public static final DeferredItem<KitchenIngredientItem> BOILED_EGG_ITEM = ingredient(
+            "boiled_egg", IngredientState.BOILED, 0.82F, 0.42F, 0.66F, 0.48F, 0.68F, 0.72F, 0.04F, 20_000L, 6, 4
     );
     public static final DeferredItem<KitchenIngredientItem> FLOUR = ingredient(
             "flour", IngredientState.PANTRY_READY, 0.76F, 0.18F, 0.32F, 0.40F, 0.10F, 0.92F, 0.00F, Long.MAX_VALUE / 4L, 1, 0

@@ -1,0 +1,35 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "method": "pan_fry",
+  "inputs": [
+    {
+      "ingredient": { "item": "jazzycookin:cleaned_fish" },
+      "required_state": "cleaned_fish",
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "jazzycookin:frying_oil" },
+      "required_state": "fresh_oil",
+      "count": 1
+    }
+  ],
+  "preferred_tool": "skillet",
+  "tool_required": true,
+  "duration": 58,
+  "preferred_heat": "medium",
+  "minimum_heat": "medium",
+  "maximum_heat": "high",
+  "output": {
+    "result": { "id": "jazzycookin:pan_fried_fish", "count": 1 },
+    "byproduct": { "id": "jazzycookin:used_oil", "count": 1 },
+    "state": "pan_fried",
+    "quality_bonus": 0.07,
+    "recipe_accuracy_delta": 0.06,
+    "flavor_delta": 0.18,
+    "texture_delta": 0.16,
+    "moisture_delta": -0.06,
+    "nourishment": 7,
+    "enjoyment": 6
+  }
+}

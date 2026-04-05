@@ -13,6 +13,50 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.StringRepresentable;
 
 public enum IngredientState implements StringRepresentable {
+    RAW("raw"),
+    WASHED("washed"),
+    WHOLE("whole"),
+    PEELED("peeled"),
+    SLICED("sliced"),
+    CHOPPED("chopped"),
+    DICED("diced"),
+    MINCED("minced"),
+    ROUGH_CUT("rough_cut"),
+    STRAINED("strained"),
+    CRUSHED("crushed"),
+    COARSE_PASTE("coarse_paste"),
+    SMOOTH_PASTE("smooth_paste"),
+    OVERWORKED_PASTE("overworked_paste"),
+    COARSE_POWDER("coarse_powder"),
+    FINE_POWDER("fine_powder"),
+    MIXED("mixed"),
+    SMOOTH_MIXTURE("smooth_mixture"),
+    LUMPY_MIXTURE("lumpy_mixture"),
+    UNDERWHISKED("underwhisked"),
+    WHISKED("whisked"),
+    OVERWHISKED("overwhisked"),
+    SEPARATED("separated"),
+    SHAGGY_DOUGH("shaggy_dough"),
+    ROUGH_DOUGH("rough_dough"),
+    DEVELOPING_DOUGH("developing_dough"),
+    DEVELOPED_DOUGH("developed_dough"),
+    SMOOTH_DOUGH("smooth_dough"),
+    ELASTIC_DOUGH("elastic_dough"),
+    OVERWORKED_DOUGH("overworked_dough"),
+    BATTERED("battered"),
+    MARINATED("marinated"),
+    BOILED("boiled"),
+    SIMMERED("simmered"),
+    PAN_FRIED("pan_fried"),
+    DEEP_FRIED("deep_fried"),
+    BAKED("baked"),
+    ROASTED("roasted"),
+    STEAMED("steamed"),
+    SMOKED("smoked"),
+    FERMENTED("fermented"),
+    COOLED("cooled"),
+    RESTED("rested"),
+    PLATED("plated"),
     PANTRY_READY("pantry_ready"),
     WHOLE_APPLE("whole_apple"),
     WILD_BERRIES("wild_berries"),
@@ -65,6 +109,8 @@ public enum IngredientState implements StringRepresentable {
     CULTURED_DAIRY("cultured_dairy"),
     FRESH_OIL("fresh_oil"),
     USED_OIL("used_oil"),
+    DIRTY_OIL("dirty_oil"),
+    BURNT_OIL("burnt_oil"),
     SIMMERED_FILLING("simmered_filling"),
     RAW_ASSEMBLED_PIE("raw_assembled_pie"),
     BAKED_PIE("baked_pie"),
@@ -103,7 +149,12 @@ public enum IngredientState implements StringRepresentable {
                 || this == PLATED_SOUP_MEAL
                 || this == PLATED_DUMPLING_MEAL
                 || this == PLATED_FRIED_MEAL
-                || this == PLATED_ROAST_MEAL;
+                || this == PLATED_ROAST_MEAL
+                || this == PLATED;
+    }
+
+    public boolean isSpoiledState() {
+        return this == SPOILED || this == MOLDY;
     }
 
     @Override

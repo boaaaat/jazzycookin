@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "canning_station",
+  "method": "can",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:orchard_apple" },
@@ -14,8 +15,11 @@
     }
   ],
   "preferred_tool": "jar",
+  "tool_required": true,
   "duration": 90,
   "preferred_heat": "medium",
+  "minimum_heat": "medium",
+  "maximum_heat": "high",
   "output": {
     "result": { "id": "jazzycookin:apple_preserve", "count": 1 },
     "state": "apple_preserve",

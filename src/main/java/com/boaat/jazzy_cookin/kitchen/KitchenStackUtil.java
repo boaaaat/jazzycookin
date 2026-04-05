@@ -35,12 +35,15 @@ public final class KitchenStackUtil {
     }
 
     public static boolean matchesState(ItemStack stack, IngredientState state, long gameTime) {
-        IngredientStateData data = getOrCreateData(stack, gameTime);
-        return data != null && data.state() == state;
+        return effectiveState(stack, gameTime) == state;
     }
 
     public static float currentFreshnessScore(ItemStack stack, Level level) {
-        IngredientStateData data = getOrCreateData(stack, level.getGameTime());
+        return currentFreshnessScore(stack, level.getGameTime());
+    }
+
+    public static float currentFreshnessScore(ItemStack stack, long gameTime) {
+        IngredientStateData data = getOrCreateData(stack, gameTime);
         if (data == null) {
             return 0.0F;
         }
@@ -50,26 +53,34 @@ public final class KitchenStackUtil {
             return 1.0F;
         }
 
-        long age = Math.max(0L, level.getGameTime() - data.createdTick());
+        long age = Math.max(0L, gameTime - data.createdTick());
         float ratio = age / (float) decayTicks;
         return Mth.clamp(1.0F - ratio, 0.0F, 1.0F);
     }
 
+    public static FreshnessBand freshnessBand(ItemStack stack, Level level) {
+        return freshnessBand(stack, level.getGameTime());
+    }
+
+    public static FreshnessBand freshnessBand(ItemStack stack, long gameTime) {
+        return FreshnessBand.fromScore(currentFreshnessScore(stack, gameTime));
+    }
+
+    public static IngredientState effectiveState(ItemStack stack, long gameTime) {
+        IngredientStateData data = getOrCreateData(stack, gameTime);
+        if (data == null) {
+            return IngredientState.PANTRY_READY;
+        }
+
+        return switch (freshnessBand(stack, gameTime)) {
+            case SPOILED -> IngredientState.SPOILED;
+            case MOLDY -> IngredientState.MOLDY;
+            default -> data.state();
+        };
+    }
+
     public static String freshnessLabel(ItemStack stack, Level level) {
-        float score = currentFreshnessScore(stack, level);
-        if (score >= 0.75F) {
-            return "fresh";
-        }
-        if (score >= 0.45F) {
-            return "aging";
-        }
-        if (score >= 0.2F) {
-            return "stale";
-        }
-        if (score > 0.0F) {
-            return "spoiled";
-        }
-        return "moldy";
+        return freshnessBand(stack, level).getSerializedName();
     }
 
     public static long decayTicks(ItemStack stack) {

@@ -69,9 +69,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(this.font, this.title, 8, 6, 0xF2E7D5, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, 0xF2E7D5, false);
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.current_heat", Component.translatable("heat.jazzycookin." + this.menu.heatLevel().getSerializedName())), 100, 22, 0xE3CFAE, false);
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.output"), 118, 14, 0xD6C4A7, false);
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.byproduct"), 118, 58, 0xD6C4A7, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.method", this.menu.currentMethod().displayName()), 100, 8, 0xE3CFAE, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.current_heat", Component.translatable("heat.jazzycookin." + this.menu.heatLevel().getSerializedName())), 100, 20, 0xE3CFAE, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.output"), 118, 40, 0xD6C4A7, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.byproduct"), 112, 62, 0xD6C4A7, false);
         if (this.menu.stationType() == StationType.OVEN) {
             guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.preheat", this.menu.preheatProgress()), 100, 82, 0xE3CFAE, false);
         } else {

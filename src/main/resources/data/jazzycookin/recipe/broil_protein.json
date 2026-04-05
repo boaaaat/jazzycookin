@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "oven",
+  "method": "broil",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:roasted_protein" },
@@ -10,6 +11,8 @@
   ],
   "duration": 42,
   "preferred_heat": "high",
+  "minimum_heat": "high",
+  "maximum_heat": "high",
   "requires_preheat": true,
   "output": {
     "result": { "id": "jazzycookin:broiled_protein", "count": 1 },

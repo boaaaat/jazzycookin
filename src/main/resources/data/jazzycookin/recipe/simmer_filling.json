@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "stove",
+  "method": "simmer",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:orchard_apple" },
@@ -19,8 +20,11 @@
     }
   ],
   "preferred_tool": "pot",
+  "tool_required": true,
   "duration": 100,
   "preferred_heat": "medium",
+  "minimum_heat": "low",
+  "maximum_heat": "medium",
   "output": {
     "result": { "id": "jazzycookin:pie_filling", "count": 1 },
     "state": "simmered_filling",

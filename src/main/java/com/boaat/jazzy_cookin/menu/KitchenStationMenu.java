@@ -3,6 +3,7 @@ package com.boaat.jazzy_cookin.menu;
 import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
+import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyMenus;
@@ -30,7 +31,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 containerId,
                 playerInventory,
                 new SimpleContainer(7),
-                new SimpleContainerData(4),
+                new SimpleContainerData(5),
                 readStationType(extraData),
                 ContainerLevelAccess.NULL
         );
@@ -62,7 +63,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this.access = access;
 
         checkContainerSize(container, 7);
-        checkContainerDataCount(data, 4);
+        checkContainerDataCount(data, 5);
         container.startOpen(playerInventory.player);
 
         this.addSlot(new Slot(container, 0, 18, 22));
@@ -124,6 +125,10 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
     public int preheatProgress() {
         return this.data.get(3);
+    }
+
+    public KitchenMethod currentMethod() {
+        return KitchenMethod.values()[Math.max(0, Math.min(KitchenMethod.values().length - 1, this.data.get(4)))];
     }
 
     @Override

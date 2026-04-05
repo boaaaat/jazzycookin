@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "drying_rack",
+  "method": "dry",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:orchard_apple" },

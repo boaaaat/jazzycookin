@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "oven",
+  "method": "roast",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:tomato" },
@@ -15,6 +16,8 @@
   ],
   "duration": 86,
   "preferred_heat": "high",
+  "minimum_heat": "medium",
+  "maximum_heat": "high",
   "requires_preheat": true,
   "output": {
     "result": { "id": "jazzycookin:roast_vegetables", "count": 1 },

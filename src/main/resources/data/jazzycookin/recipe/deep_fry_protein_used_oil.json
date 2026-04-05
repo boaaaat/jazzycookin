@@ -9,8 +9,8 @@
       "count": 1
     },
     {
-      "ingredient": { "item": "jazzycookin:frying_oil" },
-      "required_state": "fresh_oil",
+      "ingredient": { "item": "jazzycookin:used_oil" },
+      "required_state": "used_oil",
       "count": 1
     }
   ],
@@ -22,13 +22,14 @@
   "maximum_heat": "high",
   "output": {
     "result": { "id": "jazzycookin:fried_protein", "count": 1 },
-    "byproduct": { "id": "jazzycookin:used_oil", "count": 1 },
+    "byproduct": { "id": "jazzycookin:dirty_oil", "count": 1 },
     "state": "fried_protein",
-    "quality_bonus": 0.09,
-    "flavor_delta": 0.20,
-    "texture_delta": 0.22,
-    "moisture_delta": -0.10,
+    "quality_bonus": 0.03,
+    "recipe_accuracy_delta": -0.06,
+    "flavor_delta": 0.16,
+    "texture_delta": 0.18,
+    "moisture_delta": -0.12,
     "nourishment": 8,
-    "enjoyment": 9
+    "enjoyment": 8
   }
 }

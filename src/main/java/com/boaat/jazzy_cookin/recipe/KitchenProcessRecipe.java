@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
+import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.ProcessMode;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
@@ -19,9 +20,13 @@ import net.minecraft.world.level.Level;
 public record KitchenProcessRecipe(
         StationType station,
         List<KitchenInputRequirement> inputs,
+        KitchenMethod method,
         Optional<ToolProfile> preferredTool,
+        boolean toolRequired,
         int duration,
         HeatLevel preferredHeat,
+        HeatLevel minimumHeat,
+        HeatLevel maximumHeat,
         boolean requiresPreheat,
         ProcessMode mode,
         boolean requiresNearbyWater,
@@ -80,5 +85,9 @@ public record KitchenProcessRecipe(
     @Override
     public boolean isSpecial() {
         return true;
+    }
+
+    public boolean usesHeat() {
+        return this.minimumHeat != HeatLevel.OFF || this.maximumHeat != HeatLevel.OFF || this.preferredHeat != HeatLevel.OFF;
     }
 }

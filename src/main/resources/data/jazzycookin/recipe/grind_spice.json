@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "spice_grinder",
+  "method": "grind",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:baking_spice" },

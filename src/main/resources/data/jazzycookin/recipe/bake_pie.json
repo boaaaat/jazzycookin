@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "oven",
+  "method": "bake",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:apple_pie" },
@@ -9,8 +10,11 @@
     }
   ],
   "preferred_tool": "pie_tin",
+  "tool_required": true,
   "duration": 140,
   "preferred_heat": "high",
+  "minimum_heat": "medium",
+  "maximum_heat": "high",
   "requires_preheat": true,
   "output": {
     "result": { "id": "jazzycookin:apple_pie", "count": 1 },

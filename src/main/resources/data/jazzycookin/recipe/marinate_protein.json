@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "fermentation_crock",
+  "method": "marinate",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:raw_protein" },

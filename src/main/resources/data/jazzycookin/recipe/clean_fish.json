@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "prep_table",
+  "method": "cut",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:raw_fish" },

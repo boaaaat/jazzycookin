@@ -1,6 +1,7 @@
 {
   "type": "jazzycookin:kitchen_process",
   "station": "stove",
+  "method": "simmer",
   "inputs": [
     {
       "ingredient": { "item": "jazzycookin:chopped_tomato" },
@@ -19,8 +20,11 @@
     }
   ],
   "preferred_tool": "pot",
+  "tool_required": true,
   "duration": 96,
   "preferred_heat": "low",
+  "minimum_heat": "low",
+  "maximum_heat": "medium",
   "requires_nearby_water": true,
   "output": {
     "result": { "id": "jazzycookin:tomato_soup_base", "count": 1 },

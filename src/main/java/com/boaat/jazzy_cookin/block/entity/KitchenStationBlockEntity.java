@@ -9,6 +9,7 @@ import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
+import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
@@ -52,6 +53,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 1 -> KitchenStationBlockEntity.this.maxProgress;
                 case 2 -> KitchenStationBlockEntity.this.heatLevel.ordinal();
                 case 3 -> KitchenStationBlockEntity.this.preheatProgress;
+                case 4 -> KitchenStationBlockEntity.this.currentMethod().ordinal();
                 default -> 0;
             };
         }
@@ -70,7 +72,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
         @Override
         public int getCount() {
-            return 4;
+            return 5;
         }
     };
 
@@ -220,7 +222,23 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return JazzyRecipes.findPlateRecipe(this.level, List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)));
     }
 
+    private KitchenMethod currentMethod() {
+        if (this.getStationType() == StationType.PLATING_STATION) {
+            return this.currentPlateRecipe().isPresent() ? KitchenMethod.PLATE : KitchenMethod.NONE;
+        }
+        return this.currentRecipe().map(KitchenProcessRecipe::method).orElse(KitchenMethod.NONE);
+    }
+
     private boolean environmentAllows(KitchenProcessRecipe recipe) {
+        if (recipe.toolRequired()) {
+            if (recipe.preferredTool().isEmpty()) {
+                return false;
+            }
+            if (!(this.getItem(TOOL_SLOT).getItem() instanceof KitchenToolItem toolItem) || toolItem.profile() != recipe.preferredTool().get()) {
+                return false;
+            }
+        }
+
         if (!recipe.requiresNearbyWater() || this.level == null) {
             return true;
         }
