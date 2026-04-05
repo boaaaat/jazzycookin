@@ -21,8 +21,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class KitchenStationMenu extends AbstractContainerMenu {
-    private static final int PLAYER_INVENTORY_START_Y = 104;
-    private static final int HOTBAR_Y = 162;
+    private static final int PLAYER_INVENTORY_START_X = 34;
+    private static final int PLAYER_INVENTORY_START_Y = 131;
+    private static final int HOTBAR_Y = 189;
 
     private final Container container;
     private final ContainerData data;
@@ -101,12 +102,12 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, PLAYER_INVENTORY_START_Y + row * 18));
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, PLAYER_INVENTORY_START_X + col * 18, PLAYER_INVENTORY_START_Y + row * 18));
             }
         }
 
         for (int hotbarSlot = 0; hotbarSlot < 9; hotbarSlot++) {
-            this.addSlot(new Slot(playerInventory, hotbarSlot, 8 + hotbarSlot * 18, HOTBAR_Y));
+            this.addSlot(new Slot(playerInventory, hotbarSlot, PLAYER_INVENTORY_START_X + hotbarSlot * 18, HOTBAR_Y));
         }
 
         this.addDataSlots(data);
@@ -204,28 +205,28 @@ public class KitchenStationMenu extends AbstractContainerMenu {
     }
 
     private record SlotLayout(SlotPosition[] inputs, SlotPosition tool, SlotPosition output, SlotPosition byproduct) {
-        private static final SlotPosition RESULT_SLOT = new SlotPosition(138, 30);
-        private static final SlotPosition BYPRODUCT_SLOT = new SlotPosition(138, 52);
+        private static final SlotPosition RESULT_SLOT = new SlotPosition(187, 50);
+        private static final SlotPosition BYPRODUCT_SLOT = new SlotPosition(187, 72);
 
         private static SlotLayout forStation(StationType stationType) {
             return switch (stationType) {
                 case PREP_TABLE -> new SlotLayout(
                         positions(
-                                new SlotPosition(18, 28),
-                                new SlotPosition(36, 28),
-                                new SlotPosition(54, 28),
-                                new SlotPosition(72, 28)
+                                new SlotPosition(28, 50),
+                                new SlotPosition(46, 50),
+                                new SlotPosition(64, 50),
+                                new SlotPosition(82, 50)
                         ),
-                        new SlotPosition(45, 56),
+                        new SlotPosition(64, 72),
                         RESULT_SLOT,
                         BYPRODUCT_SLOT
                 );
                 case SPICE_GRINDER, MIXING_BOWL, STRAINER, FERMENTATION_CROCK, PLATING_STATION -> new SlotLayout(
                         positions(
-                                new SlotPosition(18, 24),
-                                new SlotPosition(38, 24),
-                                new SlotPosition(18, 44),
-                                new SlotPosition(38, 44)
+                                new SlotPosition(28, 46),
+                                new SlotPosition(50, 46),
+                                new SlotPosition(28, 68),
+                                new SlotPosition(50, 68)
                         ),
                         toolPosition(stationType),
                         RESULT_SLOT,
@@ -233,21 +234,21 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 );
                 case OVEN -> new SlotLayout(
                         positions(
-                                new SlotPosition(18, 24),
-                                new SlotPosition(38, 24),
-                                new SlotPosition(18, 44),
-                                new SlotPosition(38, 44)
+                                new SlotPosition(28, 50),
+                                new SlotPosition(46, 50),
+                                new SlotPosition(64, 50),
+                                new SlotPosition(82, 50)
                         ),
-                        new SlotPosition(58, 56),
+                        new SlotPosition(84, 72),
                         RESULT_SLOT,
                         BYPRODUCT_SLOT
                 );
                 default -> new SlotLayout(
                         positions(
-                                new SlotPosition(18, 26),
-                                new SlotPosition(36, 26),
-                                new SlotPosition(54, 26),
-                                new SlotPosition(72, 26)
+                                new SlotPosition(28, 50),
+                                new SlotPosition(46, 50),
+                                new SlotPosition(64, 50),
+                                new SlotPosition(82, 50)
                         ),
                         toolPosition(stationType),
                         RESULT_SLOT,
@@ -258,13 +259,11 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
         private static SlotPosition toolPosition(StationType stationType) {
             return switch (stationType) {
-                case PREP_TABLE -> new SlotPosition(45, 56);
-                case SPICE_GRINDER -> new SlotPosition(60, 34);
-                case MIXING_BOWL -> new SlotPosition(58, 58);
-                case STRAINER -> new SlotPosition(60, 42);
-                case CANNING_STATION, SMOKER, STEAMER, STOVE -> new SlotPosition(54, 54);
-                case OVEN -> new SlotPosition(58, 56);
-                default -> new SlotPosition(82, 56);
+                case PREP_TABLE -> new SlotPosition(64, 72);
+                case SPICE_GRINDER, MIXING_BOWL, FERMENTATION_CROCK, PLATING_STATION -> new SlotPosition(84, 68);
+                case STRAINER -> new SlotPosition(84, 57);
+                case CANNING_STATION, SMOKER, STEAMER, STOVE, OVEN -> new SlotPosition(84, 72);
+                default -> new SlotPosition(84, 72);
             };
         }
 

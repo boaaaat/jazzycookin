@@ -14,23 +14,27 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorageMenu> {
-    private static final int STORAGE_PANEL_X = 7;
-    private static final int STORAGE_PANEL_Y = 17;
-    private static final int STORAGE_PANEL_WIDTH = 162;
-    private static final int STORAGE_PANEL_HEIGHT = 60;
-    private static final int INVENTORY_PANEL_X = 7;
-    private static final int INVENTORY_PANEL_Y = 81;
-    private static final int INVENTORY_PANEL_WIDTH = 162;
-    private static final int INVENTORY_PANEL_HEIGHT = 80;
+    private static final int STORAGE_CARD_X = 14;
+    private static final int STORAGE_CARD_Y = 34;
+    private static final int STORAGE_CARD_WIDTH = 202;
+    private static final int STORAGE_CARD_HEIGHT = 62;
+    private static final int SHORTCUT_CARD_X = 14;
+    private static final int SHORTCUT_CARD_Y = 104;
+    private static final int SHORTCUT_CARD_WIDTH = 202;
+    private static final int SHORTCUT_CARD_HEIGHT = 30;
+    private static final int INVENTORY_CARD_X = 14;
+    private static final int INVENTORY_CARD_Y = 138;
+    private static final int INVENTORY_CARD_WIDTH = 202;
+    private static final int INVENTORY_CARD_HEIGHT = 78;
     private static final int SLOT_COUNT = 45;
 
     private final List<PantryShortcut> pantryShortcuts = new ArrayList<>();
 
     public KitchenStorageScreen(KitchenStorageMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 168;
-        this.inventoryLabelY = 74;
+        this.imageWidth = 230;
+        this.imageHeight = 222;
+        this.inventoryLabelY = 127;
     }
 
     @Override
@@ -38,14 +42,14 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         super.init();
         this.pantryShortcuts.clear();
         if (this.menu.isPantry()) {
-            this.addShortcut(0, 8, 58, JazzyItems.FLOUR.get().getDefaultInstance());
-            this.addShortcut(1, 28, 58, JazzyItems.CANE_SUGAR.get().getDefaultInstance());
-            this.addShortcut(2, 48, 58, JazzyItems.BUTTER.get().getDefaultInstance());
-            this.addShortcut(3, 68, 58, JazzyItems.BAKING_SPICE.get().getDefaultInstance());
-            this.addShortcut(4, 90, 58, JazzyItems.FRYING_OIL.get().getDefaultInstance());
-            this.addShortcut(5, 110, 58, JazzyItems.CERAMIC_PLATE.get().getDefaultInstance());
-            this.addShortcut(6, 130, 58, JazzyItems.CANNING_JAR.get().getDefaultInstance());
-            this.addShortcut(7, 150, 58, JazzyItems.SALT.get().getDefaultInstance());
+            this.addShortcut(0, 34, 110, JazzyItems.FLOUR.get().getDefaultInstance());
+            this.addShortcut(1, 54, 110, JazzyItems.CANE_SUGAR.get().getDefaultInstance());
+            this.addShortcut(2, 74, 110, JazzyItems.BUTTER.get().getDefaultInstance());
+            this.addShortcut(3, 94, 110, JazzyItems.BAKING_SPICE.get().getDefaultInstance());
+            this.addShortcut(4, 118, 110, JazzyItems.FRYING_OIL.get().getDefaultInstance());
+            this.addShortcut(5, 138, 110, JazzyItems.CERAMIC_PLATE.get().getDefaultInstance());
+            this.addShortcut(6, 158, 110, JazzyItems.CANNING_JAR.get().getDefaultInstance());
+            this.addShortcut(7, 178, 110, JazzyItems.SALT.get().getDefaultInstance());
         }
     }
 
@@ -68,8 +72,9 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         int top = this.topPos;
 
         JazzyGuiRenderer.drawWindow(guiGraphics, left, top, this.imageWidth, this.imageHeight);
-        JazzyGuiRenderer.drawPanel(guiGraphics, left + STORAGE_PANEL_X, top + STORAGE_PANEL_Y, STORAGE_PANEL_WIDTH, STORAGE_PANEL_HEIGHT);
-        JazzyGuiRenderer.drawPanel(guiGraphics, left + INVENTORY_PANEL_X, top + INVENTORY_PANEL_Y, INVENTORY_PANEL_WIDTH, INVENTORY_PANEL_HEIGHT);
+        JazzyGuiRenderer.drawCard(guiGraphics, left + STORAGE_CARD_X, top + STORAGE_CARD_Y, STORAGE_CARD_WIDTH, STORAGE_CARD_HEIGHT);
+        JazzyGuiRenderer.drawCard(guiGraphics, left + SHORTCUT_CARD_X, top + SHORTCUT_CARD_Y, SHORTCUT_CARD_WIDTH, SHORTCUT_CARD_HEIGHT);
+        JazzyGuiRenderer.drawCard(guiGraphics, left + INVENTORY_CARD_X, top + INVENTORY_CARD_Y, INVENTORY_CARD_WIDTH, INVENTORY_CARD_HEIGHT);
 
         for (int slotIndex = 0; slotIndex < SLOT_COUNT; slotIndex++) {
             JazzyGuiRenderer.drawSlot(guiGraphics, left + this.menu.getSlot(slotIndex).x, top + this.menu.getSlot(slotIndex).y);
@@ -78,8 +83,31 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, 8, 6, JazzyGuiRenderer.TEXT, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, JazzyGuiRenderer.TEXT, false);
+        guiGraphics.drawString(this.font, this.title, 14, 10, JazzyGuiRenderer.TITLE_TEXT, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.storage_short"), STORAGE_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 20, this.inventoryLabelY, JazzyGuiRenderer.TEXT, false);
+
+        if (this.menu.isPantry()) {
+            this.drawCenteredLabel(
+                    guiGraphics,
+                    Component.translatable("screen.jazzycookin.quick_supply"),
+                    this.imageWidth / 2,
+                    97,
+                    JazzyGuiRenderer.TEXT_MUTED
+            );
+        } else {
+            this.drawCenteredLabel(
+                    guiGraphics,
+                    Component.translatable("screen.jazzycookin.cellar_hint"),
+                    this.imageWidth / 2,
+                    113,
+                    JazzyGuiRenderer.TEXT_MUTED
+            );
+        }
+    }
+
+    private void drawCenteredLabel(GuiGraphics guiGraphics, Component label, int centerX, int y, int color) {
+        guiGraphics.drawString(this.font, label, centerX - this.font.width(label) / 2, y, color, false);
     }
 
     @Override

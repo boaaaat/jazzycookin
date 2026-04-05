@@ -16,6 +16,12 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class KitchenStorageMenu extends AbstractContainerMenu {
+    private static final int STORAGE_START_X = 34;
+    private static final int STORAGE_START_Y = 43;
+    private static final int PLAYER_INVENTORY_START_X = 34;
+    private static final int PLAYER_INVENTORY_START_Y = 146;
+    private static final int HOTBAR_Y = 204;
+
     private final Container container;
     private final StorageType storageType;
     private final ContainerLevelAccess access;
@@ -57,18 +63,18 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 2; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(container, col + row * 9, 8 + col * 18, 24 + row * 18));
+                this.addSlot(new Slot(container, col + row * 9, STORAGE_START_X + col * 18, STORAGE_START_Y + row * 18));
             }
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, PLAYER_INVENTORY_START_X + col * 18, PLAYER_INVENTORY_START_Y + row * 18));
             }
         }
 
         for (int hotbarSlot = 0; hotbarSlot < 9; hotbarSlot++) {
-            this.addSlot(new Slot(playerInventory, hotbarSlot, 8 + hotbarSlot * 18, 142));
+            this.addSlot(new Slot(playerInventory, hotbarSlot, PLAYER_INVENTORY_START_X + hotbarSlot * 18, HOTBAR_Y));
         }
     }
 
