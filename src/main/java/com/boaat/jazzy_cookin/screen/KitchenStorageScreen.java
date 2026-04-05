@@ -3,15 +3,14 @@ package com.boaat.jazzy_cookin.screen;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
-import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
 
 public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorageMenu> {
     private static final int STORAGE_CARD_X = 14;
@@ -21,43 +20,69 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     private static final int SHORTCUT_CARD_X = 14;
     private static final int SHORTCUT_CARD_Y = 104;
     private static final int SHORTCUT_CARD_WIDTH = 202;
-    private static final int SHORTCUT_CARD_HEIGHT = 30;
+    private static final int SHORTCUT_CARD_HEIGHT = 108;
     private static final int INVENTORY_CARD_X = 14;
-    private static final int INVENTORY_CARD_Y = 138;
+    private static final int INVENTORY_CARD_Y = 218;
     private static final int INVENTORY_CARD_WIDTH = 202;
-    private static final int INVENTORY_CARD_HEIGHT = 78;
+    private static final int INVENTORY_CARD_HEIGHT = 84;
     private static final int SLOT_COUNT = 45;
+    private static final int TAB_WIDTH = 62;
+    private static final int TAB_HEIGHT = 18;
+    private static final int TAB_GAP_X = 4;
+    private static final int TAB_GAP_Y = 4;
+    private static final int TAB_START_Y = 124;
 
-    private final List<PantryShortcut> pantryShortcuts = new ArrayList<>();
+    private final List<PantryTabButton> pantryTabs = new ArrayList<>();
+    private PantrySortTab selectedPantryTab;
 
     public KitchenStorageScreen(KitchenStorageMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 230;
-        this.imageHeight = 222;
-        this.inventoryLabelY = 127;
+        this.imageHeight = 308;
+        this.inventoryLabelY = 207;
     }
 
     @Override
     protected void init() {
         super.init();
-        this.pantryShortcuts.clear();
+        this.pantryTabs.clear();
         if (this.menu.isPantry()) {
-            this.addShortcut(0, 34, 110, JazzyItems.FLOUR.get().getDefaultInstance());
-            this.addShortcut(1, 54, 110, JazzyItems.CANE_SUGAR.get().getDefaultInstance());
-            this.addShortcut(2, 74, 110, JazzyItems.BUTTER.get().getDefaultInstance());
-            this.addShortcut(3, 94, 110, JazzyItems.BAKING_SPICE.get().getDefaultInstance());
-            this.addShortcut(4, 118, 110, JazzyItems.FRYING_OIL.get().getDefaultInstance());
-            this.addShortcut(5, 138, 110, JazzyItems.CERAMIC_PLATE.get().getDefaultInstance());
-            this.addShortcut(6, 158, 110, JazzyItems.CANNING_JAR.get().getDefaultInstance());
-            this.addShortcut(7, 178, 110, JazzyItems.SALT.get().getDefaultInstance());
+            int index = 0;
+            int[] rowCounts = new int[] { 3, 3, 3, 2 };
+            for (int row = 0; row < rowCounts.length; row++) {
+                int count = rowCounts[row];
+                int rowWidth = count * TAB_WIDTH + (count - 1) * TAB_GAP_X;
+                int startX = SHORTCUT_CARD_X + 8 + (186 - rowWidth) / 2;
+                for (int col = 0; col < count; col++) {
+                    PantrySortTab tab = PantrySortTab.tabs().get(index++);
+                    this.addTab(
+                            tab,
+                            startX + col * (TAB_WIDTH + TAB_GAP_X),
+                            TAB_START_Y + row * (TAB_HEIGHT + TAB_GAP_Y)
+                    );
+                }
+            }
+            this.updateTabStates();
         }
     }
 
-    private void addShortcut(int buttonId, int x, int y, ItemStack icon) {
-        Button button = this.addRenderableWidget(Button.builder(Component.empty(), pressed -> this.sendButton(buttonId))
-                .bounds(this.leftPos + x, this.topPos + y, 18, 18)
+    private void addTab(PantrySortTab tab, int x, int y) {
+        Button button = this.addRenderableWidget(Button.builder(Component.empty(), pressed -> this.selectTab(tab))
+                .bounds(this.leftPos + x, this.topPos + y, TAB_WIDTH, TAB_HEIGHT)
                 .build());
-        this.pantryShortcuts.add(new PantryShortcut(button, icon));
+        this.pantryTabs.add(new PantryTabButton(button, tab));
+    }
+
+    private void selectTab(PantrySortTab tab) {
+        this.selectedPantryTab = tab;
+        this.updateTabStates();
+        this.sendButton(tab.buttonId());
+    }
+
+    private void updateTabStates() {
+        for (PantryTabButton tab : this.pantryTabs) {
+            tab.button().active = this.selectedPantryTab != tab.tab();
+        }
     }
 
     private void sendButton(int buttonId) {
@@ -89,14 +114,14 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.storage_short"), STORAGE_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
         guiGraphics.drawString(this.font, shelfLabel, STORAGE_CARD_X + STORAGE_CARD_WIDTH - this.font.width(shelfLabel), 35, JazzyGuiRenderer.TEXT_MUTED, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 20, this.inventoryLabelY, JazzyGuiRenderer.TEXT, false);
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.hotbar_short"), 20, 182, JazzyGuiRenderer.TEXT_SOFT, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.hotbar_short"), 20, 273, JazzyGuiRenderer.TEXT_SOFT, false);
 
         if (this.menu.isPantry()) {
             this.drawCenteredLabel(
                     guiGraphics,
-                    Component.translatable("screen.jazzycookin.quick_supply"),
+                    Component.translatable("screen.jazzycookin.sort_tabs"),
                     this.imageWidth / 2,
-                    97,
+                    110,
                     JazzyGuiRenderer.TEXT_MUTED
             );
         } else {
@@ -104,7 +129,7 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
                     guiGraphics,
                     Component.translatable("screen.jazzycookin.cellar_hint"),
                     this.imageWidth / 2,
-                    113,
+                    156,
                     JazzyGuiRenderer.TEXT_MUTED
             );
         }
@@ -119,21 +144,40 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        PantryShortcut hoveredShortcut = null;
-        for (PantryShortcut shortcut : this.pantryShortcuts) {
-            guiGraphics.renderItem(shortcut.icon(), shortcut.button().getX() + 1, shortcut.button().getY() + 1);
-            if (shortcut.button().isMouseOver(mouseX, mouseY)) {
-                hoveredShortcut = shortcut;
+        PantryTabButton hoveredTab = null;
+        for (PantryTabButton tab : this.pantryTabs) {
+            this.drawScaledTabLabel(guiGraphics, tab);
+            if (tab.button().isMouseOver(mouseX, mouseY)) {
+                hoveredTab = tab;
             }
         }
 
-        if (hoveredShortcut != null) {
-            guiGraphics.renderTooltip(this.font, hoveredShortcut.icon(), mouseX, mouseY);
+        if (hoveredTab != null) {
+            guiGraphics.renderTooltip(this.font, hoveredTab.tab().label(), mouseX, mouseY);
         } else {
             this.renderTooltip(guiGraphics, mouseX, mouseY);
         }
     }
 
-    private record PantryShortcut(Button button, ItemStack icon) {
+    private void drawScaledTabLabel(GuiGraphics guiGraphics, PantryTabButton tab) {
+        Component label = tab.tab().label();
+        int maxWidth = TAB_WIDTH - 8;
+        float scale = Math.min(1.0F, maxWidth / (float) this.font.width(label));
+        scale = Math.max(0.5F, scale);
+
+        int x = tab.button().getX();
+        int y = tab.button().getY();
+        int color = !tab.button().active
+                ? JazzyGuiRenderer.TEXT_SOFT
+                : tab.button().isHoveredOrFocused() ? JazzyGuiRenderer.ACCENT : JazzyGuiRenderer.TEXT;
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(x + TAB_WIDTH / 2.0F, y + (TAB_HEIGHT - 8.0F * scale) / 2.0F + 1.0F, 0.0F);
+        guiGraphics.pose().scale(scale, scale, 1.0F);
+        guiGraphics.drawString(this.font, label, -this.font.width(label) / 2, 0, color, false);
+        guiGraphics.pose().popPose();
+    }
+
+    private record PantryTabButton(Button button, PantrySortTab tab) {
     }
 }

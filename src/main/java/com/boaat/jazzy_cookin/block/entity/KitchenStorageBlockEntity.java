@@ -5,9 +5,9 @@ import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
+import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
-import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -43,26 +43,63 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
             return false;
         }
 
-        ItemStack stack = switch (buttonId) {
-            case 0 -> JazzyItems.FLOUR.get().createStack(1, this.level.getGameTime());
-            case 1 -> JazzyItems.CANE_SUGAR.get().createStack(1, this.level.getGameTime());
-            case 2 -> JazzyItems.BUTTER.get().createStack(1, this.level.getGameTime());
-            case 3 -> JazzyItems.BAKING_SPICE.get().createStack(1, this.level.getGameTime());
-            case 4 -> JazzyItems.FRYING_OIL.get().createStack(1, this.level.getGameTime());
-            case 5 -> JazzyItems.CERAMIC_PLATE.get().createStack(1, this.level.getGameTime());
-            case 6 -> new ItemStack(JazzyItems.CANNING_JAR.get());
-            case 7 -> JazzyItems.SALT.get().createStack(1, this.level.getGameTime());
-            default -> ItemStack.EMPTY;
-        };
-
-        if (stack.isEmpty()) {
+        PantrySortTab sortTab = PantrySortTab.byButtonId(buttonId);
+        if (sortTab == null) {
             return false;
         }
 
-        if (!player.getInventory().add(stack)) {
-            player.drop(stack, false);
-        }
+        this.sortByCategory(sortTab);
         return true;
+    }
+
+    private void sortByCategory(PantrySortTab selectedTab) {
+        java.util.List<StorageEntry> entries = new java.util.ArrayList<>(CONTAINER_SIZE);
+        for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
+            entries.add(new StorageEntry(this.items.get(slot), this.insertedAt[slot]));
+        }
+
+        entries.sort((left, right) -> {
+            if (left.stack().isEmpty() != right.stack().isEmpty()) {
+                return left.stack().isEmpty() ? 1 : -1;
+            }
+
+            PantrySortTab leftTab = PantrySortTab.classify(left.stack());
+            PantrySortTab rightTab = PantrySortTab.classify(right.stack());
+            int leftPriority = this.sortPriority(selectedTab, leftTab);
+            int rightPriority = this.sortPriority(selectedTab, rightTab);
+            if (leftPriority != rightPriority) {
+                return Integer.compare(leftPriority, rightPriority);
+            }
+
+            int categoryOrder = Integer.compare(leftTab.ordinal(), rightTab.ordinal());
+            if (categoryOrder != 0) {
+                return categoryOrder;
+            }
+
+            int descriptionOrder = left.stack().getDescriptionId().compareTo(right.stack().getDescriptionId());
+            if (descriptionOrder != 0) {
+                return descriptionOrder;
+            }
+
+            return Long.compare(left.insertedAt(), right.insertedAt());
+        });
+
+        for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
+            StorageEntry entry = entries.get(slot);
+            this.items.set(slot, entry.stack());
+            this.insertedAt[slot] = entry.insertedAt();
+        }
+        this.setChanged();
+    }
+
+    private int sortPriority(PantrySortTab selectedTab, PantrySortTab tab) {
+        if (tab == selectedTab) {
+            return 0;
+        }
+        if (tab == PantrySortTab.OTHER) {
+            return PantrySortTab.tabs().size() + 1;
+        }
+        return PantrySortTab.tabs().indexOf(tab) + 1;
     }
 
     @Override
@@ -192,5 +229,8 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
         if (loaded.length == CONTAINER_SIZE) {
             this.insertedAt = loaded;
         }
+    }
+
+    private record StorageEntry(ItemStack stack, long insertedAt) {
     }
 }
