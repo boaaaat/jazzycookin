@@ -10,6 +10,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
@@ -25,6 +26,9 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     private static final int SHORTCUT_CARD_Y = 104;
     private static final int SHORTCUT_CARD_WIDTH = 202;
     private static final int SHORTCUT_CARD_HEIGHT = 58;
+    private static final int STORAGE_HINT_WIDTH = 184;
+    private static final int STORAGE_HINT_START_Y = 116;
+    private static final int STORAGE_HINT_LINE_HEIGHT = 10;
     private static final int INVENTORY_CARD_X = 14;
     private static final int INVENTORY_CARD_Y = 164;
     private static final int INVENTORY_CARD_WIDTH = 202;
@@ -126,7 +130,9 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
         JazzyGuiRenderer.drawWindow(guiGraphics, left, top, this.imageWidth, this.imageHeight);
         JazzyGuiRenderer.drawCard(guiGraphics, left + STORAGE_CARD_X, top + STORAGE_CARD_Y, STORAGE_CARD_WIDTH, STORAGE_CARD_HEIGHT);
-        JazzyGuiRenderer.drawCard(guiGraphics, left + SHORTCUT_CARD_X, top + SHORTCUT_CARD_Y, SHORTCUT_CARD_WIDTH, SHORTCUT_CARD_HEIGHT);
+        if (this.menu.isPantry()) {
+            JazzyGuiRenderer.drawCard(guiGraphics, left + SHORTCUT_CARD_X, top + SHORTCUT_CARD_Y, SHORTCUT_CARD_WIDTH, SHORTCUT_CARD_HEIGHT);
+        }
         JazzyGuiRenderer.drawCard(guiGraphics, left + INVENTORY_CARD_X, top + INVENTORY_CARD_Y, INVENTORY_CARD_WIDTH, INVENTORY_CARD_HEIGHT);
 
         for (int slotIndex = 0; slotIndex < this.menu.slots.size(); slotIndex++) {
@@ -160,11 +166,12 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
                     JazzyGuiRenderer.TEXT_SOFT
             );
         } else {
-            this.drawCenteredLabel(
+            this.drawWrappedCenteredLabel(
                     guiGraphics,
                     Component.translatable(this.menu.storageType().hintTranslationKey()),
                     this.imageWidth / 2,
-                    123,
+                    STORAGE_HINT_START_Y,
+                    STORAGE_HINT_WIDTH,
                     JazzyGuiRenderer.TEXT_MUTED
             );
         }
@@ -172,6 +179,16 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
     private void drawCenteredLabel(GuiGraphics guiGraphics, Component label, int centerX, int y, int color) {
         guiGraphics.drawString(this.font, label, centerX - this.font.width(label) / 2, y, color, false);
+    }
+
+    private void drawWrappedCenteredLabel(GuiGraphics guiGraphics, Component label, int centerX, int startY, int width, int color) {
+        List<FormattedCharSequence> lines = this.font.split(label, width);
+        for (int index = 0; index < lines.size(); index++) {
+            FormattedCharSequence line = lines.get(index);
+            int lineX = centerX - this.font.width(line) / 2;
+            int lineY = startY + index * STORAGE_HINT_LINE_HEIGHT;
+            guiGraphics.drawString(this.font, line, lineX, lineY, color, false);
+        }
     }
 
     @Override
