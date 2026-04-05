@@ -19,8 +19,8 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
     private static final int STORAGE_START_X = 34;
     private static final int STORAGE_START_Y = 43;
     private static final int PLAYER_INVENTORY_START_X = 34;
-    private static final int PLAYER_INVENTORY_START_Y = 226;
-    private static final int HOTBAR_Y = 284;
+    private static final int PLAYER_INVENTORY_START_Y = 186;
+    private static final int HOTBAR_Y = 244;
 
     private final Container container;
     private final StorageType storageType;

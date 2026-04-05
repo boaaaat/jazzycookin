@@ -7,6 +7,7 @@ import com.boaat.jazzy_cookin.registry.JazzyItems;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public enum PantrySortTab {
     SWEETENERS(0, "screen.jazzycookin.pantry_tab.sweeteners"),
@@ -50,6 +51,23 @@ public enum PantrySortTab {
 
     public Component label() {
         return Component.translatable(this.translationKey);
+    }
+
+    public ItemStack iconStack() {
+        return switch (this) {
+            case SWEETENERS -> new ItemStack(JazzyItems.CANE_SUGAR.get());
+            case GRAINS_AND_FLOURS -> new ItemStack(JazzyItems.FLOUR.get());
+            case LEAVENING_AGENTS -> new ItemStack(Items.BONE_MEAL);
+            case SEASONINGS -> new ItemStack(JazzyItems.BAKING_SPICE.get());
+            case OILS_AND_FATS -> new ItemStack(JazzyItems.FRYING_OIL.get());
+            case DAIRY_AND_ALTERNATIVES -> new ItemStack(JazzyItems.FRESH_MILK.get());
+            case CANNED_GOODS -> new ItemStack(JazzyItems.CANNING_JAR.get());
+            case BAKING_ADD_INS -> new ItemStack(JazzyItems.FARM_EGG.get());
+            case DRY_GOODS -> new ItemStack(JazzyItems.DRIED_APPLE_ITEM.get());
+            case SAUCES_AND_CONDIMENTS -> new ItemStack(JazzyItems.BRINE.get());
+            case SNACKS -> new ItemStack(JazzyItems.APPLE_PIE_SLICE.get());
+            case OTHER -> ItemStack.EMPTY;
+        };
     }
 
     public static List<PantrySortTab> tabs() {

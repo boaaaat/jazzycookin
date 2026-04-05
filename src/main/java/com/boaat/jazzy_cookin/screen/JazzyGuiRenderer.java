@@ -29,6 +29,8 @@ final class JazzyGuiRenderer {
     private static final int CHIP_BORDER = 0xFFC7D0DA;
     private static final int CHIP_FILL = 0xFFF6FBFC;
     private static final int CHIP_FILL_WARM = 0xFFFAF2E7;
+    private static final int TAB_HOVER = 0xFF9BA7B7;
+    private static final int TAB_SELECTED = 0xFF5AAAB1;
 
     private JazzyGuiRenderer() {
     }
@@ -67,12 +69,22 @@ final class JazzyGuiRenderer {
         guiGraphics.fill(x, y, x + width, y + 6, PROGRESS_BG);
         int filledWidth = Math.max(0, Math.min(width, Math.round(width * progress)));
         if (filledWidth > 0) {
-            guiGraphics.fill(x, y, x + filledWidth, y + 6, color);
+            guiGraphics.fill(x, y, x + filledWidth, y + 6, opaque(color));
         }
     }
 
     static void drawChip(GuiGraphics guiGraphics, int x, int y, int width, int height, boolean warm) {
         guiGraphics.fill(x, y, x + width, y + height, CHIP_BORDER);
         guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, warm ? CHIP_FILL_WARM : CHIP_FILL);
+    }
+
+    static void drawIconTab(GuiGraphics guiGraphics, int x, int y, boolean hovered, boolean selected) {
+        int frame = selected ? TAB_SELECTED : hovered ? TAB_HOVER : CARD_BORDER;
+        guiGraphics.fill(x, y, x + 20, y + 20, frame);
+        drawSlot(guiGraphics, x + 2, y + 2);
+    }
+
+    private static int opaque(int color) {
+        return (color & 0xFF000000) == 0 ? color | 0xFF000000 : color;
     }
 }
