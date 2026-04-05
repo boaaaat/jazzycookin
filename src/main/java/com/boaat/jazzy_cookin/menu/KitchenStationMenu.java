@@ -35,7 +35,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 containerId,
                 playerInventory,
                 new SimpleContainer(7),
-                new SimpleContainerData(7),
+                new SimpleContainerData(8),
                 readStationType(extraData),
                 ContainerLevelAccess.NULL
         );
@@ -67,7 +67,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this.access = access;
 
         checkContainerSize(container, 7);
-        checkContainerDataCount(data, 7);
+        checkContainerDataCount(data, 8);
         container.startOpen(playerInventory.player);
 
         SlotLayout layout = SlotLayout.forStation(this.stationType);
@@ -148,6 +148,14 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
     public int environmentStatus() {
         return this.data.get(6);
+    }
+
+    public int ovenTemperature() {
+        if (this.stationType != StationType.OVEN) {
+            return HeatLevel.DEFAULT_OVEN_TEMPERATURE;
+        }
+        int syncedTemperature = this.data.get(7);
+        return syncedTemperature > 0 ? syncedTemperature : HeatLevel.DEFAULT_OVEN_TEMPERATURE;
     }
 
     @Override

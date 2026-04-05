@@ -55,11 +55,12 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return switch (index) {
                 case 0 -> KitchenStationBlockEntity.this.progress;
                 case 1 -> KitchenStationBlockEntity.this.maxProgress;
-                case 2 -> KitchenStationBlockEntity.this.heatLevel.ordinal();
+                case 2 -> KitchenStationBlockEntity.this.currentHeatLevel().ordinal();
                 case 3 -> KitchenStationBlockEntity.this.preheatProgress;
                 case 4 -> KitchenStationBlockEntity.this.currentMethod().ordinal();
                 case 5 -> KitchenStationBlockEntity.this.controlSetting;
                 case 6 -> KitchenStationBlockEntity.this.environmentStatus();
+                case 7 -> KitchenStationBlockEntity.this.ovenTemperature;
                 default -> 0;
             };
         }
@@ -72,6 +73,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 2 -> KitchenStationBlockEntity.this.heatLevel = HeatLevel.values()[Math.max(0, Math.min(HeatLevel.values().length - 1, value))];
                 case 3 -> KitchenStationBlockEntity.this.preheatProgress = value;
                 case 5 -> KitchenStationBlockEntity.this.controlSetting = Math.max(0, Math.min(2, value));
+                case 7 -> KitchenStationBlockEntity.this.ovenTemperature = HeatLevel.normalizeOvenTemperature(value);
                 default -> {
                 }
             }
@@ -79,13 +81,14 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
         @Override
         public int getCount() {
-            return 7;
+            return 8;
         }
     };
 
     private int progress;
     private int maxProgress;
     private int preheatProgress;
+    private int ovenTemperature = HeatLevel.DEFAULT_OVEN_TEMPERATURE;
     private int controlSetting = 1;
     private boolean processing;
     private HeatLevel heatLevel = HeatLevel.OFF;
@@ -96,17 +99,15 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, KitchenStationBlockEntity blockEntity) {
         if (blockEntity.getStationType() == StationType.OVEN) {
-            if (blockEntity.heatLevel == HeatLevel.OFF) {
-                blockEntity.preheatProgress = Math.max(0, blockEntity.preheatProgress - 2);
-            } else {
-                int gain = switch (blockEntity.heatLevel) {
-                    case LOW -> 1;
-                    case MEDIUM -> 2;
-                    case HIGH -> 3;
-                    default -> 0;
-                };
-                blockEntity.preheatProgress = Math.min(100, blockEntity.preheatProgress + gain);
-            }
+            int gain = switch (blockEntity.currentHeatLevel()) {
+                case LOW -> 1;
+                case MEDIUM -> 2;
+                case HIGH -> 3;
+                default -> 0;
+            };
+            blockEntity.preheatProgress = gain == 0
+                    ? Math.max(0, blockEntity.preheatProgress - 2)
+                    : Math.min(100, blockEntity.preheatProgress + gain);
         }
 
         if (!blockEntity.processing) {
@@ -148,12 +149,42 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     public HeatLevel heatLevel() {
-        return this.heatLevel;
+        return this.currentHeatLevel();
+    }
+
+    public int ovenTemperature() {
+        return this.ovenTemperature;
+    }
+
+    private HeatLevel currentHeatLevel() {
+        return this.getStationType() == StationType.OVEN
+                ? HeatLevel.fromOvenTemperature(this.ovenTemperature)
+                : this.heatLevel;
     }
 
     public boolean handleButton(int buttonId, Player player) {
         if (buttonId == 0) {
             return this.startProcessing();
+        }
+
+        if (this.getStationType() == StationType.OVEN) {
+            if (buttonId >= 1000) {
+                this.ovenTemperature = HeatLevel.normalizeOvenTemperature(buttonId - 1000);
+                this.setChanged();
+                return true;
+            }
+
+            int legacyTemperature = switch (buttonId) {
+                case 1 -> 250;
+                case 2 -> HeatLevel.DEFAULT_OVEN_TEMPERATURE;
+                case 3 -> 450;
+                default -> -1;
+            };
+            if (legacyTemperature > 0) {
+                this.ovenTemperature = legacyTemperature;
+                this.setChanged();
+                return true;
+            }
         }
 
         if (this.getStationType().supportsHeat()) {
@@ -232,7 +263,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 this.getStationType(),
                 List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)),
                 this.getItem(TOOL_SLOT),
-                this.heatLevel,
+                this.currentHeatLevel(),
                 this.preheatProgress >= 100
         );
     }
@@ -369,7 +400,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 resolvedOutput,
                 consumedInputs,
                 this.getItem(TOOL_SLOT),
-                this.heatLevel,
+                this.currentHeatLevel(),
                 this.preheatProgress >= 100
         );
 
@@ -568,6 +599,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         tag.putInt("Progress", this.progress);
         tag.putInt("MaxProgress", this.maxProgress);
         tag.putInt("PreheatProgress", this.preheatProgress);
+        tag.putInt("OvenTemperature", this.ovenTemperature);
         tag.putInt("ControlSetting", this.controlSetting);
         tag.putBoolean("Processing", this.processing);
         tag.putString("HeatLevel", this.heatLevel.getSerializedName());
@@ -580,8 +612,11 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.progress = tag.getInt("Progress");
         this.maxProgress = tag.getInt("MaxProgress");
         this.preheatProgress = tag.getInt("PreheatProgress");
+        this.heatLevel = HeatLevel.byName(tag.getString("HeatLevel"));
+        this.ovenTemperature = tag.contains("OvenTemperature")
+                ? HeatLevel.normalizeOvenTemperature(tag.getInt("OvenTemperature"))
+                : HeatLevel.legacyOvenTemperature(this.heatLevel);
         this.controlSetting = Math.max(0, Math.min(2, tag.getInt("ControlSetting")));
         this.processing = tag.getBoolean("Processing");
-        this.heatLevel = HeatLevel.byName(tag.getString("HeatLevel"));
     }
 }

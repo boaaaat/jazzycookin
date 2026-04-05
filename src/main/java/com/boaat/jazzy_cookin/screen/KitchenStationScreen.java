@@ -7,10 +7,12 @@ import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import org.lwjgl.glfw.GLFW;
 
 public class KitchenStationScreen extends AbstractContainerScreen<KitchenStationMenu> {
     private static final int MAIN_CARD_X = 14;
@@ -45,6 +47,8 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private Button highHeatButton;
     private Button lowerControlButton;
     private Button raiseControlButton;
+    private EditBox ovenTemperatureBox;
+    private int pendingOvenTemperature = -1;
 
     public KitchenStationScreen(KitchenStationMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -61,7 +65,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                 .bounds(this.leftPos + 154, this.topPos + 94, 56, 20)
                 .build());
 
-        if (this.menu.stationType().supportsHeat()) {
+        if (this.menu.stationType() == StationType.OVEN) {
+            this.ovenTemperatureBox = new EditBox(this.font, this.leftPos + 52, this.topPos + 94, 44, 18, Component.translatable("screen.jazzycookin.temperature_short"));
+            this.ovenTemperatureBox.setMaxLength(3);
+            this.ovenTemperatureBox.setFilter(value -> value.isEmpty() || value.chars().allMatch(Character::isDigit));
+            this.ovenTemperatureBox.setTextColor(JazzyGuiRenderer.TEXT);
+            this.ovenTemperatureBox.setTextColorUneditable(JazzyGuiRenderer.TEXT);
+            this.ovenTemperatureBox.setValue(Integer.toString(this.menu.ovenTemperature()));
+            this.addRenderableWidget(this.ovenTemperatureBox);
+        } else if (this.menu.stationType().supportsHeat()) {
             this.lowHeatButton = this.addRenderableWidget(Button.builder(Component.literal("L"), button -> this.sendButton(1))
                     .bounds(this.leftPos + 22, this.topPos + 94, 18, 18)
                     .build());
@@ -89,6 +101,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     protected void containerTick() {
         super.containerTick();
         this.updateButtonStates();
+        this.syncOvenTemperatureField();
     }
 
     private void updateButtonStates() {
@@ -116,6 +129,54 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (this.minecraft != null && this.minecraft.gameMode != null) {
             this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, buttonId);
         }
+    }
+
+    private void syncOvenTemperatureField() {
+        if (this.ovenTemperatureBox == null || this.ovenTemperatureBox.isFocused()) {
+            return;
+        }
+
+        int syncedTemperature = this.menu.ovenTemperature();
+        if (this.pendingOvenTemperature == syncedTemperature) {
+            this.pendingOvenTemperature = -1;
+        }
+
+        int displayTemperature = this.pendingOvenTemperature > 0 ? this.pendingOvenTemperature : syncedTemperature;
+        String displayText = Integer.toString(displayTemperature);
+        if (!this.ovenTemperatureBox.getValue().equals(displayText)) {
+            this.ovenTemperatureBox.setValue(displayText);
+        }
+    }
+
+    private void commitOvenTemperature() {
+        if (this.ovenTemperatureBox == null) {
+            return;
+        }
+
+        String value = this.ovenTemperatureBox.getValue();
+        if (value.isBlank()) {
+            this.syncOvenTemperatureField();
+            return;
+        }
+
+        int parsedTemperature;
+        try {
+            parsedTemperature = Integer.parseInt(value);
+        } catch (NumberFormatException exception) {
+            this.syncOvenTemperatureField();
+            return;
+        }
+
+        this.applyOvenTemperature(parsedTemperature);
+    }
+
+    private void applyOvenTemperature(int temperature) {
+        int normalizedTemperature = HeatLevel.normalizeOvenTemperature(temperature);
+        this.pendingOvenTemperature = normalizedTemperature;
+        if (this.ovenTemperatureBox != null) {
+            this.ovenTemperatureBox.setValue(Integer.toString(normalizedTemperature));
+        }
+        this.sendButton(1000 + normalizedTemperature);
     }
 
     @Override
@@ -176,14 +237,30 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         Component methodLabel = this.menu.currentMethod().displayName();
         int methodChipWidth = Math.max(46, this.font.width(methodLabel) + 16);
         int methodChipX = this.imageWidth - methodChipWidth - 14;
+        Component resultByproductLabel = Component.translatable("screen.jazzycookin.byproduct_short");
 
         guiGraphics.drawString(this.font, this.title, 14, 10, JazzyGuiRenderer.TITLE_TEXT, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 20, this.inventoryLabelY, JazzyGuiRenderer.TEXT, false);
         this.drawCenteredLabel(guiGraphics, methodLabel, methodChipX + methodChipWidth / 2, 11, JazzyGuiRenderer.TEXT, false);
 
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.inputs"), WORK_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
+        if (this.menu.stationType().usesTools()) {
+            Component toolLabel = Component.translatable("screen.jazzycookin.tool_short");
+            guiGraphics.drawString(this.font, toolLabel, WORK_CARD_X + WORK_CARD_WIDTH - this.font.width(toolLabel), 35, JazzyGuiRenderer.TEXT_MUTED, false);
+        }
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.status_short"), STATUS_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.result_short"), RESULT_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.progress_short"), STATUS_CARD_X + 4, 54, JazzyGuiRenderer.TEXT_SOFT, false);
+        if (this.menu.stationType() == StationType.OVEN) {
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.preheat_short"), STATUS_CARD_X + 4, 70, JazzyGuiRenderer.TEXT_SOFT, false);
+        }
+        this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.output"), RESULT_CARD_X + RESULT_CARD_WIDTH / 2, 46, JazzyGuiRenderer.TEXT_SOFT, false);
+        this.drawCenteredLabel(guiGraphics, resultByproductLabel, RESULT_CARD_X + RESULT_CARD_WIDTH / 2, 68, JazzyGuiRenderer.TEXT_SOFT, false);
+
+        if (this.menu.stationType() == StationType.OVEN) {
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.temperature_short"), 24, 99, JazzyGuiRenderer.TEXT_MUTED, false);
+            guiGraphics.drawString(this.font, Component.literal("F"), 100, 99, JazzyGuiRenderer.TEXT_MUTED, false);
+        }
 
         Component controlLabel = this.controlDisplayLabel();
         if (!controlLabel.getString().isEmpty()) {
@@ -197,6 +274,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private Component controlDisplayLabel() {
+        if (this.menu.stationType() == StationType.OVEN) {
+            return Component.empty();
+        }
         if (this.menu.stationType().supportsHeat()) {
             return Component.translatable("heat.jazzycookin." + this.menu.heatLevel().getSerializedName());
         }
@@ -260,5 +340,59 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        boolean wasFocused = this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused();
+        boolean handled = super.mouseClicked(mouseX, mouseY, button);
+        if (wasFocused && this.ovenTemperatureBox != null && !this.ovenTemperatureBox.isFocused()) {
+            this.commitOvenTemperature();
+        }
+        return handled;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (this.ovenTemperatureBox != null
+                && scrollY != 0.0D
+                && (this.ovenTemperatureBox.isMouseOver(mouseX, mouseY) || this.ovenTemperatureBox.isFocused())) {
+            int baseTemperature = this.pendingOvenTemperature > 0 ? this.pendingOvenTemperature : this.menu.ovenTemperature();
+            int nextTemperature = baseTemperature + (scrollY > 0.0D ? HeatLevel.OVEN_TEMPERATURE_STEP : -HeatLevel.OVEN_TEMPERATURE_STEP);
+            this.applyOvenTemperature(nextTemperature);
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused()) {
+            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                this.commitOvenTemperature();
+                this.ovenTemperatureBox.setFocused(false);
+                return true;
+            }
+            if (this.ovenTemperatureBox.keyPressed(keyCode, scanCode, modifiers)) {
+                return true;
+            }
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused() && this.ovenTemperatureBox.charTyped(codePoint, modifiers)) {
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
+    }
+
+    @Override
+    public void removed() {
+        if (this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused()) {
+            this.commitOvenTemperature();
+        }
+        super.removed();
     }
 }
