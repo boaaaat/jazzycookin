@@ -1,0 +1,60 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "food_processor",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:chickpeas"
+      },
+      "required_state": "chickpeas"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:olive_oil"
+      },
+      "required_state": "olive_oil"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:cumin"
+      },
+      "required_state": "cumin"
+    }
+  ],
+  "duration": 95,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:hummus_prep",
+          "count": 1
+        },
+        "state": "coarse_paste"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:hummus_prep",
+          "count": 1
+        },
+        "state": "overworked_paste"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:hummus_prep",
+      "count": 1
+    },
+    "state": "smooth_paste"
+  }
+}

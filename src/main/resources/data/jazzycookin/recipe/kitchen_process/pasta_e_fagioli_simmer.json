@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:pasta"
+      },
+      "required_state": "pasta"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:black_beans"
+      },
+      "required_state": "black_beans"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:canned_tomatoes"
+      },
+      "required_state": "canned_tomatoes"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:broth"
+      },
+      "required_state": "broth"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 220,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:pasta_e_fagioli_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

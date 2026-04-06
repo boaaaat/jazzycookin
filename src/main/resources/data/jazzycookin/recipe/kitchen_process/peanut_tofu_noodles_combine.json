@@ -1,0 +1,40 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:ramen"
+      },
+      "required_state": "ramen"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:tofu"
+      },
+      "required_state": "tofu"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:peanut_sauce"
+      },
+      "required_state": "smooth_mixture"
+    }
+  ],
+  "preferred_tool": "saucepan",
+  "allowed_tools": [
+    "saucepan",
+    "pot"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 160,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:peanut_tofu_noodles_prep",
+      "count": 1
+    },
+    "state": "mixed"
+  }
+}

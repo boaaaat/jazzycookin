@@ -1,0 +1,40 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:spaghetti"
+      },
+      "required_state": "spaghetti"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:tomato_sauce"
+      },
+      "required_state": "tomato_sauce"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:basil"
+      },
+      "required_state": "basil"
+    }
+  ],
+  "preferred_tool": "saucepan",
+  "allowed_tools": [
+    "saucepan",
+    "pot"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 190,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:spaghetti_pomodoro_prep",
+      "count": 1
+    },
+    "state": "mixed"
+  }
+}

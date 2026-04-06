@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:rice"
+      },
+      "required_state": "rice"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:kidney_beans"
+      },
+      "required_state": "kidney_beans"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:coconut_milk"
+      },
+      "required_state": "coconut_milk"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:thyme"
+      },
+      "required_state": "thyme"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 215,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:rice_and_beans_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

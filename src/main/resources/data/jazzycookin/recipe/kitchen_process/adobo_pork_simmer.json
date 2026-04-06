@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:pork"
+      },
+      "required_state": "pork"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:soy_sauce"
+      },
+      "required_state": "soy_sauce"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:white_vinegar"
+      },
+      "required_state": "white_vinegar"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 230,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:adobo_pork_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

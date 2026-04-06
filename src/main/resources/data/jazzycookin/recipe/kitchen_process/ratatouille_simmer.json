@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:tomatoes"
+      },
+      "required_state": "tomatoes"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:onions"
+      },
+      "required_state": "onions"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:red_pepper"
+      },
+      "required_state": "red_pepper"
+    }
+  ],
+  "preferred_tool": "saucepan",
+  "allowed_tools": [
+    "saucepan",
+    "pot"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 190,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:ratatouille_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

@@ -90,8 +90,10 @@ public final class KitchenGameTests {
         ServerLevel level = helper.getLevel();
         ResourceLocation stoveRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "stove");
         ResourceLocation kitchenRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "kitchen_process/fresh_lemon_juice_cut");
+        ResourceLocation newMealRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "kitchen_process/spaghetti_pomodoro_simmer");
         require(level.getRecipeManager().byKey(stoveRecipeId).isPresent(), "Expected vanilla crafting recipe jazzycookin:stove to be present");
         require(level.getRecipeManager().byKey(kitchenRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:fresh_lemon_juice_cut to be present");
+        require(level.getRecipeManager().byKey(newMealRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:spaghetti_pomodoro_simmer to be present");
         helper.succeed();
     }
 

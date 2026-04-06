@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:lentils"
+      },
+      "required_state": "lentils"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:broth"
+      },
+      "required_state": "broth"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:onions"
+      },
+      "required_state": "onions"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:cumin"
+      },
+      "required_state": "cumin"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 210,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:lentil_soup_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

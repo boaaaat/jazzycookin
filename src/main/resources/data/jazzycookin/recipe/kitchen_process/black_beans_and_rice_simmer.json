@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:rice"
+      },
+      "required_state": "rice"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:black_beans"
+      },
+      "required_state": "black_beans"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:onions"
+      },
+      "required_state": "onions"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 210,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:black_beans_and_rice_prep",
+      "count": 1
+    },
+    "state": "mixed"
+  }
+}

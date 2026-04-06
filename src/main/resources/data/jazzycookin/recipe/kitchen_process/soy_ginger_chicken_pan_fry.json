@@ -1,0 +1,39 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:chicken"
+      },
+      "required_state": "chicken"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:soy_sauce"
+      },
+      "required_state": "soy_sauce"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:ginger"
+      },
+      "required_state": "ginger"
+    }
+  ],
+  "preferred_tool": "pan",
+  "allowed_tools": [
+    "pan",
+    "frying_skillet"
+  ],
+  "tool_required": true,
+  "duration": 140,
+  "preferred_heat": "medium",
+  "output": {
+    "result": {
+      "id": "jazzycookin:soy_ginger_chicken_prep",
+      "count": 1
+    },
+    "state": "glazed"
+  }
+}

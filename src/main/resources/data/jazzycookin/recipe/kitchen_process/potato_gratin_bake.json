@@ -1,0 +1,41 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "oven",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:potatoes"
+      },
+      "required_state": "potatoes"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:shelf_stable_cream"
+      },
+      "required_state": "shelf_stable_cream"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:cheese"
+      },
+      "required_state": "cheese"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    }
+  ],
+  "mode": "passive",
+  "duration": 240,
+  "preferred_heat": "medium",
+  "requires_preheat": true,
+  "output": {
+    "result": {
+      "id": "jazzycookin:potato_gratin_prep",
+      "count": 1
+    },
+    "state": "baked"
+  }
+}
