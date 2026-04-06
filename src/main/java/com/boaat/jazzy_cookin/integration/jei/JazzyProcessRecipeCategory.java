@@ -28,13 +28,11 @@ public class JazzyProcessRecipeCategory implements IRecipeCategory<KitchenProces
     private static final int WIDTH = 182;
     private static final int HEIGHT = 94;
 
-    private final IDrawable background;
     private final IDrawable icon;
     private final IDrawable arrow;
     private final IDrawableAnimated animatedArrow;
 
     public JazzyProcessRecipeCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createBlankDrawable(WIDTH, HEIGHT);
         this.icon = guiHelper.createDrawableItemStack(JazzyJeiStackUtil.stationStack(StationType.PREP_TABLE));
         this.arrow = guiHelper.getRecipeArrow();
         this.animatedArrow = guiHelper.createAnimatedRecipeArrow(80);
@@ -51,8 +49,13 @@ public class JazzyProcessRecipeCategory implements IRecipeCategory<KitchenProces
     }
 
     @Override
-    public IDrawable getBackground() {
-        return this.background;
+    public int getWidth() {
+        return WIDTH;
+    }
+
+    @Override
+    public int getHeight() {
+        return HEIGHT;
     }
 
     @Override
@@ -70,7 +73,7 @@ public class JazzyProcessRecipeCategory implements IRecipeCategory<KitchenProces
             builder.addSlot(RecipeIngredientRole.INPUT, x, y)
                     .setStandardSlotBackground()
                     .addItemStacks(JazzyJeiStackUtil.displayStacks(requirement))
-                    .addTooltipCallback((view, tooltip) -> {
+                    .addRichTooltipCallback((view, tooltip) -> {
                         tooltip.add(Component.translatable("jei.jazzycookin.required_state", JazzyJeiStackUtil.stateLabel(requirement.requiredState())));
                         if (requirement.count() > 1) {
                             tooltip.add(Component.translatable("jei.jazzycookin.required_count", requirement.count()));
@@ -83,7 +86,7 @@ public class JazzyProcessRecipeCategory implements IRecipeCategory<KitchenProces
             builder.addSlot(RecipeIngredientRole.CATALYST, 4, 56)
                     .setStandardSlotBackground()
                     .addItemStacks(toolStacks)
-                    .addTooltipCallback((view, tooltip) -> {
+                    .addRichTooltipCallback((view, tooltip) -> {
                         if (recipe.preferredTool().isPresent()) {
                             tooltip.add(Component.translatable("jei.jazzycookin.preferred_tool", JazzyJeiStackUtil.toolLabel(recipe.preferredTool().get())));
                         }
@@ -99,7 +102,7 @@ public class JazzyProcessRecipeCategory implements IRecipeCategory<KitchenProces
         builder.addSlot(RecipeIngredientRole.OUTPUT, 88, 4)
                 .setOutputSlotBackground()
                 .addItemStack(JazzyJeiStackUtil.displayOutput(recipe.output()))
-                .addTooltipCallback((view, tooltip) -> {
+                .addRichTooltipCallback((view, tooltip) -> {
                     tooltip.add(Component.translatable("jei.jazzycookin.outcome.ideal"));
                     tooltip.add(Component.translatable("jei.jazzycookin.output_state", JazzyJeiStackUtil.stateLabel(recipe.output().state())));
                 });
@@ -108,7 +111,7 @@ public class JazzyProcessRecipeCategory implements IRecipeCategory<KitchenProces
             builder.addSlot(RecipeIngredientRole.OUTPUT, 108, 4)
                     .setOutputSlotBackground()
                     .addItemStack(recipe.output().byproduct().copy())
-                    .addTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("screen.jazzycookin.byproduct")));
+                    .addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("screen.jazzycookin.byproduct")));
         }
 
         Optional<KitchenProcessOutcome> underOutcome = recipe.outcomes().stream()
@@ -121,14 +124,14 @@ public class JazzyProcessRecipeCategory implements IRecipeCategory<KitchenProces
         underOutcome.ifPresent(outcome -> builder.addSlot(RecipeIngredientRole.OUTPUT, 88, 24)
                 .setOutputSlotBackground()
                 .addItemStack(JazzyJeiStackUtil.displayOutput(outcome.output()))
-                .addTooltipCallback((view, tooltip) -> {
+                .addRichTooltipCallback((view, tooltip) -> {
                     tooltip.add(Component.translatable("jei.jazzycookin.outcome.under"));
                     tooltip.add(Component.translatable("jei.jazzycookin.output_state", JazzyJeiStackUtil.stateLabel(outcome.output().state())));
                 }));
         overOutcome.ifPresent(outcome -> builder.addSlot(RecipeIngredientRole.OUTPUT, 108, 24)
                 .setOutputSlotBackground()
                 .addItemStack(JazzyJeiStackUtil.displayOutput(outcome.output()))
-                .addTooltipCallback((view, tooltip) -> {
+                .addRichTooltipCallback((view, tooltip) -> {
                     tooltip.add(Component.translatable("jei.jazzycookin.outcome.over"));
                     tooltip.add(Component.translatable("jei.jazzycookin.output_state", JazzyJeiStackUtil.stateLabel(outcome.output().state())));
                 }));

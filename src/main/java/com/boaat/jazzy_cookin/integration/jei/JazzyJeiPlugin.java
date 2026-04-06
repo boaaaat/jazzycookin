@@ -15,6 +15,7 @@ import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
+import mezz.jei.api.ingredients.subtypes.UidContext;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
@@ -38,21 +39,35 @@ public class JazzyJeiPlugin implements IModPlugin {
 
     @Override
     public void registerItemSubtypes(ISubtypeRegistration registration) {
-        ISubtypeInterpreter<ItemStack> interpreter = (stack, context) -> {
-            if (stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-                var data = KitchenStackUtil.getData(stack);
-                if (data != null) {
-                    return data.state().getSerializedName();
-                }
-                return ingredientItem.defaultData(0L).state().getSerializedName();
+        ISubtypeInterpreter<ItemStack> interpreter = new ISubtypeInterpreter<>() {
+            @Override
+            public Object getSubtypeData(ItemStack stack, UidContext context) {
+                return stateKey(stack);
             }
-            return null;
+
+            @Override
+            @SuppressWarnings("deprecation")
+            public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext context) {
+                String stateKey = stateKey(stack);
+                return stateKey == null ? "" : stateKey;
+            }
         };
 
         BuiltInRegistries.ITEM.stream()
                 .filter(item -> BuiltInRegistries.ITEM.getKey(item).getNamespace().equals(JazzyCookin.MODID))
                 .filter(KitchenIngredientItem.class::isInstance)
                 .forEach(item -> registration.registerSubtypeInterpreter(item, interpreter));
+    }
+
+    private static String stateKey(ItemStack stack) {
+        if (stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
+            var data = KitchenStackUtil.getData(stack);
+            if (data != null) {
+                return data.state().getSerializedName();
+            }
+            return ingredientItem.defaultData(0L).state().getSerializedName();
+        }
+        return null;
     }
 
     @Override

@@ -1,4 +1,5 @@
 {
+  "render_type": "cutout",
   "parent": "minecraft:block/cube_all",
   "textures": {
     "all": "minecraft:block/birch_planks"
