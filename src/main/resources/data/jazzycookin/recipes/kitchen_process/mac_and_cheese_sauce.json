@@ -1,0 +1,54 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:powdered_milk"
+      },
+      "required_state": "powdered_milk"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:butter"
+      },
+      "required_state": "butter"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:cheese"
+      },
+      "required_state": "cheese"
+    }
+  ],
+  "duration": 55,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:cheese_sauce",
+          "count": 1
+        },
+        "state": "mixed"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:cheese_sauce",
+          "count": 1
+        },
+        "state": "separated_blend"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:cheese_sauce",
+      "count": 1
+    },
+    "state": "creamy"
+  }
+}

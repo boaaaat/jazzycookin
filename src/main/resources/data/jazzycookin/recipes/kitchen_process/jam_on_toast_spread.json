@@ -1,0 +1,26 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:bread"
+      },
+      "required_state": "baked_bread"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:jam"
+      },
+      "required_state": "jam"
+    }
+  ],
+  "duration": 30,
+  "output": {
+    "result": {
+      "id": "jazzycookin:jam_toast_prep",
+      "count": 1
+    },
+    "state": "mixed"
+  }
+}

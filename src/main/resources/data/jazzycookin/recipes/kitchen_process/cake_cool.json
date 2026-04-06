@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "cooling_rack",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:baked_cake"
+      },
+      "required_state": "baked"
+    }
+  ],
+  "mode": "passive",
+  "duration": 80,
+  "output": {
+    "result": {
+      "id": "jazzycookin:baked_cake",
+      "count": 1
+    },
+    "state": "cooled"
+  }
+}

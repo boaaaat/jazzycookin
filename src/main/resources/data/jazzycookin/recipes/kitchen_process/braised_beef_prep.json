@@ -1,0 +1,66 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:beef"
+      },
+      "required_state": "beef"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:onions"
+      },
+      "required_state": "onions"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:tomato_paste"
+      },
+      "required_state": "tomato_paste"
+    }
+  ],
+  "preferred_tool": "chef_knife",
+  "allowed_tools": [
+    "chef_knife",
+    "cleaver"
+  ],
+  "tool_required": true,
+  "duration": 70,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:braised_beef_base",
+          "count": 1
+        },
+        "state": "rough_cut"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:braised_beef_base",
+          "count": 1
+        },
+        "state": "diced"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:braised_beef_base",
+      "count": 1
+    },
+    "state": "chopped"
+  }
+}

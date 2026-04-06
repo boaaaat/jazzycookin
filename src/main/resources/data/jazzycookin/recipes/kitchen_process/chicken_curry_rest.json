@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "resting_board",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:chicken_curry_prep"
+      },
+      "required_state": "simmered"
+    }
+  ],
+  "mode": "passive",
+  "duration": 60,
+  "output": {
+    "result": {
+      "id": "jazzycookin:chicken_curry_prep",
+      "count": 1
+    },
+    "state": "rested"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "oven",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:brownie_batter"
+      },
+      "required_state": "batter"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:butter"
+      },
+      "required_state": "butter"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:paper_liner"
+      },
+      "required_state": "pantry_ready"
+    }
+  ],
+  "preferred_tool": "baking_tray",
+  "allowed_tools": [
+    "baking_tray"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 220,
+  "preferred_heat": "medium",
+  "requires_preheat": true,
+  "output": {
+    "result": {
+      "id": "jazzycookin:baked_brownies",
+      "count": 1
+    },
+    "state": "baked"
+  }
+}

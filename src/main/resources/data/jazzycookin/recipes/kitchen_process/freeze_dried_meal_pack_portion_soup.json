@@ -1,0 +1,26 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "tag": "jazzycookin:plated_meals"
+      },
+      "required_state": "plated_soup_meal"
+    }
+  ],
+  "preferred_tool": "table_knife",
+  "allowed_tools": [
+    "table_knife",
+    "chef_knife"
+  ],
+  "tool_required": true,
+  "duration": 40,
+  "output": {
+    "result": {
+      "id": "jazzycookin:portioned_meal",
+      "count": 1
+    },
+    "state": "portioned_meal"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:chicken"
+      },
+      "required_state": "chicken"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:table_salt"
+      },
+      "required_state": "table_salt"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:olive_oil"
+      },
+      "required_state": "olive_oil"
+    }
+  ],
+  "preferred_tool": "pan",
+  "allowed_tools": [
+    "pan",
+    "frying_skillet"
+  ],
+  "tool_required": true,
+  "duration": 110,
+  "preferred_heat": "high",
+  "output": {
+    "result": {
+      "id": "jazzycookin:glazed_chicken_prep",
+      "count": 1
+    },
+    "state": "pan_fried"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:brownie_batter_base"
+      },
+      "required_state": "mixed"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:eggs"
+      },
+      "required_state": "eggs"
+    }
+  ],
+  "duration": 70,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:brownie_batter",
+          "count": 1
+        },
+        "state": "lumpy_mixture"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:brownie_batter",
+          "count": 1
+        },
+        "state": "batter"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:brownie_batter",
+      "count": 1
+    },
+    "state": "smooth_mixture"
+  }
+}

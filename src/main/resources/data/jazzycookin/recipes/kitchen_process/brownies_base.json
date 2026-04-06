@@ -1,0 +1,38 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:cocoa_powder"
+      },
+      "required_state": "cocoa_powder"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:white_sugar"
+      },
+      "required_state": "white_sugar"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:all_purpose_flour"
+      },
+      "required_state": "all_purpose_flour"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:butter"
+      },
+      "required_state": "butter"
+    }
+  ],
+  "duration": 70,
+  "output": {
+    "result": {
+      "id": "jazzycookin:brownie_batter_base",
+      "count": 1
+    },
+    "state": "mixed"
+  }
+}

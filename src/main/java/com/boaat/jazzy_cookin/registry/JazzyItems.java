@@ -248,6 +248,7 @@ public final class JazzyItems {
     public static final DeferredItem<Item> STRAW = utilityItem("straw", 64);
     public static final DeferredItem<Item> BASKET = utilityItem("basket", 16);
     public static final DeferredItem<Item> PAPER_LINER = utilityItem("paper_liner", 64);
+    public static final DeferredItem<Item> BUTTER_KNIFE = utilityItem("butter_knife", 16);
 
     public static final DeferredItem<KitchenIngredientItem> CHOPPED_PRODUCE_BLEND = prepared("chopped_produce_blend", IngredientState.ROUGH_CUT, PantrySortTab.OTHER, DAY * 2L, 0, 2, 1, true, false);
     public static final DeferredItem<KitchenIngredientItem> LEMON_JUICE = prepared("lemon_juice", IngredientState.FRESH_JUICE, PantrySortTab.SAUCES_AND_CONDIMENTS, DAY * 4L, 0, 0, 2, true, false);
@@ -273,6 +274,38 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenIngredientItem> FRIED_CHICKEN_PREP = prepared("fried_chicken_prep", IngredientState.DEEP_FRIED, PantrySortTab.OTHER, DAY * 2L, 80, 6, 3, true, true);
     public static final DeferredItem<KitchenIngredientItem> JARRED_NUT_BUTTER = prepared("jarred_nut_butter", IngredientState.PASTE, PantrySortTab.SAUCES_AND_CONDIMENTS, DAY * 120L, 0, 3, 2, false, false);
     public static final DeferredItem<KitchenIngredientItem> PACKED_BREADCRUMBS = prepared("packed_breadcrumbs", IngredientState.COARSE_POWDER, PantrySortTab.DRY_GOODS, DAY * 120L, 0, 1, 0, false, false);
+    public static final DeferredItem<KitchenIngredientItem> PORTIONED_MEAL = prepared("portioned_meal", IngredientState.PORTIONED_MEAL, PantrySortTab.OTHER, DAY * 2L, 0, 6, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> FREEZE_DRIED_MEAL = prepared("freeze_dried_meal", IngredientState.FREEZE_DRIED, PantrySortTab.SNACKS, DAY * 180L, 0, 6, 4, false, false);
+    public static final DeferredItem<KitchenIngredientItem> JAM_TOAST_PREP = prepared("jam_toast_prep", IngredientState.MIXED, PantrySortTab.OTHER, DAY * 1L, 0, 3, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> SYRUP_MIXTURE = prepared("syrup_mixture", IngredientState.CANNING_SYRUP, PantrySortTab.SAUCES_AND_CONDIMENTS, DAY * 1L, 0, 1, 2, true, false);
+    public static final DeferredItem<KitchenIngredientItem> HOT_SYRUP_PRESERVE = prepared("hot_syrup_preserve", IngredientState.HOT_PRESERVE, PantrySortTab.SAUCES_AND_CONDIMENTS, DAY * 14L, 0, 1, 2, true, false);
+    public static final DeferredItem<KitchenIngredientItem> SAVORY_PIE_FILLING = prepared("savory_pie_filling", IngredientState.SIMMERED_FILLING, PantrySortTab.OTHER, DAY * 2L, 80, 5, 3, true, false);
+    public static final DeferredItem<KitchenIngredientItem> ASSEMBLED_SAVORY_PIE = prepared("assembled_savory_pie", IngredientState.RAW_ASSEMBLED_PIE, PantrySortTab.OTHER, DAY * 2L, 80, 6, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> FISH_COATING = prepared("fish_coating", IngredientState.COARSE_POWDER, PantrySortTab.OTHER, DAY * 1L, 0, 1, 1, false, false);
+    public static final DeferredItem<KitchenIngredientItem> FRIED_FISH_PREP = prepared("fried_fish_prep", IngredientState.DEEP_FRIED, PantrySortTab.OTHER, DAY * 2L, 70, 5, 3, true, true);
+    public static final DeferredItem<KitchenIngredientItem> BRAISED_BEEF_BASE = prepared("braised_beef_base", IngredientState.ROUGH_CUT, PantrySortTab.OTHER, DAY * 2L, 90, 5, 2, true, false);
+    public static final DeferredItem<KitchenIngredientItem> BRAISED_BEEF_PREP = prepared("braised_beef_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 4L, 100, 7, 4, true, true);
+    public static final DeferredItem<KitchenIngredientItem> PEANUT_SAUCE = prepared("peanut_sauce", IngredientState.SMOOTH_MIXTURE, PantrySortTab.SAUCES_AND_CONDIMENTS, DAY * 20L, 0, 3, 3, true, false);
+    public static final DeferredItem<KitchenIngredientItem> PEANUT_NOODLES_PREP = prepared("peanut_noodles_prep", IngredientState.MIXED, PantrySortTab.OTHER, DAY * 3L, 60, 7, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> BROWNIE_BATTER_BASE = prepared("brownie_batter_base", IngredientState.MIXED, PantrySortTab.BAKING_ADD_INS, DAY * 1L, 0, 3, 3, true, false);
+    public static final DeferredItem<KitchenIngredientItem> BROWNIE_BATTER = prepared("brownie_batter", IngredientState.BATTER, PantrySortTab.OTHER, DAY * 1L, 0, 4, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> BAKED_BROWNIES = prepared("baked_brownies", IngredientState.BAKED, PantrySortTab.SNACKS, DAY * 4L, 120, 5, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CAKE_DRY_MIX = prepared("cake_dry_mix", IngredientState.COARSE_POWDER, PantrySortTab.BAKING_ADD_INS, DAY * 30L, 0, 2, 2, false, false);
+    public static final DeferredItem<KitchenIngredientItem> CAKE_BATTER = prepared("cake_batter", IngredientState.BATTER, PantrySortTab.OTHER, DAY * 1L, 0, 4, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> BAKED_CAKE = prepared("baked_cake", IngredientState.BAKED, PantrySortTab.SNACKS, DAY * 4L, 120, 5, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> SANDWICH_FILLING = prepared("sandwich_filling", IngredientState.CHOPPED, PantrySortTab.OTHER, DAY * 2L, 0, 5, 3, true, false);
+    public static final DeferredItem<KitchenIngredientItem> ASSEMBLED_SANDWICH = prepared("assembled_sandwich", IngredientState.ASSEMBLED_SANDWICH, PantrySortTab.OTHER, DAY * 1L, 0, 6, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CURRY_BASE = prepared("curry_base", IngredientState.SMOOTH_MIXTURE, PantrySortTab.SAUCES_AND_CONDIMENTS, DAY * 3L, 30, 3, 3, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CHICKEN_CURRY_PREP = prepared("chicken_curry_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 3L, 90, 7, 4, true, true);
+    public static final DeferredItem<KitchenIngredientItem> CHEESE_SAUCE = prepared("cheese_sauce", IngredientState.CREAMY, PantrySortTab.SAUCES_AND_CONDIMENTS, DAY * 2L, 0, 4, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> MAC_AND_CHEESE_PREP = prepared("mac_and_cheese_prep", IngredientState.MIXED, PantrySortTab.OTHER, DAY * 2L, 60, 7, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> GARLIC_BUTTER = prepared("garlic_butter", IngredientState.SMOOTH_PASTE, PantrySortTab.SAUCES_AND_CONDIMENTS, DAY * 6L, 0, 3, 3, true, true);
+    public static final DeferredItem<KitchenIngredientItem> GARLIC_BREAD_PREP = prepared("garlic_bread_prep", IngredientState.BAKED_BREAD, PantrySortTab.OTHER, DAY * 3L, 40, 4, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> GLAZED_CHICKEN_PREP = prepared("glazed_chicken_prep", IngredientState.GLAZED, PantrySortTab.OTHER, DAY * 3L, 60, 7, 4, true, true);
+    public static final DeferredItem<KitchenIngredientItem> PANCAKE_DRY_MIX = prepared("pancake_dry_mix", IngredientState.COARSE_POWDER, PantrySortTab.BAKING_ADD_INS, DAY * 30L, 0, 2, 2, false, false);
+    public static final DeferredItem<KitchenIngredientItem> PANCAKE_BATTER = prepared("pancake_batter", IngredientState.BATTER, PantrySortTab.OTHER, DAY * 1L, 0, 4, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> PANCAKES_PREP = prepared("pancakes_prep", IngredientState.PAN_FRIED, PantrySortTab.OTHER, DAY * 2L, 40, 5, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> STICKED_PRODUCT = prepared("sticked_product", IngredientState.STICKED_PRODUCT, PantrySortTab.OTHER, DAY * 2L, 0, 1, 0, true, false);
 
     private static final List<DeferredItem<KitchenIngredientItem>> PREPARED_ITEM_LIST = List.of(
             CHOPPED_PRODUCE_BLEND,
@@ -298,7 +331,39 @@ public final class JazzyItems {
             BATTER_MIX,
             FRIED_CHICKEN_PREP,
             JARRED_NUT_BUTTER,
-            PACKED_BREADCRUMBS
+            PACKED_BREADCRUMBS,
+            PORTIONED_MEAL,
+            FREEZE_DRIED_MEAL,
+            JAM_TOAST_PREP,
+            SYRUP_MIXTURE,
+            HOT_SYRUP_PRESERVE,
+            SAVORY_PIE_FILLING,
+            ASSEMBLED_SAVORY_PIE,
+            FISH_COATING,
+            FRIED_FISH_PREP,
+            BRAISED_BEEF_BASE,
+            BRAISED_BEEF_PREP,
+            PEANUT_SAUCE,
+            PEANUT_NOODLES_PREP,
+            BROWNIE_BATTER_BASE,
+            BROWNIE_BATTER,
+            BAKED_BROWNIES,
+            CAKE_DRY_MIX,
+            CAKE_BATTER,
+            BAKED_CAKE,
+            SANDWICH_FILLING,
+            ASSEMBLED_SANDWICH,
+            CURRY_BASE,
+            CHICKEN_CURRY_PREP,
+            CHEESE_SAUCE,
+            MAC_AND_CHEESE_PREP,
+            GARLIC_BUTTER,
+            GARLIC_BREAD_PREP,
+            GLAZED_CHICKEN_PREP,
+            PANCAKE_DRY_MIX,
+            PANCAKE_BATTER,
+            PANCAKES_PREP,
+            STICKED_PRODUCT
     );
 
     public static final DeferredItem<KitchenToolItem> PARING_KNIFE = tool("paring_knife", ToolProfile.PARING_KNIFE, 0.06F, 1.10F, 128);
@@ -333,6 +398,20 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenMealItem> DUMPLING_BASKET = meal("dumpling_basket", IngredientState.PLATED, DAY * 2L, 8, 5, BAMBOO_TRAY, CHOPSTICKS);
     public static final DeferredItem<KitchenMealItem> SMOOTHIE = meal("smoothie", IngredientState.PLATED, DAY * 1L, 5, 5, GLASS_CUP, STRAW);
     public static final DeferredItem<KitchenMealItem> FRIED_CHICKEN_BASKET = meal("fried_chicken_basket", IngredientState.PLATED, DAY * 2L, 9, 6, BASKET);
+    public static final DeferredItem<KitchenMealItem> FREEZE_DRIED_MEAL_PACK = meal("freeze_dried_meal_pack", IngredientState.FREEZE_DRIED, DAY * 240L, 7, 3, TUPPERWARE);
+    public static final DeferredItem<KitchenMealItem> JAM_TOAST = meal("jam_toast", IngredientState.PLATED, DAY * 1L, 4, 5, CERAMIC_PLATE, BUTTER_KNIFE);
+    public static final DeferredItem<KitchenMealItem> SAVORY_PIE = meal("savory_pie", IngredientState.PLATED, DAY * 4L, 8, 5, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> FRIED_FISH = meal("fried_fish", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> BRAISED_BEEF = meal("braised_beef", IngredientState.PLATED, DAY * 3L, 9, 5, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> PEANUT_NOODLES = meal("peanut_noodles", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_BOWL);
+    public static final DeferredItem<KitchenMealItem> BROWNIES = meal("brownies", IngredientState.PLATED, DAY * 4L, 5, 6, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> CAKE = meal("cake", IngredientState.PLATED, DAY * 4L, 5, 6, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> SANDWICH_PLATE = meal("sandwich_plate", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> CHICKEN_CURRY = meal("chicken_curry", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_BOWL);
+    public static final DeferredItem<KitchenMealItem> MAC_AND_CHEESE = meal("mac_and_cheese", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> GARLIC_BREAD = meal("garlic_bread", IngredientState.PLATED, DAY * 2L, 5, 5, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> GLAZED_CHICKEN = meal("glazed_chicken", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> PANCAKES = meal("pancakes", IngredientState.PLATED, DAY * 2L, 6, 6, CERAMIC_PLATE);
 
     private static final List<DeferredItem<KitchenMealItem>> MEAL_ITEM_LIST = List.of(
             FRUIT_JUICE,
@@ -344,7 +423,21 @@ public final class JazzyItems {
             MEAT_PLATTER,
             DUMPLING_BASKET,
             SMOOTHIE,
-            FRIED_CHICKEN_BASKET
+            FRIED_CHICKEN_BASKET,
+            FREEZE_DRIED_MEAL_PACK,
+            JAM_TOAST,
+            SAVORY_PIE,
+            FRIED_FISH,
+            BRAISED_BEEF,
+            PEANUT_NOODLES,
+            BROWNIES,
+            CAKE,
+            SANDWICH_PLATE,
+            CHICKEN_CURRY,
+            MAC_AND_CHEESE,
+            GARLIC_BREAD,
+            GLAZED_CHICKEN,
+            PANCAKES
     );
 
     private JazzyItems() {

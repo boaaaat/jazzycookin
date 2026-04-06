@@ -1,0 +1,41 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:braised_beef_base"
+      },
+      "required_state": "rough_cut"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:broth"
+      },
+      "required_state": "broth"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:paprika"
+      },
+      "required_state": "paprika"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "stock_pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 240,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:braised_beef_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

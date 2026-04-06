@@ -1,0 +1,27 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:bread"
+      },
+      "required_state": "bread"
+    }
+  ],
+  "preferred_tool": "pan",
+  "allowed_tools": [
+    "pan",
+    "frying_skillet"
+  ],
+  "tool_required": true,
+  "duration": 60,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:bread",
+      "count": 1
+    },
+    "state": "baked_bread"
+  }
+}

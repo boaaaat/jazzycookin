@@ -1,0 +1,27 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:pancake_batter"
+      },
+      "required_state": "batter"
+    }
+  ],
+  "preferred_tool": "pan",
+  "allowed_tools": [
+    "pan",
+    "frying_skillet"
+  ],
+  "tool_required": true,
+  "duration": 80,
+  "preferred_heat": "medium",
+  "output": {
+    "result": {
+      "id": "jazzycookin:pancakes_prep",
+      "count": 1
+    },
+    "state": "pan_fried"
+  }
+}

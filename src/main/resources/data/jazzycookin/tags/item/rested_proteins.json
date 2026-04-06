@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "jazzycookin:pan_seared_chicken_prep",
+    "jazzycookin:smoked_meat",
+    "jazzycookin:fried_chicken_prep",
+    "jazzycookin:fried_fish_prep",
+    "jazzycookin:braised_beef_prep",
+    "jazzycookin:glazed_chicken_prep"
+  ]
+}

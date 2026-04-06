@@ -64,6 +64,7 @@ public final class JazzyCreativeTabs {
                             JazzyItems.STRAW,
                             JazzyItems.BASKET,
                             JazzyItems.PAPER_LINER,
+                            JazzyItems.BUTTER_KNIFE,
                             JazzyItems.CANNING_JAR,
                             JazzyItems.GLASS_JAR,
                             JazzyItems.PARING_KNIFE,

@@ -1,0 +1,39 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:fish_fillet"
+      },
+      "required_state": "fish_fillet"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:fish_coating"
+      },
+      "required_state": "coarse_powder"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:vegetable_oil"
+      },
+      "required_state": "vegetable_oil"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "stock_pot"
+  ],
+  "tool_required": true,
+  "duration": 120,
+  "preferred_heat": "high",
+  "output": {
+    "result": {
+      "id": "jazzycookin:fried_fish_prep",
+      "count": 1
+    },
+    "state": "deep_fried"
+  }
+}

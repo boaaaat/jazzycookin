@@ -1,0 +1,54 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:all_purpose_flour"
+      },
+      "required_state": "all_purpose_flour"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:butter"
+      },
+      "required_state": "butter"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:table_salt"
+      },
+      "required_state": "table_salt"
+    }
+  ],
+  "duration": 80,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:pie_dough",
+          "count": 1
+        },
+        "state": "rough_dough"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:pie_dough",
+          "count": 1
+        },
+        "state": "overworked_dough"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:pie_dough",
+      "count": 1
+    },
+    "state": "smooth_dough"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:pancake_dry_mix"
+      },
+      "required_state": "coarse_powder"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:eggs"
+      },
+      "required_state": "eggs"
+    }
+  ],
+  "duration": 55,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:pancake_batter",
+          "count": 1
+        },
+        "state": "lumpy_mixture"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:pancake_batter",
+          "count": 1
+        },
+        "state": "separated"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:pancake_batter",
+      "count": 1
+    },
+    "state": "batter"
+  }
+}

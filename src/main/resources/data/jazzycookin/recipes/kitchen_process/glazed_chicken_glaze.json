@@ -1,0 +1,48 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "mixing_bowl",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:glazed_chicken_prep"
+      },
+      "required_state": "pan_fried"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:honey"
+      },
+      "required_state": "honey"
+    }
+  ],
+  "duration": 45,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:glazed_chicken_prep",
+          "count": 1
+        },
+        "state": "glazed"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:glazed_chicken_prep",
+          "count": 1
+        },
+        "state": "separated"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:glazed_chicken_prep",
+      "count": 1
+    },
+    "state": "mixed"
+  }
+}
