@@ -6,6 +6,8 @@ import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
+import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
+import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.boaat.jazzy_cookin.registry.JazzyItems.IngredientId;
@@ -35,6 +37,7 @@ public final class FreezeDrySimulationDomain implements StationSimulationDomain 
         if (matter == null) {
             return SimulationSnapshot.inactive(executionMode);
         }
+        DishRecognitionResult preview = DishSchema.preview(matter);
         return new SimulationSnapshot(
                 executionMode,
                 0,
@@ -47,7 +50,7 @@ public final class FreezeDrySimulationDomain implements StationSimulationDomain 
                 0,
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                0
+                preview != null ? preview.previewId() : 0
         );
     }
 

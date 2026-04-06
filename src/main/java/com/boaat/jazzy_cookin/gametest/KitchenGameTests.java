@@ -3,11 +3,13 @@ package com.boaat.jazzy_cookin.gametest;
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.block.entity.KitchenStorageBlockEntity;
+import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.FreshnessBand;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
+import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.StorageRules;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
@@ -15,6 +17,8 @@ import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
+import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
+import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
@@ -442,6 +446,104 @@ public final class KitchenGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void recognizerLibraryClassifiesSimulatedOutputs(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        KitchenStationBlockEntity bowl = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.MIXING_BOWL.get());
+        bowl.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ALL_PURPOSE_FLOUR).get().createStack(1, level.getGameTime()));
+        bowl.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, level.getGameTime()));
+        require(bowl.handleButton(6, fakePlayer), "Mix action should produce pie dough for recognizer coverage");
+
+        KitchenStationBlockEntity processor = placeStation(level, helper.absolutePos(new BlockPos(2, 1, 0)), JazzyBlocks.FOOD_PROCESSOR.get());
+        processor.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ALMONDS).get().createStack(1, level.getGameTime()));
+        require(processor.handleButton(6, fakePlayer), "Processor action should produce nut butter for recognizer coverage");
+
+        KitchenStationBlockEntity blender = placeStation(level, helper.absolutePos(new BlockPos(4, 1, 0)), JazzyBlocks.BLENDER.get());
+        blender.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get().createStack(1, level.getGameTime()));
+        blender.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.OAT_MILK).get().createStack(1, level.getGameTime()));
+        require(blender.handleButton(6, fakePlayer), "Blend action should produce smoothie blend for recognizer coverage");
+
+        KitchenStationBlockEntity juicer = placeStation(level, helper.absolutePos(new BlockPos(6, 1, 0)), JazzyBlocks.JUICER.get());
+        juicer.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.LEMONS).get().createStack(1, level.getGameTime()));
+        require(juicer.handleButton(6, fakePlayer), "Juice action should produce lemon juice for recognizer coverage");
+
+        KitchenStationBlockEntity freezeDryer = placeStation(level, helper.absolutePos(new BlockPos(8, 1, 0)), JazzyBlocks.FREEZE_DRYER.get());
+        freezeDryer.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get().createStack(1, level.getGameTime()));
+        require(freezeDryer.handleButton(6, fakePlayer), "Dry action should produce freeze-dried apples for recognizer coverage");
+
+        requireRecognizer(bowl.getItem(KitchenStationBlockEntity.OUTPUT_SLOT), level, "pie_dough");
+        requireRecognizer(processor.getItem(KitchenStationBlockEntity.OUTPUT_SLOT), level, "nut_butter");
+        requireRecognizer(blender.getItem(KitchenStationBlockEntity.OUTPUT_SLOT), level, "smoothie_blend");
+        requireRecognizer(juicer.getItem(KitchenStationBlockEntity.OUTPUT_SLOT), level, "lemon_juice");
+        requireRecognizer(freezeDryer.getItem(KitchenStationBlockEntity.OUTPUT_SLOT), level, "packed_freeze_dry_apples");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void dishEvaluationRewardsGoodPhysicsAndPenalizesBurning(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long gameTime = level.getGameTime();
+
+        ItemStack omelet = JazzyItems.OMELET.get().createStack(1, gameTime);
+        FoodMatterData omeletMatter = KitchenStackUtil.getOrCreateFoodMatter(omelet, gameTime);
+        require(omeletMatter != null, "Omelet stack should initialize FOOD_MATTER");
+        KitchenStackUtil.setFoodMatter(
+                omelet,
+                omeletMatter.withAddedTraits(FoodTrait.maskOf(FoodTrait.EGG, FoodTrait.PROTEIN, FoodTrait.ANIMAL_PROTEIN)).withWorkingState(
+                        0.42F,
+                        0.18F,
+                        0.20F,
+                        0.74F,
+                        0.68F,
+                        0.12F,
+                        0.0F,
+                        omeletMatter.whiskWork(),
+                        0,
+                        2,
+                        120,
+                        Math.max(3, omeletMatter.processDepth()),
+                        true
+                ),
+                gameTime
+        );
+
+        ItemStack burntEggs = JazzyItems.BURNT_EGGS.get().createStack(1, gameTime);
+        FoodMatterData burntMatter = KitchenStackUtil.getOrCreateFoodMatter(burntEggs, gameTime);
+        require(burntMatter != null, "Burnt eggs stack should initialize FOOD_MATTER");
+        KitchenStackUtil.setFoodMatter(
+                burntEggs,
+                burntMatter.withAddedTraits(FoodTrait.maskOf(FoodTrait.EGG, FoodTrait.PROTEIN, FoodTrait.ANIMAL_PROTEIN)).withWorkingState(
+                        0.12F,
+                        0.04F,
+                        0.46F,
+                        0.18F,
+                        0.82F,
+                        0.88F,
+                        0.44F,
+                        burntMatter.whiskWork(),
+                        1,
+                        0,
+                        360,
+                        Math.max(3, burntMatter.processDepth()),
+                        true
+                ),
+                gameTime
+        );
+
+        DishRecognitionResult omeletRecognition = DishSchema.preview(KitchenStackUtil.getFoodMatter(omelet));
+        DishRecognitionResult burntRecognition = DishSchema.preview(KitchenStackUtil.getFoodMatter(burntEggs));
+        QualityBreakdown omeletBreakdown = DishEvaluation.evaluateStack(omelet, level);
+        QualityBreakdown burntBreakdown = DishEvaluation.evaluateStack(burntEggs, level);
+
+        require(omeletRecognition != null && "omelet".equals(omeletRecognition.key()), "Good omelet physics should resolve to omelet recognition");
+        require(burntRecognition != null && "burnt_eggs".equals(burntRecognition.key()), "Burnt physics should resolve to burnt eggs recognition");
+        require(omeletBreakdown.finalScore() > burntBreakdown.finalScore(), "Good omelet should outscore burnt eggs");
+        require(omeletBreakdown.cookingScore() > burntBreakdown.cookingScore(), "Good omelet should carry a better cooking score than burnt eggs");
+        helper.succeed();
+    }
+
     private static KitchenStationBlockEntity placeStation(ServerLevel level, BlockPos pos, net.minecraft.world.level.block.Block block) {
         level.setBlockAndUpdate(pos, block.defaultBlockState());
         KitchenStationBlockEntity blockEntity = (KitchenStationBlockEntity) level.getBlockEntity(pos);
@@ -467,6 +569,13 @@ public final class KitchenGameTests {
         for (int i = 0; i < ticks; i++) {
             KitchenStationBlockEntity.serverTick(level, station.getBlockPos(), station.getBlockState(), station);
         }
+    }
+
+    private static void requireRecognizer(ItemStack stack, ServerLevel level, String expectedKey) {
+        FoodMatterData matter = KitchenStackUtil.getOrCreateFoodMatter(stack, level.getGameTime());
+        DishRecognitionResult recognition = DishSchema.preview(matter);
+        require(recognition != null, "Expected recognizer result for " + stack.getItemHolder().unwrapKey().map(key -> key.location().getPath()).orElse("unknown_stack"));
+        require(expectedKey.equals(recognition.key()), "Expected recognizer key " + expectedKey + " but got " + recognition.key());
     }
 
     private static void require(boolean condition, String message) {
