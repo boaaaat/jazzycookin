@@ -197,16 +197,12 @@ public class KitchenStationMenu extends AbstractContainerMenu {
     }
 
     public boolean simulationMode() {
-        return this.executionMode() == 2;
-    }
-
-    public boolean plateMode() {
         return this.executionMode() == 1;
     }
 
     public SimulationDomainType activeDomain() {
         if (!this.simulationMode()) {
-            return this.plateMode() ? SimulationDomainType.PLATE : SimulationDomainType.NONE;
+            return SimulationDomainType.NONE;
         }
         return switch (this.stationType) {
             case STOVE -> switch (this.currentMethod()) {

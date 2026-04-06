@@ -155,7 +155,7 @@ public final class DishEvaluation {
         IngredientState effectiveState = KitchenStackUtil.effectiveState(stack, level.getGameTime());
         FoodMatterData foodMatter = KitchenStackUtil.getOrCreateFoodMatter(stack, level.getGameTime());
         if (foodMatter == null) {
-            return evaluateLegacyStack(data, stack, level, freshness, effectiveState);
+            return evaluateSummaryStack(data, stack, level, freshness, effectiveState);
         }
 
         DishRecognitionResult recognition = DishSchema.preview(foodMatter);
@@ -244,7 +244,7 @@ public final class DishEvaluation {
         );
     }
 
-    private static QualityBreakdown evaluateLegacyStack(
+    private static QualityBreakdown evaluateSummaryStack(
             IngredientStateData data,
             ItemStack stack,
             Level level,

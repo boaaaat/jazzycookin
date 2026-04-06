@@ -27,10 +27,4 @@ public record KitchenEnvironmentRequirements(
     public boolean isEmpty() {
         return !this.nearbyWater && !this.sheltered;
     }
-
-    public KitchenEnvironmentRequirements mergeLegacyNearbyWater(boolean requiresNearbyWater) {
-        return requiresNearbyWater && !this.nearbyWater
-                ? new KitchenEnvironmentRequirements(true, this.sheltered)
-                : this;
-    }
 }

@@ -61,14 +61,6 @@ public enum HeatLevel implements StringRepresentable {
         return MIN_OVEN_TEMPERATURE + steps * OVEN_TEMPERATURE_STEP;
     }
 
-    public static int legacyOvenTemperature(HeatLevel heatLevel) {
-        return switch (heatLevel) {
-            case LOW -> 250;
-            case HIGH -> 450;
-            case OFF, MEDIUM -> DEFAULT_OVEN_TEMPERATURE;
-        };
-    }
-
     @Override
     public String getSerializedName() {
         return this.serializedName;

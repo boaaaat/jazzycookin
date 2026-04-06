@@ -19,32 +19,14 @@ public final class KitchenStackUtil {
     public static IngredientStateData getData(ItemStack stack) {
         FoodMatterData matter = getFoodMatter(stack);
         if (matter == null) {
-            IngredientStateData legacy = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
-            if (legacy != null) {
-                setFoodMatter(stack, FoodMaterialProfiles.createMatter(stack, legacy, isFinalizedServing(stack)), legacy.createdTick());
-                matter = getFoodMatter(stack);
-            }
+            matter = getOrCreateFoodMatter(stack, 0L);
         }
-        if (matter == null) {
-            return stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
-        }
-
-        IngredientStateData derived = deriveIngredientState(stack, matter, matter.createdTick());
-        stack.set(JazzyDataComponents.INGREDIENT_STATE.get(), derived);
-        applyStackBehavior(stack, matter);
-        return derived;
+        return matter != null ? deriveIngredientState(stack, matter, matter.createdTick()) : null;
     }
 
     public static IngredientStateData getOrCreateData(ItemStack stack, long gameTime) {
         FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
-        if (matter == null) {
-            return stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
-        }
-
-        IngredientStateData derived = deriveIngredientState(stack, matter, gameTime);
-        stack.set(JazzyDataComponents.INGREDIENT_STATE.get(), derived);
-        applyStackBehavior(stack, matter);
-        return derived;
+        return matter != null ? deriveIngredientState(stack, matter, gameTime) : null;
     }
 
     public static void setData(ItemStack stack, IngredientStateData data) {
@@ -53,14 +35,9 @@ public final class KitchenStackUtil {
 
     public static void setCreatedTick(ItemStack stack, long newCreatedTick, long gameTime) {
         FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
-        if (matter == null) {
-            IngredientStateData data = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
-            if (data != null) {
-                setData(stack, data.withCreatedTick(newCreatedTick));
-            }
-            return;
+        if (matter != null) {
+            setFoodMatter(stack, matter.withCreatedTick(newCreatedTick), gameTime);
         }
-        setFoodMatter(stack, matter.withCreatedTick(newCreatedTick), gameTime);
     }
 
     public static FoodMatterData getFoodMatter(ItemStack stack) {
@@ -77,10 +54,9 @@ public final class KitchenStackUtil {
             return null;
         }
 
-        IngredientStateData legacy = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
         FoodMatterData created = FoodMaterialProfiles.createMatter(
                 stack,
-                legacy != null ? legacy : ingredientItem.defaultData(gameTime),
+                ingredientItem.defaultData(gameTime),
                 isFinalizedServing(stack)
         );
         setFoodMatter(stack, created, gameTime);
@@ -90,14 +66,12 @@ public final class KitchenStackUtil {
     public static void setFoodMatter(ItemStack stack, FoodMatterData matter, long gameTime) {
         if (matter == null) {
             stack.remove(JazzyDataComponents.FOOD_MATTER.get());
-            stack.remove(JazzyDataComponents.INGREDIENT_STATE.get());
             stack.remove(DataComponents.MAX_STACK_SIZE);
             return;
         }
 
         FoodMatterData clamped = matter.clamp();
         stack.set(JazzyDataComponents.FOOD_MATTER.get(), clamped);
-        stack.set(JazzyDataComponents.INGREDIENT_STATE.get(), deriveIngredientState(stack, clamped, gameTime));
         applyStackBehavior(stack, clamped);
     }
 

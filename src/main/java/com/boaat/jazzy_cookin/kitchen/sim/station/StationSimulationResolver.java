@@ -38,7 +38,7 @@ public final class StationSimulationResolver {
     }
 
     public static SimulationExecutionMode executionMode(StationSimulationAccess access) {
-        return domainFor(access) != null ? SimulationExecutionMode.SIMULATION : SimulationExecutionMode.LEGACY_RECIPE;
+        return domainFor(access) != null ? SimulationExecutionMode.SIMULATION : SimulationExecutionMode.NONE;
     }
 
     public static KitchenMethod currentMethod(StationSimulationAccess access) {

@@ -45,7 +45,7 @@ public final class FoodMaterialProfiles {
         if (profile != null) {
             return profile.create(summaryHint, finalizedServing);
         }
-        return summaryHint != null ? FoodMatterData.fromLegacy(summaryHint, finalizedServing) : null;
+        return summaryHint != null ? FoodMatterData.fromSummaryHint(summaryHint, finalizedServing) : null;
     }
 
     public static long traitMaskFor(ItemStack stack) {

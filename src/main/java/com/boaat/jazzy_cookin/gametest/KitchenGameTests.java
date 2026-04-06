@@ -24,18 +24,14 @@ import com.boaat.jazzy_cookin.kitchen.sim.station.SimulationExecutionMode;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
-import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.NonNullList;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -240,44 +236,6 @@ public final class KitchenGameTests {
 
         fridgeMenu.removed(fakePlayer);
         freezerMenu.removed(fakePlayer);
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty")
-    public static void legacyStacksMigrateFoodMatterOnTouch(GameTestHelper helper) {
-        ServerLevel level = helper.getLevel();
-        ItemStack legacyEggs = JazzyItems.ingredient(JazzyItems.IngredientId.EGGS).get().createStack(1, level.getGameTime());
-        IngredientStateData existing = KitchenStackUtil.getData(legacyEggs);
-        legacyEggs.remove(JazzyDataComponents.FOOD_MATTER.get());
-
-        FoodMatterData migrated = KitchenStackUtil.getOrCreateFoodMatter(legacyEggs, level.getGameTime());
-        require(existing != null, "Legacy stack should start with ingredient data");
-        require(migrated != null, "Legacy stack should migrate FOOD_MATTER on first touch");
-        require(KitchenStackUtil.getData(legacyEggs) != null, "Legacy stack should still expose ingredient data after migration");
-        require(migrated.createdTick() == existing.createdTick(), "Migration should preserve the created tick");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty")
-    public static void legacySevenSlotStationsMigrateIntoExpandedLayout(GameTestHelper helper) {
-        ServerLevel level = helper.getLevel();
-        KitchenStationBlockEntity prepTable = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
-
-        NonNullList<ItemStack> legacyItems = NonNullList.withSize(7, ItemStack.EMPTY);
-        legacyItems.set(0, JazzyItems.ingredient(JazzyItems.IngredientId.BEEF).get().createStack(1, level.getGameTime()));
-        legacyItems.set(4, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
-        legacyItems.set(5, JazzyItems.BRAISED_BEEF_BASE.get().createStack(1, level.getGameTime()));
-        legacyItems.set(6, new ItemStack(JazzyItems.GLASS_JAR.get()));
-
-        CompoundTag legacyTag = new CompoundTag();
-        ContainerHelper.saveAllItems(legacyTag, legacyItems, level.registryAccess());
-        prepTable.loadWithComponents(legacyTag, level.registryAccess());
-
-        require(prepTable.getItem(0).is(JazzyItems.ingredient(JazzyItems.IngredientId.BEEF).get()), "Legacy input slots should remain in place");
-        require(prepTable.getItem(KitchenStationBlockEntity.TOOL_SLOT).is(JazzyItems.CHEF_KNIFE.get()), "Legacy tool slot should migrate to the new tool slot");
-        require(prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.BRAISED_BEEF_BASE.get()), "Legacy output slot should migrate to the new output slot");
-        require(prepTable.getItem(KitchenStationBlockEntity.BYPRODUCT_SLOT).is(JazzyItems.GLASS_JAR.get()), "Legacy byproduct slot should migrate to the new byproduct slot");
-        require(prepTable.getItem(4).isEmpty(), "Expanded input slot 4 should start empty after legacy migration");
         helper.succeed();
     }
 

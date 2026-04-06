@@ -192,20 +192,20 @@ public record FoodMatterData(
             process.finalizedServing()
     )));
 
-    public static FoodMatterData fromLegacy(IngredientStateData legacy, boolean finalizedServing) {
+    public static FoodMatterData fromSummaryHint(IngredientStateData summaryHint, boolean finalizedServing) {
         return new FoodMatterData(
-                legacy.createdTick(),
-                legacy,
+                summaryHint.createdTick(),
+                summaryHint,
                 0L,
                 22.0F,
                 22.0F,
-                legacy.moisture(),
+                summaryHint.moisture(),
                 0.10F,
                 0.18F,
-                legacy.aeration(),
-                legacy.processDepth() > 0 ? 0.32F : 0.08F,
-                legacy.structure(),
-                legacy.state().isPlatedState() ? 0.78F : 0.0F,
+                summaryHint.aeration(),
+                summaryHint.processDepth() > 0 ? 0.32F : 0.08F,
+                summaryHint.structure(),
+                summaryHint.state().isPlatedState() ? 0.78F : 0.0F,
                 0.0F,
                 0.0F,
                 0.0F,
@@ -216,11 +216,11 @@ public record FoodMatterData(
                 UNSET_ENVIRONMENT,
                 UNSET_ENVIRONMENT,
                 UNSET_ENVIRONMENT,
-                legacy.processDepth() > 0 ? 0.35F : 0.0F,
+                summaryHint.processDepth() > 0 ? 0.35F : 0.0F,
                 0,
                 0,
                 0,
-                legacy.processDepth(),
+                summaryHint.processDepth(),
                 finalizedServing
         );
     }

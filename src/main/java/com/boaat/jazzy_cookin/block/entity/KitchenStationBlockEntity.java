@@ -12,7 +12,6 @@ import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.StationPhysicsState;
-import com.boaat.jazzy_cookin.kitchen.sim.station.SimulationExecutionMode;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationResolver;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
@@ -45,7 +44,6 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     public static final int BYPRODUCT_SLOT = StationCapacityProfile.BYPRODUCT_SLOT;
     private static final int CONTAINER_SIZE = StationCapacityProfile.TOTAL_SLOTS;
     private static final int DATA_COUNT = 20;
-    private static final int SLOT_LAYOUT_VERSION = 1;
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private final ContainerData dataAccess = new ContainerData() {
@@ -169,18 +167,6 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         if (this.getStationType() == StationType.OVEN) {
             if (buttonId >= 1000) {
                 this.ovenTemperature = HeatLevel.normalizeOvenTemperature(buttonId - 1000);
-                this.setChanged();
-                return true;
-            }
-
-            int legacyTemperature = switch (buttonId) {
-                case 1 -> 250;
-                case 2 -> HeatLevel.DEFAULT_OVEN_TEMPERATURE;
-                case 3 -> 450;
-                default -> -1;
-            };
-            if (legacyTemperature > 0) {
-                this.ovenTemperature = legacyTemperature;
                 this.setChanged();
                 return true;
             }
@@ -362,7 +348,6 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         ContainerHelper.saveAllItems(tag, this.items, registries);
-        tag.putInt("SlotLayoutVersion", SLOT_LAYOUT_VERSION);
         tag.putInt("Progress", this.progress);
         tag.putInt("MaxProgress", this.maxProgress);
         tag.putInt("PreheatProgress", this.preheatProgress);
@@ -380,53 +365,21 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         ContainerHelper.loadAllItems(tag, this.items, registries);
-        this.migrateLegacySlotLayout(tag.getInt("SlotLayoutVersion"));
         this.progress = tag.getInt("Progress");
         this.maxProgress = tag.getInt("MaxProgress");
         this.preheatProgress = tag.getInt("PreheatProgress");
         this.heatLevel = HeatLevel.byName(tag.getString("HeatLevel"));
         this.ovenTemperature = tag.contains("OvenTemperature")
                 ? HeatLevel.normalizeOvenTemperature(tag.getInt("OvenTemperature"))
-                : HeatLevel.legacyOvenTemperature(this.heatLevel);
+                : HeatLevel.DEFAULT_OVEN_TEMPERATURE;
         this.controlSetting = Math.max(0, Math.min(2, tag.getInt("ControlSetting")));
         this.processing = tag.getBoolean("Processing");
         this.stationPhysics = decodeCodec(tag, "SimulationPhysics", StationPhysicsState.CODEC).orElse(StationPhysicsState.idle());
         this.simulationBatch = decodeCodec(tag, "SimulationBatch", CookingBatchState.CODEC).orElse(null);
     }
 
-    private void migrateLegacySlotLayout(int layoutVersion) {
-        if (layoutVersion >= SLOT_LAYOUT_VERSION) {
-            return;
-        }
-        this.moveLegacySlot(4, TOOL_SLOT);
-        this.moveLegacySlot(5, OUTPUT_SLOT);
-        this.moveLegacySlot(6, BYPRODUCT_SLOT);
-    }
-
-    private void moveLegacySlot(int sourceSlot, int targetSlot) {
-        if (sourceSlot < 0 || sourceSlot >= this.items.size() || targetSlot < 0 || targetSlot >= this.items.size()) {
-            return;
-        }
-        if (sourceSlot == targetSlot) {
-            return;
-        }
-        ItemStack source = this.items.get(sourceSlot);
-        if (source.isEmpty()) {
-            return;
-        }
-        if (!this.items.get(targetSlot).isEmpty()) {
-            return;
-        }
-        this.items.set(targetSlot, source);
-        this.items.set(sourceSlot, ItemStack.EMPTY);
-    }
-
     private void serverTickSimulation() {
         StationSimulationResolver.serverTick(this);
-    }
-
-    private SimulationExecutionMode executionMode() {
-        return StationSimulationResolver.executionMode(this);
     }
 
     @Override
