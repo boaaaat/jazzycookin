@@ -16,44 +16,28 @@ public final class KitchenStackUtil {
     }
 
     public static IngredientStateData getData(ItemStack stack) {
-        IngredientStateData existing = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
-        if (existing != null) {
-            return existing;
-        }
-
         FoodMatterData matter = getFoodMatter(stack);
         if (matter == null) {
-            return null;
+            IngredientStateData legacy = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
+            if (legacy != null) {
+                setFoodMatter(stack, FoodMatterData.fromLegacy(legacy, isFinalizedServing(stack)), legacy.createdTick());
+                matter = getFoodMatter(stack);
+            }
+        }
+        if (matter == null) {
+            return stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
         }
 
         IngredientStateData derived = deriveIngredientState(stack, matter, matter.createdTick());
         stack.set(JazzyDataComponents.INGREDIENT_STATE.get(), derived);
+        applyStackBehavior(stack, matter);
         return derived;
     }
 
     public static IngredientStateData getOrCreateData(ItemStack stack, long gameTime) {
-        IngredientStateData existing = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
-        if (existing != null && existing.createdTick() >= Long.MAX_VALUE / 8L) {
-            FoodMatterData matter = getFoodMatter(stack);
-            if (matter == null && stack.getItem() instanceof KitchenIngredientItem) {
-                setFoodMatter(stack, FoodMatterData.fromLegacy(existing, isFinalizedServing(stack)), existing.createdTick());
-            } else if (matter != null) {
-                applyStackBehavior(stack, matter);
-            }
-            return existing;
-        }
-
         FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
         if (matter == null) {
-            if (existing != null) {
-                return existing;
-            }
-            if (stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-                IngredientStateData created = ingredientItem.defaultData(gameTime);
-                stack.set(JazzyDataComponents.INGREDIENT_STATE.get(), created);
-                return created;
-            }
-            return null;
+            return stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
         }
 
         IngredientStateData derived = deriveIngredientState(stack, matter, gameTime);
@@ -63,12 +47,19 @@ public final class KitchenStackUtil {
     }
 
     public static void setData(ItemStack stack, IngredientStateData data) {
-        stack.set(JazzyDataComponents.INGREDIENT_STATE.get(), data);
-        FoodMatterData existingMatter = getFoodMatter(stack);
-        if (existingMatter == null) {
-            FoodMatterData created = FoodMatterData.fromLegacy(data, isFinalizedServing(stack));
-            setFoodMatter(stack, created, data.createdTick());
+        setFoodMatter(stack, FoodMatterData.fromLegacy(data, isFinalizedServing(stack)), data.createdTick());
+    }
+
+    public static void setCreatedTick(ItemStack stack, long newCreatedTick, long gameTime) {
+        FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
+        if (matter == null) {
+            IngredientStateData data = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
+            if (data != null) {
+                setData(stack, data.withCreatedTick(newCreatedTick));
+            }
+            return;
         }
+        setFoodMatter(stack, matter.withCreatedTick(newCreatedTick), gameTime);
     }
 
     public static FoodMatterData getFoodMatter(ItemStack stack) {
@@ -96,6 +87,7 @@ public final class KitchenStackUtil {
     public static void setFoodMatter(ItemStack stack, FoodMatterData matter, long gameTime) {
         if (matter == null) {
             stack.remove(JazzyDataComponents.FOOD_MATTER.get());
+            stack.remove(JazzyDataComponents.INGREDIENT_STATE.get());
             stack.remove(DataComponents.MAX_STACK_SIZE);
             return;
         }
@@ -107,12 +99,14 @@ public final class KitchenStackUtil {
     }
 
     public static void initializeStack(ItemStack stack, IngredientStateData data, FoodMatterData matter, long gameTime) {
-        if (data != null) {
-            stack.set(JazzyDataComponents.INGREDIENT_STATE.get(), data);
-        } else {
-            stack.remove(JazzyDataComponents.INGREDIENT_STATE.get());
+        FoodMatterData canonical = matter;
+        if (canonical == null && data != null) {
+            canonical = FoodMatterData.fromLegacy(data, isFinalizedServing(stack));
         }
-        setFoodMatter(stack, matter, gameTime);
+        if (canonical == null && stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
+            canonical = FoodMatterData.fromLegacy(ingredientItem.defaultData(gameTime), isFinalizedServing(stack));
+        }
+        setFoodMatter(stack, canonical, gameTime);
     }
 
     public static boolean isWorkedFood(ItemStack stack) {
@@ -186,7 +180,7 @@ public final class KitchenStackUtil {
     }
 
     private static IngredientStateData deriveIngredientState(ItemStack stack, FoodMatterData matter, long gameTime) {
-        IngredientStateData fallback = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
+        IngredientStateData fallback = matter.summaryHint();
         if (fallback == null && stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
             fallback = ingredientItem.defaultData(gameTime);
         }
@@ -209,9 +203,19 @@ public final class KitchenStackUtil {
             );
         }
 
+        if (!matter.finalizedServing()
+                && matter.processDepth() == 0
+                && matter.timeInPan() == 0
+                && matter.stirCount() == 0
+                && matter.flipCount() == 0
+                && matter.whiskWork() <= 0.0F) {
+            return fallback.withCreatedTick(matter.createdTick());
+        }
+
         IngredientState summaryState = summaryStateFor(stack, fallback.state(), matter);
         float quality = Mth.clamp(
-                0.35F
+                fallback.quality() * 0.42F
+                        + 0.20F
                         + matter.proteinSet() * 0.18F
                         + matter.cohesiveness() * 0.14F
                         + (1.0F - matter.charLevel()) * 0.14F
@@ -222,10 +226,11 @@ public final class KitchenStackUtil {
                 1.0F
         );
         float recipeAccuracy = matter.finalizedServing()
-                ? Mth.clamp(0.62F + matter.proteinSet() * 0.18F - matter.charLevel() * 0.10F, 0.0F, 1.0F)
-                : Mth.clamp(0.56F + matter.whiskWork() * 0.24F + matter.cohesiveness() * 0.08F, 0.0F, 1.0F);
+                ? Mth.clamp(fallback.recipeAccuracy() * 0.45F + 0.40F + matter.proteinSet() * 0.18F - matter.charLevel() * 0.10F, 0.0F, 1.0F)
+                : Mth.clamp(fallback.recipeAccuracy() * 0.50F + 0.20F + matter.whiskWork() * 0.24F + matter.cohesiveness() * 0.08F, 0.0F, 1.0F);
         float flavor = Mth.clamp(
-                0.36F
+                fallback.flavor() * 0.45F
+                        + 0.20F
                         + matter.seasoningLoad() * 0.18F
                         + matter.cheeseLoad() * 0.10F
                         + matter.onionLoad() * 0.08F
@@ -237,7 +242,8 @@ public final class KitchenStackUtil {
                 1.0F
         );
         float texture = Mth.clamp(
-                0.22F
+                fallback.texture() * 0.42F
+                        + 0.12F
                         + matter.aeration() * 0.18F
                         + matter.proteinSet() * 0.24F
                         + matter.fragmentation() * 0.10F
@@ -247,7 +253,8 @@ public final class KitchenStackUtil {
                 1.0F
         );
         float structure = Mth.clamp(
-                0.18F
+                fallback.structure() * 0.48F
+                        + 0.08F
                         + matter.cohesiveness() * 0.44F
                         + matter.proteinSet() * 0.18F
                         - matter.fragmentation() * 0.14F,
@@ -255,13 +262,10 @@ public final class KitchenStackUtil {
                 1.0F
         );
         float moisture = Mth.clamp(matter.water(), 0.0F, 1.0F);
-        float purity = Mth.clamp(0.72F + matter.whiskWork() * 0.10F - matter.onionLoad() * 0.05F, 0.0F, 1.0F);
+        float purity = Mth.clamp(fallback.purity() * 0.55F + 0.24F + matter.whiskWork() * 0.10F - matter.onionLoad() * 0.05F, 0.0F, 1.0F);
         float aeration = Mth.clamp(matter.aeration(), 0.0F, 1.0F);
         int nourishment = Math.max(fallback.nourishment(), Math.max(1, Math.round(matter.protein() * 8.0F + matter.fat() * 4.0F)));
-        int enjoyment = Math.max(
-                fallback.enjoyment(),
-                Math.max(1, Math.round(3.0F + flavor * 3.0F + texture * 2.0F + matter.browning() - matter.charLevel() * 3.0F))
-        );
+        int enjoyment = Math.max(fallback.enjoyment(), Math.max(1, Math.round(3.0F + flavor * 3.0F + texture * 2.0F + matter.browning() - matter.charLevel() * 3.0F)));
 
         return new IngredientStateData(
                 summaryState,

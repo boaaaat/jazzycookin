@@ -143,9 +143,7 @@ public class KitchenIngredientItem extends Item {
     }
 
     public ItemStack createCreativeStack(int count) {
-        ItemStack stack = this.createStack(count, CREATIVE_CREATED_TICK, this.maxData());
-        stack.set(com.boaat.jazzy_cookin.registry.JazzyDataComponents.INGREDIENT_STATE.get(), this.maxData());
-        return stack;
+        return this.createStack(count, CREATIVE_CREATED_TICK, this.maxData());
     }
 
     @Override

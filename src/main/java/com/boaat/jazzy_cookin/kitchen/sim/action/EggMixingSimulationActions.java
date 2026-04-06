@@ -2,6 +2,7 @@ package com.boaat.jazzy_cookin.kitchen.sim.action;
 
 import java.util.Optional;
 
+import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
@@ -133,8 +134,10 @@ public final class EggMixingSimulationActions {
             return null;
         }
 
+        IngredientStateData summaryHint = JazzyItems.EGG_MIXTURE.get().defaultData(createdTick);
         return new FoodMatterData(
                 createdTick,
+                summaryHint,
                 EggPanReactionSolver.ROOM_TEMP_C,
                 EggPanReactionSolver.ROOM_TEMP_C,
                 eggCount > 0 ? water / eggCount : FoodMaterialProfiles.EGGS.water(),

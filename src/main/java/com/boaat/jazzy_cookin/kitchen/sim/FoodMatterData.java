@@ -1,6 +1,7 @@
 package com.boaat.jazzy_cookin.kitchen.sim;
 
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
+import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -8,6 +9,7 @@ import net.minecraft.util.Mth;
 
 public record FoodMatterData(
         long createdTick,
+        IngredientStateData summaryHint,
         float surfaceTempC,
         float coreTempC,
         float water,
@@ -31,6 +33,22 @@ public record FoodMatterData(
         int processDepth,
         boolean finalizedServing
 ) {
+    private static final IngredientStateData DEFAULT_SUMMARY_HINT = new IngredientStateData(
+            IngredientState.PANTRY_READY,
+            0L,
+            0.70F,
+            0.72F,
+            0.42F,
+            0.40F,
+            0.36F,
+            0.45F,
+            0.68F,
+            0.10F,
+            0,
+            1,
+            1
+    );
+
     private record ThermalFields(float surfaceTempC, float coreTempC) {
     }
 
@@ -95,6 +113,7 @@ public record FoodMatterData(
 
     public static final Codec<FoodMatterData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.LONG.fieldOf("created_tick").forGetter(FoodMatterData::createdTick),
+            IngredientStateData.CODEC.optionalFieldOf("summary_hint", DEFAULT_SUMMARY_HINT).forGetter(FoodMatterData::summaryHint),
             THERMAL_CODEC.fieldOf("thermal").forGetter(data -> new ThermalFields(data.surfaceTempC, data.coreTempC)),
             COMPOSITION_CODEC.fieldOf("composition").forGetter(data -> new CompositionFields(
                     data.water,
@@ -120,8 +139,9 @@ public record FoodMatterData(
                     data.processDepth,
                     data.finalizedServing
             ))
-    ).apply(instance, (createdTick, thermal, composition, process) -> new FoodMatterData(
+    ).apply(instance, (createdTick, summaryHint, thermal, composition, process) -> new FoodMatterData(
             createdTick,
+            summaryHint,
             thermal.surfaceTempC(),
             thermal.coreTempC(),
             composition.water(),
@@ -149,6 +169,7 @@ public record FoodMatterData(
     public static FoodMatterData fromLegacy(IngredientStateData legacy, boolean finalizedServing) {
         return new FoodMatterData(
                 legacy.createdTick(),
+                legacy,
                 22.0F,
                 22.0F,
                 legacy.moisture(),
@@ -177,6 +198,7 @@ public record FoodMatterData(
     public FoodMatterData clamp() {
         return new FoodMatterData(
                 this.createdTick,
+                this.summaryHint,
                 Math.max(0.0F, this.surfaceTempC),
                 Math.max(0.0F, this.coreTempC),
                 Mth.clamp(this.water, 0.0F, 1.0F),
@@ -205,6 +227,7 @@ public record FoodMatterData(
     public FoodMatterData withTemps(float newSurfaceTempC, float newCoreTempC) {
         return new FoodMatterData(
                 this.createdTick,
+                this.summaryHint,
                 newSurfaceTempC,
                 newCoreTempC,
                 this.water,
@@ -247,6 +270,7 @@ public record FoodMatterData(
     ) {
         return new FoodMatterData(
                 this.createdTick,
+                this.summaryHint,
                 this.surfaceTempC,
                 this.coreTempC,
                 newWater,
@@ -282,6 +306,7 @@ public record FoodMatterData(
     ) {
         return new FoodMatterData(
                 this.createdTick,
+                this.summaryHint,
                 this.surfaceTempC,
                 this.coreTempC,
                 this.water,
@@ -298,6 +323,35 @@ public record FoodMatterData(
                 newOnionLoad,
                 newHerbLoad,
                 newPepperLoad,
+                this.whiskWork,
+                this.stirCount,
+                this.flipCount,
+                this.timeInPan,
+                this.processDepth,
+                this.finalizedServing
+        ).clamp();
+    }
+
+    public FoodMatterData withCreatedTick(long newCreatedTick) {
+        return new FoodMatterData(
+                newCreatedTick,
+                this.summaryHint.withCreatedTick(newCreatedTick),
+                this.surfaceTempC,
+                this.coreTempC,
+                this.water,
+                this.fat,
+                this.protein,
+                this.aeration,
+                this.fragmentation,
+                this.cohesiveness,
+                this.proteinSet,
+                this.browning,
+                this.charLevel,
+                this.seasoningLoad,
+                this.cheeseLoad,
+                this.onionLoad,
+                this.herbLoad,
+                this.pepperLoad,
                 this.whiskWork,
                 this.stirCount,
                 this.flipCount,

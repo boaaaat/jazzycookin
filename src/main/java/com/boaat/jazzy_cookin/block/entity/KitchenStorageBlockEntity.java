@@ -117,7 +117,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
             if (data != null) {
                 long storedTicks = Math.max(0L, this.level.getGameTime() - this.insertedAt[slot]);
                 long ageReduction = Math.round(storedTicks * (1.0F - this.getStorageType().decayMultiplier()));
-                KitchenStackUtil.setData(extractedStack, data.withCreatedTick(data.createdTick() + ageReduction));
+                KitchenStackUtil.setCreatedTick(extractedStack, data.createdTick() + ageReduction, this.level.getGameTime());
             }
         }
     }

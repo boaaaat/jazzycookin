@@ -38,9 +38,23 @@ public final class KitchenGameTests {
         IngredientStateData data = KitchenStackUtil.getOrCreateData(creativeApples, level.getGameTime());
 
         require(data != null, "Creative ingredient stack should carry state data");
+        require(KitchenStackUtil.getFoodMatter(creativeApples) != null, "Creative ingredient stack should initialize FOOD_MATTER");
         require(data.quality() == 1.0F, "Creative ingredient stack should have max quality");
         require(data.recipeAccuracy() == 1.0F, "Creative ingredient stack should have max recipe accuracy");
         require(KitchenStackUtil.freshnessBand(creativeApples, level) == FreshnessBand.FRESH, "Creative ingredient stack should stay fresh");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void mealStacksStartCanonicalAndFinalized(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ItemStack omelet = JazzyItems.OMELET.get().createStack(1, level.getGameTime());
+        FoodMatterData matter = KitchenStackUtil.getFoodMatter(omelet);
+        IngredientStateData data = KitchenStackUtil.getOrCreateData(omelet, level.getGameTime());
+
+        require(data != null, "Meal stacks should carry derived ingredient data");
+        require(matter != null, "Meal stacks should initialize FOOD_MATTER");
+        require(matter.finalizedServing(), "Meal stacks should initialize as finalized servings");
         helper.succeed();
     }
 
