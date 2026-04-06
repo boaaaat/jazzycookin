@@ -79,7 +79,7 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
                 int visibleIndex = col + row * 9;
                 this.addSlot(this.isPantry()
                         ? new PagedStorageSlot(container, visibleIndex, STORAGE_START_X + col * 18, STORAGE_START_Y + row * 18)
-                        : new Slot(container, visibleIndex, STORAGE_START_X + col * 18, STORAGE_START_Y + row * 18));
+                        : new StorageSlot(container, visibleIndex, STORAGE_START_X + col * 18, STORAGE_START_Y + row * 18));
             }
         }
 
@@ -275,16 +275,13 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
     private record ClientInit(StorageType storageType, int storageSlotCount) {
     }
 
-    private final class PagedStorageSlot extends Slot {
-        private final int visibleIndex;
-
-        private PagedStorageSlot(Container container, int visibleIndex, int x, int y) {
-            super(container, visibleIndex, x, y);
-            this.visibleIndex = visibleIndex;
+    private class StorageSlot extends Slot {
+        private StorageSlot(Container container, int slot, int x, int y) {
+            super(container, slot, x, y);
         }
 
-        private int actualSlot() {
-            return KitchenStorageMenu.this.visibleSlotToActualSlot(this.visibleIndex);
+        protected int actualSlot() {
+            return super.getContainerSlot();
         }
 
         @Override
@@ -306,7 +303,7 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
         @Override
         public void set(ItemStack stack) {
             int actualSlot = this.actualSlot();
-            if (actualSlot >= 0) {
+            if (actualSlot >= 0 && (stack.isEmpty() || KitchenStorageMenu.this.container.canPlaceItem(actualSlot, stack))) {
                 KitchenStorageMenu.this.container.setItem(actualSlot, stack);
                 this.setChanged();
             }
@@ -315,7 +312,7 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
         @Override
         public void setByPlayer(ItemStack stack) {
             int actualSlot = this.actualSlot();
-            if (actualSlot >= 0) {
+            if (actualSlot >= 0 && (stack.isEmpty() || KitchenStorageMenu.this.container.canPlaceItem(actualSlot, stack))) {
                 KitchenStorageMenu.this.container.setItem(actualSlot, stack);
             }
         }
@@ -329,10 +326,7 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
         @Override
         public boolean mayPlace(ItemStack stack) {
             int actualSlot = this.actualSlot();
-            if (actualSlot < 0 || !KitchenStorageMenu.this.container.canPlaceItem(actualSlot, stack)) {
-                return false;
-            }
-            return KitchenStorageMenu.this.selectedPantryTab == null || PantrySortTab.classify(stack) == KitchenStorageMenu.this.selectedPantryTab;
+            return actualSlot >= 0 && KitchenStorageMenu.this.container.canPlaceItem(actualSlot, stack);
         }
 
         @Override
@@ -343,6 +337,27 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
         @Override
         public void setChanged() {
             KitchenStorageMenu.this.container.setChanged();
+        }
+    }
+
+    private final class PagedStorageSlot extends StorageSlot {
+        private final int visibleIndex;
+
+        private PagedStorageSlot(Container container, int visibleIndex, int x, int y) {
+            super(container, visibleIndex, x, y);
+            this.visibleIndex = visibleIndex;
+        }
+
+        @Override
+        protected int actualSlot() {
+            return KitchenStorageMenu.this.visibleSlotToActualSlot(this.visibleIndex);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return super.mayPlace(stack)
+                    && (KitchenStorageMenu.this.selectedPantryTab == null
+                    || PantrySortTab.classify(stack) == KitchenStorageMenu.this.selectedPantryTab);
         }
     }
 }

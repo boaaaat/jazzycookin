@@ -1,6 +1,7 @@
 package com.boaat.jazzy_cookin.gametest;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
+import com.boaat.jazzy_cookin.block.entity.KitchenStorageBlockEntity;
 import com.boaat.jazzy_cookin.kitchen.FreshnessBand;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
@@ -9,14 +10,17 @@ import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.StorageRules;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
+import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 
 @GameTestHolder(JazzyCookin.MODID)
@@ -88,6 +92,44 @@ public final class KitchenGameTests {
         ResourceLocation kitchenRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "kitchen_process/fresh_lemon_juice_cut");
         require(level.getRecipeManager().byKey(stoveRecipeId).isPresent(), "Expected vanilla crafting recipe jazzycookin:stove to be present");
         require(level.getRecipeManager().byKey(kitchenRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:fresh_lemon_juice_cut to be present");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void coldStorageRejectsInvalidMenuPlacements(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos fridgePos = helper.absolutePos(new BlockPos(0, 1, 0));
+        BlockPos freezerPos = helper.absolutePos(new BlockPos(2, 1, 0));
+        level.setBlockAndUpdate(fridgePos, JazzyBlocks.FRIDGE.get().defaultBlockState());
+        level.setBlockAndUpdate(freezerPos, JazzyBlocks.FREEZER.get().defaultBlockState());
+
+        KitchenStorageBlockEntity fridge = (KitchenStorageBlockEntity) level.getBlockEntity(fridgePos);
+        KitchenStorageBlockEntity freezer = (KitchenStorageBlockEntity) level.getBlockEntity(freezerPos);
+        require(fridge != null, "Expected fridge block entity to exist");
+        require(freezer != null, "Expected freezer block entity to exist");
+
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        fakePlayer.getInventory().clearContent();
+
+        ItemStack sugar = JazzyItems.ingredient(JazzyItems.IngredientId.WHITE_SUGAR).get().createStack(1, level.getGameTime());
+        ItemStack basil = JazzyItems.ingredient(JazzyItems.IngredientId.BASIL).get().createStack(1, level.getGameTime());
+
+        KitchenStorageMenu fridgeMenu = new KitchenStorageMenu(0, fakePlayer.getInventory(), fridge);
+        KitchenStorageMenu freezerMenu = new KitchenStorageMenu(1, fakePlayer.getInventory(), freezer);
+
+        require(!fridgeMenu.getSlot(0).mayPlace(sugar), "Fridge UI should reject pantry-only items");
+        require(!freezerMenu.getSlot(0).mayPlace(basil), "Freezer UI should reject freezer-unsafe items");
+
+        fakePlayer.getInventory().setItem(9, sugar.copy());
+        require(fridgeMenu.quickMoveStack(fakePlayer, 18).isEmpty(), "Shift-click into fridge should fail for pantry-only items");
+        require(ItemStack.isSameItemSameComponents(fakePlayer.getInventory().getItem(9), sugar), "Fridge rejection should not consume the stack");
+
+        fakePlayer.getInventory().setItem(10, basil.copy());
+        require(freezerMenu.quickMoveStack(fakePlayer, 19).isEmpty(), "Shift-click into freezer should fail for freezer-unsafe items");
+        require(ItemStack.isSameItemSameComponents(fakePlayer.getInventory().getItem(10), basil), "Freezer rejection should not consume the stack");
+
+        fridgeMenu.removed(fakePlayer);
+        freezerMenu.removed(fakePlayer);
         helper.succeed();
     }
 
