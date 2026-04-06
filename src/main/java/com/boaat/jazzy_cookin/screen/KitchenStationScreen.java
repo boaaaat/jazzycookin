@@ -122,14 +122,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.startButton.active = this.primaryActionActive();
         }
         if (this.secondaryActionButton != null) {
-            boolean stoveSimulation = this.menu.simulationMode() && this.menu.stationType() == StationType.STOVE;
-            this.secondaryActionButton.visible = stoveSimulation;
-            this.secondaryActionButton.active = stoveSimulation && this.menu.simulationBatchPresent();
+            boolean panSimulation = this.isPanSimulation();
+            this.secondaryActionButton.visible = panSimulation;
+            this.secondaryActionButton.active = panSimulation && this.menu.simulationBatchPresent();
         }
         if (this.tertiaryActionButton != null) {
-            boolean stoveSimulation = this.menu.simulationMode() && this.menu.stationType() == StationType.STOVE;
-            this.tertiaryActionButton.visible = stoveSimulation;
-            this.tertiaryActionButton.active = stoveSimulation && this.menu.simulationBatchPresent();
+            boolean panSimulation = this.isPanSimulation();
+            this.tertiaryActionButton.visible = panSimulation;
+            this.tertiaryActionButton.active = panSimulation && this.menu.simulationBatchPresent();
         }
         if (this.lowHeatButton != null) {
             this.lowHeatButton.active = this.menu.heatLevel() != HeatLevel.LOW;
@@ -173,7 +173,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private void beginHeldAction(Button button, int buttonId) {
-        if (this.menu.simulationMode() && this.menu.stationType() == StationType.MIXING_BOWL && buttonId == 6) {
+        if (buttonId == 6 && this.menu.simulationMode() && this.menu.currentMethod() != KitchenMethod.PAN_FRY && this.menu.currentMethod() != KitchenMethod.NONE) {
             this.heldActionButton = button;
             this.heldActionButtonId = buttonId;
         }
@@ -278,14 +278,17 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             }
         }
 
-        if (this.menu.simulationMode() && this.menu.stationType() == StationType.STOVE) {
+        if (this.isPanSimulation()) {
             JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 140, top + 53, 20, this.simPanTempRatio(), JazzyGuiRenderer.ACCENT_WARM);
             JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 140, top + 62, 20, this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT);
             JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 140, top + 71, 20, this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT);
             JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 140, top + 80, 20, this.menu.simBrowning() / 100.0F, JazzyGuiRenderer.ACCENT_WARM);
-        } else if (this.menu.simulationMode() && this.menu.stationType() == StationType.MIXING_BOWL) {
+        } else if (this.isWhiskSimulation()) {
             JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 60, 28, this.menu.simAeration() / 100.0F, JazzyGuiRenderer.ACCENT);
             JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 76, 28, this.menu.simFragmentation() / 100.0F, JazzyGuiRenderer.ACCENT_WARM);
+        } else if (this.menu.simulationMode()) {
+            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 60, 28, this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT);
+            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 76, 28, this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT);
         } else {
             float progress = this.menu.maxProgress() > 0 ? this.menu.progress() / (float) this.menu.maxProgress() : 0.0F;
             JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 60, 28, progress, JazzyGuiRenderer.ACCENT);
@@ -313,14 +316,17 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         }
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.status_short"), STATUS_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.result_short"), RESULT_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
-        if (this.menu.simulationMode() && this.menu.stationType() == StationType.STOVE) {
+        if (this.isPanSimulation()) {
             guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.sim_temp_short"), STATUS_CARD_X + 4, 50, JazzyGuiRenderer.TEXT_SOFT, false);
             guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.sim_done_short"), STATUS_CARD_X + 4, 59, JazzyGuiRenderer.TEXT_SOFT, false);
             guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.sim_moist_short"), STATUS_CARD_X + 4, 68, JazzyGuiRenderer.TEXT_SOFT, false);
             guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.sim_brown_short"), STATUS_CARD_X + 4, 77, JazzyGuiRenderer.TEXT_SOFT, false);
-        } else if (this.menu.simulationMode() && this.menu.stationType() == StationType.MIXING_BOWL) {
+        } else if (this.isWhiskSimulation()) {
             this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.sim_aeration_short"), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 50, JazzyGuiRenderer.TEXT_SOFT, false);
             this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.sim_fragment_short"), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 66, JazzyGuiRenderer.TEXT_SOFT, false);
+        } else if (this.menu.simulationMode()) {
+            this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.sim_done_short"), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 50, JazzyGuiRenderer.TEXT_SOFT, false);
+            this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.sim_moist_short"), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 66, JazzyGuiRenderer.TEXT_SOFT, false);
         } else {
             guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.progress_short"), STATUS_CARD_X + 4, 54, JazzyGuiRenderer.TEXT_SOFT, false);
         }
@@ -362,11 +368,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private Component primaryStatusText() {
-        if (this.menu.simulationMode() && this.menu.stationType() == StationType.STOVE) {
+        if (this.isPanSimulation()) {
             return Component.literal(this.menu.simPanTempF() + "F");
         }
-        if (this.menu.simulationMode() && this.menu.stationType() == StationType.MIXING_BOWL) {
+        if (this.isWhiskSimulation()) {
             return Component.literal(this.menu.simAeration() + "%");
+        }
+        if (this.menu.simulationMode()) {
+            return Component.literal(this.menu.simDoneness() + "%");
         }
         if (this.menu.maxProgress() > 0) {
             int percent = Math.round((this.menu.progress() / (float) this.menu.maxProgress()) * 100.0F);
@@ -382,11 +391,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private Component secondaryStatusText() {
-        if (this.menu.simulationMode() && this.menu.stationType() == StationType.STOVE) {
+        if (this.isPanSimulation()) {
             return Component.literal(this.menu.simFoodCoreTempF() + "F");
         }
-        if (this.menu.simulationMode() && this.menu.stationType() == StationType.MIXING_BOWL) {
+        if (this.isWhiskSimulation()) {
             return Component.literal(this.menu.simFragmentation() + "%");
+        }
+        if (this.menu.simulationMode()) {
+            return Component.literal(this.menu.simMoisture() + "%");
         }
         if (this.menu.stationType() == StationType.OVEN) {
             return this.menu.preheatProgress() >= 100
@@ -429,38 +441,37 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (!this.menu.simulationMode()) {
             return Component.translatable("screen.jazzycookin.start");
         }
-        if (this.menu.stationType() == StationType.MIXING_BOWL) {
-            return Component.translatable("screen.jazzycookin.whisk");
-        }
-        if (this.menu.stationType() == StationType.STOVE) {
-            return this.menu.simulationBatchPresent()
+        return switch (this.menu.currentMethod()) {
+            case WHISK -> Component.translatable("screen.jazzycookin.whisk");
+            case PAN_FRY -> this.menu.simulationBatchPresent()
                     ? Component.translatable("screen.jazzycookin.remove")
                     : Component.translatable("screen.jazzycookin.pour");
-        }
-        return Component.translatable("screen.jazzycookin.start");
+            case MIX -> Component.literal("Mix");
+            case KNEAD -> Component.literal("Knead");
+            case BATTER -> Component.literal("Mix");
+            case PROCESS -> Component.literal("Pulse");
+            case BLEND -> Component.literal("Blend");
+            case JUICE -> Component.literal("Juice");
+            case FREEZE_DRY -> Component.literal("Dry");
+            default -> Component.translatable("screen.jazzycookin.start");
+        };
     }
 
     private int primaryActionButtonId() {
-        if (!this.menu.simulationMode()) {
-            return 0;
-        }
-        if (this.menu.stationType() == StationType.MIXING_BOWL || this.menu.stationType() == StationType.STOVE) {
-            return 6;
-        }
-        return 0;
+        return this.menu.simulationMode() ? 6 : 0;
     }
 
     private boolean primaryActionActive() {
         if (!this.menu.simulationMode()) {
             return this.menu.environmentStatus() != 0;
         }
-        if (this.menu.stationType() == StationType.MIXING_BOWL) {
-            return true;
-        }
-        if (this.menu.stationType() == StationType.STOVE) {
+        if (this.isPanSimulation()) {
             return this.menu.simulationBatchPresent() || this.hasInputItems();
         }
-        return false;
+        if (this.menu.currentMethod() == KitchenMethod.WHISK && this.menu.getSlot(5).hasItem()) {
+            return true;
+        }
+        return this.hasInputItems();
     }
 
     private boolean hasInputItems() {
@@ -470,6 +481,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             }
         }
         return false;
+    }
+
+    private boolean isPanSimulation() {
+        return this.menu.simulationMode() && this.menu.currentMethod() == KitchenMethod.PAN_FRY;
+    }
+
+    private boolean isWhiskSimulation() {
+        return this.menu.simulationMode() && this.menu.currentMethod() == KitchenMethod.WHISK;
     }
 
     private float simPanTempRatio() {

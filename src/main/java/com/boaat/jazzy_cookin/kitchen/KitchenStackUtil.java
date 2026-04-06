@@ -3,6 +3,7 @@ package com.boaat.jazzy_cookin.kitchen;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
@@ -20,7 +21,7 @@ public final class KitchenStackUtil {
         if (matter == null) {
             IngredientStateData legacy = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
             if (legacy != null) {
-                setFoodMatter(stack, FoodMatterData.fromLegacy(legacy, isFinalizedServing(stack)), legacy.createdTick());
+                setFoodMatter(stack, FoodMaterialProfiles.createMatter(stack, legacy, isFinalizedServing(stack)), legacy.createdTick());
                 matter = getFoodMatter(stack);
             }
         }
@@ -47,7 +48,7 @@ public final class KitchenStackUtil {
     }
 
     public static void setData(ItemStack stack, IngredientStateData data) {
-        setFoodMatter(stack, FoodMatterData.fromLegacy(data, isFinalizedServing(stack)), data.createdTick());
+        setFoodMatter(stack, FoodMaterialProfiles.createMatter(stack, data, isFinalizedServing(stack)), data.createdTick());
     }
 
     public static void setCreatedTick(ItemStack stack, long newCreatedTick, long gameTime) {
@@ -77,9 +78,11 @@ public final class KitchenStackUtil {
         }
 
         IngredientStateData legacy = stack.get(JazzyDataComponents.INGREDIENT_STATE.get());
-        FoodMatterData created = legacy != null
-                ? FoodMatterData.fromLegacy(legacy, isFinalizedServing(stack))
-                : FoodMatterData.fromLegacy(ingredientItem.defaultData(gameTime), isFinalizedServing(stack));
+        FoodMatterData created = FoodMaterialProfiles.createMatter(
+                stack,
+                legacy != null ? legacy : ingredientItem.defaultData(gameTime),
+                isFinalizedServing(stack)
+        );
         setFoodMatter(stack, created, gameTime);
         return created;
     }
@@ -100,11 +103,12 @@ public final class KitchenStackUtil {
 
     public static void initializeStack(ItemStack stack, IngredientStateData data, FoodMatterData matter, long gameTime) {
         FoodMatterData canonical = matter;
-        if (canonical == null && data != null) {
-            canonical = FoodMatterData.fromLegacy(data, isFinalizedServing(stack));
+        IngredientStateData summary = data;
+        if (summary == null && stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
+            summary = ingredientItem.defaultData(gameTime);
         }
-        if (canonical == null && stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            canonical = FoodMatterData.fromLegacy(ingredientItem.defaultData(gameTime), isFinalizedServing(stack));
+        if (canonical == null && summary != null) {
+            canonical = FoodMaterialProfiles.createMatter(stack, summary, isFinalizedServing(stack));
         }
         setFoodMatter(stack, canonical, gameTime);
     }

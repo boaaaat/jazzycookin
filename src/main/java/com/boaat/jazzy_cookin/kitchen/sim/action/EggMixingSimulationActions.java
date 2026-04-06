@@ -96,6 +96,7 @@ public final class EggMixingSimulationActions {
         float onion = 0.0F;
         float herb = 0.0F;
         float pepper = 0.0F;
+        long traitMask = 0L;
 
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
             ItemStack stack = access.simulationItem(slot);
@@ -111,6 +112,9 @@ public final class EggMixingSimulationActions {
             FoodMatterData sourceMatter = KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime);
             if (sourceMatter != null) {
                 createdTick = Math.min(createdTick, sourceMatter.createdTick());
+                traitMask |= sourceMatter.traitMask();
+            } else {
+                traitMask |= profile.get().traitMask();
             }
 
             if (stack.is(JazzyItems.ingredient(JazzyItems.IngredientId.EGGS).get())) {
@@ -138,6 +142,7 @@ public final class EggMixingSimulationActions {
         return new FoodMatterData(
                 createdTick,
                 summaryHint,
+                traitMask,
                 EggPanReactionSolver.ROOM_TEMP_C,
                 EggPanReactionSolver.ROOM_TEMP_C,
                 eggCount > 0 ? water / eggCount : FoodMaterialProfiles.EGGS.water(),
@@ -173,6 +178,7 @@ public final class EggMixingSimulationActions {
         float herb = matter.herbLoad();
         float pepper = matter.pepperLoad();
         boolean consumed = false;
+        long addedTraits = 0L;
 
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
             ItemStack stack = access.simulationItem(slot);
@@ -193,6 +199,7 @@ public final class EggMixingSimulationActions {
             onion += profile.onionLoad();
             herb += profile.herbLoad();
             pepper += profile.pepperLoad();
+            addedTraits |= profile.traitMask();
             access.simulationRemoveItem(slot, 1);
             consumed = true;
         }
@@ -201,7 +208,7 @@ public final class EggMixingSimulationActions {
             return matter;
         }
 
-        FoodMatterData flavored = matter.withFlavorLoads(fat, seasoning, cheese, onion, herb, pepper).withWorkingState(
+        FoodMatterData flavored = matter.withAddedTraits(addedTraits).withFlavorLoads(fat, seasoning, cheese, onion, herb, pepper).withWorkingState(
                 water,
                 matter.aeration(),
                 matter.fragmentation(),

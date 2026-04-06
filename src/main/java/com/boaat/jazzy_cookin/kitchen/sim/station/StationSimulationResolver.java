@@ -1,20 +1,35 @@
 package com.boaat.jazzy_cookin.kitchen.sim.station;
 
+import java.util.List;
+
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
-import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
-import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
-import com.boaat.jazzy_cookin.kitchen.sim.reaction.EggPanReactionSolver;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.BlenderSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.FoodProcessorSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.FreezeDrySimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.JuicerSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.MixingSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.PanSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.StationSimulationDomain;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public final class StationSimulationResolver {
+    private static final List<StationSimulationDomain> DOMAINS = List.of(
+            new PanSimulationDomain(),
+            new MixingSimulationDomain(),
+            new FoodProcessorSimulationDomain(),
+            new BlenderSimulationDomain(),
+            new JuicerSimulationDomain(),
+            new FreezeDrySimulationDomain()
+    );
+
     private StationSimulationResolver() {
     }
 
@@ -22,73 +37,52 @@ public final class StationSimulationResolver {
         if (access.simulationStationType() == StationType.PLATING_STATION) {
             return SimulationExecutionMode.PLATE;
         }
-        if (supportsEggMixing(access) || supportsEggStove(access)) {
-            return SimulationExecutionMode.SIMULATION;
-        }
-        return SimulationExecutionMode.LEGACY_RECIPE;
+        return domainFor(access) != null ? SimulationExecutionMode.SIMULATION : SimulationExecutionMode.LEGACY_RECIPE;
     }
 
     public static KitchenMethod currentMethod(StationSimulationAccess access) {
-        if (executionMode(access) != SimulationExecutionMode.SIMULATION) {
-            return KitchenMethod.NONE;
-        }
-        return switch (access.simulationStationType()) {
-            case MIXING_BOWL -> KitchenMethod.WHISK;
-            case STOVE -> KitchenMethod.PAN_FRY;
-            default -> KitchenMethod.NONE;
-        };
+        StationSimulationDomain domain = domainFor(access);
+        return domain != null ? domain.method(access) : KitchenMethod.NONE;
     }
 
     public static SimulationSnapshot currentSnapshot(StationSimulationAccess access) {
         int mode = executionMode(access).ordinal();
-        if (executionMode(access) != SimulationExecutionMode.SIMULATION) {
-            return SimulationSnapshot.inactive(mode);
-        }
+        StationSimulationDomain domain = domainFor(access);
+        return domain != null ? domain.snapshot(access, mode) : SimulationSnapshot.inactive(mode);
+    }
 
-        if (access.simulationStationType() == StationType.STOVE) {
-            FoodMatterData matter = access.simulationBatch() != null ? access.simulationBatch().matter() : previewInputMatter(access);
-            if (matter == null) {
-                return new SimulationSnapshot(mode, 0, EggPanReactionSolver.toF(access.simulationStationPhysics().panTemperatureC()), 72, 72, 0, 0, 0, 0, 0, 0, 0);
+    public static boolean handleAction(StationSimulationAccess access, int buttonId) {
+        StationSimulationDomain domain = domainFor(access);
+        return domain != null && domain.handleAction(access, buttonId);
+    }
+
+    public static void serverTick(StationSimulationAccess access) {
+        StationSimulationDomain domain = domainFor(access);
+        if (domain != null) {
+            domain.serverTick(access);
+        }
+    }
+
+    public static StationSimulationDomain domainFor(StationSimulationAccess access) {
+        for (StationSimulationDomain domain : DOMAINS) {
+            if (domain.supports(access)) {
+                return domain;
             }
-            DishRecognitionResult preview = access.simulationBatch() != null ? DishSchema.preview(matter) : null;
-            return new SimulationSnapshot(
-                    mode,
-                    access.simulationBatch() != null ? 1 : 0,
-                    EggPanReactionSolver.toF(access.simulationStationPhysics().panTemperatureC()),
-                    EggPanReactionSolver.toF(matter.coreTempC()),
-                    EggPanReactionSolver.toF(matter.surfaceTempC()),
-                    Math.round(matter.proteinSet() * 100.0F),
-                    Math.round(matter.water() * 100.0F),
-                    Math.round(matter.browning() * 100.0F),
-                    Math.round(matter.charLevel() * 100.0F),
-                    Math.round(matter.aeration() * 100.0F),
-                    Math.round(matter.fragmentation() * 100.0F),
-                    preview != null ? preview.previewId() : 0
-            );
         }
+        return null;
+    }
 
-        ItemStack output = access.simulationItem(access.outputSlot());
-        long gameTime = access.simulationLevel() != null ? access.simulationLevel().getGameTime() : 0L;
-        FoodMatterData matter = output.is(JazzyItems.EGG_MIXTURE.get())
-                ? com.boaat.jazzy_cookin.kitchen.KitchenStackUtil.getOrCreateFoodMatter(output, gameTime)
-                : null;
-        if (matter == null) {
-            return SimulationSnapshot.inactive(mode);
+    public static FoodMatterData previewInputMatter(StationSimulationAccess access) {
+        if (access.simulationLevel() == null) {
+            return null;
         }
-
-        return new SimulationSnapshot(
-                mode,
-                0,
-                72,
-                EggPanReactionSolver.toF(matter.coreTempC()),
-                EggPanReactionSolver.toF(matter.surfaceTempC()),
-                Math.round(matter.whiskWork() * 50.0F),
-                Math.round(matter.water() * 100.0F),
-                Math.round(matter.browning() * 100.0F),
-                Math.round(matter.charLevel() * 100.0F),
-                Math.round(matter.aeration() * 100.0F),
-                Math.round(matter.fragmentation() * 100.0F),
-                0
+        int mixtureSlot = firstInputSlotMatching(access, JazzyItems.EGG_MIXTURE.get());
+        if (mixtureSlot < 0) {
+            return null;
+        }
+        return com.boaat.jazzy_cookin.kitchen.KitchenStackUtil.getOrCreateFoodMatter(
+                access.simulationItem(mixtureSlot),
+                access.simulationLevel().getGameTime()
         );
     }
 
@@ -141,32 +135,19 @@ public final class StationSimulationResolver {
         boolean sawMixture = false;
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
             ItemStack stack = access.simulationItem(slot);
-            if (stack.isEmpty()) {
-                continue;
-            }
             if (stack.is(JazzyItems.EGG_MIXTURE.get())) {
                 sawMixture = true;
                 continue;
             }
-            if (!FoodMaterialProfiles.isStoveFat(stack)) {
+            if (!stack.isEmpty() && !FoodMaterialProfiles.isStoveFat(stack)) {
                 return false;
             }
         }
         return sawMixture;
     }
 
-    public static FoodMatterData previewInputMatter(StationSimulationAccess access) {
-        if (access.simulationLevel() == null) {
-            return null;
-        }
-        int mixtureSlot = firstInputSlotMatching(access, JazzyItems.EGG_MIXTURE.get());
-        if (mixtureSlot < 0) {
-            return null;
-        }
-        return com.boaat.jazzy_cookin.kitchen.KitchenStackUtil.getOrCreateFoodMatter(
-                access.simulationItem(mixtureSlot),
-                access.simulationLevel().getGameTime()
-        );
+    public static int firstStoveFatSlot(StationSimulationAccess access) {
+        return firstInputSlotMatching(access, FoodMaterialProfiles::isStoveFat);
     }
 
     public static int firstInputSlotMatching(StationSimulationAccess access, Item item) {
@@ -178,9 +159,9 @@ public final class StationSimulationResolver {
         return -1;
     }
 
-    public static int firstStoveFatSlot(StationSimulationAccess access) {
+    public static int firstInputSlotMatching(StationSimulationAccess access, java.util.function.Predicate<ItemStack> predicate) {
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
-            if (FoodMaterialProfiles.isStoveFat(access.simulationItem(slot))) {
+            if (predicate.test(access.simulationItem(slot))) {
                 return slot;
             }
         }

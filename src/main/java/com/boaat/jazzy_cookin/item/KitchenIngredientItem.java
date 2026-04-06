@@ -9,7 +9,6 @@ import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
-import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -137,8 +136,7 @@ public class KitchenIngredientItem extends Item {
 
     public ItemStack createStack(int count, long gameTime, IngredientStateData data) {
         ItemStack stack = new ItemStack(this, count);
-        FoodMatterData matter = FoodMatterData.fromLegacy(data, this instanceof KitchenMealItem);
-        KitchenStackUtil.initializeStack(stack, data, matter, gameTime);
+        KitchenStackUtil.initializeStack(stack, data, null, gameTime);
         return stack;
     }
 

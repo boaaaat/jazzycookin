@@ -16,9 +16,6 @@ import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.StationPhysicsState;
-import com.boaat.jazzy_cookin.kitchen.sim.action.EggMixingSimulationActions;
-import com.boaat.jazzy_cookin.kitchen.sim.action.EggStoveSimulationActions;
-import com.boaat.jazzy_cookin.kitchen.sim.reaction.EggPanReactionSolver;
 import com.boaat.jazzy_cookin.kitchen.sim.station.SimulationExecutionMode;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationResolver;
@@ -199,14 +196,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     public boolean handleButton(int buttonId, Player player) {
         if (buttonId >= 6 && buttonId <= 8 && this.executionMode() == SimulationExecutionMode.SIMULATION) {
-            return switch (buttonId) {
-                case 6 -> this.getStationType() == StationType.MIXING_BOWL
-                        ? EggMixingSimulationActions.whisk(this)
-                        : EggStoveSimulationActions.primaryAction(this);
-                case 7 -> EggStoveSimulationActions.stir(this);
-                case 8 -> EggStoveSimulationActions.foldOrFlip(this);
-                default -> false;
-            };
+            return StationSimulationResolver.handleAction(this, buttonId);
         }
 
         if (buttonId == 0) {
@@ -682,7 +672,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     private void serverTickSimulation() {
-        EggPanReactionSolver.serverTick(this);
+        StationSimulationResolver.serverTick(this);
     }
 
     private SimulationExecutionMode executionMode() {

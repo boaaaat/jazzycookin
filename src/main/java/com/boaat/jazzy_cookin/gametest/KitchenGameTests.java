@@ -12,6 +12,8 @@ import com.boaat.jazzy_cookin.kitchen.StorageRules;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
@@ -55,6 +57,47 @@ public final class KitchenGameTests {
         require(data != null, "Meal stacks should carry derived ingredient data");
         require(matter != null, "Meal stacks should initialize FOOD_MATTER");
         require(matter.finalizedServing(), "Meal stacks should initialize as finalized servings");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void allIngredientsExposeMaterialProfiles(GameTestHelper helper) {
+        for (JazzyItems.IngredientId ingredientId : JazzyItems.IngredientId.values()) {
+            ItemStack stack = new ItemStack(JazzyItems.ingredient(ingredientId).get());
+            require(FoodMaterialProfiles.profileFor(stack).isPresent(), "Missing material profile for " + ingredientId.id());
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void ingredientProfilesExposeRecognitionTraits(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        FoodMatterData eggs = KitchenStackUtil.getOrCreateFoodMatter(
+                JazzyItems.ingredient(JazzyItems.IngredientId.EGGS).get().createStack(1, level.getGameTime()),
+                level.getGameTime()
+        );
+        FoodMatterData lemons = KitchenStackUtil.getOrCreateFoodMatter(
+                JazzyItems.ingredient(JazzyItems.IngredientId.LEMONS).get().createStack(1, level.getGameTime()),
+                level.getGameTime()
+        );
+        FoodMatterData chickpeas = KitchenStackUtil.getOrCreateFoodMatter(
+                JazzyItems.ingredient(JazzyItems.IngredientId.CHICKPEAS).get().createStack(1, level.getGameTime()),
+                level.getGameTime()
+        );
+        FoodMatterData paneer = KitchenStackUtil.getOrCreateFoodMatter(
+                JazzyItems.ingredient(JazzyItems.IngredientId.PANEER).get().createStack(1, level.getGameTime()),
+                level.getGameTime()
+        );
+        FoodMatterData tomatoSauce = KitchenStackUtil.getOrCreateFoodMatter(
+                JazzyItems.ingredient(JazzyItems.IngredientId.TOMATO_SAUCE).get().createStack(1, level.getGameTime()),
+                level.getGameTime()
+        );
+
+        require(eggs != null && eggs.hasTrait(FoodTrait.EGG) && eggs.hasTrait(FoodTrait.ANIMAL_PROTEIN), "Eggs should expose egg and animal-protein traits");
+        require(lemons != null && lemons.hasTrait(FoodTrait.FRUIT) && lemons.hasTrait(FoodTrait.ACIDIC), "Lemons should expose fruit and acidic traits");
+        require(chickpeas != null && chickpeas.hasTrait(FoodTrait.LEGUME) && chickpeas.hasTrait(FoodTrait.PLANT_PROTEIN), "Chickpeas should expose legume and plant-protein traits");
+        require(paneer != null && paneer.hasTrait(FoodTrait.DAIRY) && paneer.hasTrait(FoodTrait.PROTEIN), "Paneer should expose dairy and protein traits");
+        require(tomatoSauce != null && tomatoSauce.hasTrait(FoodTrait.TOMATO) && tomatoSauce.hasTrait(FoodTrait.SAUCE), "Tomato sauce should expose tomato and sauce traits");
         helper.succeed();
     }
 
@@ -274,6 +317,69 @@ public final class KitchenGameTests {
         tickStation(level, stove, 35);
         require(stove.handleButton(6, fakePlayer), "Remove should finalize the add-in scramble");
         require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SCRAMBLED_EGGS.get()), "Add-ins should still resolve to the egg dish family");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void mixingBowlCanMakePieDoughViaSimulation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity bowl = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.MIXING_BOWL.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        bowl.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ALL_PURPOSE_FLOUR).get().createStack(1, level.getGameTime()));
+        bowl.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, level.getGameTime()));
+        require(bowl.handleButton(6, fakePlayer), "Mix action should form pie dough from flour and butter");
+        require(bowl.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.PIE_DOUGH.get()), "Mixing bowl simulation should output pie dough");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void foodProcessorTurnsNutsIntoNutButter(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity processor = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.FOOD_PROCESSOR.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        processor.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ALMONDS).get().createStack(1, level.getGameTime()));
+        require(processor.handleButton(6, fakePlayer), "Processor action should succeed with almonds");
+        require(processor.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.NUT_BUTTER.get()), "Food processor simulation should output nut butter");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void blenderTurnsFruitAndMilkIntoSmoothieBlend(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity blender = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.BLENDER.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        blender.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get().createStack(1, level.getGameTime()));
+        blender.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.OAT_MILK).get().createStack(1, level.getGameTime()));
+        require(blender.handleButton(6, fakePlayer), "Blend action should succeed with produce and plant milk");
+        require(blender.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SMOOTHIE_BLEND.get()), "Blender simulation should output smoothie blend");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void juicerTurnsLemonsIntoJuiceAndPulp(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity juicer = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.JUICER.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        juicer.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.LEMONS).get().createStack(1, level.getGameTime()));
+        require(juicer.handleButton(6, fakePlayer), "Juice action should succeed with lemons");
+        require(juicer.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.LEMON_JUICE.get()), "Juicer simulation should output lemon juice");
+        require(juicer.getItem(KitchenStationBlockEntity.BYPRODUCT_SLOT).is(JazzyItems.FRUIT_PULP.get()), "Juicer simulation should output fruit pulp byproduct");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void freezeDryerPreservesApples(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity freezeDryer = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.FREEZE_DRYER.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        freezeDryer.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get().createStack(1, level.getGameTime()));
+        require(freezeDryer.handleButton(6, fakePlayer), "Dry action should succeed with apples");
+        require(freezeDryer.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.PACKED_FREEZE_DRY_APPLES.get()), "Freeze dryer simulation should output packed freeze-dried apples");
         helper.succeed();
     }
 

@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.boaat.jazzy_cookin.kitchen.sim.domain.SimulationDomainType;
 import com.mojang.serialization.Codec;
 
 import io.netty.buffer.ByteBuf;
@@ -71,6 +72,23 @@ public enum StationType implements StringRepresentable {
                 || this == MIXING_BOWL
                 || this == FOOD_PROCESSOR
                 || this == BLENDER;
+    }
+
+    public SimulationDomainType simulationDomain() {
+        return switch (this) {
+            case PLATING_STATION -> SimulationDomainType.PLATE;
+            case MIXING_BOWL -> SimulationDomainType.MIX;
+            case STOVE -> SimulationDomainType.PAN;
+            case FOOD_PROCESSOR -> SimulationDomainType.PROCESS;
+            case BLENDER -> SimulationDomainType.BLEND;
+            case JUICER -> SimulationDomainType.JUICE;
+            case FREEZE_DRYER -> SimulationDomainType.DRY;
+            case PREP_TABLE -> SimulationDomainType.PREP;
+            case CANNING_STATION, FERMENTATION_CROCK, DRYING_RACK, SMOKER, STEAMER -> SimulationDomainType.PRESERVE;
+            case OVEN -> SimulationDomainType.OVEN;
+            case COOLING_RACK, RESTING_BOARD -> SimulationDomainType.REST;
+            default -> SimulationDomainType.NONE;
+        };
     }
 
     public Component controlLabel(int controlIndex) {
