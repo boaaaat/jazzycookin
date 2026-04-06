@@ -5,8 +5,11 @@ import com.boaat.jazzy_cookin.kitchen.FreshnessBand;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
+import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.StorageRules;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
+import com.boaat.jazzy_cookin.kitchen.ToolProfile;
+import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.gametest.framework.GameTest;
@@ -61,6 +64,19 @@ public final class KitchenGameTests {
         require(PantrySortTab.classify(lentils) == PantrySortTab.DRY_GOODS, "Lentils should sort under dry goods");
         require(PantrySortTab.classify(ketchup) == PantrySortTab.SAUCES_AND_CONDIMENTS, "Ketchup should sort under sauces and condiments");
         require(PantrySortTab.classify(tomatoes) == PantrySortTab.OTHER, "Fresh produce should stay out of pantry tabs");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void newStationsAndServiceToolsRegister(GameTestHelper helper) {
+        require(JazzyBlocks.blockForStation(StationType.MICROWAVE).get() == JazzyBlocks.MICROWAVE.get(), "Microwave station should resolve to the microwave block");
+        require(StationType.FOOD_PROCESSOR.supportsStationControl(), "Food processor should expose station controls");
+        require(StationType.BLENDER.supportsStationControl(), "Blender should expose station controls");
+        require(StationType.MICROWAVE.supportsHeat(), "Microwave should expose heat controls");
+        require(ToolProfile.fromStack(new ItemStack(JazzyItems.FRYING_PAN.get())) == ToolProfile.PAN, "Frying pan should advertise the pan profile");
+        require(ToolProfile.fromStack(new ItemStack(JazzyItems.POT.get())) == ToolProfile.POT, "Pot should advertise the pot profile");
+        require(ToolProfile.fromStack(new ItemStack(JazzyItems.SAUCEPAN.get())) == ToolProfile.SAUCEPAN, "Saucepan should advertise the saucepan profile");
+        require(ToolProfile.fromStack(new ItemStack(JazzyItems.TABLE_KNIFE.get())) == ToolProfile.TABLE_KNIFE, "Table knife should advertise the silverware profile");
         helper.succeed();
     }
 

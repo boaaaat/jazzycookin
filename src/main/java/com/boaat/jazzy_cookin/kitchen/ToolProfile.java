@@ -38,8 +38,13 @@ public enum ToolProfile implements StringRepresentable {
     TONGS("tongs"),
     SPATULA("spatula"),
     BAKING_TRAY("baking_tray"),
+    GLASS_JAR("glass_jar"),
     JAR("jar"),
-    PIE_TIN("pie_tin");
+    PIE_TIN("pie_tin"),
+    SAUCEPAN("saucepan"),
+    FORK("fork"),
+    SPOON("spoon"),
+    TABLE_KNIFE("table_knife");
 
     private static final Map<String, ToolProfile> BY_NAME = Arrays.stream(values())
             .collect(Collectors.toMap(ToolProfile::getSerializedName, Function.identity()));

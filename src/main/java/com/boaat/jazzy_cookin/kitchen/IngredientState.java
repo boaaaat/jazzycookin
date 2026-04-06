@@ -258,6 +258,17 @@ public enum IngredientState implements StringRepresentable {
     MATCHA("matcha"),
     ROSE_WATER("rose_water"),
     FOOD_COLORING("food_coloring"),
+    CHUNKY("chunky"),
+    SMOOTH("smooth"),
+    CREAMY("creamy"),
+    PASTE("paste"),
+    MUSH("mush"),
+    SEPARATED_BLEND("separated_blend"),
+    FRESH_JUICE("fresh_juice"),
+    PULP("pulp"),
+    BITTER_JUICE("bitter_juice"),
+    FREEZE_DRIED("freeze_dried"),
+    BRITTLE_WASTE("brittle_waste"),
     SPOILED("spoiled"),
     MOLDY("moldy");
 

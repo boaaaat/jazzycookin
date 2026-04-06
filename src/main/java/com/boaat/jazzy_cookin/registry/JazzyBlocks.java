@@ -46,6 +46,11 @@ public final class JazzyBlocks {
     public static final DeferredBlock<Block> SPICE_GRINDER = station("spice_grinder", StationType.SPICE_GRINDER, MapColor.STONE, SoundType.STONE);
     public static final DeferredBlock<Block> STRAINER = station("strainer", StationType.STRAINER, MapColor.METAL, SoundType.METAL);
     public static final DeferredBlock<Block> MIXING_BOWL = station("mixing_bowl", StationType.MIXING_BOWL, MapColor.TERRACOTTA_ORANGE, SoundType.WOOD);
+    public static final DeferredBlock<Block> MICROWAVE = station("microwave", StationType.MICROWAVE, MapColor.METAL, SoundType.METAL);
+    public static final DeferredBlock<Block> FOOD_PROCESSOR = station("food_processor", StationType.FOOD_PROCESSOR, MapColor.QUARTZ, SoundType.STONE);
+    public static final DeferredBlock<Block> BLENDER = station("blender", StationType.BLENDER, MapColor.COLOR_LIGHT_BLUE, SoundType.GLASS);
+    public static final DeferredBlock<Block> JUICER = station("juicer", StationType.JUICER, MapColor.COLOR_LIGHT_GREEN, SoundType.GLASS);
+    public static final DeferredBlock<Block> FREEZE_DRYER = station("freeze_dryer", StationType.FREEZE_DRYER, MapColor.ICE, SoundType.GLASS);
     public static final DeferredBlock<Block> CANNING_STATION = station("canning_station", StationType.CANNING_STATION, MapColor.WOOD, SoundType.WOOD);
     public static final DeferredBlock<Block> DRYING_RACK = station("drying_rack", StationType.DRYING_RACK, MapColor.WOOD, SoundType.WOOD);
     public static final DeferredBlock<Block> SMOKER = station("smoker", StationType.SMOKER, MapColor.WOOD, SoundType.WOOD);
@@ -92,6 +97,11 @@ public final class JazzyBlocks {
             case SPICE_GRINDER -> SPICE_GRINDER;
             case STRAINER -> STRAINER;
             case MIXING_BOWL -> MIXING_BOWL;
+            case MICROWAVE -> MICROWAVE;
+            case FOOD_PROCESSOR -> FOOD_PROCESSOR;
+            case BLENDER -> BLENDER;
+            case JUICER -> JUICER;
+            case FREEZE_DRYER -> FREEZE_DRYER;
             case CANNING_STATION -> CANNING_STATION;
             case DRYING_RACK -> DRYING_RACK;
             case SMOKER -> SMOKER;

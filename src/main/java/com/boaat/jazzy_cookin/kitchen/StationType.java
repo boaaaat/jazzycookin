@@ -18,6 +18,11 @@ public enum StationType implements StringRepresentable {
     SPICE_GRINDER("spice_grinder", true, false),
     STRAINER("strainer", true, false),
     MIXING_BOWL("mixing_bowl", true, false),
+    MICROWAVE("microwave", false, true),
+    FOOD_PROCESSOR("food_processor", false, false),
+    BLENDER("blender", false, false),
+    JUICER("juicer", false, false),
+    FREEZE_DRYER("freeze_dryer", false, false),
     CANNING_STATION("canning_station", true, true),
     DRYING_RACK("drying_rack", false, false),
     SMOKER("smoker", true, true),
@@ -61,7 +66,11 @@ public enum StationType implements StringRepresentable {
     }
 
     public boolean supportsStationControl() {
-        return this == PREP_TABLE || this == SPICE_GRINDER || this == MIXING_BOWL;
+        return this == PREP_TABLE
+                || this == SPICE_GRINDER
+                || this == MIXING_BOWL
+                || this == FOOD_PROCESSOR
+                || this == BLENDER;
     }
 
     public Component controlLabel(int controlIndex) {
@@ -75,6 +84,8 @@ public enum StationType implements StringRepresentable {
             case PREP_TABLE -> "prep";
             case SPICE_GRINDER -> "grind";
             case MIXING_BOWL -> "mix";
+            case FOOD_PROCESSOR -> "process";
+            case BLENDER -> "blend";
             default -> "generic";
         };
         return Component.translatable("control.jazzycookin." + family + "." + band);

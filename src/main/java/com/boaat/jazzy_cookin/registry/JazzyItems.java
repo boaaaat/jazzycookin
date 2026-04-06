@@ -42,6 +42,11 @@ public final class JazzyItems {
     public static final DeferredItem<BlockItem> SPICE_GRINDER_ITEM = ITEMS.registerSimpleBlockItem("spice_grinder", JazzyBlocks.SPICE_GRINDER);
     public static final DeferredItem<BlockItem> STRAINER_ITEM = ITEMS.registerSimpleBlockItem("strainer", JazzyBlocks.STRAINER);
     public static final DeferredItem<BlockItem> MIXING_BOWL_ITEM = ITEMS.registerSimpleBlockItem("mixing_bowl", JazzyBlocks.MIXING_BOWL);
+    public static final DeferredItem<BlockItem> MICROWAVE_ITEM = ITEMS.registerSimpleBlockItem("microwave", JazzyBlocks.MICROWAVE);
+    public static final DeferredItem<BlockItem> FOOD_PROCESSOR_ITEM = ITEMS.registerSimpleBlockItem("food_processor", JazzyBlocks.FOOD_PROCESSOR);
+    public static final DeferredItem<BlockItem> BLENDER_ITEM = ITEMS.registerSimpleBlockItem("blender", JazzyBlocks.BLENDER);
+    public static final DeferredItem<BlockItem> JUICER_ITEM = ITEMS.registerSimpleBlockItem("juicer", JazzyBlocks.JUICER);
+    public static final DeferredItem<BlockItem> FREEZE_DRYER_ITEM = ITEMS.registerSimpleBlockItem("freeze_dryer", JazzyBlocks.FREEZE_DRYER);
     public static final DeferredItem<BlockItem> CANNING_STATION_ITEM = ITEMS.registerSimpleBlockItem("canning_station", JazzyBlocks.CANNING_STATION);
     public static final DeferredItem<BlockItem> DRYING_RACK_ITEM = ITEMS.registerSimpleBlockItem("drying_rack", JazzyBlocks.DRYING_RACK);
     public static final DeferredItem<BlockItem> SMOKER_ITEM = ITEMS.registerSimpleBlockItem("smoker", JazzyBlocks.SMOKER);
@@ -227,6 +232,11 @@ public final class JazzyItems {
             "ceramic_plate",
             () -> new Item(new Item.Properties().stacksTo(16))
     );
+    public static final DeferredItem<Item> TUPPERWARE = utilityItem("tupperware", 16);
+    public static final DeferredItem<Item> CERAMIC_BOWL = utilityItem("ceramic_bowl", 16);
+    public static final DeferredItem<Item> GLASS_CUP = utilityItem("glass_cup", 16);
+    public static final DeferredItem<Item> WOODEN_BOARD = utilityItem("wooden_board", 16);
+    public static final DeferredItem<Item> SERVING_TRAY = utilityItem("serving_tray", 16);
 
     public static final DeferredItem<KitchenToolItem> PARING_KNIFE = tool("paring_knife", ToolProfile.PARING_KNIFE, 0.06F, 1.10F, 128);
     public static final DeferredItem<KitchenToolItem> CHEF_KNIFE = tool("chef_knife", ToolProfile.CHEF_KNIFE, 0.09F, 1.20F, 192);
@@ -236,11 +246,19 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenToolItem> MORTAR_PESTLE = tool("mortar_pestle", ToolProfile.MORTAR_PESTLE, 0.08F, 1.06F, 192);
     public static final DeferredItem<KitchenToolItem> STOCK_POT = tool("stock_pot", ToolProfile.STOCK_POT, 0.05F, 1.00F, 256);
     public static final DeferredItem<KitchenToolItem> FRYING_SKILLET = tool("frying_skillet", ToolProfile.FRYING_SKILLET, 0.08F, 1.10F, 256);
+    public static final DeferredItem<KitchenToolItem> FRYING_PAN = tool("frying_pan", ToolProfile.PAN, 0.08F, 1.08F, 256);
+    public static final DeferredItem<KitchenToolItem> POT = tool("pot", ToolProfile.POT, 0.05F, 1.00F, 256);
+    public static final DeferredItem<KitchenToolItem> SAUCEPAN = tool("saucepan", ToolProfile.SAUCEPAN, 0.06F, 1.04F, 224);
     public static final DeferredItem<KitchenToolItem> FINE_STRAINER = tool("fine_strainer", ToolProfile.FINE_STRAINER, 0.08F, 1.06F, 192);
     public static final DeferredItem<KitchenToolItem> COARSE_STRAINER = tool("coarse_strainer", ToolProfile.COARSE_STRAINER, 0.03F, 0.98F, 176);
     public static final DeferredItem<KitchenToolItem> STEAMER_BASKET = tool("steamer_basket", ToolProfile.STEAMER_BASKET, 0.05F, 1.04F, 192);
+    public static final DeferredItem<KitchenToolItem> BAKING_TRAY = tool("baking_tray", ToolProfile.BAKING_TRAY, 0.05F, 1.00F, 256);
     public static final DeferredItem<KitchenToolItem> CANNING_JAR = tool("canning_jar", ToolProfile.JAR, 0.04F, 0.98F, 96);
+    public static final DeferredItem<KitchenToolItem> GLASS_JAR = tool("glass_jar", ToolProfile.GLASS_JAR, 0.04F, 0.98F, 96);
     public static final DeferredItem<KitchenToolItem> PIE_TIN = tool("pie_tin", ToolProfile.PIE_TIN, 0.05F, 1.00F, 256);
+    public static final DeferredItem<KitchenToolItem> FORK = tool("fork", ToolProfile.FORK, 0.01F, 1.00F, 96);
+    public static final DeferredItem<KitchenToolItem> SPOON = tool("spoon", ToolProfile.SPOON, 0.01F, 1.00F, 96);
+    public static final DeferredItem<KitchenToolItem> TABLE_KNIFE = tool("table_knife", ToolProfile.TABLE_KNIFE, 0.02F, 1.02F, 96);
 
     private JazzyItems() {
     }
@@ -431,5 +449,9 @@ public final class JazzyItems {
                 qualityBonus,
                 speedMultiplier
         ));
+    }
+
+    private static DeferredItem<Item> utilityItem(String name, int stacksTo) {
+        return ITEMS.register(name, () -> new Item(new Item.Properties().stacksTo(stacksTo)));
     }
 }

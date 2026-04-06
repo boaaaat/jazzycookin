@@ -229,7 +229,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                         RESULT_SLOT,
                         BYPRODUCT_SLOT
                 );
-                case SPICE_GRINDER, MIXING_BOWL, STRAINER, FERMENTATION_CROCK, PLATING_STATION -> new SlotLayout(
+                case SPICE_GRINDER, MIXING_BOWL, STRAINER, FOOD_PROCESSOR, BLENDER, JUICER, FERMENTATION_CROCK, PLATING_STATION -> new SlotLayout(
                         positions(
                                 new SlotPosition(28, 46),
                                 new SlotPosition(50, 46),
@@ -268,7 +268,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         private static SlotPosition toolPosition(StationType stationType) {
             return switch (stationType) {
                 case PREP_TABLE -> new SlotPosition(64, 72);
-                case SPICE_GRINDER, MIXING_BOWL, FERMENTATION_CROCK, PLATING_STATION -> new SlotPosition(84, 68);
+                case SPICE_GRINDER, MIXING_BOWL, FOOD_PROCESSOR, BLENDER, JUICER, FERMENTATION_CROCK, PLATING_STATION -> new SlotPosition(84, 68);
                 case STRAINER -> new SlotPosition(84, 57);
                 case CANNING_STATION, SMOKER, STEAMER, STOVE, OVEN -> new SlotPosition(84, 72);
                 default -> new SlotPosition(84, 72);

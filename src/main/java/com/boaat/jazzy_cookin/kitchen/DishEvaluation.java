@@ -308,6 +308,9 @@ public final class DishEvaluation {
             case GRIND -> new MethodAdjustment(0.03F, 0.07F, 0.12F + toolAccuracy * 0.15F, -0.02F, 0.00F, -0.02F, 0.10F, 0.02F);
             case STRAIN -> new MethodAdjustment(0.04F, 0.06F, 0.02F, -0.02F, 0.00F, -0.03F, 0.18F, 0.00F);
             case MIX -> new MethodAdjustment(0.03F, 0.06F, 0.02F, 0.02F, 0.08F, 0.05F, 0.03F, 0.02F);
+            case PROCESS -> new MethodAdjustment(0.03F, 0.07F, 0.10F, 0.06F, 0.04F, -0.04F, 0.06F, 0.02F);
+            case BLEND -> new MethodAdjustment(0.04F, 0.08F, 0.04F, 0.06F, 0.04F, 0.08F, 0.03F, 0.10F);
+            case JUICE -> new MethodAdjustment(0.03F, 0.06F, 0.02F, 0.02F, 0.00F, 0.12F, 0.08F, 0.00F);
             case WHISK -> new MethodAdjustment(0.02F, 0.08F, 0.00F, 0.04F, 0.06F, 0.00F, 0.02F, 0.18F + toolAccuracy * 0.12F);
             case KNEAD -> new MethodAdjustment(0.03F, 0.09F, 0.00F, 0.06F, 0.18F + toolAccuracy * 0.15F, -0.01F, 0.02F, 0.03F);
             case BATTER -> new MethodAdjustment(0.03F, 0.07F, 0.04F, 0.10F, 0.06F, 0.05F, 0.02F, 0.01F);
@@ -324,6 +327,8 @@ public final class DishEvaluation {
             case FERMENT -> new MethodAdjustment(0.04F + passiveBonus, 0.08F + passiveBonus, 0.12F, 0.02F, 0.02F, 0.03F, 0.08F, 0.00F);
             case CAN -> new MethodAdjustment(0.05F + passiveBonus, 0.08F, 0.08F, 0.00F, 0.02F, 0.08F, 0.12F, 0.00F);
             case DRY -> new MethodAdjustment(0.03F + passiveBonus, 0.07F, 0.12F, 0.05F, 0.02F, -0.20F, 0.04F, 0.00F);
+            case FREEZE_DRY -> new MethodAdjustment(0.04F + passiveBonus, 0.08F, 0.10F, 0.06F, 0.04F, -0.18F, 0.18F, 0.00F);
+            case MICROWAVE -> new MethodAdjustment(0.02F + heatAccuracy * 0.1F, 0.05F, 0.08F, 0.06F, 0.02F, -0.04F, 0.00F, 0.00F);
             case COOL -> new MethodAdjustment(0.03F, 0.06F, 0.00F, 0.04F, 0.06F, 0.02F, 0.02F, 0.00F);
             case REST -> new MethodAdjustment(0.05F, 0.08F, 0.02F, 0.10F, 0.10F, 0.04F, 0.02F, 0.00F);
             case SLICE -> new MethodAdjustment(0.02F, 0.05F, 0.00F, 0.04F, 0.02F, 0.00F, 0.03F, 0.00F);

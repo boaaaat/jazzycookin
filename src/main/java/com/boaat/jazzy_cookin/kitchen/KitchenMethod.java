@@ -19,6 +19,9 @@ public enum KitchenMethod implements StringRepresentable {
     GRIND("grind"),
     STRAIN("strain"),
     MIX("mix"),
+    PROCESS("process"),
+    BLEND("blend"),
+    JUICE("juice"),
     WHISK("whisk"),
     KNEAD("knead"),
     BATTER("batter"),
@@ -35,6 +38,8 @@ public enum KitchenMethod implements StringRepresentable {
     FERMENT("ferment"),
     CAN("can"),
     DRY("dry"),
+    FREEZE_DRY("freeze_dry"),
+    MICROWAVE("microwave"),
     COOL("cool"),
     REST("rest"),
     SLICE("slice"),
@@ -76,6 +81,11 @@ public enum KitchenMethod implements StringRepresentable {
             case SPICE_GRINDER -> GRIND;
             case STRAINER -> STRAIN;
             case MIXING_BOWL -> inferBowlMethod(outputState, preferredTool);
+            case MICROWAVE -> MICROWAVE;
+            case FOOD_PROCESSOR -> PROCESS;
+            case BLENDER -> BLEND;
+            case JUICER -> JUICE;
+            case FREEZE_DRYER -> FREEZE_DRY;
             case CANNING_STATION -> CAN;
             case DRYING_RACK -> DRY;
             case SMOKER -> SMOKE;
@@ -147,7 +157,10 @@ public enum KitchenMethod implements StringRepresentable {
             ProcessMode mode,
             boolean requiresNearbyWater
     ) {
-        if (preferredTool == ToolProfile.FRYING_SKILLET || preferredTool == ToolProfile.SKILLET || outputState == IngredientState.PAN_FRIED) {
+        if (preferredTool == ToolProfile.FRYING_SKILLET
+                || preferredTool == ToolProfile.SKILLET
+                || preferredTool == ToolProfile.PAN
+                || outputState == IngredientState.PAN_FRIED) {
             return PAN_FRY;
         }
         if (outputState == IngredientState.FRIED_PROTEIN || outputState == IngredientState.DEEP_FRIED
@@ -164,7 +177,10 @@ public enum KitchenMethod implements StringRepresentable {
                 || outputState == IngredientState.SIMMERED) {
             return SIMMER;
         }
-        if (preferredHeat == HeatLevel.HIGH && (preferredTool == ToolProfile.STOCK_POT || preferredTool == ToolProfile.POT)) {
+        if (preferredHeat == HeatLevel.HIGH
+                && (preferredTool == ToolProfile.STOCK_POT
+                || preferredTool == ToolProfile.POT
+                || preferredTool == ToolProfile.SAUCEPAN)) {
             return BOIL;
         }
         return SIMMER;
@@ -172,7 +188,7 @@ public enum KitchenMethod implements StringRepresentable {
 
     public boolean isCookMethod() {
         return switch (this) {
-            case BOIL, SIMMER, PAN_FRY, DEEP_FRY, BAKE, ROAST, BROIL, STEAM, SMOKE, FERMENT, CAN, DRY -> true;
+            case BOIL, SIMMER, PAN_FRY, DEEP_FRY, BAKE, ROAST, BROIL, STEAM, SMOKE, FERMENT, CAN, DRY, FREEZE_DRY, MICROWAVE -> true;
             default -> false;
         };
     }
