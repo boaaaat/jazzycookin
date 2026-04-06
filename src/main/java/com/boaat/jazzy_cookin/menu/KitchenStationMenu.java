@@ -4,7 +4,9 @@ import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.StationCapacityProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.StationUiProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.SimulationDomainType;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
@@ -25,20 +27,18 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class KitchenStationMenu extends AbstractContainerMenu {
-    private static final int PLAYER_INVENTORY_START_X = 34;
-    private static final int PLAYER_INVENTORY_START_Y = 131;
-    private static final int HOTBAR_Y = 189;
-
     private final Container container;
     private final ContainerData data;
     private final StationType stationType;
     private final ContainerLevelAccess access;
+    private final StationUiProfile uiProfile;
+    private final StationCapacityProfile capacity;
 
     public KitchenStationMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
         this(
                 containerId,
                 playerInventory,
-                new SimpleContainer(7),
+                new SimpleContainer(StationCapacityProfile.TOTAL_SLOTS),
                 new SimpleContainerData(20),
                 readStationType(extraData),
                 ContainerLevelAccess.NULL
@@ -69,14 +69,15 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this.data = data;
         this.stationType = stationType;
         this.access = access;
+        this.uiProfile = StationUiProfile.forStation(stationType);
+        this.capacity = this.uiProfile.capacity();
 
-        checkContainerSize(container, 7);
+        checkContainerSize(container, StationCapacityProfile.TOTAL_SLOTS);
         checkContainerDataCount(data, 20);
         container.startOpen(playerInventory.player);
 
-        SlotLayout layout = SlotLayout.forStation(this.stationType);
-        for (int inputIndex = 0; inputIndex < 4; inputIndex++) {
-            SlotPosition position = layout.inputs()[inputIndex];
+        for (int inputIndex = 0; inputIndex < this.capacity.inputCount(); inputIndex++) {
+            StationUiProfile.Point position = this.uiProfile.inputPositions()[inputIndex];
             this.addSlot(new Slot(container, inputIndex, position.x(), position.y()) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
@@ -85,19 +86,19 @@ public class KitchenStationMenu extends AbstractContainerMenu {
             });
         }
 
-        this.addSlot(new Slot(container, 4, layout.tool().x(), layout.tool().y()) {
+        this.addSlot(new Slot(container, StationCapacityProfile.TOOL_SLOT, this.uiProfile.toolPosition().x(), this.uiProfile.toolPosition().y()) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return KitchenStationMenu.this.stationType.usesTools() && stack.getItem() instanceof KitchenToolItem;
             }
         });
-        this.addSlot(new Slot(container, 5, layout.output().x(), layout.output().y()) {
+        this.addSlot(new Slot(container, StationCapacityProfile.OUTPUT_SLOT, this.uiProfile.outputPosition().x(), this.uiProfile.outputPosition().y()) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        this.addSlot(new Slot(container, 6, layout.byproduct().x(), layout.byproduct().y()) {
+        this.addSlot(new Slot(container, StationCapacityProfile.BYPRODUCT_SLOT, this.uiProfile.byproductPosition().x(), this.uiProfile.byproductPosition().y()) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -106,12 +107,17 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, PLAYER_INVENTORY_START_X + col * 18, PLAYER_INVENTORY_START_Y + row * 18));
+                this.addSlot(new Slot(
+                        playerInventory,
+                        col + row * 9 + 9,
+                        this.uiProfile.playerInventoryStartX() + col * 18,
+                        this.uiProfile.playerInventoryStartY() + row * 18
+                ));
             }
         }
 
         for (int hotbarSlot = 0; hotbarSlot < 9; hotbarSlot++) {
-            this.addSlot(new Slot(playerInventory, hotbarSlot, PLAYER_INVENTORY_START_X + hotbarSlot * 18, HOTBAR_Y));
+            this.addSlot(new Slot(playerInventory, hotbarSlot, this.uiProfile.playerInventoryStartX() + hotbarSlot * 18, this.uiProfile.hotbarY()));
         }
 
         this.addDataSlots(data);
@@ -119,6 +125,30 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
     public StationType stationType() {
         return this.stationType;
+    }
+
+    public StationUiProfile uiProfile() {
+        return this.uiProfile;
+    }
+
+    public int activeInputCount() {
+        return this.capacity.inputCount();
+    }
+
+    public int visibleStationSlotCount() {
+        return this.capacity.visibleStationSlotCount();
+    }
+
+    public int toolMenuSlotIndex() {
+        return this.capacity.toolMenuSlotIndex();
+    }
+
+    public int outputMenuSlotIndex() {
+        return this.capacity.outputMenuSlotIndex();
+    }
+
+    public int byproductMenuSlotIndex() {
+        return this.capacity.byproductMenuSlotIndex();
     }
 
     private static StationType readStationType(RegistryFriendlyByteBuf extraData) {
@@ -255,26 +285,26 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack quickMoved = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
         if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
 
         ItemStack slotStack = slot.getItem();
-        quickMoved = slotStack.copy();
-        if (index < 7) {
-            if (!this.moveItemStackTo(slotStack, 7, this.slots.size(), true)) {
+        ItemStack quickMoved = slotStack.copy();
+        int stationSlotCount = this.visibleStationSlotCount();
+        if (index < stationSlotCount) {
+            if (!this.moveItemStackTo(slotStack, stationSlotCount, this.slots.size(), true)) {
                 return ItemStack.EMPTY;
             }
         } else if (slotStack.getItem() instanceof KitchenToolItem) {
             if (!this.stationType.usesTools()) {
                 return ItemStack.EMPTY;
             }
-            if (!this.moveItemStackTo(slotStack, 4, 5, false)) {
+            if (!this.moveItemStackTo(slotStack, this.toolMenuSlotIndex(), this.toolMenuSlotIndex() + 1, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!this.moveItemStackTo(slotStack, 0, 4, false)) {
+        } else if (!this.moveItemStackTo(slotStack, 0, this.activeInputCount(), false)) {
             return ItemStack.EMPTY;
         }
 
@@ -300,76 +330,5 @@ public class KitchenStationMenu extends AbstractContainerMenu {
     public void removed(Player player) {
         super.removed(player);
         this.container.stopOpen(player);
-    }
-
-    private record SlotLayout(SlotPosition[] inputs, SlotPosition tool, SlotPosition output, SlotPosition byproduct) {
-        private static final SlotPosition RESULT_SLOT = new SlotPosition(187, 50);
-        private static final SlotPosition BYPRODUCT_SLOT = new SlotPosition(187, 72);
-
-        private static SlotLayout forStation(StationType stationType) {
-            return switch (stationType) {
-                case PREP_TABLE -> new SlotLayout(
-                        positions(
-                                new SlotPosition(28, 50),
-                                new SlotPosition(46, 50),
-                                new SlotPosition(64, 50),
-                                new SlotPosition(82, 50)
-                        ),
-                        new SlotPosition(64, 72),
-                        RESULT_SLOT,
-                        BYPRODUCT_SLOT
-                );
-                case SPICE_GRINDER, MIXING_BOWL, STRAINER, FOOD_PROCESSOR, BLENDER, JUICER, FERMENTATION_CROCK, PLATING_STATION -> new SlotLayout(
-                        positions(
-                                new SlotPosition(28, 46),
-                                new SlotPosition(50, 46),
-                                new SlotPosition(28, 68),
-                                new SlotPosition(50, 68)
-                        ),
-                        toolPosition(stationType),
-                        RESULT_SLOT,
-                        BYPRODUCT_SLOT
-                );
-                case OVEN -> new SlotLayout(
-                        positions(
-                                new SlotPosition(28, 50),
-                                new SlotPosition(46, 50),
-                                new SlotPosition(64, 50),
-                                new SlotPosition(82, 50)
-                        ),
-                        new SlotPosition(84, 72),
-                        RESULT_SLOT,
-                        BYPRODUCT_SLOT
-                );
-                default -> new SlotLayout(
-                        positions(
-                                new SlotPosition(28, 50),
-                                new SlotPosition(46, 50),
-                                new SlotPosition(64, 50),
-                                new SlotPosition(82, 50)
-                        ),
-                        toolPosition(stationType),
-                        RESULT_SLOT,
-                        BYPRODUCT_SLOT
-                );
-            };
-        }
-
-        private static SlotPosition toolPosition(StationType stationType) {
-            return switch (stationType) {
-                case PREP_TABLE -> new SlotPosition(64, 72);
-                case SPICE_GRINDER, MIXING_BOWL, FOOD_PROCESSOR, BLENDER, JUICER, FERMENTATION_CROCK, PLATING_STATION -> new SlotPosition(84, 68);
-                case STRAINER -> new SlotPosition(84, 57);
-                case CANNING_STATION, SMOKER, STEAMER, STOVE, OVEN -> new SlotPosition(84, 72);
-                default -> new SlotPosition(84, 72);
-            };
-        }
-
-        private static SlotPosition[] positions(SlotPosition first, SlotPosition second, SlotPosition third, SlotPosition fourth) {
-            return new SlotPosition[] { first, second, third, fourth };
-        }
-    }
-
-    private record SlotPosition(int x, int y) {
     }
 }

@@ -10,6 +10,7 @@ import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
+import com.boaat.jazzy_cookin.kitchen.StationCapacityProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.StorageRules;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
@@ -19,16 +20,20 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.NonNullList;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -153,6 +158,18 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void stationCapacityProfilesExposeExpandedLayouts(GameTestHelper helper) {
+        require(StationCapacityProfile.forStation(StationType.PREP_TABLE).inputCount() == 10, "Prep table should expose 10 inputs");
+        require(StationCapacityProfile.forStation(StationType.MIXING_BOWL).inputCount() == 8, "Mixing bowl should expose 8 inputs");
+        require(StationCapacityProfile.forStation(StationType.PLATING_STATION).inputCount() == 8, "Plating station should expose 8 inputs");
+        require(StationCapacityProfile.forStation(StationType.STOVE).inputCount() == 6, "Stove should expose 6 inputs");
+        require(StationCapacityProfile.forStation(StationType.OVEN).inputCount() == 6, "Oven should expose 6 inputs");
+        require(StationCapacityProfile.forStation(StationType.FREEZE_DRYER).inputCount() == 5, "Freeze dryer should expose 5 inputs");
+        require(StationCapacityProfile.forStation(StationType.MICROWAVE).inputCount() == 4, "Microwave should expose 4 inputs");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void recipeDataLoads(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ResourceLocation stoveRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "stove");
@@ -216,6 +233,29 @@ public final class KitchenGameTests {
         require(migrated != null, "Legacy stack should migrate FOOD_MATTER on first touch");
         require(KitchenStackUtil.getData(legacyEggs) != null, "Legacy stack should still expose ingredient data after migration");
         require(migrated.createdTick() == existing.createdTick(), "Migration should preserve the created tick");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void legacySevenSlotStationsMigrateIntoExpandedLayout(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity prepTable = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+
+        NonNullList<ItemStack> legacyItems = NonNullList.withSize(7, ItemStack.EMPTY);
+        legacyItems.set(0, JazzyItems.ingredient(JazzyItems.IngredientId.BEEF).get().createStack(1, level.getGameTime()));
+        legacyItems.set(4, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        legacyItems.set(5, JazzyItems.BRAISED_BEEF_BASE.get().createStack(1, level.getGameTime()));
+        legacyItems.set(6, new ItemStack(JazzyItems.GLASS_JAR.get()));
+
+        CompoundTag legacyTag = new CompoundTag();
+        ContainerHelper.saveAllItems(legacyTag, legacyItems, level.registryAccess());
+        prepTable.loadWithComponents(legacyTag, level.registryAccess());
+
+        require(prepTable.getItem(0).is(JazzyItems.ingredient(JazzyItems.IngredientId.BEEF).get()), "Legacy input slots should remain in place");
+        require(prepTable.getItem(KitchenStationBlockEntity.TOOL_SLOT).is(JazzyItems.CHEF_KNIFE.get()), "Legacy tool slot should migrate to the new tool slot");
+        require(prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.BRAISED_BEEF_BASE.get()), "Legacy output slot should migrate to the new output slot");
+        require(prepTable.getItem(KitchenStationBlockEntity.BYPRODUCT_SLOT).is(JazzyItems.GLASS_JAR.get()), "Legacy byproduct slot should migrate to the new byproduct slot");
+        require(prepTable.getItem(4).isEmpty(), "Expanded input slot 4 should start empty after legacy migration");
         helper.succeed();
     }
 
@@ -335,11 +375,13 @@ public final class KitchenGameTests {
         prepTable.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.GARLIC).get().createStack(1, level.getGameTime()));
         prepTable.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.BEEF).get().createStack(1, level.getGameTime()));
         prepTable.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(4, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(5, JazzyItems.ingredient(JazzyItems.IngredientId.TABLE_SALT).get().createStack(1, level.getGameTime()));
         prepTable.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
 
-        require(prepTable.handleButton(0, fakePlayer), "Guide recipes should start even when prep inputs are shuffled");
+        require(prepTable.handleButton(0, fakePlayer), "Guide recipes should start even when expanded prep inputs are shuffled");
         tickStation(level, prepTable, 80);
-        require(prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.BRAISED_BEEF_BASE.get()), "Shuffled prep inputs should still yield braised beef base");
+        require(prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.BRAISED_BEEF_BASE.get()), "Expanded shuffled prep inputs should still yield braised beef base");
         helper.succeed();
     }
 
@@ -380,6 +422,66 @@ public final class KitchenGameTests {
         require(platingStation.handleButton(0, fakePlayer), "Plate guide should start with reversed input order");
         tickStation(level, platingStation, 30);
         require(platingStation.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.CHICKEN_CURRY.get()), "Reversed plating inputs should still yield chicken curry");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void quickMoveUsesExpandedInputRange(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity prepTable = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        KitchenStationMenu menu = new KitchenStationMenu(0, fakePlayer.getInventory(), prepTable, prepTable.dataAccess());
+
+        prepTable.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.BEEF).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.GARLIC).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATO_PASTE).get().createStack(1, level.getGameTime()));
+
+        fakePlayer.getInventory().setItem(9, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, level.getGameTime()));
+        ItemStack moved = menu.quickMoveStack(fakePlayer, menu.visibleStationSlotCount());
+
+        require(!moved.isEmpty(), "Shift-click should move ingredients into expanded prep-table slots");
+        require(prepTable.getItem(4).is(JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get()), "Shift-click should target the fifth active prep-table input slot");
+        menu.removed(fakePlayer);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void mixingBowlSupportsExpandedDryMixRecipes(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity bowl = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.MIXING_BOWL.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        bowl.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ALL_PURPOSE_FLOUR).get().createStack(1, level.getGameTime()));
+        bowl.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.WHITE_SUGAR).get().createStack(1, level.getGameTime()));
+        bowl.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.BAKING_POWDER).get().createStack(1, level.getGameTime()));
+        bowl.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.POWDERED_MILK).get().createStack(1, level.getGameTime()));
+        bowl.setItem(4, JazzyItems.ingredient(JazzyItems.IngredientId.TABLE_SALT).get().createStack(1, level.getGameTime()));
+
+        require(bowl.handleButton(0, fakePlayer), "Expanded dry-mix recipes should start in the mixing bowl");
+        tickStation(level, bowl, 70);
+        require(bowl.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.PANCAKE_DRY_MIX.get()), "Expanded dry-mix recipes should output pancake dry mix");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void stoveSupportsExpandedSixIngredientRecipes(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity stove = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.STOVE.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        stove.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.CHICKPEAS).get().createStack(1, level.getGameTime()));
+        stove.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, level.getGameTime()));
+        stove.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get().createStack(1, level.getGameTime()));
+        stove.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.GARLIC).get().createStack(1, level.getGameTime()));
+        stove.setItem(4, JazzyItems.ingredient(JazzyItems.IngredientId.CURRY_POWDER).get().createStack(1, level.getGameTime()));
+        stove.setItem(5, JazzyItems.ingredient(JazzyItems.IngredientId.TABLE_SALT).get().createStack(1, level.getGameTime()));
+        stove.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.SAUCEPAN.get()));
+        stove.handleButton(1, fakePlayer);
+
+        require(stove.handleButton(0, fakePlayer), "Expanded stove recipes should start with six active inputs");
+        tickStation(level, stove, 240);
+        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.CHANA_MASALA_PREP.get()), "Expanded stove recipes should still resolve to chana masala prep");
         helper.succeed();
     }
 

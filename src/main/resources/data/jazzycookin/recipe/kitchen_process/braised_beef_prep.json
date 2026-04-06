@@ -25,6 +25,18 @@
         "item": "jazzycookin:tomato_paste"
       },
       "required_state": "tomato_paste"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:table_salt"
+      },
+      "required_state": "table_salt"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:black_pepper"
+      },
+      "required_state": "black_pepper"
     }
   ],
   "preferred_tool": "chef_knife",

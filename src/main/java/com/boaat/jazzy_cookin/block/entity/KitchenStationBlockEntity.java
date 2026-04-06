@@ -11,6 +11,7 @@ import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenOutcomeBand;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.StationCapacityProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
@@ -53,13 +54,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class KitchenStationBlockEntity extends BlockEntity implements Container, MenuProvider, StationSimulationAccess {
-    public static final int INPUT_START = 0;
-    public static final int INPUT_END = 3;
-    public static final int TOOL_SLOT = 4;
-    public static final int OUTPUT_SLOT = 5;
-    public static final int BYPRODUCT_SLOT = 6;
-    private static final int CONTAINER_SIZE = 7;
+    public static final int INPUT_START = StationCapacityProfile.INPUT_START;
+    public static final int INPUT_END = StationCapacityProfile.MAX_INPUT_SLOT;
+    public static final int TOOL_SLOT = StationCapacityProfile.TOOL_SLOT;
+    public static final int OUTPUT_SLOT = StationCapacityProfile.OUTPUT_SLOT;
+    public static final int BYPRODUCT_SLOT = StationCapacityProfile.BYPRODUCT_SLOT;
+    private static final int CONTAINER_SIZE = StationCapacityProfile.TOTAL_SLOTS;
     private static final int DATA_COUNT = 20;
+    private static final int SLOT_LAYOUT_VERSION = 1;
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private final ContainerData dataAccess = new ContainerData() {
@@ -179,6 +181,16 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     public StationType getStationType() {
         return this.getBlockState().getBlock() instanceof KitchenStationBlock block ? block.stationType() : StationType.PREP_TABLE;
+    }
+
+    private StationCapacityProfile capacityProfile() {
+        return StationCapacityProfile.forStation(this.getStationType());
+    }
+
+    private List<ItemStack> activeInputStacks() {
+        return java.util.stream.IntStream.rangeClosed(this.inputStart(), this.inputEnd())
+                .mapToObj(this::getItem)
+                .toList();
     }
 
     public HeatLevel heatLevel() {
@@ -301,7 +313,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return JazzyRecipes.findProcessRecipe(
                 this.level,
                 this.getStationType(),
-                List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)),
+                this.activeInputStacks(),
                 this.getItem(TOOL_SLOT),
                 this.currentHeatLevel(),
                 this.preheatProgress >= 100
@@ -313,7 +325,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return Optional.empty();
         }
 
-        return JazzyRecipes.findPlateRecipe(this.level, List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)));
+        return JazzyRecipes.findPlateRecipe(this.level, this.activeInputStacks());
     }
 
     private Optional<KitchenRecipeMatchPlan> currentRecipePlan(KitchenProcessRecipe recipe) {
@@ -326,7 +338,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     private KitchenProcessInput currentProcessInput() {
         return new KitchenProcessInput(
-                List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)),
+                this.activeInputStacks(),
                 this.getItem(TOOL_SLOT),
                 this.getStationType(),
                 this.currentHeatLevel(),
@@ -335,7 +347,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     private KitchenPlateInput currentPlateInput() {
-        return new KitchenPlateInput(List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)));
+        return new KitchenPlateInput(this.activeInputStacks());
     }
 
     private KitchenMethod currentMethod() {
@@ -456,12 +468,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return;
         }
 
-        List<ItemStack> consumedInputs = List.of(
-                matchedInputCopy(matchPlan, recipe.inputs(), 0),
-                matchedInputCopy(matchPlan, recipe.inputs(), 1),
-                matchedInputCopy(matchPlan, recipe.inputs(), 2),
-                matchedInputCopy(matchPlan, recipe.inputs(), 3)
-        );
+        List<ItemStack> consumedInputs = this.matchedInputs(matchPlan, recipe.inputs());
 
         KitchenOutcomeBand outcomeBand = this.currentOutcomeBand(recipe);
         KitchenProcessOutput resolvedOutput = recipe.outputForBand(outcomeBand);
@@ -512,12 +519,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return;
         }
 
-        List<ItemStack> consumedInputs = List.of(
-                matchedInputCopy(matchPlan, recipe.inputs(), 0),
-                matchedInputCopy(matchPlan, recipe.inputs(), 1),
-                matchedInputCopy(matchPlan, recipe.inputs(), 2),
-                matchedInputCopy(matchPlan, recipe.inputs(), 3)
-        );
+        List<ItemStack> consumedInputs = this.matchedInputs(matchPlan, recipe.inputs());
 
         IngredientStateData outputData = DishEvaluation.evaluatePlate(this.level, recipe, consumedInputs);
         for (int i = 0; i < recipe.inputs().size(); i++) {
@@ -558,6 +560,12 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         }
         int matchedSlot = matchPlan.slotForRequirement(requirementIndex);
         return matchedSlot >= 0 ? copySized(this.getItem(matchedSlot), requirements.get(requirementIndex).count()) : ItemStack.EMPTY;
+    }
+
+    private List<ItemStack> matchedInputs(KitchenRecipeMatchPlan matchPlan, List<KitchenInputRequirement> requirements) {
+        return java.util.stream.IntStream.range(0, requirements.size())
+                .mapToObj(index -> this.matchedInputCopy(matchPlan, requirements, index))
+                .toList();
     }
 
     private KitchenOutcomeBand currentOutcomeBand(KitchenProcessRecipe recipe) {
@@ -669,14 +677,19 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return false;
         }
         if (slot == TOOL_SLOT) {
-            return stack.getItem() instanceof KitchenToolItem;
+            return this.getStationType().usesTools() && stack.getItem() instanceof KitchenToolItem;
         }
-        return true;
+        if (!this.capacityProfile().isActiveInputSlot(slot)) {
+            return false;
+        }
+        return !(stack.getItem() instanceof KitchenToolItem);
     }
 
     @Override
     public void clearContent() {
-        this.items.clear();
+        for (int slot = 0; slot < this.items.size(); slot++) {
+            this.items.set(slot, ItemStack.EMPTY);
+        }
         this.simulationBatch = null;
         this.stationPhysics = StationPhysicsState.idle();
     }
@@ -693,6 +706,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         ContainerHelper.saveAllItems(tag, this.items, registries);
+        tag.putInt("SlotLayoutVersion", SLOT_LAYOUT_VERSION);
         tag.putInt("Progress", this.progress);
         tag.putInt("MaxProgress", this.maxProgress);
         tag.putInt("PreheatProgress", this.preheatProgress);
@@ -710,6 +724,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         ContainerHelper.loadAllItems(tag, this.items, registries);
+        this.migrateLegacySlotLayout(tag.getInt("SlotLayoutVersion"));
         this.progress = tag.getInt("Progress");
         this.maxProgress = tag.getInt("MaxProgress");
         this.preheatProgress = tag.getInt("PreheatProgress");
@@ -721,6 +736,33 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.processing = tag.getBoolean("Processing");
         this.stationPhysics = decodeCodec(tag, "SimulationPhysics", StationPhysicsState.CODEC).orElse(StationPhysicsState.idle());
         this.simulationBatch = decodeCodec(tag, "SimulationBatch", CookingBatchState.CODEC).orElse(null);
+    }
+
+    private void migrateLegacySlotLayout(int layoutVersion) {
+        if (layoutVersion >= SLOT_LAYOUT_VERSION) {
+            return;
+        }
+        this.moveLegacySlot(4, TOOL_SLOT);
+        this.moveLegacySlot(5, OUTPUT_SLOT);
+        this.moveLegacySlot(6, BYPRODUCT_SLOT);
+    }
+
+    private void moveLegacySlot(int sourceSlot, int targetSlot) {
+        if (sourceSlot < 0 || sourceSlot >= this.items.size() || targetSlot < 0 || targetSlot >= this.items.size()) {
+            return;
+        }
+        if (sourceSlot == targetSlot) {
+            return;
+        }
+        ItemStack source = this.items.get(sourceSlot);
+        if (source.isEmpty()) {
+            return;
+        }
+        if (!this.items.get(targetSlot).isEmpty()) {
+            return;
+        }
+        this.items.set(targetSlot, source);
+        this.items.set(sourceSlot, ItemStack.EMPTY);
     }
 
     private void serverTickSimulation() {
@@ -772,13 +814,18 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     @Override
+    public StationCapacityProfile simulationCapacity() {
+        return this.capacityProfile();
+    }
+
+    @Override
     public int inputStart() {
         return INPUT_START;
     }
 
     @Override
     public int inputEnd() {
-        return INPUT_END;
+        return this.capacityProfile().inputEnd();
     }
 
     @Override

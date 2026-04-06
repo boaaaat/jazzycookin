@@ -25,6 +25,12 @@
         "item": "jazzycookin:powdered_milk"
       },
       "required_state": "powdered_milk"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:table_salt"
+      },
+      "required_state": "table_salt"
     }
   ],
   "duration": 55,

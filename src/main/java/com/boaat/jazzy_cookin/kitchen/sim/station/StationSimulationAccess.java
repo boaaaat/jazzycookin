@@ -1,6 +1,7 @@
 package com.boaat.jazzy_cookin.kitchen.sim.station;
 
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
+import com.boaat.jazzy_cookin.kitchen.StationCapacityProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.StationPhysicsState;
@@ -25,6 +26,8 @@ public interface StationSimulationAccess {
 
     boolean simulationActive();
 
+    StationCapacityProfile simulationCapacity();
+
     int inputStart();
 
     int inputEnd();
@@ -34,6 +37,10 @@ public interface StationSimulationAccess {
     int outputSlot();
 
     int byproductSlot();
+
+    default int activeInputCount() {
+        return this.simulationCapacity().inputCount();
+    }
 
     ItemStack simulationItem(int slot);
 

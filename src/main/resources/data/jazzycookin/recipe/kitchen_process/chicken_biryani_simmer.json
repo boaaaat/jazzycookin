@@ -22,9 +22,21 @@
     },
     {
       "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    },
+    {
+      "ingredient": {
         "item": "jazzycookin:curry_powder"
       },
       "required_state": "curry_powder"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:table_salt"
+      },
+      "required_state": "table_salt"
     }
   ],
   "preferred_tool": "pot",

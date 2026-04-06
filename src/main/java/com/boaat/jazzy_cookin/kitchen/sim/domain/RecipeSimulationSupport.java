@@ -25,6 +25,7 @@ import com.boaat.jazzy_cookin.recipe.KitchenRecipeMatchPlan;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -141,12 +142,7 @@ final class RecipeSimulationSupport {
             return ItemStack.EMPTY;
         }
 
-        List<ItemStack> consumedInputs = List.of(
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 0),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 1),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 2),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 3)
-        );
+        List<ItemStack> consumedInputs = matchedInputs(access, matchPlan, recipe.inputs());
         KitchenProcessOutput resolvedOutput = recipe.outputForBand(currentOutcomeBand(access, recipe));
         IngredientStateData outputData = DishEvaluation.evaluateProcess(
                 level,
@@ -171,12 +167,7 @@ final class RecipeSimulationSupport {
             return ItemStack.EMPTY;
         }
 
-        List<ItemStack> consumedInputs = List.of(
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 0),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 1),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 2),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 3)
-        );
+        List<ItemStack> consumedInputs = matchedInputs(access, matchPlan, recipe.inputs());
         IngredientStateData outputData = DishEvaluation.evaluatePlate(level, recipe, consumedInputs);
         return createOutputStack(recipe.output().result(), outputData, level.getGameTime());
     }
@@ -225,12 +216,7 @@ final class RecipeSimulationSupport {
             return;
         }
 
-        List<ItemStack> consumedInputs = List.of(
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 0),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 1),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 2),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 3)
-        );
+        List<ItemStack> consumedInputs = matchedInputs(access, matchPlan, recipe.inputs());
 
         KitchenProcessOutput resolvedOutput = recipe.outputForBand(currentOutcomeBand(access, recipe));
         IngredientStateData outputData = DishEvaluation.evaluateProcess(
@@ -272,12 +258,7 @@ final class RecipeSimulationSupport {
             return;
         }
 
-        List<ItemStack> consumedInputs = List.of(
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 0),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 1),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 2),
-                matchedInputCopy(access, matchPlan, recipe.inputs(), 3)
-        );
+        List<ItemStack> consumedInputs = matchedInputs(access, matchPlan, recipe.inputs());
 
         IngredientStateData outputData = DishEvaluation.evaluatePlate(level, recipe, consumedInputs);
         for (int i = 0; i < recipe.inputs().size(); i++) {
@@ -311,12 +292,9 @@ final class RecipeSimulationSupport {
     }
 
     private static List<ItemStack> inputStacks(StationSimulationAccess access) {
-        return List.of(
-                access.simulationItem(access.inputStart()),
-                access.simulationItem(access.inputStart() + 1),
-                access.simulationItem(access.inputStart() + 2),
-                access.simulationItem(access.inputStart() + 3)
-        );
+        return java.util.stream.IntStream.rangeClosed(access.inputStart(), access.inputEnd())
+                .mapToObj(access::simulationItem)
+                .toList();
     }
 
     private static boolean environmentAllows(StationSimulationAccess access, KitchenProcessRecipe recipe) {
@@ -330,9 +308,10 @@ final class RecipeSimulationSupport {
 
         KitchenEnvironmentRequirements requirements = recipe.environmentRequirements();
         if (requirements.nearbyWater()) {
+            BlockEntity blockEntity = (BlockEntity) access;
             boolean hasWater = false;
             for (Direction direction : Direction.values()) {
-                if (level.getFluidState(level.getBlockEntity(((net.minecraft.world.level.block.entity.BlockEntity) access).getBlockPos()).getBlockPos().relative(direction)).is(FluidTags.WATER)) {
+                if (level.getFluidState(blockEntity.getBlockPos().relative(direction)).is(FluidTags.WATER)) {
                     hasWater = true;
                     break;
                 }
@@ -343,7 +322,7 @@ final class RecipeSimulationSupport {
         }
 
         if (requirements.sheltered()) {
-            net.minecraft.world.level.block.entity.BlockEntity blockEntity = (net.minecraft.world.level.block.entity.BlockEntity) access;
+            BlockEntity blockEntity = (BlockEntity) access;
             if (level.canSeeSky(blockEntity.getBlockPos().above())) {
                 return false;
             }
@@ -422,6 +401,16 @@ final class RecipeSimulationSupport {
         }
         int matchedSlot = matchPlan.slotForRequirement(requirementIndex);
         return matchedSlot >= 0 ? copySized(access.simulationItem(matchedSlot), requirements.get(requirementIndex).count()) : ItemStack.EMPTY;
+    }
+
+    private static List<ItemStack> matchedInputs(
+            StationSimulationAccess access,
+            KitchenRecipeMatchPlan matchPlan,
+            List<KitchenInputRequirement> requirements
+    ) {
+        return java.util.stream.IntStream.range(0, requirements.size())
+                .mapToObj(index -> matchedInputCopy(access, matchPlan, requirements, index))
+                .toList();
     }
 
     private static ItemStack copySized(ItemStack stack, int count) {
