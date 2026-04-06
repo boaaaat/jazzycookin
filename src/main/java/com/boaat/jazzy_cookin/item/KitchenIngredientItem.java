@@ -12,6 +12,8 @@ import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -142,6 +144,30 @@ public class KitchenIngredientItem extends Item {
 
     public ItemStack createCreativeStack(int count) {
         return this.createStack(count, CREATIVE_CREATED_TICK, this.maxData());
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        super.inventoryTick(stack, level, entity, slotId, isSelected);
+        if (!level.isClientSide) {
+            KitchenStackUtil.refreshSpoilageDisplay(stack, level.getGameTime());
+        }
+    }
+
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        return !stack.isEmpty();
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        return Math.round(13.0F * KitchenStackUtil.spoilageDisplayFreshness(stack));
+    }
+
+    @Override
+    public int getBarColor(ItemStack stack) {
+        float freshness = KitchenStackUtil.spoilageDisplayFreshness(stack);
+        return Mth.hsvToRgb(Mth.clamp(freshness * 0.33F, 0.0F, 0.33F), 0.90F, 0.96F);
     }
 
     @Override

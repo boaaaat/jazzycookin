@@ -19,6 +19,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -34,6 +35,37 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
         int size = storageSize(blockState);
         this.items = NonNullList.withSize(size, ItemStack.EMPTY);
         this.insertedAt = new long[size];
+    }
+
+    public static void serverTick(Level level, BlockPos pos, BlockState state, KitchenStorageBlockEntity blockEntity) {
+        boolean changed = false;
+        for (int slot = 0; slot < blockEntity.items.size(); slot++) {
+            ItemStack stack = blockEntity.items.get(slot);
+            if (stack.isEmpty()) {
+                if (blockEntity.insertedAt[slot] != 0L) {
+                    blockEntity.insertedAt[slot] = 0L;
+                    changed = true;
+                }
+                continue;
+            }
+
+            if (blockEntity.insertedAt[slot] <= 0L) {
+                blockEntity.insertedAt[slot] = level.getGameTime();
+                changed = true;
+            }
+
+            long storedTicks = Math.max(0L, level.getGameTime() - blockEntity.insertedAt[slot]);
+            if (storedTicks >= KitchenStackUtil.SPOILAGE_BAR_UPDATE_TICKS) {
+                KitchenStackUtil.applyStorageExposure(stack, blockEntity.getStorageType(), storedTicks, level.getGameTime());
+                blockEntity.insertedAt[slot] = level.getGameTime();
+                changed = true;
+            }
+            changed |= KitchenStackUtil.refreshSpoilageDisplay(stack, level.getGameTime());
+        }
+
+        if (changed) {
+            blockEntity.setChanged();
+        }
     }
 
     public StorageType getStorageType() {
@@ -128,6 +160,9 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
         if (!stack.isEmpty() && (previous.isEmpty() || !ItemStack.isSameItemSameComponents(previous, stack))) {
             this.insertedAt[slot] = this.level != null ? this.level.getGameTime() : 0L;
+            if (this.level != null) {
+                KitchenStackUtil.refreshSpoilageDisplay(stack, this.level.getGameTime());
+            }
         } else if (stack.isEmpty()) {
             this.insertedAt[slot] = 0L;
         }

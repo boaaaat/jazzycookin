@@ -71,6 +71,31 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void spoilageBarsRefreshHourlyForIngredientsAndMeals(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long start = level.getGameTime();
+
+        ItemStack chicken = JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, start);
+        ItemStack curry = JazzyItems.CHICKEN_CURRY.get().createStack(1, start);
+
+        KitchenStackUtil.setCreatedTick(chicken, start - 24_000L, start);
+        KitchenStackUtil.setCreatedTick(curry, start - 24_000L, start);
+        KitchenStackUtil.refreshSpoilageDisplay(chicken, start);
+        KitchenStackUtil.refreshSpoilageDisplay(curry, start);
+
+        int chickenBefore = chicken.getItem().getBarWidth(chicken);
+        int curryBefore = curry.getItem().getBarWidth(curry);
+        KitchenStackUtil.refreshSpoilageDisplay(chicken, start + KitchenStackUtil.SPOILAGE_BAR_UPDATE_TICKS);
+        KitchenStackUtil.refreshSpoilageDisplay(curry, start + KitchenStackUtil.SPOILAGE_BAR_UPDATE_TICKS);
+
+        require(chicken.getItem().isBarVisible(chicken), "Ingredients should show a spoilage bar");
+        require(curry.getItem().isBarVisible(curry), "Meals should show a spoilage bar");
+        require(chicken.getItem().getBarWidth(chicken) < chickenBefore, "Ingredient spoilage bar should fall after an in-game hour");
+        require(curry.getItem().getBarWidth(curry) < curryBefore, "Meal spoilage bar should fall after an in-game hour");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void allIngredientsExposeMaterialProfiles(GameTestHelper helper) {
         for (JazzyItems.IngredientId ingredientId : JazzyItems.IngredientId.values()) {
             ItemStack stack = new ItemStack(JazzyItems.ingredient(ingredientId).get());

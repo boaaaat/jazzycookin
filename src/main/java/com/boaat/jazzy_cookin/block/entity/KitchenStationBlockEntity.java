@@ -7,6 +7,7 @@ import com.boaat.jazzy_cookin.block.KitchenStationBlock;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationCapacityProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
@@ -121,6 +122,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                     ? Math.max(0, blockEntity.preheatProgress - 2)
                     : Math.min(100, blockEntity.preheatProgress + gain);
         }
+        blockEntity.refreshSpoilageDisplays(level.getGameTime());
         blockEntity.serverTickSimulation();
     }
 
@@ -140,6 +142,18 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return java.util.stream.IntStream.rangeClosed(this.inputStart(), this.inputEnd())
                 .mapToObj(this::getItem)
                 .toList();
+    }
+
+    private void refreshSpoilageDisplays(long gameTime) {
+        boolean changed = false;
+        for (ItemStack stack : this.items) {
+            if (!stack.isEmpty()) {
+                changed |= KitchenStackUtil.refreshSpoilageDisplay(stack, gameTime);
+            }
+        }
+        if (changed) {
+            this.setChanged();
+        }
     }
 
     public HeatLevel heatLevel() {

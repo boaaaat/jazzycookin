@@ -2,6 +2,7 @@ package com.boaat.jazzy_cookin.registry;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
+import com.boaat.jazzy_cookin.kitchen.SpoilageDisplayData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 
 import net.minecraft.core.component.DataComponentType;
@@ -22,6 +23,12 @@ public final class JazzyDataComponents {
             DATA_COMPONENTS.registerComponentType(
                     "food_matter",
                     builder -> builder.persistent(FoodMatterData.CODEC)
+            );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<SpoilageDisplayData>> SPOILAGE_DISPLAY =
+            DATA_COMPONENTS.registerComponentType(
+                    "spoilage_display",
+                    builder -> builder.persistent(SpoilageDisplayData.CODEC)
             );
 
     private JazzyDataComponents() {

@@ -13,6 +13,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 public final class KitchenStackUtil {
+    public static final long SPOILAGE_BAR_UPDATE_TICKS = 1_000L;
+
     private KitchenStackUtil() {
     }
 
@@ -66,6 +68,7 @@ public final class KitchenStackUtil {
     public static void setFoodMatter(ItemStack stack, FoodMatterData matter, long gameTime) {
         if (matter == null) {
             stack.remove(JazzyDataComponents.FOOD_MATTER.get());
+            stack.remove(JazzyDataComponents.SPOILAGE_DISPLAY.get());
             stack.remove(DataComponents.MAX_STACK_SIZE);
             return;
         }
@@ -73,6 +76,7 @@ public final class KitchenStackUtil {
         FoodMatterData clamped = matter.clamp();
         stack.set(JazzyDataComponents.FOOD_MATTER.get(), clamped);
         applyStackBehavior(stack, clamped);
+        refreshSpoilageDisplay(stack, gameTime);
     }
 
     public static void initializeStack(ItemStack stack, IngredientStateData data, FoodMatterData matter, long gameTime) {
@@ -119,18 +123,48 @@ public final class KitchenStackUtil {
     }
 
     public static float currentFreshnessScore(ItemStack stack, long gameTime) {
-        IngredientStateData data = getOrCreateData(stack, gameTime);
-        if (data == null) {
+        FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
+        return currentFreshnessScore(stack, matter, gameTime);
+    }
+
+    public static boolean refreshSpoilageDisplay(ItemStack stack, long gameTime) {
+        if (!(stack.getItem() instanceof KitchenIngredientItem)) {
+            return false;
+        }
+
+        SpoilageDisplayData existing = stack.get(JazzyDataComponents.SPOILAGE_DISPLAY.get());
+        if (existing != null && gameTime - existing.updatedTick() < SPOILAGE_BAR_UPDATE_TICKS) {
+            return false;
+        }
+
+        float freshness = currentFreshnessScore(stack, gameTime);
+        SpoilageDisplayData updated = new SpoilageDisplayData(gameTime, freshness).clamp();
+        if (existing != null
+                && existing.updatedTick() == updated.updatedTick()
+                && Math.abs(existing.freshness() - updated.freshness()) < 0.0005F) {
+            return false;
+        }
+        stack.set(JazzyDataComponents.SPOILAGE_DISPLAY.get(), updated);
+        return true;
+    }
+
+    public static float spoilageDisplayFreshness(ItemStack stack) {
+        SpoilageDisplayData display = stack.get(JazzyDataComponents.SPOILAGE_DISPLAY.get());
+        return display != null ? display.freshness() : 1.0F;
+    }
+
+    private static float currentFreshnessScore(ItemStack stack, FoodMatterData matter, long gameTime) {
+        if (!(stack.getItem() instanceof KitchenIngredientItem ingredientItem)) {
             return 0.0F;
         }
 
-        long decayTicks = decayTicks(stack);
+        long decayTicks = ingredientItem.decayTicks();
         if (decayTicks <= 0L || decayTicks >= Long.MAX_VALUE / 4L) {
             return 1.0F;
         }
 
-        FoodMatterData matter = getFoodMatter(stack);
-        long age = Math.max(0L, gameTime - data.createdTick());
+        long createdTick = matter != null ? matter.createdTick() : gameTime;
+        long age = Math.max(0L, gameTime - createdTick);
         float effectiveDecayTicks = decayTicks;
         if (matter != null) {
             effectiveDecayTicks *= 1.0F
