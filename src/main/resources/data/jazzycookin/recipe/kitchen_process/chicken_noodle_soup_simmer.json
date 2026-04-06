@@ -1,46 +1,58 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:chicken"
-      },
-      "required_state": "chicken"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:broth"
-      },
-      "required_state": "broth"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:ramen"
-      },
-      "required_state": "ramen"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:carrots"
-      },
-      "required_state": "carrots"
-    }
-  ],
-  "preferred_tool": "stock_pot",
-  "allowed_tools": [
-    "stock_pot",
-    "pot"
-  ],
-  "tool_required": true,
-  "mode": "passive",
-  "duration": 210,
-  "preferred_heat": "low",
-  "output": {
-    "result": {
-      "id": "jazzycookin:chicken_noodle_soup_prep",
-      "count": 1
-    },
-    "state": "simmered"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:chicken"
+                                      },
+                       "required_state":  "chicken"
+                   },
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:broths"
+                                      },
+                       "required_state":  "pantry_ready"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:ramen"
+                                      },
+                       "required_state":  "ramen"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:carrots"
+                                      },
+                       "required_state":  "carrots"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:onions"
+                                      },
+                       "required_state":  "onions"
+                   },
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:salts"
+                                      },
+                       "required_state":  "pantry_ready"
+                   }
+               ],
+    "preferred_tool":  "stock_pot",
+    "allowed_tools":  [
+                          "stock_pot",
+                          "pot"
+                      ],
+    "tool_required":  true,
+    "mode":  "passive",
+    "duration":  210,
+    "preferred_heat":  "low",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:chicken_noodle_soup_prep",
+                                  "count":  1
+                              },
+                   "state":  "simmered"
+               }
 }

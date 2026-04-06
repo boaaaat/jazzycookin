@@ -128,7 +128,16 @@ public final class KitchenStackUtil {
     }
 
     public static boolean matchesState(ItemStack stack, IngredientState state, long gameTime) {
-        return effectiveState(stack, gameTime) == state;
+        IngredientState actualState = effectiveState(stack, gameTime);
+        if (actualState == state) {
+            return true;
+        }
+
+        if (state == IngredientState.PANTRY_READY) {
+            return !actualState.isSpoiledState() && StorageRules.canStore(StorageType.PANTRY, stack);
+        }
+
+        return false;
     }
 
     public static float currentFreshnessScore(ItemStack stack, Level level) {

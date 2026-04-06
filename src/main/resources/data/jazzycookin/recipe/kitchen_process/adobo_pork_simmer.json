@@ -1,46 +1,58 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:pork"
-      },
-      "required_state": "pork"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:soy_sauce"
-      },
-      "required_state": "soy_sauce"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:white_vinegar"
-      },
-      "required_state": "white_vinegar"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:garlic"
-      },
-      "required_state": "garlic"
-    }
-  ],
-  "preferred_tool": "pot",
-  "allowed_tools": [
-    "pot",
-    "saucepan"
-  ],
-  "tool_required": true,
-  "mode": "passive",
-  "duration": 230,
-  "preferred_heat": "low",
-  "output": {
-    "result": {
-      "id": "jazzycookin:adobo_pork_prep",
-      "count": 1
-    },
-    "state": "simmered"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:pork"
+                                      },
+                       "required_state":  "pork"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:soy_sauce"
+                                      },
+                       "required_state":  "soy_sauce"
+                   },
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:light_vinegars"
+                                      },
+                       "required_state":  "pantry_ready"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:garlic"
+                                      },
+                       "required_state":  "garlic"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:onions"
+                                      },
+                       "required_state":  "onions"
+                   },
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:peppers"
+                                      },
+                       "required_state":  "pantry_ready"
+                   }
+               ],
+    "preferred_tool":  "pot",
+    "allowed_tools":  [
+                          "pot",
+                          "saucepan"
+                      ],
+    "tool_required":  true,
+    "mode":  "passive",
+    "duration":  230,
+    "preferred_heat":  "low",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:adobo_pork_prep",
+                                  "count":  1
+                              },
+                   "state":  "simmered"
+               }
 }

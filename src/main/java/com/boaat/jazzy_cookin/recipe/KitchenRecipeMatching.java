@@ -74,7 +74,9 @@ final class KitchenRecipeMatching {
         }
 
         float score = Mth.clamp(1.0F - supportiveExtras * 0.08F, 0.0F, 1.0F);
-        return score >= guide.minimumScore() ? new KitchenRecipeMatchPlan(matchedSlots, supportiveExtras, score) : null;
+        return score >= minimumScore(guide, inputStacks, requirements, supportiveExtras)
+                ? new KitchenRecipeMatchPlan(matchedSlots, supportiveExtras, score)
+                : null;
     }
 
     private static KitchenRecipeMatchPlan findFlexiblePlan(
@@ -107,7 +109,7 @@ final class KitchenRecipeMatching {
             }
 
             float score = Mth.clamp(1.0F - supportiveExtras * 0.08F, 0.0F, 1.0F);
-            if (score < guide.minimumScore()) {
+            if (score < minimumScore(guide, inputStacks, requirements, supportiveExtras)) {
                 return;
             }
 
@@ -173,6 +175,26 @@ final class KitchenRecipeMatching {
                     return !traits.isEmpty() && traits.stream().allMatch(SUPPORTIVE_EXTRA_TRAITS::contains);
                 })
                 .orElse(false);
+    }
+
+    private static float minimumScore(
+            KitchenRecipeGuideData guide,
+            List<ItemStack> inputStacks,
+            List<KitchenInputRequirement> requirements,
+            int supportiveExtras
+    ) {
+        if (!guide.allowSupportiveExtras() || supportiveExtras <= 0) {
+            return guide.minimumScore();
+        }
+
+        long occupiedInputs = inputStacks.stream().filter(stack -> !stack.isEmpty()).count();
+        int extraCapacity = Math.max(0, (int) occupiedInputs - requirements.size());
+        if (extraCapacity <= 0) {
+            return guide.minimumScore();
+        }
+
+        float expandedLayoutFloor = Mth.clamp(1.0F - extraCapacity * 0.08F, 0.48F, 1.0F);
+        return Math.min(guide.minimumScore(), expandedLayoutFloor);
     }
 
     private static final class SearchState {

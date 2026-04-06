@@ -1,34 +1,34 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:chicken"
-      },
-      "required_state": "chicken"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:curry_base"
-      },
-      "required_state": "smooth_mixture"
-    }
-  ],
-  "preferred_tool": "saucepan",
-  "allowed_tools": [
-    "saucepan",
-    "pot"
-  ],
-  "tool_required": true,
-  "mode": "passive",
-  "duration": 220,
-  "preferred_heat": "low",
-  "output": {
-    "result": {
-      "id": "jazzycookin:chicken_curry_prep",
-      "count": 1
-    },
-    "state": "simmered"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:chicken"
+                                      },
+                       "required_state":  "chicken"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:curry_base"
+                                      },
+                       "required_state":  "smooth_mixture"
+                   }
+               ],
+    "preferred_tool":  "saucepan",
+    "allowed_tools":  [
+                          "saucepan",
+                          "pot"
+                      ],
+    "tool_required":  true,
+    "mode":  "passive",
+    "duration":  220,
+    "preferred_heat":  "low",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:chicken_curry_prep",
+                                  "count":  1
+                              },
+                   "state":  "simmered"
+               }
 }

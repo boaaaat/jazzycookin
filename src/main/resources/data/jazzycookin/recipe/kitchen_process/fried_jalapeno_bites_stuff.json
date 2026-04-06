@@ -1,32 +1,32 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "prep_table",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:jalapenos"
-      },
-      "required_state": "sliced"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:cream_cheese"
-      },
-      "required_state": "cream_cheese"
-    }
-  ],
-  "preferred_tool": "paring_knife",
-  "allowed_tools": [
-    "paring_knife",
-    "chef_knife"
-  ],
-  "tool_required": true,
-  "duration": 45,
-  "output": {
-    "result": {
-      "id": "jazzycookin:stuffed_jalapenos",
-      "count": 1
-    },
-    "state": "stuffed"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "prep_table",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:jalapenos"
+                                      },
+                       "required_state":  "sliced"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:cream_cheese"
+                                      },
+                       "required_state":  "cream_cheese"
+                   }
+               ],
+    "preferred_tool":  "paring_knife",
+    "allowed_tools":  [
+                          "paring_knife",
+                          "chef_knife"
+                      ],
+    "tool_required":  true,
+    "duration":  45,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:stuffed_jalapenos",
+                                  "count":  1
+                              },
+                   "state":  "stuffed"
+               }
 }

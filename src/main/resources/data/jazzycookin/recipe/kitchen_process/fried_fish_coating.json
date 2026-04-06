@@ -1,48 +1,48 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "mixing_bowl",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:all_purpose_flour"
-      },
-      "required_state": "all_purpose_flour"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:table_salt"
-      },
-      "required_state": "table_salt"
-    }
-  ],
-  "duration": 40,
-  "outcomes": [
-    {
-      "band": "under",
-      "output": {
-        "result": {
-          "id": "jazzycookin:fish_coating",
-          "count": 1
-        },
-        "state": "coarse_powder"
-      }
-    },
-    {
-      "band": "over",
-      "output": {
-        "result": {
-          "id": "jazzycookin:fish_coating",
-          "count": 1
-        },
-        "state": "fine_powder"
-      }
-    }
-  ],
-  "output": {
-    "result": {
-      "id": "jazzycookin:fish_coating",
-      "count": 1
-    },
-    "state": "mixed"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "mixing_bowl",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:all_purpose_flour"
+                                      },
+                       "required_state":  "all_purpose_flour"
+                   },
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:salts"
+                                      },
+                       "required_state":  "pantry_ready"
+                   }
+               ],
+    "duration":  40,
+    "outcomes":  [
+                     {
+                         "band":  "under",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:fish_coating",
+                                                       "count":  1
+                                                   },
+                                        "state":  "coarse_powder"
+                                    }
+                     },
+                     {
+                         "band":  "over",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:fish_coating",
+                                                       "count":  1
+                                                   },
+                                        "state":  "fine_powder"
+                                    }
+                     }
+                 ],
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:fish_coating",
+                                  "count":  1
+                              },
+                   "state":  "mixed"
+               }
 }

@@ -20,11 +20,13 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.station.SimulationExecutionMode;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
+import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
@@ -180,6 +182,26 @@ public final class KitchenGameTests {
         require(level.getRecipeManager().byKey(kitchenRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:fresh_lemon_juice_cut to be present");
         require(level.getRecipeManager().byKey(newMealRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:spaghetti_pomodoro_simmer to be present");
         require(level.getRecipeManager().byKey(expandedMealRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:chana_masala_simmer to be present");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeInputCountsRespectStationCapacities(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PROCESS_TYPE.get()).forEach(holder -> {
+            int capacity = StationCapacityProfile.forStation(holder.value().station()).inputCount();
+            require(
+                    holder.value().inputs().size() <= capacity,
+                    "Process recipe " + holder.id() + " exceeds " + holder.value().station().getSerializedName() + " capacity"
+            );
+        });
+        level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PLATE_TYPE.get()).forEach(holder -> {
+            int capacity = StationCapacityProfile.forStation(StationType.PLATING_STATION).inputCount();
+            require(
+                    holder.value().inputs().size() <= capacity,
+                    "Plate recipe " + holder.id() + " exceeds plating-station capacity"
+            );
+        });
         helper.succeed();
     }
 
@@ -392,16 +414,20 @@ public final class KitchenGameTests {
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
 
         prepTable.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, level.getGameTime()));
-        prepTable.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.LEMONS).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.WHITE_SUGAR).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.COCOA_POWDER).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.MAPLE_SYRUP).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(4, JazzyItems.ingredient(JazzyItems.IngredientId.LEMONS).get().createStack(1, level.getGameTime()));
         prepTable.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.PARING_KNIFE.get()));
 
-        require(prepTable.handleButton(0, fakePlayer), "Guide recipes should tolerate supportive seasoning extras");
+        require(prepTable.handleButton(0, fakePlayer), "Guide recipes should tolerate fully populated supportive extras on expanded stations");
         tickStation(level, prepTable, 50);
 
         ItemStack output = prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
         require(output.is(JazzyItems.ingredient(JazzyItems.IngredientId.LEMONS).get()), "Lemon cut guide should still output lemons");
         require(KitchenStackUtil.effectiveState(output, level.getGameTime()) == IngredientState.SLICED, "Guide result should preserve the expected sliced state");
         require(prepTable.getItem(0).is(JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get()), "Supportive extra seasoning should remain in the input slot");
+        require(prepTable.getItem(3).is(JazzyItems.ingredient(JazzyItems.IngredientId.MAPLE_SYRUP).get()), "Expanded supportive extras should not be consumed");
         helper.succeed();
     }
 
@@ -417,11 +443,63 @@ public final class KitchenGameTests {
                 JazzyItems.CHICKEN_CURRY_PREP.get().defaultData(level.getGameTime()).withState(IngredientState.RESTED)
         );
         platingStation.setItem(0, new ItemStack(JazzyItems.CERAMIC_BOWL.get()));
-        platingStation.setItem(1, restedCurryPrep);
+        platingStation.setItem(2, restedCurryPrep);
+        platingStation.setItem(5, new ItemStack(JazzyItems.SPOON.get()));
 
-        require(platingStation.handleButton(0, fakePlayer), "Plate guide should start with reversed input order");
+        require(platingStation.handleButton(0, fakePlayer), "Plate guide should start with shuffled plating inputs");
         tickStation(level, platingStation, 30);
-        require(platingStation.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.CHICKEN_CURRY.get()), "Reversed plating inputs should still yield chicken curry");
+        require(platingStation.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.CHICKEN_CURRY.get()), "Shuffled plating inputs should still yield chicken curry");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeDrivenStationsResolveThroughSimulationDomains(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        KitchenStationBlockEntity prepTable = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        prepTable.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATO_PASTE).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.GARLIC).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.BEEF).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(4, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(5, JazzyItems.ingredient(JazzyItems.IngredientId.SEA_SALT).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        require(prepTable.dataAccess().get(8) == SimulationExecutionMode.SIMULATION.ordinal(), "Prep-table recipes should now resolve through simulation domains");
+        require(prepTable.handleButton(0, fakePlayer), "Simulation-backed prep recipes should still start");
+
+        KitchenStationBlockEntity platingStation = placeStation(level, helper.absolutePos(new BlockPos(2, 1, 0)), JazzyBlocks.PLATING_STATION.get());
+        ItemStack restedCurryPrep = JazzyItems.CHICKEN_CURRY_PREP.get().createStack(
+                1,
+                level.getGameTime(),
+                JazzyItems.CHICKEN_CURRY_PREP.get().defaultData(level.getGameTime()).withState(IngredientState.RESTED)
+        );
+        platingStation.setItem(0, restedCurryPrep);
+        platingStation.setItem(3, new ItemStack(JazzyItems.CERAMIC_BOWL.get()));
+        platingStation.setItem(6, new ItemStack(JazzyItems.SPOON.get()));
+        require(platingStation.dataAccess().get(8) == SimulationExecutionMode.SIMULATION.ordinal(), "Plating recipes should resolve through simulation domains as well");
+        require(platingStation.handleButton(0, fakePlayer), "Simulation-backed plating recipes should still start");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void pantryTagsAllowCommonRecipeSubstitutions(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity stove = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.STOVE.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        stove.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.PASTA).get().createStack(1, level.getGameTime()));
+        stove.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_BEANS).get().createStack(1, level.getGameTime()));
+        stove.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.CANNED_TOMATOES).get().createStack(1, level.getGameTime()));
+        stove.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.STOCK).get().createStack(1, level.getGameTime()));
+        stove.setItem(4, JazzyItems.ingredient(JazzyItems.IngredientId.GARLIC).get().createStack(1, level.getGameTime()));
+        stove.setItem(5, JazzyItems.ingredient(JazzyItems.IngredientId.SEA_SALT).get().createStack(1, level.getGameTime()));
+        stove.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.POT.get()));
+        stove.handleButton(1, fakePlayer);
+
+        require(stove.handleButton(0, fakePlayer), "Tagged pantry substitutions should still start expanded stove recipes");
+        tickStation(level, stove, 240);
+        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.PASTA_E_FAGIOLI_PREP.get()), "Stock and alternate salts should satisfy the expanded simmer recipe");
         helper.succeed();
     }
 

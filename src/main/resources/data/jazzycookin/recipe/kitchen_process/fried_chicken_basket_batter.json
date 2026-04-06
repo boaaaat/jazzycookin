@@ -1,32 +1,32 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "mixing_bowl",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:all_purpose_flour"
-      },
-      "required_state": "all_purpose_flour"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:seasoning_blend"
-      },
-      "required_state": "fine_powder"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:eggs"
-      },
-      "required_state": "eggs"
-    }
-  ],
-  "duration": 60,
-  "output": {
-    "result": {
-      "id": "jazzycookin:batter_mix",
-      "count": 1
-    },
-    "state": "batter"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "mixing_bowl",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:all_purpose_flour"
+                                      },
+                       "required_state":  "all_purpose_flour"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:seasoning_blend"
+                                      },
+                       "required_state":  "fine_powder"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:eggs"
+                                      },
+                       "required_state":  "eggs"
+                   }
+               ],
+    "duration":  60,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:batter_mix",
+                                  "count":  1
+                              },
+                   "state":  "batter"
+               }
 }

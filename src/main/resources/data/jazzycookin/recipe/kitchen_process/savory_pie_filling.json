@@ -1,44 +1,44 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "prep_table",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:beef"
-      },
-      "required_state": "beef"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:carrots"
-      },
-      "required_state": "carrots"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:onions"
-      },
-      "required_state": "onions"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:potatoes"
-      },
-      "required_state": "potatoes"
-    }
-  ],
-  "preferred_tool": "chef_knife",
-  "allowed_tools": [
-    "chef_knife",
-    "cleaver"
-  ],
-  "tool_required": true,
-  "duration": 70,
-  "output": {
-    "result": {
-      "id": "jazzycookin:savory_pie_filling",
-      "count": 1
-    },
-    "state": "simmered_filling"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "prep_table",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:beef"
+                                      },
+                       "required_state":  "beef"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:carrots"
+                                      },
+                       "required_state":  "carrots"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:onions"
+                                      },
+                       "required_state":  "onions"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:potatoes"
+                                      },
+                       "required_state":  "potatoes"
+                   }
+               ],
+    "preferred_tool":  "chef_knife",
+    "allowed_tools":  [
+                          "chef_knife",
+                          "cleaver"
+                      ],
+    "tool_required":  true,
+    "duration":  70,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:savory_pie_filling",
+                                  "count":  1
+                              },
+                   "state":  "simmered_filling"
+               }
 }

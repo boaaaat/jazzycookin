@@ -1,39 +1,39 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:eggs"
-      },
-      "required_state": "eggs"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:tomatoes"
-      },
-      "required_state": "tomatoes"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:onions"
-      },
-      "required_state": "onions"
-    }
-  ],
-  "preferred_tool": "pan",
-  "allowed_tools": [
-    "pan",
-    "frying_skillet"
-  ],
-  "tool_required": true,
-  "duration": 90,
-  "preferred_heat": "medium",
-  "output": {
-    "result": {
-      "id": "jazzycookin:tomato_egg_skillet_prep",
-      "count": 1
-    },
-    "state": "pan_fried"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:eggs"
+                                      },
+                       "required_state":  "eggs"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:tomatoes"
+                                      },
+                       "required_state":  "tomatoes"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:onions"
+                                      },
+                       "required_state":  "onions"
+                   }
+               ],
+    "preferred_tool":  "pan",
+    "allowed_tools":  [
+                          "pan",
+                          "frying_skillet"
+                      ],
+    "tool_required":  true,
+    "duration":  90,
+    "preferred_heat":  "medium",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:tomato_egg_skillet_prep",
+                                  "count":  1
+                              },
+                   "state":  "pan_fried"
+               }
 }

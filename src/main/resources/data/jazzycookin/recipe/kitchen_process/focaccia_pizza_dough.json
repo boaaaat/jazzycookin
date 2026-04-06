@@ -1,60 +1,60 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "mixing_bowl",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:bread_flour"
-      },
-      "required_state": "bread_flour"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:active_dry_yeast"
-      },
-      "required_state": "active_dry_yeast"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:table_salt"
-      },
-      "required_state": "table_salt"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:olive_oil"
-      },
-      "required_state": "olive_oil"
-    }
-  ],
-  "duration": 95,
-  "outcomes": [
-    {
-      "band": "under",
-      "output": {
-        "result": {
-          "id": "jazzycookin:focaccia_dough",
-          "count": 1
-        },
-        "state": "rough_dough"
-      }
-    },
-    {
-      "band": "over",
-      "output": {
-        "result": {
-          "id": "jazzycookin:focaccia_dough",
-          "count": 1
-        },
-        "state": "overworked_dough"
-      }
-    }
-  ],
-  "output": {
-    "result": {
-      "id": "jazzycookin:focaccia_dough",
-      "count": 1
-    },
-    "state": "bread_dough"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "mixing_bowl",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:bread_flour"
+                                      },
+                       "required_state":  "bread_flour"
+                   },
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:dry_yeasts"
+                                      },
+                       "required_state":  "pantry_ready"
+                   },
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:salts"
+                                      },
+                       "required_state":  "pantry_ready"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:olive_oil"
+                                      },
+                       "required_state":  "olive_oil"
+                   }
+               ],
+    "duration":  95,
+    "outcomes":  [
+                     {
+                         "band":  "under",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:focaccia_dough",
+                                                       "count":  1
+                                                   },
+                                        "state":  "rough_dough"
+                                    }
+                     },
+                     {
+                         "band":  "over",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:focaccia_dough",
+                                                       "count":  1
+                                                   },
+                                        "state":  "overworked_dough"
+                                    }
+                     }
+                 ],
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:focaccia_dough",
+                                  "count":  1
+                              },
+                   "state":  "bread_dough"
+               }
 }

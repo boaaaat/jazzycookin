@@ -4,16 +4,11 @@ import java.util.List;
 import java.util.Optional;
 
 import com.boaat.jazzy_cookin.block.KitchenStationBlock;
-import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
-import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
-import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
-import com.boaat.jazzy_cookin.kitchen.KitchenOutcomeBand;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationCapacityProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
-import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.StationPhysicsState;
@@ -21,33 +16,22 @@ import com.boaat.jazzy_cookin.kitchen.sim.station.SimulationExecutionMode;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationResolver;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
-import com.boaat.jazzy_cookin.recipe.KitchenEnvironmentRequirements;
-import com.boaat.jazzy_cookin.recipe.KitchenPlateInput;
-import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
-import com.boaat.jazzy_cookin.recipe.KitchenInputRequirement;
-import com.boaat.jazzy_cookin.recipe.KitchenProcessInput;
-import com.boaat.jazzy_cookin.recipe.KitchenProcessOutput;
-import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
-import com.boaat.jazzy_cookin.recipe.KitchenRecipeMatchPlan;
 import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
-import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -139,40 +123,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                     ? Math.max(0, blockEntity.preheatProgress - 2)
                     : Math.min(100, blockEntity.preheatProgress + gain);
         }
-
-        if (blockEntity.executionMode() == SimulationExecutionMode.SIMULATION) {
-            blockEntity.serverTickSimulation();
-            return;
-        }
-
-        if (!blockEntity.processing) {
-            return;
-        }
-
-        if (blockEntity.getStationType() == StationType.PLATING_STATION) {
-            Optional<KitchenPlateRecipe> plateRecipe = blockEntity.currentPlateRecipe();
-            if (plateRecipe.isEmpty() || !blockEntity.canAcceptOutputs(plateRecipe.get())) {
-                blockEntity.stopProcessing();
-                return;
-            }
-        } else {
-            Optional<KitchenProcessRecipe> recipe = blockEntity.currentRecipe();
-            if (recipe.isEmpty() || !blockEntity.environmentAllows(recipe.get()) || !blockEntity.canAcceptOutputs(recipe.get())) {
-                blockEntity.stopProcessing();
-                return;
-            }
-        }
-
-        blockEntity.progress++;
-        if (blockEntity.progress >= blockEntity.maxProgress) {
-            if (blockEntity.getStationType() == StationType.PLATING_STATION) {
-                blockEntity.currentPlateRecipe().ifPresent(blockEntity::finishPlate);
-            } else {
-                blockEntity.currentRecipe().ifPresent(blockEntity::finishRecipe);
-            }
-        }
-
-        blockEntity.setChanged();
+        blockEntity.serverTickSimulation();
     }
 
     public ContainerData dataAccess() {
@@ -208,15 +159,11 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     public boolean handleButton(int buttonId, Player player) {
-        if (buttonId == 0 && this.executionMode() == SimulationExecutionMode.SIMULATION) {
+        if (buttonId == 0) {
             return StationSimulationResolver.handleAction(this, 6);
         }
-        if (buttonId >= 6 && buttonId <= 8 && this.executionMode() == SimulationExecutionMode.SIMULATION) {
+        if (buttonId >= 6 && buttonId <= 8) {
             return StationSimulationResolver.handleAction(this, buttonId);
-        }
-
-        if (buttonId == 0) {
-            return this.startProcessing();
         }
 
         if (this.getStationType() == StationType.OVEN) {
@@ -266,163 +213,17 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return false;
     }
 
-    private boolean startProcessing() {
-        if (this.level == null || this.processing || this.executionMode() == SimulationExecutionMode.SIMULATION) {
-            return false;
-        }
-
-        if (this.getStationType() == StationType.PLATING_STATION) {
-            Optional<KitchenPlateRecipe> plateRecipe = this.currentPlateRecipe();
-            if (plateRecipe.isEmpty() || !this.canAcceptOutputs(plateRecipe.get())) {
-                return false;
-            }
-
-            this.processing = true;
-            this.progress = 0;
-            this.maxProgress = 24;
-            this.setChanged();
-            return true;
-        }
-
-        Optional<KitchenProcessRecipe> recipe = this.currentRecipe();
-        if (recipe.isEmpty() || !this.environmentAllows(recipe.get()) || !this.canAcceptOutputs(recipe.get())) {
-            return false;
-        }
-
-        this.processing = true;
-        this.progress = 0;
-        this.maxProgress = recipe.get().mode() == com.boaat.jazzy_cookin.kitchen.ProcessMode.PASSIVE
-                ? Math.max(40, recipe.get().effectiveDuration())
-                : Math.max(20, Math.round(recipe.get().effectiveDuration() / this.toolSpeedMultiplier(recipe.get())));
-        this.setChanged();
-        return true;
-    }
-
-    private void stopProcessing() {
+    private void resetSimulationState() {
         this.processing = false;
         this.progress = 0;
         this.maxProgress = 0;
+        this.simulationBatch = null;
+        this.stationPhysics = StationPhysicsState.idle();
         this.setChanged();
     }
 
-    private Optional<KitchenProcessRecipe> currentRecipe() {
-        if (this.level == null || this.executionMode() == SimulationExecutionMode.SIMULATION) {
-            return Optional.empty();
-        }
-
-        return JazzyRecipes.findProcessRecipe(
-                this.level,
-                this.getStationType(),
-                this.activeInputStacks(),
-                this.getItem(TOOL_SLOT),
-                this.currentHeatLevel(),
-                this.preheatProgress >= 100
-        );
-    }
-
-    private Optional<KitchenPlateRecipe> currentPlateRecipe() {
-        if (this.level == null || this.executionMode() == SimulationExecutionMode.SIMULATION) {
-            return Optional.empty();
-        }
-
-        return JazzyRecipes.findPlateRecipe(this.level, this.activeInputStacks());
-    }
-
-    private Optional<KitchenRecipeMatchPlan> currentRecipePlan(KitchenProcessRecipe recipe) {
-        return this.level == null ? Optional.empty() : recipe.matchPlan(this.currentProcessInput(), this.level);
-    }
-
-    private Optional<KitchenRecipeMatchPlan> currentPlatePlan(KitchenPlateRecipe recipe) {
-        return this.level == null ? Optional.empty() : recipe.matchPlan(this.currentPlateInput(), this.level);
-    }
-
-    private KitchenProcessInput currentProcessInput() {
-        return new KitchenProcessInput(
-                this.activeInputStacks(),
-                this.getItem(TOOL_SLOT),
-                this.getStationType(),
-                this.currentHeatLevel(),
-                this.preheatProgress >= 100
-        );
-    }
-
-    private KitchenPlateInput currentPlateInput() {
-        return new KitchenPlateInput(this.activeInputStacks());
-    }
-
     private KitchenMethod currentMethod() {
-        if (this.executionMode() == SimulationExecutionMode.SIMULATION) {
-            return StationSimulationResolver.currentMethod(this);
-        }
-        if (this.getStationType() == StationType.PLATING_STATION) {
-            return this.currentPlateRecipe().isPresent() ? KitchenMethod.PLATE : KitchenMethod.NONE;
-        }
-        return this.currentRecipe().map(KitchenProcessRecipe::method).orElse(KitchenMethod.NONE);
-    }
-
-    private boolean environmentAllows(KitchenProcessRecipe recipe) {
-        ToolProfile actualProfile = ToolProfile.fromStack(this.getItem(TOOL_SLOT));
-        List<ToolProfile> allowedTools = recipe.allowedToolsOrPreferred();
-        if (recipe.toolRequired()) {
-            if (allowedTools.isEmpty()) {
-                return false;
-            }
-            if (actualProfile == ToolProfile.NONE || !recipe.allowsTool(actualProfile)) {
-                return false;
-            }
-        }
-
-        if (this.level == null) {
-            return true;
-        }
-
-        KitchenEnvironmentRequirements requirements = recipe.environmentRequirements();
-        if (requirements.nearbyWater()) {
-            boolean hasWater = false;
-            for (Direction direction : Direction.values()) {
-                if (this.level.getFluidState(this.worldPosition.relative(direction)).is(FluidTags.WATER)) {
-                    hasWater = true;
-                    break;
-                }
-            }
-            if (!hasWater) {
-                return false;
-            }
-        }
-
-        return !requirements.sheltered() || !this.level.canSeeSky(this.worldPosition.above());
-    }
-
-    private float toolSpeedMultiplier(KitchenProcessRecipe recipe) {
-        List<ToolProfile> allowedTools = recipe.allowedToolsOrPreferred();
-        if (allowedTools.isEmpty()) {
-            return 1.0F;
-        }
-
-        if (this.getItem(TOOL_SLOT).getItem() instanceof KitchenToolItem toolItem) {
-            if (recipe.preferredTool().isPresent() && toolItem.profile() == recipe.preferredTool().get()) {
-                return toolItem.speedMultiplier();
-            }
-            if (recipe.allowsTool(toolItem.profile())) {
-                return toolItem.speedMultiplier() * 0.88F;
-            }
-        }
-
-        return this.getItem(TOOL_SLOT).isEmpty() ? 0.75F : 0.82F;
-    }
-
-    private boolean canAcceptOutputs(KitchenProcessRecipe recipe) {
-        if (!this.canAcceptStack(OUTPUT_SLOT, recipe.output().result())) {
-            return false;
-        }
-        return recipe.output().byproduct().isEmpty() || this.canAcceptStack(BYPRODUCT_SLOT, recipe.output().byproduct());
-    }
-
-    private boolean canAcceptOutputs(KitchenPlateRecipe recipe) {
-        if (!this.canAcceptStack(OUTPUT_SLOT, recipe.output().result())) {
-            return false;
-        }
-        return recipe.output().byproduct().isEmpty() || this.canAcceptStack(BYPRODUCT_SLOT, recipe.output().byproduct());
+        return StationSimulationResolver.currentMethod(this);
     }
 
     private boolean canAcceptStack(int slot, ItemStack stack) {
@@ -457,157 +258,8 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.setChanged();
     }
 
-    private void finishRecipe(KitchenProcessRecipe recipe) {
-        if (this.level == null) {
-            return;
-        }
-
-        KitchenRecipeMatchPlan matchPlan = this.currentRecipePlan(recipe).orElse(null);
-        if (matchPlan == null) {
-            this.stopProcessing();
-            return;
-        }
-
-        List<ItemStack> consumedInputs = this.matchedInputs(matchPlan, recipe.inputs());
-
-        KitchenOutcomeBand outcomeBand = this.currentOutcomeBand(recipe);
-        KitchenProcessOutput resolvedOutput = recipe.outputForBand(outcomeBand);
-        IngredientStateData outputData = DishEvaluation.evaluateProcess(
-                this.level,
-                recipe,
-                resolvedOutput,
-                consumedInputs,
-                this.getItem(TOOL_SLOT),
-                this.currentHeatLevel(),
-                this.preheatProgress >= 100
-        );
-
-        for (int i = 0; i < recipe.inputs().size(); i++) {
-            int matchedSlot = matchPlan.slotForRequirement(i);
-            if (matchedSlot >= 0) {
-                this.removeItem(matchedSlot, recipe.inputs().get(i).count());
-            }
-        }
-
-        ItemStack outputStack = resolvedOutput.result().copy();
-        if (outputStack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            outputStack = ingredientItem.createStack(outputStack.getCount(), this.level.getGameTime(), outputData);
-        }
-
-        this.mergeIntoSlot(OUTPUT_SLOT, outputStack);
-        ItemStack byproduct = resolvedOutput.byproduct().copy();
-        if (!byproduct.isEmpty() && byproduct.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            byproduct = ingredientItem.createStack(byproduct.getCount(), this.level.getGameTime());
-        }
-        this.mergeIntoSlot(BYPRODUCT_SLOT, byproduct);
-        this.damageTool(recipe);
-        this.stopProcessing();
-        if (this.getStationType() == StationType.OVEN) {
-            this.preheatProgress = Math.max(0, this.preheatProgress - 30);
-        }
-        this.setChanged();
-    }
-
-    private void finishPlate(KitchenPlateRecipe recipe) {
-        if (this.level == null) {
-            return;
-        }
-
-        KitchenRecipeMatchPlan matchPlan = this.currentPlatePlan(recipe).orElse(null);
-        if (matchPlan == null) {
-            this.stopProcessing();
-            return;
-        }
-
-        List<ItemStack> consumedInputs = this.matchedInputs(matchPlan, recipe.inputs());
-
-        IngredientStateData outputData = DishEvaluation.evaluatePlate(this.level, recipe, consumedInputs);
-        for (int i = 0; i < recipe.inputs().size(); i++) {
-            int matchedSlot = matchPlan.slotForRequirement(i);
-            if (matchedSlot >= 0) {
-                this.removeItem(matchedSlot, recipe.inputs().get(i).count());
-            }
-        }
-
-        ItemStack outputStack = recipe.output().result().copy();
-        if (outputStack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            outputStack = ingredientItem.createStack(outputStack.getCount(), this.level.getGameTime(), outputData);
-        }
-
-        this.mergeIntoSlot(OUTPUT_SLOT, outputStack);
-        ItemStack byproduct = recipe.output().byproduct().copy();
-        if (!byproduct.isEmpty() && byproduct.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            byproduct = ingredientItem.createStack(byproduct.getCount(), this.level.getGameTime());
-        }
-        this.mergeIntoSlot(BYPRODUCT_SLOT, byproduct);
-        this.stopProcessing();
-        this.setChanged();
-    }
-
-    private static ItemStack copySized(ItemStack stack, int count) {
-        if (count <= 0 || stack.isEmpty()) {
-            return ItemStack.EMPTY;
-        }
-
-        ItemStack copy = stack.copy();
-        copy.setCount(count);
-        return copy;
-    }
-
-    private ItemStack matchedInputCopy(KitchenRecipeMatchPlan matchPlan, List<KitchenInputRequirement> requirements, int requirementIndex) {
-        if (requirementIndex < 0 || requirementIndex >= requirements.size()) {
-            return ItemStack.EMPTY;
-        }
-        int matchedSlot = matchPlan.slotForRequirement(requirementIndex);
-        return matchedSlot >= 0 ? copySized(this.getItem(matchedSlot), requirements.get(requirementIndex).count()) : ItemStack.EMPTY;
-    }
-
-    private List<ItemStack> matchedInputs(KitchenRecipeMatchPlan matchPlan, List<KitchenInputRequirement> requirements) {
-        return java.util.stream.IntStream.range(0, requirements.size())
-                .mapToObj(index -> this.matchedInputCopy(matchPlan, requirements, index))
-                .toList();
-    }
-
-    private KitchenOutcomeBand currentOutcomeBand(KitchenProcessRecipe recipe) {
-        if (!this.getStationType().supportsStationControl() || recipe.outcomes().isEmpty()) {
-            return KitchenOutcomeBand.IDEAL;
-        }
-        return KitchenOutcomeBand.fromControlIndex(this.controlSetting);
-    }
-
     private int environmentStatus() {
-        if (this.executionMode() == SimulationExecutionMode.SIMULATION) {
-            return StationSimulationResolver.environmentStatus(this);
-        }
-
-        if (this.getStationType() == StationType.PLATING_STATION) {
-            return 2;
-        }
-
-        Optional<KitchenProcessRecipe> recipe = this.currentRecipe();
-        if (recipe.isEmpty() || recipe.get().environmentRequirements().isEmpty()) {
-            return 2;
-        }
-
-        return this.environmentAllows(recipe.get()) ? 1 : 0;
-    }
-
-    private void damageTool(KitchenProcessRecipe recipe) {
-        if (recipe.allowedToolsOrPreferred().isEmpty()) {
-            return;
-        }
-
-        ItemStack tool = this.getItem(TOOL_SLOT);
-        if (!tool.isDamageableItem()) {
-            return;
-        }
-
-        tool.setDamageValue(tool.getDamageValue() + 1);
-        if (tool.getDamageValue() >= tool.getMaxDamage()) {
-            this.setItem(TOOL_SLOT, ItemStack.EMPTY);
-        } else {
-            this.setChanged();
-        }
+        return StationSimulationResolver.environmentStatus(this);
     }
 
     @Override
@@ -658,7 +310,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             stack.setCount(this.getMaxStackSize());
         }
         if (slot != OUTPUT_SLOT && slot != BYPRODUCT_SLOT) {
-            this.stopProcessing();
+            this.resetSimulationState();
         }
         this.setChanged();
     }
@@ -690,8 +342,12 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         for (int slot = 0; slot < this.items.size(); slot++) {
             this.items.set(slot, ItemStack.EMPTY);
         }
+        this.processing = false;
+        this.progress = 0;
+        this.maxProgress = 0;
         this.simulationBatch = null;
         this.stationPhysics = StationPhysicsState.idle();
+        this.setChanged();
     }
 
     @Override

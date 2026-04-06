@@ -1,26 +1,26 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "prep_table",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:pie_dough"
-      },
-      "required_state": "smooth_dough"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:savory_pie_filling"
-      },
-      "required_state": "simmered_filling"
-    }
-  ],
-  "duration": 60,
-  "output": {
-    "result": {
-      "id": "jazzycookin:assembled_savory_pie",
-      "count": 1
-    },
-    "state": "raw_assembled_pie"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "prep_table",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:pie_dough"
+                                      },
+                       "required_state":  "smooth_dough"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:savory_pie_filling"
+                                      },
+                       "required_state":  "simmered_filling"
+                   }
+               ],
+    "duration":  60,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:assembled_savory_pie",
+                                  "count":  1
+                              },
+                   "state":  "raw_assembled_pie"
+               }
 }

@@ -1,54 +1,54 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "mixing_bowl",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:pasta"
-      },
-      "required_state": "boiled"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:tomato_sauce"
-      },
-      "required_state": "tomato_sauce"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:cheese"
-      },
-      "required_state": "cheese"
-    }
-  ],
-  "duration": 60,
-  "outcomes": [
-    {
-      "band": "under",
-      "output": {
-        "result": {
-          "id": "jazzycookin:pasta_bake_assembly",
-          "count": 1
-        },
-        "state": "mixed"
-      }
-    },
-    {
-      "band": "over",
-      "output": {
-        "result": {
-          "id": "jazzycookin:pasta_bake_assembly",
-          "count": 1
-        },
-        "state": "lumpy_mixture"
-      }
-    }
-  ],
-  "output": {
-    "result": {
-      "id": "jazzycookin:pasta_bake_assembly",
-      "count": 1
-    },
-    "state": "smooth_mixture"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "mixing_bowl",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:pasta"
+                                      },
+                       "required_state":  "boiled"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:tomato_sauce"
+                                      },
+                       "required_state":  "tomato_sauce"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:cheese"
+                                      },
+                       "required_state":  "cheese"
+                   }
+               ],
+    "duration":  60,
+    "outcomes":  [
+                     {
+                         "band":  "under",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:pasta_bake_assembly",
+                                                       "count":  1
+                                                   },
+                                        "state":  "mixed"
+                                    }
+                     },
+                     {
+                         "band":  "over",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:pasta_bake_assembly",
+                                                       "count":  1
+                                                   },
+                                        "state":  "lumpy_mixture"
+                                    }
+                     }
+                 ],
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:pasta_bake_assembly",
+                                  "count":  1
+                              },
+                   "state":  "smooth_mixture"
+               }
 }

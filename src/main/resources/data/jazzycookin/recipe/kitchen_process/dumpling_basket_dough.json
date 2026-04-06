@@ -1,48 +1,48 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "mixing_bowl",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:all_purpose_flour"
-      },
-      "required_state": "all_purpose_flour"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:eggs"
-      },
-      "required_state": "eggs"
-    }
-  ],
-  "duration": 80,
-  "outcomes": [
-    {
-      "band": "under",
-      "output": {
-        "result": {
-          "id": "jazzycookin:dumpling_dough",
-          "count": 1
-        },
-        "state": "rough_dough"
-      }
-    },
-    {
-      "band": "over",
-      "output": {
-        "result": {
-          "id": "jazzycookin:dumpling_dough",
-          "count": 1
-        },
-        "state": "overworked_dough"
-      }
-    }
-  ],
-  "output": {
-    "result": {
-      "id": "jazzycookin:dumpling_dough",
-      "count": 1
-    },
-    "state": "smooth_dough"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "mixing_bowl",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:all_purpose_flour"
+                                      },
+                       "required_state":  "all_purpose_flour"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:eggs"
+                                      },
+                       "required_state":  "eggs"
+                   }
+               ],
+    "duration":  80,
+    "outcomes":  [
+                     {
+                         "band":  "under",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:dumpling_dough",
+                                                       "count":  1
+                                                   },
+                                        "state":  "rough_dough"
+                                    }
+                     },
+                     {
+                         "band":  "over",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:dumpling_dough",
+                                                       "count":  1
+                                                   },
+                                        "state":  "overworked_dough"
+                                    }
+                     }
+                 ],
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:dumpling_dough",
+                                  "count":  1
+                              },
+                   "state":  "smooth_dough"
+               }
 }

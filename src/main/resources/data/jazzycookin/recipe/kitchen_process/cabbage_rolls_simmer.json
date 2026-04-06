@@ -1,46 +1,46 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:cabbage"
-      },
-      "required_state": "cabbage"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:beef"
-      },
-      "required_state": "beef"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:rice"
-      },
-      "required_state": "rice"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:tomato_paste"
-      },
-      "required_state": "tomato_paste"
-    }
-  ],
-  "preferred_tool": "stock_pot",
-  "allowed_tools": [
-    "stock_pot",
-    "pot"
-  ],
-  "tool_required": true,
-  "mode": "passive",
-  "duration": 220,
-  "preferred_heat": "low",
-  "output": {
-    "result": {
-      "id": "jazzycookin:cabbage_rolls_prep",
-      "count": 1
-    },
-    "state": "simmered"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:cabbage"
+                                      },
+                       "required_state":  "cabbage"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:beef"
+                                      },
+                       "required_state":  "beef"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:rice"
+                                      },
+                       "required_state":  "rice"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:tomato_paste"
+                                      },
+                       "required_state":  "tomato_paste"
+                   }
+               ],
+    "preferred_tool":  "stock_pot",
+    "allowed_tools":  [
+                          "stock_pot",
+                          "pot"
+                      ],
+    "tool_required":  true,
+    "mode":  "passive",
+    "duration":  220,
+    "preferred_heat":  "low",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:cabbage_rolls_prep",
+                                  "count":  1
+                              },
+                   "state":  "simmered"
+               }
 }

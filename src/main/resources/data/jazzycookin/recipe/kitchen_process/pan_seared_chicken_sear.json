@@ -1,39 +1,39 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:chicken"
-      },
-      "required_state": "chicken"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:seasoning_blend"
-      },
-      "required_state": "fine_powder"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:olive_oil"
-      },
-      "required_state": "olive_oil"
-    }
-  ],
-  "preferred_tool": "pan",
-  "allowed_tools": [
-    "pan",
-    "frying_skillet"
-  ],
-  "tool_required": true,
-  "duration": 110,
-  "preferred_heat": "high",
-  "output": {
-    "result": {
-      "id": "jazzycookin:pan_seared_chicken_prep",
-      "count": 1
-    },
-    "state": "pan_fried"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:chicken"
+                                      },
+                       "required_state":  "chicken"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:seasoning_blend"
+                                      },
+                       "required_state":  "fine_powder"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:olive_oil"
+                                      },
+                       "required_state":  "olive_oil"
+                   }
+               ],
+    "preferred_tool":  "pan",
+    "allowed_tools":  [
+                          "pan",
+                          "frying_skillet"
+                      ],
+    "tool_required":  true,
+    "duration":  110,
+    "preferred_heat":  "high",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:pan_seared_chicken_prep",
+                                  "count":  1
+                              },
+                   "state":  "pan_fried"
+               }
 }

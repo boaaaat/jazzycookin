@@ -1,32 +1,32 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "mixing_bowl",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:cake_flour"
-      },
-      "required_state": "cake_flour"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:white_sugar"
-      },
-      "required_state": "white_sugar"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:baking_powder"
-      },
-      "required_state": "baking_powder"
-    }
-  ],
-  "duration": 55,
-  "output": {
-    "result": {
-      "id": "jazzycookin:cake_dry_mix",
-      "count": 1
-    },
-    "state": "coarse_powder"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "mixing_bowl",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:cake_flour"
+                                      },
+                       "required_state":  "cake_flour"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:white_sugar"
+                                      },
+                       "required_state":  "white_sugar"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:baking_powder"
+                                      },
+                       "required_state":  "baking_powder"
+                   }
+               ],
+    "duration":  55,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:cake_dry_mix",
+                                  "count":  1
+                              },
+                   "state":  "coarse_powder"
+               }
 }

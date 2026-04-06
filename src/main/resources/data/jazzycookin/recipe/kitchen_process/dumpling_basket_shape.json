@@ -1,26 +1,26 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "prep_table",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:dumpling_dough"
-      },
-      "required_state": "smooth_dough"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:dumpling_filling"
-      },
-      "required_state": "dumpling_filling"
-    }
-  ],
-  "duration": 70,
-  "output": {
-    "result": {
-      "id": "jazzycookin:raw_dumplings",
-      "count": 1
-    },
-    "state": "raw_dumplings"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "prep_table",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:dumpling_dough"
+                                      },
+                       "required_state":  "smooth_dough"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:dumpling_filling"
+                                      },
+                       "required_state":  "dumpling_filling"
+                   }
+               ],
+    "duration":  70,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:raw_dumplings",
+                                  "count":  1
+                              },
+                   "state":  "raw_dumplings"
+               }
 }

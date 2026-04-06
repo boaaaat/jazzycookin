@@ -1,28 +1,28 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "smoker",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:pork"
-      },
-      "required_state": "pork"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:table_salt"
-      },
-      "required_state": "table_salt"
-    }
-  ],
-  "mode": "passive",
-  "duration": 260,
-  "preferred_heat": "low",
-  "output": {
-    "result": {
-      "id": "jazzycookin:smoked_meat",
-      "count": 1
-    },
-    "state": "smoked"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "smoker",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:pork"
+                                      },
+                       "required_state":  "pork"
+                   },
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:salts"
+                                      },
+                       "required_state":  "pantry_ready"
+                   }
+               ],
+    "mode":  "passive",
+    "duration":  260,
+    "preferred_heat":  "low",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:smoked_meat",
+                                  "count":  1
+                              },
+                   "state":  "smoked"
+               }
 }

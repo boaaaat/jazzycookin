@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "jazzycookin:table_salt",
+    "jazzycookin:kosher_salt",
+    "jazzycookin:sea_salt"
+  ]
+}

@@ -1,21 +1,21 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "cooling_rack",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:hot_syrup_preserve"
-      },
-      "required_state": "hot_preserve"
-    }
-  ],
-  "mode": "passive",
-  "duration": 60,
-  "output": {
-    "result": {
-      "id": "jazzycookin:syrup_preserves",
-      "count": 1
-    },
-    "state": "syrup_preserves"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "cooling_rack",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:hot_syrup_preserve"
+                                      },
+                       "required_state":  "hot_preserve"
+                   }
+               ],
+    "mode":  "passive",
+    "duration":  60,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:syrup_preserves",
+                                  "count":  1
+                              },
+                   "state":  "syrup_preserves"
+               }
 }

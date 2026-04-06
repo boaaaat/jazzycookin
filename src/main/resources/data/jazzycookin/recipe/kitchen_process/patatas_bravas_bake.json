@@ -1,41 +1,41 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "oven",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:potatoes"
-      },
-      "required_state": "potatoes"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:tomato_sauce"
-      },
-      "required_state": "tomato_sauce"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:paprika"
-      },
-      "required_state": "paprika"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:hot_sauce"
-      },
-      "required_state": "hot_sauce"
-    }
-  ],
-  "mode": "passive",
-  "duration": 190,
-  "preferred_heat": "medium",
-  "requires_preheat": true,
-  "output": {
-    "result": {
-      "id": "jazzycookin:patatas_bravas_prep",
-      "count": 1
-    },
-    "state": "roasted"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "oven",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:potatoes"
+                                      },
+                       "required_state":  "potatoes"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:tomato_sauce"
+                                      },
+                       "required_state":  "tomato_sauce"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:paprika"
+                                      },
+                       "required_state":  "paprika"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:hot_sauce"
+                                      },
+                       "required_state":  "hot_sauce"
+                   }
+               ],
+    "mode":  "passive",
+    "duration":  190,
+    "preferred_heat":  "medium",
+    "requires_preheat":  true,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:patatas_bravas_prep",
+                                  "count":  1
+                              },
+                   "state":  "roasted"
+               }
 }

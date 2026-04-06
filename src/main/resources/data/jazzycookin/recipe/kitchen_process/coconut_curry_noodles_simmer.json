@@ -1,46 +1,46 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:ramen"
-      },
-      "required_state": "ramen"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:coconut_milk"
-      },
-      "required_state": "coconut_milk"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:curry_powder"
-      },
-      "required_state": "curry_powder"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:chicken"
-      },
-      "required_state": "chicken"
-    }
-  ],
-  "preferred_tool": "saucepan",
-  "allowed_tools": [
-    "saucepan",
-    "pot"
-  ],
-  "tool_required": true,
-  "mode": "passive",
-  "duration": 210,
-  "preferred_heat": "low",
-  "output": {
-    "result": {
-      "id": "jazzycookin:coconut_curry_noodles_prep",
-      "count": 1
-    },
-    "state": "simmered"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:ramen"
+                                      },
+                       "required_state":  "ramen"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:coconut_milk"
+                                      },
+                       "required_state":  "coconut_milk"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:curry_powder"
+                                      },
+                       "required_state":  "curry_powder"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:chicken"
+                                      },
+                       "required_state":  "chicken"
+                   }
+               ],
+    "preferred_tool":  "saucepan",
+    "allowed_tools":  [
+                          "saucepan",
+                          "pot"
+                      ],
+    "tool_required":  true,
+    "mode":  "passive",
+    "duration":  210,
+    "preferred_heat":  "low",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:coconut_curry_noodles_prep",
+                                  "count":  1
+                              },
+                   "state":  "simmered"
+               }
 }

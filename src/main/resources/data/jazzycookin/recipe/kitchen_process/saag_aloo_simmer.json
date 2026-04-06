@@ -1,46 +1,46 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:spinach"
-      },
-      "required_state": "spinach"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:potatoes"
-      },
-      "required_state": "potatoes"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:garlic"
-      },
-      "required_state": "garlic"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:ginger"
-      },
-      "required_state": "ginger"
-    }
-  ],
-  "preferred_tool": "saucepan",
-  "allowed_tools": [
-    "saucepan",
-    "pot"
-  ],
-  "tool_required": true,
-  "mode": "passive",
-  "duration": 185,
-  "preferred_heat": "low",
-  "output": {
-    "result": {
-      "id": "jazzycookin:saag_aloo_prep",
-      "count": 1
-    },
-    "state": "simmered"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:spinach"
+                                      },
+                       "required_state":  "spinach"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:potatoes"
+                                      },
+                       "required_state":  "potatoes"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:garlic"
+                                      },
+                       "required_state":  "garlic"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:ginger"
+                                      },
+                       "required_state":  "ginger"
+                   }
+               ],
+    "preferred_tool":  "saucepan",
+    "allowed_tools":  [
+                          "saucepan",
+                          "pot"
+                      ],
+    "tool_required":  true,
+    "mode":  "passive",
+    "duration":  185,
+    "preferred_heat":  "low",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:saag_aloo_prep",
+                                  "count":  1
+                              },
+                   "state":  "simmered"
+               }
 }

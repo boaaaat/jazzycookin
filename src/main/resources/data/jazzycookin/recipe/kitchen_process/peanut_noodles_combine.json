@@ -1,26 +1,26 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "mixing_bowl",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:spaghetti"
-      },
-      "required_state": "boiled"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:peanut_sauce"
-      },
-      "required_state": "smooth_mixture"
-    }
-  ],
-  "duration": 50,
-  "output": {
-    "result": {
-      "id": "jazzycookin:peanut_noodles_prep",
-      "count": 1
-    },
-    "state": "mixed"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "mixing_bowl",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:spaghetti"
+                                      },
+                       "required_state":  "boiled"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:peanut_sauce"
+                                      },
+                       "required_state":  "smooth_mixture"
+                   }
+               ],
+    "duration":  50,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:peanut_noodles_prep",
+                                  "count":  1
+                              },
+                   "state":  "mixed"
+               }
 }

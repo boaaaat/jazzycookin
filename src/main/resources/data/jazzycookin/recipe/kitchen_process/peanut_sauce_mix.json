@@ -1,26 +1,26 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "mixing_bowl",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:peanut_butter"
-      },
-      "required_state": "peanut_butter"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:soy_sauce"
-      },
-      "required_state": "soy_sauce"
-    }
-  ],
-  "duration": 45,
-  "output": {
-    "result": {
-      "id": "jazzycookin:peanut_sauce",
-      "count": 1
-    },
-    "state": "smooth_mixture"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "mixing_bowl",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:peanut_butter"
+                                      },
+                       "required_state":  "peanut_butter"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:soy_sauce"
+                                      },
+                       "required_state":  "soy_sauce"
+                   }
+               ],
+    "duration":  45,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:peanut_sauce",
+                                  "count":  1
+                              },
+                   "state":  "smooth_mixture"
+               }
 }

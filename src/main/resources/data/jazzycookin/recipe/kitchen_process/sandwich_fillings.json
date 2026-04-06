@@ -1,32 +1,32 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "prep_table",
-  "inputs": [
-    {
-      "ingredient": {
-        "tag": "jazzycookin:rested_proteins"
-      },
-      "required_state": "rested"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:cabbage"
-      },
-      "required_state": "chopped_cabbage"
-    }
-  ],
-  "preferred_tool": "paring_knife",
-  "allowed_tools": [
-    "paring_knife",
-    "chef_knife"
-  ],
-  "tool_required": true,
-  "duration": 40,
-  "output": {
-    "result": {
-      "id": "jazzycookin:sandwich_filling",
-      "count": 1
-    },
-    "state": "chopped"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "prep_table",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:rested_proteins"
+                                      },
+                       "required_state":  "rested"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:cabbage"
+                                      },
+                       "required_state":  "chopped_cabbage"
+                   }
+               ],
+    "preferred_tool":  "paring_knife",
+    "allowed_tools":  [
+                          "paring_knife",
+                          "chef_knife"
+                      ],
+    "tool_required":  true,
+    "duration":  40,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:sandwich_filling",
+                                  "count":  1
+                              },
+                   "state":  "chopped"
+               }
 }

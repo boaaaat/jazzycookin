@@ -1,37 +1,37 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:tomato_soup_base"
-      },
-      "required_state": "diced"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:broth"
-      },
-      "required_state": "broth"
-    }
-  ],
-  "preferred_tool": "pot",
-  "allowed_tools": [
-    "pot",
-    "stock_pot",
-    "saucepan"
-  ],
-  "tool_required": true,
-  "mode": "passive",
-  "duration": 180,
-  "preferred_heat": "medium",
-  "minimum_heat": "low",
-  "maximum_heat": "medium",
-  "output": {
-    "result": {
-      "id": "jazzycookin:tomato_soup_base",
-      "count": 1
-    },
-    "state": "soup_base"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:tomato_soup_base"
+                                      },
+                       "required_state":  "diced"
+                   },
+                   {
+                       "ingredient":  {
+                                          "tag":  "jazzycookin:broths"
+                                      },
+                       "required_state":  "pantry_ready"
+                   }
+               ],
+    "preferred_tool":  "pot",
+    "allowed_tools":  [
+                          "pot",
+                          "stock_pot",
+                          "saucepan"
+                      ],
+    "tool_required":  true,
+    "mode":  "passive",
+    "duration":  180,
+    "preferred_heat":  "medium",
+    "minimum_heat":  "low",
+    "maximum_heat":  "medium",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:tomato_soup_base",
+                                  "count":  1
+                              },
+                   "state":  "soup_base"
+               }
 }

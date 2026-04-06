@@ -1,45 +1,45 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:bread"
-      },
-      "required_state": "bread"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:eggs"
-      },
-      "required_state": "eggs"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:cinnamon"
-      },
-      "required_state": "cinnamon"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:powdered_sugar"
-      },
-      "required_state": "powdered_sugar"
-    }
-  ],
-  "preferred_tool": "pan",
-  "allowed_tools": [
-    "pan",
-    "frying_skillet"
-  ],
-  "tool_required": true,
-  "duration": 100,
-  "preferred_heat": "medium",
-  "output": {
-    "result": {
-      "id": "jazzycookin:french_toast_prep",
-      "count": 1
-    },
-    "state": "pan_fried"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:bread"
+                                      },
+                       "required_state":  "bread"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:eggs"
+                                      },
+                       "required_state":  "eggs"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:cinnamon"
+                                      },
+                       "required_state":  "cinnamon"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:powdered_sugar"
+                                      },
+                       "required_state":  "powdered_sugar"
+                   }
+               ],
+    "preferred_tool":  "pan",
+    "allowed_tools":  [
+                          "pan",
+                          "frying_skillet"
+                      ],
+    "tool_required":  true,
+    "duration":  100,
+    "preferred_heat":  "medium",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:french_toast_prep",
+                                  "count":  1
+                              },
+                   "state":  "pan_fried"
+               }
 }

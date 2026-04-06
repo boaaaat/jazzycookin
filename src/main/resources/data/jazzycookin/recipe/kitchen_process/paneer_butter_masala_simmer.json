@@ -1,46 +1,46 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "stove",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:paneer"
-      },
-      "required_state": "paneer"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:tomatoes"
-      },
-      "required_state": "tomatoes"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:butter"
-      },
-      "required_state": "butter"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:curry_powder"
-      },
-      "required_state": "curry_powder"
-    }
-  ],
-  "preferred_tool": "saucepan",
-  "allowed_tools": [
-    "saucepan",
-    "pot"
-  ],
-  "tool_required": true,
-  "mode": "passive",
-  "duration": 195,
-  "preferred_heat": "low",
-  "output": {
-    "result": {
-      "id": "jazzycookin:paneer_butter_masala_prep",
-      "count": 1
-    },
-    "state": "simmered"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "stove",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:paneer"
+                                      },
+                       "required_state":  "paneer"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:tomatoes"
+                                      },
+                       "required_state":  "tomatoes"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:butter"
+                                      },
+                       "required_state":  "butter"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:curry_powder"
+                                      },
+                       "required_state":  "curry_powder"
+                   }
+               ],
+    "preferred_tool":  "saucepan",
+    "allowed_tools":  [
+                          "saucepan",
+                          "pot"
+                      ],
+    "tool_required":  true,
+    "mode":  "passive",
+    "duration":  195,
+    "preferred_heat":  "low",
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:paneer_butter_masala_prep",
+                                  "count":  1
+                              },
+                   "state":  "simmered"
+               }
 }

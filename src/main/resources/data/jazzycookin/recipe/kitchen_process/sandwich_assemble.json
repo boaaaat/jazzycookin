@@ -1,38 +1,38 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "prep_table",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:bread"
-      },
-      "required_state": "bread"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:mayonnaise"
-      },
-      "required_state": "mayonnaise"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:mustard"
-      },
-      "required_state": "mustard"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:sandwich_filling"
-      },
-      "required_state": "chopped"
-    }
-  ],
-  "duration": 45,
-  "output": {
-    "result": {
-      "id": "jazzycookin:assembled_sandwich",
-      "count": 1
-    },
-    "state": "assembled_sandwich"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "prep_table",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:bread"
+                                      },
+                       "required_state":  "bread"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:mayonnaise"
+                                      },
+                       "required_state":  "mayonnaise"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:mustard"
+                                      },
+                       "required_state":  "mustard"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:sandwich_filling"
+                                      },
+                       "required_state":  "chopped"
+                   }
+               ],
+    "duration":  45,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:assembled_sandwich",
+                                  "count":  1
+                              },
+                   "state":  "assembled_sandwich"
+               }
 }

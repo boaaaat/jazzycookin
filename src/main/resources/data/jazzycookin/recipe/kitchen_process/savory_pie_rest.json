@@ -1,21 +1,21 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "resting_board",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:assembled_savory_pie"
-      },
-      "required_state": "cooled_pie"
-    }
-  ],
-  "mode": "passive",
-  "duration": 70,
-  "output": {
-    "result": {
-      "id": "jazzycookin:assembled_savory_pie",
-      "count": 1
-    },
-    "state": "rested_pie"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "resting_board",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:assembled_savory_pie"
+                                      },
+                       "required_state":  "cooled_pie"
+                   }
+               ],
+    "mode":  "passive",
+    "duration":  70,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:assembled_savory_pie",
+                                  "count":  1
+                              },
+                   "state":  "rested_pie"
+               }
 }

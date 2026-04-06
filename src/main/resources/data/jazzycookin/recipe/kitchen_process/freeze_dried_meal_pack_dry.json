@@ -1,21 +1,21 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "freeze_dryer",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:portioned_meal"
-      },
-      "required_state": "portioned_meal"
-    }
-  ],
-  "mode": "passive",
-  "duration": 260,
-  "output": {
-    "result": {
-      "id": "jazzycookin:freeze_dried_meal",
-      "count": 1
-    },
-    "state": "freeze_dried"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "freeze_dryer",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:portioned_meal"
+                                      },
+                       "required_state":  "portioned_meal"
+                   }
+               ],
+    "mode":  "passive",
+    "duration":  260,
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:freeze_dried_meal",
+                                  "count":  1
+                              },
+                   "state":  "freeze_dried"
+               }
 }

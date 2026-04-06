@@ -1,42 +1,42 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "food_processor",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:pecans"
-      },
-      "required_state": "pecans"
-    }
-  ],
-  "duration": 90,
-  "outcomes": [
-    {
-      "band": "under",
-      "output": {
-        "result": {
-          "id": "jazzycookin:nut_butter",
-          "count": 1
-        },
-        "state": "chunky"
-      }
-    },
-    {
-      "band": "over",
-      "output": {
-        "result": {
-          "id": "jazzycookin:nut_butter",
-          "count": 1
-        },
-        "state": "paste"
-      }
-    }
-  ],
-  "output": {
-    "result": {
-      "id": "jazzycookin:nut_butter",
-      "count": 1
-    },
-    "state": "smooth"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "food_processor",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:pecans"
+                                      },
+                       "required_state":  "pecans"
+                   }
+               ],
+    "duration":  90,
+    "outcomes":  [
+                     {
+                         "band":  "under",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:nut_butter",
+                                                       "count":  1
+                                                   },
+                                        "state":  "chunky"
+                                    }
+                     },
+                     {
+                         "band":  "over",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:nut_butter",
+                                                       "count":  1
+                                                   },
+                                        "state":  "paste"
+                                    }
+                     }
+                 ],
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:nut_butter",
+                                  "count":  1
+                              },
+                   "state":  "smooth"
+               }
 }

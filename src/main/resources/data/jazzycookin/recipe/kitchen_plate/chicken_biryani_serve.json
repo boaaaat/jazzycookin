@@ -1,30 +1,30 @@
 {
-  "type": "jazzycookin:kitchen_plate",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:chicken_biryani_prep"
-      },
-      "required_state": "simmered"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:ceramic_plate"
-      },
-      "required_state": "pantry_ready"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:spoon"
-      },
-      "required_state": "pantry_ready"
-    }
-  ],
-  "output": {
-    "result": {
-      "id": "jazzycookin:chicken_biryani",
-      "count": 1
-    },
-    "state": "plated"
-  }
+    "type":  "jazzycookin:kitchen_plate",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:chicken_biryani_prep"
+                                      },
+                       "required_state":  "simmered"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:ceramic_plate"
+                                      },
+                       "required_state":  "pantry_ready"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:spoon"
+                                      },
+                       "required_state":  "pantry_ready"
+                   }
+               ],
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:chicken_biryani",
+                                  "count":  1
+                              },
+                   "state":  "plated"
+               }
 }

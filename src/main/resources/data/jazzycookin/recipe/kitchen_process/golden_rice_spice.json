@@ -1,48 +1,48 @@
 {
-  "type": "jazzycookin:kitchen_process",
-  "station": "spice_grinder",
-  "inputs": [
-    {
-      "ingredient": {
-        "item": "jazzycookin:turmeric"
-      },
-      "required_state": "turmeric"
-    },
-    {
-      "ingredient": {
-        "item": "jazzycookin:cumin"
-      },
-      "required_state": "cumin"
-    }
-  ],
-  "duration": 45,
-  "outcomes": [
-    {
-      "band": "under",
-      "output": {
-        "result": {
-          "id": "jazzycookin:seasoning_blend",
-          "count": 1
-        },
-        "state": "coarse_powder"
-      }
-    },
-    {
-      "band": "over",
-      "output": {
-        "result": {
-          "id": "jazzycookin:seasoning_blend",
-          "count": 1
-        },
-        "state": "ground_spice"
-      }
-    }
-  ],
-  "output": {
-    "result": {
-      "id": "jazzycookin:seasoning_blend",
-      "count": 1
-    },
-    "state": "fine_powder"
-  }
+    "type":  "jazzycookin:kitchen_process",
+    "station":  "spice_grinder",
+    "inputs":  [
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:turmeric"
+                                      },
+                       "required_state":  "turmeric"
+                   },
+                   {
+                       "ingredient":  {
+                                          "item":  "jazzycookin:cumin"
+                                      },
+                       "required_state":  "cumin"
+                   }
+               ],
+    "duration":  45,
+    "outcomes":  [
+                     {
+                         "band":  "under",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:seasoning_blend",
+                                                       "count":  1
+                                                   },
+                                        "state":  "coarse_powder"
+                                    }
+                     },
+                     {
+                         "band":  "over",
+                         "output":  {
+                                        "result":  {
+                                                       "id":  "jazzycookin:seasoning_blend",
+                                                       "count":  1
+                                                   },
+                                        "state":  "ground_spice"
+                                    }
+                     }
+                 ],
+    "output":  {
+                   "result":  {
+                                  "id":  "jazzycookin:seasoning_blend",
+                                  "count":  1
+                              },
+                   "state":  "fine_powder"
+               }
 }
