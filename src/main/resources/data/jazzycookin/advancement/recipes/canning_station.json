@@ -1,0 +1,65 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "criteria":  {
+                     "has_minecraft_glass_pane":  {
+                                                      "conditions":  {
+                                                                         "items":  [
+                                                                                       {
+                                                                                           "items":  "minecraft:glass_pane"
+                                                                                       }
+                                                                                   ]
+                                                                     },
+                                                      "trigger":  "minecraft:inventory_changed"
+                                                  },
+                     "has_jazzycookin_canning_jar":  {
+                                                         "conditions":  {
+                                                                            "items":  [
+                                                                                          {
+                                                                                              "items":  "jazzycookin:canning_jar"
+                                                                                          }
+                                                                                      ]
+                                                                        },
+                                                         "trigger":  "minecraft:inventory_changed"
+                                                     },
+                     "has_minecraft_planks":  {
+                                                  "conditions":  {
+                                                                     "items":  [
+                                                                                   {
+                                                                                       "items":  "#minecraft:planks"
+                                                                                   }
+                                                                               ]
+                                                                 },
+                                                  "trigger":  "minecraft:inventory_changed"
+                                              },
+                     "has_minecraft_cauldron":  {
+                                                    "conditions":  {
+                                                                       "items":  [
+                                                                                     {
+                                                                                         "items":  "minecraft:cauldron"
+                                                                                     }
+                                                                                 ]
+                                                                   },
+                                                    "trigger":  "minecraft:inventory_changed"
+                                                },
+                     "has_the_recipe":  {
+                                            "conditions":  {
+                                                               "recipe":  "jazzycookin:canning_station"
+                                                           },
+                                            "trigger":  "minecraft:recipe_unlocked"
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_the_recipe",
+                             "has_minecraft_glass_pane",
+                             "has_jazzycookin_canning_jar",
+                             "has_minecraft_planks",
+                             "has_minecraft_cauldron"
+                         ]
+                     ],
+    "rewards":  {
+                    "recipes":  [
+                                    "jazzycookin:canning_station"
+                                ]
+                }
+}

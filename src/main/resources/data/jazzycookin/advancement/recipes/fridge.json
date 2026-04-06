@@ -1,0 +1,65 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "criteria":  {
+                     "has_minecraft_iron_ingot":  {
+                                                      "conditions":  {
+                                                                         "items":  [
+                                                                                       {
+                                                                                           "items":  "minecraft:iron_ingot"
+                                                                                       }
+                                                                                   ]
+                                                                     },
+                                                      "trigger":  "minecraft:inventory_changed"
+                                                  },
+                     "has_minecraft_glass_pane":  {
+                                                      "conditions":  {
+                                                                         "items":  [
+                                                                                       {
+                                                                                           "items":  "minecraft:glass_pane"
+                                                                                       }
+                                                                                   ]
+                                                                     },
+                                                      "trigger":  "minecraft:inventory_changed"
+                                                  },
+                     "has_minecraft_chest":  {
+                                                 "conditions":  {
+                                                                    "items":  [
+                                                                                  {
+                                                                                      "items":  "minecraft:chest"
+                                                                                  }
+                                                                              ]
+                                                                },
+                                                 "trigger":  "minecraft:inventory_changed"
+                                             },
+                     "has_minecraft_ice":  {
+                                               "conditions":  {
+                                                                  "items":  [
+                                                                                {
+                                                                                    "items":  "minecraft:ice"
+                                                                                }
+                                                                            ]
+                                                              },
+                                               "trigger":  "minecraft:inventory_changed"
+                                           },
+                     "has_the_recipe":  {
+                                            "conditions":  {
+                                                               "recipe":  "jazzycookin:fridge"
+                                                           },
+                                            "trigger":  "minecraft:recipe_unlocked"
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_the_recipe",
+                             "has_minecraft_iron_ingot",
+                             "has_minecraft_glass_pane",
+                             "has_minecraft_chest",
+                             "has_minecraft_ice"
+                         ]
+                     ],
+    "rewards":  {
+                    "recipes":  [
+                                    "jazzycookin:fridge"
+                                ]
+                }
+}

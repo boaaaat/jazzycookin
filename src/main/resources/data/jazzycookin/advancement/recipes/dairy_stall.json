@@ -1,0 +1,54 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "criteria":  {
+                     "has_minecraft_white_wool":  {
+                                                      "conditions":  {
+                                                                         "items":  [
+                                                                                       {
+                                                                                           "items":  "minecraft:white_wool"
+                                                                                       }
+                                                                                   ]
+                                                                     },
+                                                      "trigger":  "minecraft:inventory_changed"
+                                                  },
+                     "has_minecraft_bucket":  {
+                                                  "conditions":  {
+                                                                     "items":  [
+                                                                                   {
+                                                                                       "items":  "minecraft:bucket"
+                                                                                   }
+                                                                               ]
+                                                                 },
+                                                  "trigger":  "minecraft:inventory_changed"
+                                              },
+                     "has_minecraft_planks":  {
+                                                  "conditions":  {
+                                                                     "items":  [
+                                                                                   {
+                                                                                       "items":  "#minecraft:planks"
+                                                                                   }
+                                                                               ]
+                                                                 },
+                                                  "trigger":  "minecraft:inventory_changed"
+                                              },
+                     "has_the_recipe":  {
+                                            "conditions":  {
+                                                               "recipe":  "jazzycookin:dairy_stall"
+                                                           },
+                                            "trigger":  "minecraft:recipe_unlocked"
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_the_recipe",
+                             "has_minecraft_white_wool",
+                             "has_minecraft_bucket",
+                             "has_minecraft_planks"
+                         ]
+                     ],
+    "rewards":  {
+                    "recipes":  [
+                                    "jazzycookin:dairy_stall"
+                                ]
+                }
+}

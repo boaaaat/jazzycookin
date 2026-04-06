@@ -1,0 +1,54 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "criteria":  {
+                     "has_minecraft_brick":  {
+                                                 "conditions":  {
+                                                                    "items":  [
+                                                                                  {
+                                                                                      "items":  "minecraft:brick"
+                                                                                  }
+                                                                              ]
+                                                                },
+                                                 "trigger":  "minecraft:inventory_changed"
+                                             },
+                     "has_minecraft_furnace":  {
+                                                   "conditions":  {
+                                                                      "items":  [
+                                                                                    {
+                                                                                        "items":  "minecraft:furnace"
+                                                                                    }
+                                                                                ]
+                                                                  },
+                                                   "trigger":  "minecraft:inventory_changed"
+                                               },
+                     "has_minecraft_smooth_stone":  {
+                                                        "conditions":  {
+                                                                           "items":  [
+                                                                                         {
+                                                                                             "items":  "minecraft:smooth_stone"
+                                                                                         }
+                                                                                     ]
+                                                                       },
+                                                        "trigger":  "minecraft:inventory_changed"
+                                                    },
+                     "has_the_recipe":  {
+                                            "conditions":  {
+                                                               "recipe":  "jazzycookin:oven"
+                                                           },
+                                            "trigger":  "minecraft:recipe_unlocked"
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_the_recipe",
+                             "has_minecraft_brick",
+                             "has_minecraft_furnace",
+                             "has_minecraft_smooth_stone"
+                         ]
+                     ],
+    "rewards":  {
+                    "recipes":  [
+                                    "jazzycookin:oven"
+                                ]
+                }
+}

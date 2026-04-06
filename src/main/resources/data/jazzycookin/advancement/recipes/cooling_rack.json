@@ -1,0 +1,43 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "criteria":  {
+                     "has_minecraft_iron_ingot":  {
+                                                      "conditions":  {
+                                                                         "items":  [
+                                                                                       {
+                                                                                           "items":  "minecraft:iron_ingot"
+                                                                                       }
+                                                                                   ]
+                                                                     },
+                                                      "trigger":  "minecraft:inventory_changed"
+                                                  },
+                     "has_minecraft_iron_bars":  {
+                                                     "conditions":  {
+                                                                        "items":  [
+                                                                                      {
+                                                                                          "items":  "minecraft:iron_bars"
+                                                                                      }
+                                                                                  ]
+                                                                    },
+                                                     "trigger":  "minecraft:inventory_changed"
+                                                 },
+                     "has_the_recipe":  {
+                                            "conditions":  {
+                                                               "recipe":  "jazzycookin:cooling_rack"
+                                                           },
+                                            "trigger":  "minecraft:recipe_unlocked"
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_the_recipe",
+                             "has_minecraft_iron_ingot",
+                             "has_minecraft_iron_bars"
+                         ]
+                     ],
+    "rewards":  {
+                    "recipes":  [
+                                    "jazzycookin:cooling_rack"
+                                ]
+                }
+}

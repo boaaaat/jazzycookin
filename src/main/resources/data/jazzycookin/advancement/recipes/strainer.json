@@ -1,0 +1,54 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "criteria":  {
+                     "has_minecraft_iron_bars":  {
+                                                     "conditions":  {
+                                                                        "items":  [
+                                                                                      {
+                                                                                          "items":  "minecraft:iron_bars"
+                                                                                      }
+                                                                                  ]
+                                                                    },
+                                                     "trigger":  "minecraft:inventory_changed"
+                                                 },
+                     "has_jazzycookin_fine_strainer":  {
+                                                           "conditions":  {
+                                                                              "items":  [
+                                                                                            {
+                                                                                                "items":  "jazzycookin:fine_strainer"
+                                                                                            }
+                                                                                        ]
+                                                                          },
+                                                           "trigger":  "minecraft:inventory_changed"
+                                                       },
+                     "has_minecraft_iron_ingot":  {
+                                                      "conditions":  {
+                                                                         "items":  [
+                                                                                       {
+                                                                                           "items":  "minecraft:iron_ingot"
+                                                                                       }
+                                                                                   ]
+                                                                     },
+                                                      "trigger":  "minecraft:inventory_changed"
+                                                  },
+                     "has_the_recipe":  {
+                                            "conditions":  {
+                                                               "recipe":  "jazzycookin:strainer"
+                                                           },
+                                            "trigger":  "minecraft:recipe_unlocked"
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_the_recipe",
+                             "has_minecraft_iron_bars",
+                             "has_jazzycookin_fine_strainer",
+                             "has_minecraft_iron_ingot"
+                         ]
+                     ],
+    "rewards":  {
+                    "recipes":  [
+                                    "jazzycookin:strainer"
+                                ]
+                }
+}

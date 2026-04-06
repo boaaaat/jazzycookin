@@ -1,0 +1,54 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "criteria":  {
+                     "has_minecraft_allium":  {
+                                                  "conditions":  {
+                                                                     "items":  [
+                                                                                   {
+                                                                                       "items":  "minecraft:allium"
+                                                                                   }
+                                                                               ]
+                                                                 },
+                                                  "trigger":  "minecraft:inventory_changed"
+                                              },
+                     "has_minecraft_wheat_seeds":  {
+                                                       "conditions":  {
+                                                                          "items":  [
+                                                                                        {
+                                                                                            "items":  "minecraft:wheat_seeds"
+                                                                                        }
+                                                                                    ]
+                                                                      },
+                                                       "trigger":  "minecraft:inventory_changed"
+                                                   },
+                     "has_minecraft_dirt":  {
+                                                "conditions":  {
+                                                                   "items":  [
+                                                                                 {
+                                                                                     "items":  "minecraft:dirt"
+                                                                                 }
+                                                                             ]
+                                                               },
+                                                "trigger":  "minecraft:inventory_changed"
+                                            },
+                     "has_the_recipe":  {
+                                            "conditions":  {
+                                                               "recipe":  "jazzycookin:onion_patch"
+                                                           },
+                                            "trigger":  "minecraft:recipe_unlocked"
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_the_recipe",
+                             "has_minecraft_allium",
+                             "has_minecraft_wheat_seeds",
+                             "has_minecraft_dirt"
+                         ]
+                     ],
+    "rewards":  {
+                    "recipes":  [
+                                    "jazzycookin:onion_patch"
+                                ]
+                }
+}

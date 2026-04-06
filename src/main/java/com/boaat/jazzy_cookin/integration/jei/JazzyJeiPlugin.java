@@ -14,7 +14,7 @@ import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
-import mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter;
+import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
@@ -38,7 +38,7 @@ public class JazzyJeiPlugin implements IModPlugin {
 
     @Override
     public void registerItemSubtypes(ISubtypeRegistration registration) {
-        IIngredientSubtypeInterpreter<ItemStack> interpreter = (stack, context) -> {
+        ISubtypeInterpreter<ItemStack> interpreter = (stack, context) -> {
             if (stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
                 var data = KitchenStackUtil.getData(stack);
                 if (data != null) {
@@ -46,7 +46,7 @@ public class JazzyJeiPlugin implements IModPlugin {
                 }
                 return ingredientItem.defaultData(0L).state().getSerializedName();
             }
-            return IIngredientSubtypeInterpreter.NONE;
+            return null;
         };
 
         BuiltInRegistries.ITEM.stream()

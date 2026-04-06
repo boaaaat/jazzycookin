@@ -82,10 +82,12 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void vanillaCraftingRecipesLoad(GameTestHelper helper) {
+    public static void recipeDataLoads(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ResourceLocation stoveRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "stove");
+        ResourceLocation kitchenRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "kitchen_process/fresh_lemon_juice_cut");
         require(level.getRecipeManager().byKey(stoveRecipeId).isPresent(), "Expected vanilla crafting recipe jazzycookin:stove to be present");
+        require(level.getRecipeManager().byKey(kitchenRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:fresh_lemon_juice_cut to be present");
         helper.succeed();
     }
 

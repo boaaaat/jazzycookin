@@ -1,0 +1,65 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "criteria":  {
+                     "has_minecraft_iron_ingot":  {
+                                                      "conditions":  {
+                                                                         "items":  [
+                                                                                       {
+                                                                                           "items":  "minecraft:iron_ingot"
+                                                                                       }
+                                                                                   ]
+                                                                     },
+                                                      "trigger":  "minecraft:inventory_changed"
+                                                  },
+                     "has_minecraft_logs":  {
+                                                "conditions":  {
+                                                                   "items":  [
+                                                                                 {
+                                                                                     "items":  "#minecraft:logs"
+                                                                                 }
+                                                                             ]
+                                                               },
+                                                "trigger":  "minecraft:inventory_changed"
+                                            },
+                     "has_minecraft_smoker":  {
+                                                  "conditions":  {
+                                                                     "items":  [
+                                                                                   {
+                                                                                       "items":  "minecraft:smoker"
+                                                                                   }
+                                                                               ]
+                                                                 },
+                                                  "trigger":  "minecraft:inventory_changed"
+                                              },
+                     "has_minecraft_campfire":  {
+                                                    "conditions":  {
+                                                                       "items":  [
+                                                                                     {
+                                                                                         "items":  "minecraft:campfire"
+                                                                                     }
+                                                                                 ]
+                                                                   },
+                                                    "trigger":  "minecraft:inventory_changed"
+                                                },
+                     "has_the_recipe":  {
+                                            "conditions":  {
+                                                               "recipe":  "jazzycookin:smoker"
+                                                           },
+                                            "trigger":  "minecraft:recipe_unlocked"
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_the_recipe",
+                             "has_minecraft_iron_ingot",
+                             "has_minecraft_logs",
+                             "has_minecraft_smoker",
+                             "has_minecraft_campfire"
+                         ]
+                     ],
+    "rewards":  {
+                    "recipes":  [
+                                    "jazzycookin:smoker"
+                                ]
+                }
+}

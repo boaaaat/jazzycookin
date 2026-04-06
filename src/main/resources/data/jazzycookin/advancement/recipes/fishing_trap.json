@@ -1,0 +1,54 @@
+{
+    "parent":  "minecraft:recipes/root",
+    "criteria":  {
+                     "has_minecraft_string":  {
+                                                  "conditions":  {
+                                                                     "items":  [
+                                                                                   {
+                                                                                       "items":  "minecraft:string"
+                                                                                   }
+                                                                               ]
+                                                                 },
+                                                  "trigger":  "minecraft:inventory_changed"
+                                              },
+                     "has_minecraft_tripwire_hook":  {
+                                                         "conditions":  {
+                                                                            "items":  [
+                                                                                          {
+                                                                                              "items":  "minecraft:tripwire_hook"
+                                                                                          }
+                                                                                      ]
+                                                                        },
+                                                         "trigger":  "minecraft:inventory_changed"
+                                                     },
+                     "has_minecraft_barrel":  {
+                                                  "conditions":  {
+                                                                     "items":  [
+                                                                                   {
+                                                                                       "items":  "minecraft:barrel"
+                                                                                   }
+                                                                               ]
+                                                                 },
+                                                  "trigger":  "minecraft:inventory_changed"
+                                              },
+                     "has_the_recipe":  {
+                                            "conditions":  {
+                                                               "recipe":  "jazzycookin:fishing_trap"
+                                                           },
+                                            "trigger":  "minecraft:recipe_unlocked"
+                                        }
+                 },
+    "requirements":  [
+                         [
+                             "has_the_recipe",
+                             "has_minecraft_string",
+                             "has_minecraft_tripwire_hook",
+                             "has_minecraft_barrel"
+                         ]
+                     ],
+    "rewards":  {
+                    "recipes":  [
+                                    "jazzycookin:fishing_trap"
+                                ]
+                }
+}
