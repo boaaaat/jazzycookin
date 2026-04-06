@@ -134,6 +134,7 @@ public final class JazzyItems {
         SOY_MILK("soy_milk", stableDairy(DAY * 30L, 20, 2, 1, true, false)),
         CHEESE("cheese", stableDairy(DAY * 18L, 12, 3, 2, true, true)),
         CREAM_CHEESE("cream_cheese", stableDairy(DAY * 10L, 0, 2, 2, true, true)),
+        PANEER("paneer", stableDairy(DAY * 12L, 32, 4, 4, true, true)),
 
         CHICKEN("chicken", protein(DAY * 4L, 120, 6, 2, true)),
         FISH_FILLET("fish_fillet", protein(DAY * 3L, 70, 5, 2, true)),
@@ -152,6 +153,8 @@ public final class JazzyItems {
         GARLIC("garlic", produce(DAY * 20L, 18, 1, 1, false)),
         GINGER("ginger", produce(DAY * 14L, 18, 1, 1, false)),
         SHALLOTS("shallots", produce(DAY * 16L, 28, 1, 1, false)),
+        SPINACH("spinach", produce(DAY * 5L, 18, 1, 1, false)),
+        GREEN_PEAS("green_peas", produce(DAY * 10L, 28, 2, 1, true)),
         JALAPENOS("jalapenos", produce(DAY * 8L, 16, 1, 2, true)),
         RED_PEPPER("red_pepper", produce(DAY * 10L, 20, 1, 2, true)),
 
@@ -340,6 +343,26 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenIngredientItem> APPLE_OATMEAL_PREP = prepared("apple_oatmeal_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 1L, 50, 6, 5, true, false);
     public static final DeferredItem<KitchenIngredientItem> SHAKSHUKA_PREP = prepared("shakshuka_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 1L, 60, 6, 5, true, false);
     public static final DeferredItem<KitchenIngredientItem> PEANUT_TOFU_NOODLES_PREP = prepared("peanut_tofu_noodles_prep", IngredientState.MIXED, PantrySortTab.OTHER, DAY * 2L, 70, 7, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CHANA_MASALA_PREP = prepared("chana_masala_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 3L, 90, 7, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> DAL_TADKA_PREP = prepared("dal_tadka_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 3L, 85, 7, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> PALAK_PANEER_PREP = prepared("palak_paneer_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 80, 7, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> PANEER_BUTTER_MASALA_PREP = prepared("paneer_butter_masala_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 85, 7, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> MATAR_PANEER_PREP = prepared("matar_paneer_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 80, 7, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> VEGETABLE_PULAO_PREP = prepared("vegetable_pulao_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 85, 7, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> JEERA_RICE_PREP = prepared("jeera_rice_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 70, 5, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> RAJMA_CHAWAL_PREP = prepared("rajma_chawal_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 90, 8, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> EGG_CURRY_PREP = prepared("egg_curry_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 70, 7, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> BUTTER_CHICKEN_PREP = prepared("butter_chicken_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 3L, 90, 8, 5, true, true);
+    public static final DeferredItem<KitchenIngredientItem> CHICKEN_BIRYANI_PREP = prepared("chicken_biryani_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 100, 8, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> ALOO_MATAR_PREP = prepared("aloo_matar_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 75, 7, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> SAAG_ALOO_PREP = prepared("saag_aloo_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 75, 7, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CABBAGE_SABZI_PREP = prepared("cabbage_sabzi_prep", IngredientState.PAN_FRIED, PantrySortTab.OTHER, DAY * 2L, 60, 5, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CHICKEN_FRIED_RICE_PREP = prepared("chicken_fried_rice_prep", IngredientState.PAN_FRIED, PantrySortTab.OTHER, DAY * 2L, 75, 8, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> FALAFEL_PREP = prepared("falafel_prep", IngredientState.DEEP_FRIED, PantrySortTab.OTHER, DAY * 2L, 70, 6, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CABBAGE_ROLLS_PREP = prepared("cabbage_rolls_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 3L, 90, 8, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CHICKEN_NOODLE_SOUP_PREP = prepared("chicken_noodle_soup_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 85, 8, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> TOFU_STIR_FRY_PREP = prepared("tofu_stir_fry_prep", IngredientState.PAN_FRIED, PantrySortTab.OTHER, DAY * 2L, 70, 7, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CHICKPEA_COUSCOUS_PREP = prepared("chickpea_couscous_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 70, 7, 4, true, false);
     public static final DeferredItem<KitchenIngredientItem> STICKED_PRODUCT = prepared("sticked_product", IngredientState.STICKED_PRODUCT, PantrySortTab.OTHER, DAY * 2L, 0, 1, 0, true, false);
 
     private static final List<DeferredItem<KitchenIngredientItem>> PREPARED_ITEM_LIST = List.of(
@@ -428,6 +451,26 @@ public final class JazzyItems {
             APPLE_OATMEAL_PREP,
             SHAKSHUKA_PREP,
             PEANUT_TOFU_NOODLES_PREP,
+            CHANA_MASALA_PREP,
+            DAL_TADKA_PREP,
+            PALAK_PANEER_PREP,
+            PANEER_BUTTER_MASALA_PREP,
+            MATAR_PANEER_PREP,
+            VEGETABLE_PULAO_PREP,
+            JEERA_RICE_PREP,
+            RAJMA_CHAWAL_PREP,
+            EGG_CURRY_PREP,
+            BUTTER_CHICKEN_PREP,
+            CHICKEN_BIRYANI_PREP,
+            ALOO_MATAR_PREP,
+            SAAG_ALOO_PREP,
+            CABBAGE_SABZI_PREP,
+            CHICKEN_FRIED_RICE_PREP,
+            FALAFEL_PREP,
+            CABBAGE_ROLLS_PREP,
+            CHICKEN_NOODLE_SOUP_PREP,
+            TOFU_STIR_FRY_PREP,
+            CHICKPEA_COUSCOUS_PREP,
             STICKED_PRODUCT
     );
 
@@ -501,6 +544,26 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenMealItem> APPLE_OATMEAL = meal("apple_oatmeal", IngredientState.PLATED, DAY * 1L, 6, 6, CERAMIC_BOWL, SPOON);
     public static final DeferredItem<KitchenMealItem> SHAKSHUKA = meal("shakshuka", IngredientState.PLATED, DAY * 1L, 7, 6, CERAMIC_BOWL, SPOON);
     public static final DeferredItem<KitchenMealItem> PEANUT_TOFU_NOODLES = meal("peanut_tofu_noodles", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_BOWL, CHOPSTICKS);
+    public static final DeferredItem<KitchenMealItem> CHANA_MASALA = meal("chana_masala", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> DAL_TADKA = meal("dal_tadka", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> PALAK_PANEER = meal("palak_paneer", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> PANEER_BUTTER_MASALA = meal("paneer_butter_masala", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> MATAR_PANEER = meal("matar_paneer", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> VEGETABLE_PULAO = meal("vegetable_pulao", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_PLATE, SPOON);
+    public static final DeferredItem<KitchenMealItem> JEERA_RICE = meal("jeera_rice", IngredientState.PLATED, DAY * 2L, 6, 5, CERAMIC_PLATE, SPOON);
+    public static final DeferredItem<KitchenMealItem> RAJMA_CHAWAL = meal("rajma_chawal", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> EGG_CURRY = meal("egg_curry", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> BUTTER_CHICKEN = meal("butter_chicken", IngredientState.PLATED, DAY * 3L, 9, 6, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> CHICKEN_BIRYANI = meal("chicken_biryani", IngredientState.PLATED, DAY * 2L, 9, 6, CERAMIC_PLATE, SPOON);
+    public static final DeferredItem<KitchenMealItem> ALOO_MATAR = meal("aloo_matar", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> SAAG_ALOO = meal("saag_aloo", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> CABBAGE_SABZI = meal("cabbage_sabzi", IngredientState.PLATED, DAY * 2L, 6, 5, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> CHICKEN_FRIED_RICE = meal("chicken_fried_rice", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_PLATE, SPOON);
+    public static final DeferredItem<KitchenMealItem> FALAFEL_PLATE = meal("falafel_plate", IngredientState.PLATED, DAY * 2L, 7, 6, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> CABBAGE_ROLLS = meal("cabbage_rolls", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_PLATE, FORK);
+    public static final DeferredItem<KitchenMealItem> CHICKEN_NOODLE_SOUP = meal("chicken_noodle_soup", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> TOFU_STIR_FRY = meal("tofu_stir_fry", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, CHOPSTICKS);
+    public static final DeferredItem<KitchenMealItem> CHICKPEA_COUSCOUS = meal("chickpea_couscous", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, SPOON);
 
     private static final List<DeferredItem<KitchenMealItem>> MEAL_ITEM_LIST = List.of(
             FRUIT_JUICE,
@@ -550,7 +613,27 @@ public final class JazzyItems {
             FRENCH_TOAST,
             APPLE_OATMEAL,
             SHAKSHUKA,
-            PEANUT_TOFU_NOODLES
+            PEANUT_TOFU_NOODLES,
+            CHANA_MASALA,
+            DAL_TADKA,
+            PALAK_PANEER,
+            PANEER_BUTTER_MASALA,
+            MATAR_PANEER,
+            VEGETABLE_PULAO,
+            JEERA_RICE,
+            RAJMA_CHAWAL,
+            EGG_CURRY,
+            BUTTER_CHICKEN,
+            CHICKEN_BIRYANI,
+            ALOO_MATAR,
+            SAAG_ALOO,
+            CABBAGE_SABZI,
+            CHICKEN_FRIED_RICE,
+            FALAFEL_PLATE,
+            CABBAGE_ROLLS,
+            CHICKEN_NOODLE_SOUP,
+            TOFU_STIR_FRY,
+            CHICKPEA_COUSCOUS
     );
 
     private JazzyItems() {

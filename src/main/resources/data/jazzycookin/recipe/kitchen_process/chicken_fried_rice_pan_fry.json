@@ -1,0 +1,45 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:rice"
+      },
+      "required_state": "rice"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:chicken"
+      },
+      "required_state": "chicken"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:eggs"
+      },
+      "required_state": "eggs"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:soy_sauce"
+      },
+      "required_state": "soy_sauce"
+    }
+  ],
+  "preferred_tool": "pan",
+  "allowed_tools": [
+    "pan",
+    "frying_skillet"
+  ],
+  "tool_required": true,
+  "duration": 150,
+  "preferred_heat": "medium",
+  "output": {
+    "result": {
+      "id": "jazzycookin:chicken_fried_rice_prep",
+      "count": 1
+    },
+    "state": "pan_fried"
+  }
+}

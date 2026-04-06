@@ -1,0 +1,40 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:rice"
+      },
+      "required_state": "rice"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:cumin"
+      },
+      "required_state": "cumin"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:butter"
+      },
+      "required_state": "butter"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 170,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:jeera_rice_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

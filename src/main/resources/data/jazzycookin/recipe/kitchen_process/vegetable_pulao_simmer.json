@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:rice"
+      },
+      "required_state": "rice"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:carrots"
+      },
+      "required_state": "carrots"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:green_peas"
+      },
+      "required_state": "green_peas"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:onions"
+      },
+      "required_state": "onions"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 190,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:vegetable_pulao_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

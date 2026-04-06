@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:chickpeas"
+      },
+      "required_state": "chickpeas"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:couscous"
+      },
+      "required_state": "couscous"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:carrots"
+      },
+      "required_state": "carrots"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:cumin"
+      },
+      "required_state": "cumin"
+    }
+  ],
+  "preferred_tool": "saucepan",
+  "allowed_tools": [
+    "saucepan",
+    "pot"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 165,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:chickpea_couscous_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

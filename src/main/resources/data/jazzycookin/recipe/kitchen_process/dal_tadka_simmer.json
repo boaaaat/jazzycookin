@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:lentils"
+      },
+      "required_state": "lentils"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:onions"
+      },
+      "required_state": "onions"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:cumin"
+      },
+      "required_state": "cumin"
+    }
+  ],
+  "preferred_tool": "saucepan",
+  "allowed_tools": [
+    "saucepan",
+    "pot"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 200,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:dal_tadka_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}
