@@ -1,0 +1,60 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:red_pepper"
+      },
+      "required_state": "red_pepper"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:onions"
+      },
+      "required_state": "onions"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    }
+  ],
+  "preferred_tool": "chef_knife",
+  "allowed_tools": [
+    "chef_knife",
+    "paring_knife"
+  ],
+  "tool_required": true,
+  "duration": 55,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:confetti_rice_base",
+          "count": 1
+        },
+        "state": "chopped"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:confetti_rice_base",
+          "count": 1
+        },
+        "state": "minced"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:confetti_rice_base",
+      "count": 1
+    },
+    "state": "diced"
+  }
+}

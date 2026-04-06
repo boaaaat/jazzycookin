@@ -79,6 +79,7 @@ public final class JazzyItems {
         CORNMEAL("cornmeal", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 75L, 30, 2, 0)),
         WHITE_RICE_FLOUR("white_rice_flour", flour(DAY * 90L, 0, 1, 0)),
         BROWN_RICE_FLOUR("brown_rice_flour", flour(DAY * 60L, 0, 1, 0)),
+        RICE("rice", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 180L, 90, 3, 1)),
         ROLLED_OATS("rolled_oats", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 90L, 40, 2, 1)),
         QUICK_OATS("quick_oats", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 75L, 30, 2, 1)),
         PASTA("pasta", grain(PantrySortTab.GRAINS_AND_FLOURS, DAY * 120L, 100, 2, 1)),
@@ -101,6 +102,7 @@ public final class JazzyItems {
         NUTMEG("nutmeg", seasoning(DAY * 180L, 0, 2)),
         PAPRIKA("paprika", seasoning(DAY * 180L, 0, 2)),
         CUMIN("cumin", seasoning(DAY * 180L, 0, 2)),
+        TURMERIC("turmeric", seasoning(DAY * 180L, 0, 2)),
         CLOVES("cloves", seasoning(DAY * 180L, 0, 2)),
         CHILI_POWDER("chili_powder", seasoning(DAY * 180L, 0, 2)),
         GARLIC_POWDER("garlic_powder", seasoning(DAY * 180L, 0, 1)),
@@ -131,6 +133,7 @@ public final class JazzyItems {
         OAT_MILK("oat_milk", stableDairy(DAY * 30L, 20, 2, 1, true, false)),
         SOY_MILK("soy_milk", stableDairy(DAY * 30L, 20, 2, 1, true, false)),
         CHEESE("cheese", stableDairy(DAY * 18L, 12, 3, 2, true, true)),
+        CREAM_CHEESE("cream_cheese", stableDairy(DAY * 10L, 0, 2, 2, true, true)),
 
         CHICKEN("chicken", protein(DAY * 4L, 120, 6, 2, true)),
         FISH_FILLET("fish_fillet", protein(DAY * 3L, 70, 5, 2, true)),
@@ -149,6 +152,8 @@ public final class JazzyItems {
         GARLIC("garlic", produce(DAY * 20L, 18, 1, 1, false)),
         GINGER("ginger", produce(DAY * 14L, 18, 1, 1, false)),
         SHALLOTS("shallots", produce(DAY * 16L, 28, 1, 1, false)),
+        JALAPENOS("jalapenos", produce(DAY * 8L, 16, 1, 2, true)),
+        RED_PEPPER("red_pepper", produce(DAY * 10L, 20, 1, 2, true)),
 
         CANNED_TOMATOES("canned_tomatoes", canned(DAY * 120L, 30, 2, 1)),
         TOMATO_PASTE("tomato_paste", canned(DAY * 90L, 20, 1, 1)),
@@ -305,6 +310,16 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenIngredientItem> PANCAKE_DRY_MIX = prepared("pancake_dry_mix", IngredientState.COARSE_POWDER, PantrySortTab.BAKING_ADD_INS, DAY * 30L, 0, 2, 2, false, false);
     public static final DeferredItem<KitchenIngredientItem> PANCAKE_BATTER = prepared("pancake_batter", IngredientState.BATTER, PantrySortTab.OTHER, DAY * 1L, 0, 4, 4, true, false);
     public static final DeferredItem<KitchenIngredientItem> PANCAKES_PREP = prepared("pancakes_prep", IngredientState.PAN_FRIED, PantrySortTab.OTHER, DAY * 2L, 40, 5, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> STUFFED_JALAPENOS = prepared("stuffed_jalapenos", IngredientState.STUFFED, PantrySortTab.OTHER, DAY * 1L, 20, 3, 4, true, true);
+    public static final DeferredItem<KitchenIngredientItem> FRIED_JALAPENO_BITES_PREP = prepared("fried_jalapeno_bites_prep", IngredientState.DEEP_FRIED, PantrySortTab.OTHER, DAY * 2L, 50, 5, 6, true, false);
+    public static final DeferredItem<KitchenIngredientItem> GOLDEN_RICE_BASE = prepared("golden_rice_base", IngredientState.MIXED, PantrySortTab.OTHER, DAY * 2L, 0, 2, 3, true, false);
+    public static final DeferredItem<KitchenIngredientItem> GOLDEN_RICE_PREP = prepared("golden_rice_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 3L, 90, 6, 4, true, false);
+    public static final DeferredItem<KitchenIngredientItem> BREADED_FISH_FILLET = prepared("breaded_fish_fillet", IngredientState.BATTERED_PROTEIN, PantrySortTab.OTHER, DAY * 1L, 60, 5, 4, true, true);
+    public static final DeferredItem<KitchenIngredientItem> CONFETTI_RICE_BASE = prepared("confetti_rice_base", IngredientState.DICED, PantrySortTab.OTHER, DAY * 2L, 0, 2, 3, true, false);
+    public static final DeferredItem<KitchenIngredientItem> CONFETTI_RICE_PREP = prepared("confetti_rice_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 3L, 95, 6, 5, true, false);
+    public static final DeferredItem<KitchenIngredientItem> FOCACCIA_DOUGH = prepared("focaccia_dough", IngredientState.BREAD_DOUGH, PantrySortTab.OTHER, DAY * 2L, 0, 3, 3, true, false);
+    public static final DeferredItem<KitchenIngredientItem> SHAPED_FOCACCIA_BASE = prepared("shaped_focaccia_base", IngredientState.SHAPED_BASE, PantrySortTab.OTHER, DAY * 1L, 60, 3, 3, true, false);
+    public static final DeferredItem<KitchenIngredientItem> ASSEMBLED_FOCACCIA_PIZZA = prepared("assembled_focaccia_pizza", IngredientState.RAW_ASSEMBLED_PIZZA, PantrySortTab.OTHER, DAY * 1L, 90, 5, 5, true, false);
     public static final DeferredItem<KitchenIngredientItem> STICKED_PRODUCT = prepared("sticked_product", IngredientState.STICKED_PRODUCT, PantrySortTab.OTHER, DAY * 2L, 0, 1, 0, true, false);
 
     private static final List<DeferredItem<KitchenIngredientItem>> PREPARED_ITEM_LIST = List.of(
@@ -363,6 +378,16 @@ public final class JazzyItems {
             PANCAKE_DRY_MIX,
             PANCAKE_BATTER,
             PANCAKES_PREP,
+            STUFFED_JALAPENOS,
+            FRIED_JALAPENO_BITES_PREP,
+            GOLDEN_RICE_BASE,
+            GOLDEN_RICE_PREP,
+            BREADED_FISH_FILLET,
+            CONFETTI_RICE_BASE,
+            CONFETTI_RICE_PREP,
+            FOCACCIA_DOUGH,
+            SHAPED_FOCACCIA_BASE,
+            ASSEMBLED_FOCACCIA_PIZZA,
             STICKED_PRODUCT
     );
 
@@ -412,6 +437,10 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenMealItem> GARLIC_BREAD = meal("garlic_bread", IngredientState.PLATED, DAY * 2L, 5, 5, CERAMIC_PLATE);
     public static final DeferredItem<KitchenMealItem> GLAZED_CHICKEN = meal("glazed_chicken", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_PLATE);
     public static final DeferredItem<KitchenMealItem> PANCAKES = meal("pancakes", IngredientState.PLATED, DAY * 2L, 6, 6, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> FRIED_JALAPENO_BITES = meal("fried_jalapeno_bites", IngredientState.PLATED, DAY * 2L, 6, 6, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> GOLDEN_RICE = meal("golden_rice", IngredientState.PLATED, DAY * 2L, 6, 4, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> CONFETTI_RICE_WITH_FISH = meal("confetti_rice_with_fish", IngredientState.PLATED, DAY * 2L, 9, 6, CERAMIC_PLATE);
+    public static final DeferredItem<KitchenMealItem> FOCACCIA_PIZZA = meal("focaccia_pizza", IngredientState.PLATED, DAY * 3L, 8, 6, CERAMIC_PLATE);
 
     private static final List<DeferredItem<KitchenMealItem>> MEAL_ITEM_LIST = List.of(
             FRUIT_JUICE,
@@ -437,7 +466,11 @@ public final class JazzyItems {
             MAC_AND_CHEESE,
             GARLIC_BREAD,
             GLAZED_CHICKEN,
-            PANCAKES
+            PANCAKES,
+            FRIED_JALAPENO_BITES,
+            GOLDEN_RICE,
+            CONFETTI_RICE_WITH_FISH,
+            FOCACCIA_PIZZA
     );
 
     private JazzyItems() {

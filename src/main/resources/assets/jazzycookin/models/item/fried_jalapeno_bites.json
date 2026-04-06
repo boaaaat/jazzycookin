@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "minecraft:item/cookie"
+                 },
+    "parent":  "minecraft:item/generated"
+}

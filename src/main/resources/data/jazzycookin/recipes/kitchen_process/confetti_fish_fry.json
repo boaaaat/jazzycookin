@@ -1,0 +1,33 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:breaded_fish_fillet"
+      },
+      "required_state": "battered_protein"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:vegetable_oil"
+      },
+      "required_state": "vegetable_oil"
+    }
+  ],
+  "preferred_tool": "pan",
+  "allowed_tools": [
+    "pan",
+    "frying_skillet"
+  ],
+  "tool_required": true,
+  "duration": 115,
+  "preferred_heat": "medium",
+  "output": {
+    "result": {
+      "id": "jazzycookin:fried_fish_prep",
+      "count": 1
+    },
+    "state": "pan_fried"
+  }
+}

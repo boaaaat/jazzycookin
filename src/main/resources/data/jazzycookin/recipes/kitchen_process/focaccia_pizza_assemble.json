@@ -1,0 +1,26 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:shaped_focaccia_base"
+      },
+      "required_state": "shaped_base"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:tomato_sauce"
+      },
+      "required_state": "tomato_sauce"
+    }
+  ],
+  "duration": 55,
+  "output": {
+    "result": {
+      "id": "jazzycookin:assembled_focaccia_pizza",
+      "count": 1
+    },
+    "state": "raw_assembled_pizza"
+  }
+}

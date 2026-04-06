@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "minecraft:item/honeycomb"
+                 },
+    "parent":  "minecraft:item/generated"
+}

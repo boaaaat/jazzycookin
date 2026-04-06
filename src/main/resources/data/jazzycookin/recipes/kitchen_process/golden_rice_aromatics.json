@@ -1,0 +1,54 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:garlic"
+      },
+      "required_state": "garlic"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:onions"
+      },
+      "required_state": "onions"
+    }
+  ],
+  "preferred_tool": "chef_knife",
+  "allowed_tools": [
+    "chef_knife",
+    "paring_knife"
+  ],
+  "tool_required": true,
+  "duration": 45,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:golden_rice_base",
+          "count": 1
+        },
+        "state": "chopped"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:golden_rice_base",
+          "count": 1
+        },
+        "state": "minced"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:golden_rice_base",
+      "count": 1
+    },
+    "state": "diced"
+  }
+}

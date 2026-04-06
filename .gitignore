@@ -10,6 +10,7 @@ bin/
 
 ### VS Code ###
 .vscode/
+.eclipse/
 
 ### Minecraft Modding ###
 run/

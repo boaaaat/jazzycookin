@@ -1,0 +1,46 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:rice"
+      },
+      "required_state": "rice"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:confetti_rice_base"
+      },
+      "required_state": "diced"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:table_salt"
+      },
+      "required_state": "table_salt"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:olive_oil"
+      },
+      "required_state": "olive_oil"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 220,
+  "preferred_heat": "low",
+  "output": {
+    "result": {
+      "id": "jazzycookin:confetti_rice_prep",
+      "count": 1
+    },
+    "state": "simmered"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:jalapenos"
+      },
+      "required_state": "jalapenos"
+    }
+  ],
+  "preferred_tool": "paring_knife",
+  "allowed_tools": [
+    "paring_knife",
+    "chef_knife"
+  ],
+  "tool_required": true,
+  "duration": 35,
+  "output": {
+    "result": {
+      "id": "jazzycookin:jalapenos",
+      "count": 1
+    },
+    "state": "sliced"
+  }
+}
