@@ -5,10 +5,14 @@ import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.SimulationDomainType;
+import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
+import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyMenus;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -166,6 +170,17 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         return this.executionMode() == 2;
     }
 
+    public boolean plateMode() {
+        return this.executionMode() == 1;
+    }
+
+    public SimulationDomainType activeDomain() {
+        if (!this.simulationMode()) {
+            return this.plateMode() ? SimulationDomainType.PLATE : SimulationDomainType.NONE;
+        }
+        return this.stationType.simulationDomain();
+    }
+
     public boolean simulationBatchPresent() {
         return this.data.get(9) != 0;
     }
@@ -208,6 +223,17 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
     public int simRecognizerId() {
         return this.data.get(19);
+    }
+
+    public Component simulationPreviewName() {
+        if (!this.simulationMode()) {
+            return Component.empty();
+        }
+        DishRecognitionResult descriptor = DishSchema.descriptor(this.simRecognizerId());
+        if (descriptor == null) {
+            return Component.translatable("screen.jazzycookin.preview_none");
+        }
+        return descriptor.resultItem().get().getDefaultInstance().getHoverName();
     }
 
     @Override

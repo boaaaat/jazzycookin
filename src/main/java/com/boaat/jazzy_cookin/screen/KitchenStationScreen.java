@@ -1,8 +1,13 @@
 package com.boaat.jazzy_cookin.screen;
 
+import java.util.List;
+
+import org.lwjgl.glfw.GLFW;
+
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.SimulationDomainType;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,7 +17,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
-import org.lwjgl.glfw.GLFW;
 
 public class KitchenStationScreen extends AbstractContainerScreen<KitchenStationMenu> {
     private static final int MAIN_CARD_X = 14;
@@ -21,11 +25,11 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private static final int MAIN_CARD_HEIGHT = 84;
     private static final int WORK_CARD_X = 20;
     private static final int WORK_CARD_Y = 44;
-    private static final int WORK_CARD_WIDTH = 98;
+    private static final int WORK_CARD_WIDTH = 94;
     private static final int WORK_CARD_HEIGHT = 48;
-    private static final int STATUS_CARD_X = 128;
+    private static final int STATUS_CARD_X = 118;
     private static final int STATUS_CARD_Y = 44;
-    private static final int STATUS_CARD_WIDTH = 44;
+    private static final int STATUS_CARD_WIDTH = 58;
     private static final int STATUS_CARD_HEIGHT = 48;
     private static final int RESULT_CARD_X = 180;
     private static final int RESULT_CARD_Y = 44;
@@ -39,6 +43,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private static final int INVENTORY_CARD_Y = 124;
     private static final int INVENTORY_CARD_WIDTH = 202;
     private static final int INVENTORY_CARD_HEIGHT = 84;
+    private static final int STATUS_BAR_WIDTH = 22;
 
     private Button startButton;
     private Button lowHeatButton;
@@ -54,6 +59,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private int heldActionButtonId = -1;
     private double lastMouseX;
     private double lastMouseY;
+
+    private record SimMetric(Component shortLabel, Component tooltipLabel, String valueText, float ratio, int color) {
+    }
 
     public KitchenStationScreen(KitchenStationMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -173,10 +181,24 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private void beginHeldAction(Button button, int buttonId) {
-        if (buttonId == 6 && this.menu.simulationMode() && this.menu.currentMethod() != KitchenMethod.PAN_FRY && this.menu.currentMethod() != KitchenMethod.NONE) {
+        if (!this.menu.simulationMode()) {
+            return;
+        }
+        if (buttonId == 6 && this.isHoldablePrimaryAction()) {
+            this.heldActionButton = button;
+            this.heldActionButtonId = buttonId;
+            return;
+        }
+        if ((buttonId == 7 || buttonId == 8) && this.isPanSimulation() && this.menu.simulationBatchPresent()) {
             this.heldActionButton = button;
             this.heldActionButtonId = buttonId;
         }
+    }
+
+    private boolean isHoldablePrimaryAction() {
+        return this.menu.simulationMode()
+                && this.menu.currentMethod() != KitchenMethod.NONE
+                && this.menu.currentMethod() != KitchenMethod.PAN_FRY;
     }
 
     private void clearHeldAction() {
@@ -278,23 +300,29 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             }
         }
 
-        if (this.isPanSimulation()) {
-            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 140, top + 53, 20, this.simPanTempRatio(), JazzyGuiRenderer.ACCENT_WARM);
-            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 140, top + 62, 20, this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT);
-            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 140, top + 71, 20, this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT);
-            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 140, top + 80, 20, this.menu.simBrowning() / 100.0F, JazzyGuiRenderer.ACCENT_WARM);
-        } else if (this.isWhiskSimulation()) {
-            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 60, 28, this.menu.simAeration() / 100.0F, JazzyGuiRenderer.ACCENT);
-            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 76, 28, this.menu.simFragmentation() / 100.0F, JazzyGuiRenderer.ACCENT_WARM);
-        } else if (this.menu.simulationMode()) {
-            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 60, 28, this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT);
-            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 76, 28, this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT);
+        if (this.menu.simulationMode()) {
+            this.renderSimulationBars(guiGraphics, left, top);
         } else {
             float progress = this.menu.maxProgress() > 0 ? this.menu.progress() / (float) this.menu.maxProgress() : 0.0F;
-            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 60, 28, progress, JazzyGuiRenderer.ACCENT);
+            JazzyGuiRenderer.drawProgressBar(guiGraphics, left + STATUS_CARD_X + 16, top + 60, 28, progress, JazzyGuiRenderer.ACCENT);
             if (this.menu.stationType() == StationType.OVEN) {
-                JazzyGuiRenderer.drawProgressBar(guiGraphics, left + 136, top + 76, 28, this.menu.preheatProgress() / 100.0F, JazzyGuiRenderer.ACCENT_WARM);
+                JazzyGuiRenderer.drawProgressBar(guiGraphics, left + STATUS_CARD_X + 16, top + 76, 28, this.menu.preheatProgress() / 100.0F, JazzyGuiRenderer.ACCENT_WARM);
             }
+        }
+    }
+
+    private void renderSimulationBars(GuiGraphics guiGraphics, int left, int top) {
+        List<SimMetric> metrics = this.simulationMetrics();
+        if (metrics.isEmpty()) {
+            return;
+        }
+        int baseY = metrics.size() > 3 ? 53 : 60;
+        int gap = metrics.size() > 3 ? 9 : 16;
+        int barX = left + STATUS_CARD_X + STATUS_CARD_WIDTH - STATUS_BAR_WIDTH - 6;
+        for (int i = 0; i < metrics.size(); i++) {
+            SimMetric metric = metrics.get(i);
+            int y = top + baseY + i * gap;
+            JazzyGuiRenderer.drawProgressBar(guiGraphics, barX, y, STATUS_BAR_WIDTH, metric.ratio(), metric.color());
         }
     }
 
@@ -314,25 +342,38 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             Component toolLabel = Component.translatable("screen.jazzycookin.tool_short");
             guiGraphics.drawString(this.font, toolLabel, WORK_CARD_X + WORK_CARD_WIDTH - this.font.width(toolLabel), 35, JazzyGuiRenderer.TEXT_MUTED, false);
         }
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.status_short"), STATUS_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
+        guiGraphics.drawString(
+                this.font,
+                this.menu.simulationMode() ? Component.translatable("screen.jazzycookin.feedback_short") : Component.translatable("screen.jazzycookin.status_short"),
+                STATUS_CARD_X,
+                35,
+                JazzyGuiRenderer.TEXT_MUTED,
+                false
+        );
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.result_short"), RESULT_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
-        if (this.isPanSimulation()) {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.sim_temp_short"), STATUS_CARD_X + 4, 50, JazzyGuiRenderer.TEXT_SOFT, false);
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.sim_done_short"), STATUS_CARD_X + 4, 59, JazzyGuiRenderer.TEXT_SOFT, false);
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.sim_moist_short"), STATUS_CARD_X + 4, 68, JazzyGuiRenderer.TEXT_SOFT, false);
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.sim_brown_short"), STATUS_CARD_X + 4, 77, JazzyGuiRenderer.TEXT_SOFT, false);
-        } else if (this.isWhiskSimulation()) {
-            this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.sim_aeration_short"), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 50, JazzyGuiRenderer.TEXT_SOFT, false);
-            this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.sim_fragment_short"), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 66, JazzyGuiRenderer.TEXT_SOFT, false);
-        } else if (this.menu.simulationMode()) {
-            this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.sim_done_short"), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 50, JazzyGuiRenderer.TEXT_SOFT, false);
-            this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.sim_moist_short"), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 66, JazzyGuiRenderer.TEXT_SOFT, false);
+
+        if (this.menu.simulationMode()) {
+            this.drawCenteredLabel(guiGraphics, this.simulationDomainLabel(), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 48, JazzyGuiRenderer.TEXT, false);
+            this.renderSimulationMetricLabels(guiGraphics);
+            if (this.actionSummaryWidth() >= 60) {
+                this.drawTrimmedLabel(
+                        guiGraphics,
+                        this.simulationPreviewLine(),
+                        this.actionSummaryX(),
+                        99,
+                        this.actionSummaryWidth(),
+                        this.menu.simRecognizerId() > 0 ? JazzyGuiRenderer.READY_TEXT : JazzyGuiRenderer.TEXT_MUTED
+                );
+            }
         } else {
             guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.progress_short"), STATUS_CARD_X + 4, 54, JazzyGuiRenderer.TEXT_SOFT, false);
+            if (this.menu.stationType() == StationType.OVEN) {
+                guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.preheat_short"), STATUS_CARD_X + 4, 70, JazzyGuiRenderer.TEXT_SOFT, false);
+            }
+            this.drawCenteredLabel(guiGraphics, this.primaryStatusText(), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 48, JazzyGuiRenderer.TEXT, false);
+            this.drawCenteredLabel(guiGraphics, this.secondaryStatusText(), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 85, this.secondaryStatusColor(), false);
         }
-        if (this.menu.stationType() == StationType.OVEN && !this.menu.simulationMode()) {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.preheat_short"), STATUS_CARD_X + 4, 70, JazzyGuiRenderer.TEXT_SOFT, false);
-        }
+
         this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.output"), RESULT_CARD_X + RESULT_CARD_WIDTH / 2, 40, JazzyGuiRenderer.TEXT_SOFT, false);
         this.drawCenteredLabel(guiGraphics, resultByproductLabel, RESULT_CARD_X + RESULT_CARD_WIDTH / 2, 62, JazzyGuiRenderer.TEXT_SOFT, false);
 
@@ -347,11 +388,153 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             int controlChipX = this.menu.stationType().supportsStationControl() ? 44 : 90;
             this.drawCenteredLabel(guiGraphics, controlLabel, controlChipX + controlChipWidth / 2, 99, JazzyGuiRenderer.TEXT_MUTED, false);
         }
+    }
 
-        if (!this.menu.simulationMode()) {
-            this.drawCenteredLabel(guiGraphics, this.primaryStatusText(), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 48, JazzyGuiRenderer.TEXT, false);
-            this.drawCenteredLabel(guiGraphics, this.secondaryStatusText(), STATUS_CARD_X + STATUS_CARD_WIDTH / 2, 85, this.secondaryStatusColor(), false);
+    private void renderSimulationMetricLabels(GuiGraphics guiGraphics) {
+        List<SimMetric> metrics = this.simulationMetrics();
+        if (metrics.isEmpty()) {
+            return;
         }
+        int baseY = metrics.size() > 3 ? 53 : 60;
+        int gap = metrics.size() > 3 ? 9 : 16;
+        for (int i = 0; i < metrics.size(); i++) {
+            int y = baseY + i * gap;
+            guiGraphics.drawString(this.font, metrics.get(i).shortLabel(), STATUS_CARD_X + 4, y, JazzyGuiRenderer.TEXT_SOFT, false);
+        }
+    }
+
+    private List<SimMetric> simulationMetrics() {
+        if (!this.menu.simulationMode()) {
+            return List.of();
+        }
+        return switch (this.menu.activeDomain()) {
+            case PAN -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.pan"), Component.translatable("screen.jazzycookin.metric.pan_temp"), this.menu.simPanTempF() + "F", this.simPanTempRatio(), JazzyGuiRenderer.ACCENT_WARM),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.set"), Component.translatable("screen.jazzycookin.metric.doneness"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.wet"), Component.translatable("screen.jazzycookin.metric.moisture"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.brn"), Component.translatable("screen.jazzycookin.metric.browning"), this.menu.simBrowning() + "%", this.menu.simBrowning() / 100.0F, JazzyGuiRenderer.ACCENT_WARM)
+            );
+            case MIX -> this.menu.currentMethod() == KitchenMethod.WHISK
+                    ? List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.air"), Component.translatable("screen.jazzycookin.metric.aeration"), this.menu.simAeration() + "%", this.menu.simAeration() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.frag"), Component.translatable("screen.jazzycookin.metric.fragmentation"), this.menu.simFragmentation() + "%", this.menu.simFragmentation() / 100.0F, JazzyGuiRenderer.ACCENT_WARM)
+            )
+                    : List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.body"), Component.translatable("screen.jazzycookin.metric.body_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.wet"), Component.translatable("screen.jazzycookin.metric.moisture"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.air"), Component.translatable("screen.jazzycookin.metric.aeration"), this.menu.simAeration() + "%", this.menu.simAeration() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.text"), Component.translatable("screen.jazzycookin.metric.texture"), this.menu.simFragmentation() + "%", this.menu.simFragmentation() / 100.0F, JazzyGuiRenderer.ACCENT_WARM)
+            );
+            case PROCESS -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.body"), Component.translatable("screen.jazzycookin.metric.body_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.wet"), Component.translatable("screen.jazzycookin.metric.moisture"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.text"), Component.translatable("screen.jazzycookin.metric.texture"), this.menu.simFragmentation() + "%", this.menu.simFragmentation() / 100.0F, JazzyGuiRenderer.ACCENT_WARM),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.air"), Component.translatable("screen.jazzycookin.metric.aeration"), this.menu.simAeration() + "%", this.menu.simAeration() / 100.0F, JazzyGuiRenderer.ACCENT)
+            );
+            case BLEND -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.body"), Component.translatable("screen.jazzycookin.metric.body_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.wet"), Component.translatable("screen.jazzycookin.metric.moisture"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.air"), Component.translatable("screen.jazzycookin.metric.aeration"), this.menu.simAeration() + "%", this.menu.simAeration() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.text"), Component.translatable("screen.jazzycookin.metric.texture"), this.menu.simFragmentation() + "%", this.menu.simFragmentation() / 100.0F, JazzyGuiRenderer.ACCENT_WARM)
+            );
+            case JUICE -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.body"), Component.translatable("screen.jazzycookin.metric.body_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.juice"), Component.translatable("screen.jazzycookin.metric.moisture"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.foam"), Component.translatable("screen.jazzycookin.metric.aeration"), this.menu.simAeration() + "%", this.menu.simAeration() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.pulp"), Component.translatable("screen.jazzycookin.metric.fragmentation"), this.menu.simFragmentation() + "%", this.menu.simFragmentation() / 100.0F, JazzyGuiRenderer.ACCENT_WARM)
+            );
+            case DRY -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.body"), Component.translatable("screen.jazzycookin.metric.body_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.dry"), Component.translatable("screen.jazzycookin.metric.dryness"), (100 - this.menu.simMoisture()) + "%", (100 - this.menu.simMoisture()) / 100.0F, JazzyGuiRenderer.ACCENT_WARM),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.frag"), Component.translatable("screen.jazzycookin.metric.fragmentation"), this.menu.simFragmentation() + "%", this.menu.simFragmentation() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.air"), Component.translatable("screen.jazzycookin.metric.aeration"), this.menu.simAeration() + "%", this.menu.simAeration() / 100.0F, JazzyGuiRenderer.READY_TEXT)
+            );
+            default -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.body"), Component.translatable("screen.jazzycookin.metric.body_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.wet"), Component.translatable("screen.jazzycookin.metric.moisture"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT)
+            );
+        };
+    }
+
+    private Component simulationDomainLabel() {
+        return switch (this.menu.activeDomain()) {
+            case PAN -> Component.translatable("screen.jazzycookin.domain.pan");
+            case MIX -> Component.translatable("screen.jazzycookin.domain.mix");
+            case PROCESS -> Component.translatable("screen.jazzycookin.domain.process");
+            case BLEND -> Component.translatable("screen.jazzycookin.domain.blend");
+            case JUICE -> Component.translatable("screen.jazzycookin.domain.juice");
+            case DRY -> Component.translatable("screen.jazzycookin.domain.dry");
+            case PLATE -> Component.translatable("screen.jazzycookin.domain.plate");
+            default -> Component.translatable("screen.jazzycookin.domain.simulation");
+        };
+    }
+
+    private Component simulationPreviewLine() {
+        if (!this.menu.simulationMode()) {
+            return Component.empty();
+        }
+        if (this.menu.simRecognizerId() > 0) {
+            return Component.translatable("screen.jazzycookin.sim_preview", this.menu.simulationPreviewName());
+        }
+        return this.simulationHint();
+    }
+
+    private Component simulationHint() {
+        return switch (this.menu.activeDomain()) {
+            case PAN -> this.menu.simulationBatchPresent()
+                    ? Component.translatable("screen.jazzycookin.sim_hint.pan_active")
+                    : Component.translatable("screen.jazzycookin.sim_hint.pan_start");
+            case MIX -> this.menu.currentMethod() == KitchenMethod.WHISK
+                    ? Component.translatable("screen.jazzycookin.sim_hint.whisk")
+                    : Component.translatable("screen.jazzycookin.sim_hint.mix");
+            case PROCESS -> Component.translatable("screen.jazzycookin.sim_hint.process");
+            case BLEND -> Component.translatable("screen.jazzycookin.sim_hint.blend");
+            case JUICE -> Component.translatable("screen.jazzycookin.sim_hint.juice");
+            case DRY -> Component.translatable("screen.jazzycookin.sim_hint.dry");
+            default -> Component.translatable("screen.jazzycookin.sim_hint.generic");
+        };
+    }
+
+    private Component simulationStatusTooltip() {
+        StringBuilder builder = new StringBuilder(this.simulationDomainLabel().getString());
+        if (this.menu.simRecognizerId() > 0) {
+            builder.append(" | ").append(Component.translatable("screen.jazzycookin.sim_preview", this.menu.simulationPreviewName()).getString());
+        }
+        for (SimMetric metric : this.simulationMetrics()) {
+            builder.append(" | ").append(metric.tooltipLabel().getString()).append(": ").append(metric.valueText());
+        }
+        if (this.isPanSimulation()) {
+            builder.append(" | ").append(Component.translatable("screen.jazzycookin.metric.char_full").getString()).append(": ").append(this.menu.simChar()).append("%");
+        }
+        return Component.literal(builder.toString());
+    }
+
+    private Component primaryActionTooltip() {
+        if (!this.menu.simulationMode()) {
+            return Component.empty();
+        }
+        return switch (this.menu.currentMethod()) {
+            case WHISK -> Component.translatable("screen.jazzycookin.action_hint.hold_whisk");
+            case MIX -> Component.translatable("screen.jazzycookin.action_hint.hold_mix");
+            case KNEAD -> Component.translatable("screen.jazzycookin.action_hint.hold_knead");
+            case BATTER -> Component.translatable("screen.jazzycookin.action_hint.hold_batter");
+            case PROCESS -> Component.translatable("screen.jazzycookin.action_hint.hold_process");
+            case BLEND -> Component.translatable("screen.jazzycookin.action_hint.hold_blend");
+            case JUICE -> Component.translatable("screen.jazzycookin.action_hint.hold_juice");
+            case FREEZE_DRY -> Component.translatable("screen.jazzycookin.action_hint.hold_dry");
+            case PAN_FRY -> this.menu.simulationBatchPresent()
+                    ? Component.translatable("screen.jazzycookin.action_hint.tap_remove")
+                    : Component.translatable("screen.jazzycookin.action_hint.tap_pour");
+            default -> Component.empty();
+        };
+    }
+
+    private Component secondaryActionTooltip() {
+        return Component.translatable("screen.jazzycookin.action_hint.hold_stir");
+    }
+
+    private Component tertiaryActionTooltip() {
+        return Component.translatable("screen.jazzycookin.action_hint.hold_fold");
     }
 
     private Component controlDisplayLabel() {
@@ -368,15 +551,6 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private Component primaryStatusText() {
-        if (this.isPanSimulation()) {
-            return Component.literal(this.menu.simPanTempF() + "F");
-        }
-        if (this.isWhiskSimulation()) {
-            return Component.literal(this.menu.simAeration() + "%");
-        }
-        if (this.menu.simulationMode()) {
-            return Component.literal(this.menu.simDoneness() + "%");
-        }
         if (this.menu.maxProgress() > 0) {
             int percent = Math.round((this.menu.progress() / (float) this.menu.maxProgress()) * 100.0F);
             return Component.literal(percent + "%");
@@ -391,15 +565,6 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private Component secondaryStatusText() {
-        if (this.isPanSimulation()) {
-            return Component.literal(this.menu.simFoodCoreTempF() + "F");
-        }
-        if (this.isWhiskSimulation()) {
-            return Component.literal(this.menu.simFragmentation() + "%");
-        }
-        if (this.menu.simulationMode()) {
-            return Component.literal(this.menu.simMoisture() + "%");
-        }
         if (this.menu.stationType() == StationType.OVEN) {
             return this.menu.preheatProgress() >= 100
                     ? Component.translatable("screen.jazzycookin.hot_short")
@@ -412,9 +577,6 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private int secondaryStatusColor() {
-        if (this.menu.simulationMode()) {
-            return JazzyGuiRenderer.TEXT_MUTED;
-        }
         if (this.menu.stationType() == StationType.OVEN) {
             return this.menu.preheatProgress() >= 100 ? JazzyGuiRenderer.READY_TEXT : JazzyGuiRenderer.ACCENT_WARM;
         }
@@ -435,6 +597,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             return;
         }
         guiGraphics.drawString(this.font, label, centerX - this.font.width(label) / 2, y, color, shadow);
+    }
+
+    private void drawTrimmedLabel(GuiGraphics guiGraphics, Component label, int x, int y, int maxWidth, int color) {
+        String text = label.getString();
+        if (text.isEmpty()) {
+            return;
+        }
+        String trimmed = this.font.plainSubstrByWidth(text, Math.max(0, maxWidth));
+        guiGraphics.drawString(this.font, trimmed, x, y, color, false);
     }
 
     private Component primaryActionLabel() {
@@ -487,8 +658,24 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         return this.menu.simulationMode() && this.menu.currentMethod() == KitchenMethod.PAN_FRY;
     }
 
-    private boolean isWhiskSimulation() {
-        return this.menu.simulationMode() && this.menu.currentMethod() == KitchenMethod.WHISK;
+    private int actionSummaryX() {
+        if (this.isPanSimulation()) {
+            return ACTION_CARD_X;
+        }
+        if (this.menu.stationType().supportsStationControl()) {
+            return ACTION_CARD_X + 122;
+        }
+        return ACTION_CARD_X + 24;
+    }
+
+    private int actionSummaryWidth() {
+        if (this.isPanSimulation()) {
+            return 0;
+        }
+        if (this.menu.stationType().supportsStationControl()) {
+            return 42;
+        }
+        return 136;
     }
 
     private float simPanTempRatio() {
@@ -502,6 +689,35 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+        this.renderSimulationTooltips(guiGraphics, mouseX, mouseY);
+    }
+
+    private void renderSimulationTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (!this.menu.simulationMode()) {
+            return;
+        }
+        if (this.startButton != null && this.startButton.visible && this.startButton.isMouseOver(mouseX, mouseY)) {
+            Component tooltip = this.primaryActionTooltip();
+            if (!tooltip.getString().isEmpty()) {
+                guiGraphics.renderTooltip(this.font, tooltip, mouseX, mouseY);
+            }
+            return;
+        }
+        if (this.secondaryActionButton != null && this.secondaryActionButton.visible && this.secondaryActionButton.isMouseOver(mouseX, mouseY)) {
+            guiGraphics.renderTooltip(this.font, this.secondaryActionTooltip(), mouseX, mouseY);
+            return;
+        }
+        if (this.tertiaryActionButton != null && this.tertiaryActionButton.visible && this.tertiaryActionButton.isMouseOver(mouseX, mouseY)) {
+            guiGraphics.renderTooltip(this.font, this.tertiaryActionTooltip(), mouseX, mouseY);
+            return;
+        }
+        if (this.isHovering(STATUS_CARD_X, STATUS_CARD_Y, STATUS_CARD_WIDTH, STATUS_CARD_HEIGHT, mouseX, mouseY)) {
+            guiGraphics.renderTooltip(this.font, this.simulationStatusTooltip(), mouseX, mouseY);
+            return;
+        }
+        if (this.isHovering(ACTION_CARD_X, ACTION_CARD_Y, ACTION_CARD_WIDTH, ACTION_CARD_HEIGHT, mouseX, mouseY)) {
+            guiGraphics.renderTooltip(this.font, this.simulationHint(), mouseX, mouseY);
+        }
     }
 
     @Override
@@ -511,12 +727,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         boolean wasFocused = this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused();
         boolean handled = super.mouseClicked(mouseX, mouseY, button);
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            if (handled
-                    && this.startButton != null
-                    && this.startButton.visible
-                    && this.startButton.active
-                    && this.startButton.isMouseOver(mouseX, mouseY)) {
+            if (handled && this.startButton != null && this.startButton.visible && this.startButton.active && this.startButton.isMouseOver(mouseX, mouseY)) {
                 this.beginHeldAction(this.startButton, this.primaryActionButtonId());
+            } else if (handled && this.secondaryActionButton != null && this.secondaryActionButton.visible && this.secondaryActionButton.active
+                    && this.secondaryActionButton.isMouseOver(mouseX, mouseY)) {
+                this.beginHeldAction(this.secondaryActionButton, 7);
+            } else if (handled && this.tertiaryActionButton != null && this.tertiaryActionButton.visible && this.tertiaryActionButton.active
+                    && this.tertiaryActionButton.isMouseOver(mouseX, mouseY)) {
+                this.beginHeldAction(this.tertiaryActionButton, 8);
             } else {
                 this.clearHeldAction();
             }
