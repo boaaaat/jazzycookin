@@ -25,6 +25,22 @@ public final class JazzyCreativeTabs {
                         for (DeferredItem<KitchenIngredientItem> ingredient : JazzyItems.ingredientItems()) {
                             output.accept(ingredient.get().createCreativeStack(1));
                         }
+                        for (DeferredItem<KitchenIngredientItem> preparedItem : JazzyItems.preparedItems()) {
+                            output.accept(preparedItem.get().createCreativeStack(1));
+                        }
+                    })
+                    .build()
+    );
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MEALS = CREATIVE_MODE_TABS.register(
+            "meals",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.jazzycookin.meals"))
+                    .icon(() -> JazzyItems.CREAMY_TOMATO_SOUP.get().createCreativeStack(1))
+                    .displayItems((parameters, output) -> {
+                        for (DeferredItem<? extends KitchenIngredientItem> meal : JazzyItems.mealItems()) {
+                            output.accept(meal.get().createCreativeStack(1));
+                        }
                     })
                     .build()
     );
@@ -42,6 +58,12 @@ public final class JazzyCreativeTabs {
                             JazzyItems.GLASS_CUP,
                             JazzyItems.WOODEN_BOARD,
                             JazzyItems.SERVING_TRAY,
+                            JazzyItems.SERVING_SPOON,
+                            JazzyItems.BAMBOO_TRAY,
+                            JazzyItems.CHOPSTICKS,
+                            JazzyItems.STRAW,
+                            JazzyItems.BASKET,
+                            JazzyItems.PAPER_LINER,
                             JazzyItems.CANNING_JAR,
                             JazzyItems.GLASS_JAR,
                             JazzyItems.PARING_KNIFE,

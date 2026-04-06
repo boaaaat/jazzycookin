@@ -1,0 +1,24 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "juicer",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:chopped_produce_blend"
+      },
+      "required_state": "rough_cut"
+    }
+  ],
+  "duration": 80,
+  "output": {
+    "result": {
+      "id": "jazzycookin:mixed_juice",
+      "count": 1
+    },
+    "byproduct": {
+      "id": "jazzycookin:fruit_pulp",
+      "count": 1
+    },
+    "state": "fresh_juice"
+  }
+}

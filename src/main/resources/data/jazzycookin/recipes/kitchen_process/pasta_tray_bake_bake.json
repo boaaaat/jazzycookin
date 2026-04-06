@@ -1,0 +1,28 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "oven",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:pasta_bake_assembly"
+      },
+      "required_state": "mixed"
+    }
+  ],
+  "preferred_tool": "baking_tray",
+  "allowed_tools": [
+    "baking_tray"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 220,
+  "preferred_heat": "medium",
+  "requires_preheat": true,
+  "output": {
+    "result": {
+      "id": "jazzycookin:pasta_bake_assembly",
+      "count": 1
+    },
+    "state": "baked"
+  }
+}

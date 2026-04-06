@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "freeze_dryer",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:apples"
+      },
+      "required_state": "sliced_apple"
+    }
+  ],
+  "mode": "passive",
+  "duration": 280,
+  "output": {
+    "result": {
+      "id": "jazzycookin:apples",
+      "count": 1
+    },
+    "state": "freeze_dried"
+  }
+}

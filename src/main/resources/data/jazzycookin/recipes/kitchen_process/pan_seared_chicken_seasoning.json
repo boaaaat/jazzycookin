@@ -1,0 +1,54 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "spice_grinder",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:table_salt"
+      },
+      "required_state": "table_salt"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:black_pepper"
+      },
+      "required_state": "black_pepper"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:paprika"
+      },
+      "required_state": "paprika"
+    }
+  ],
+  "duration": 50,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:seasoning_blend",
+          "count": 1
+        },
+        "state": "coarse_powder"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:seasoning_blend",
+          "count": 1
+        },
+        "state": "ground_spice"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:seasoning_blend",
+      "count": 1
+    },
+    "state": "fine_powder"
+  }
+}

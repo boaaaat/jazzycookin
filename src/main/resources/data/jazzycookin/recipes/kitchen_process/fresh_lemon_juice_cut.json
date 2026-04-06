@@ -1,0 +1,48 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:lemons"
+      },
+      "required_state": "lemons"
+    }
+  ],
+  "preferred_tool": "paring_knife",
+  "allowed_tools": [
+    "paring_knife",
+    "chef_knife"
+  ],
+  "tool_required": true,
+  "duration": 40,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:lemons",
+          "count": 1
+        },
+        "state": "rough_cut"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:lemons",
+          "count": 1
+        },
+        "state": "diced"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:lemons",
+      "count": 1
+    },
+    "state": "sliced"
+  }
+}

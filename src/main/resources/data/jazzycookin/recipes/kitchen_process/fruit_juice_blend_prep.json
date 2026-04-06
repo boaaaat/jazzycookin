@@ -1,0 +1,54 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:apples"
+      },
+      "required_state": "apples"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:carrots"
+      },
+      "required_state": "carrots"
+    }
+  ],
+  "preferred_tool": "chef_knife",
+  "allowed_tools": [
+    "chef_knife",
+    "cleaver"
+  ],
+  "tool_required": true,
+  "duration": 55,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:chopped_produce_blend",
+          "count": 1
+        },
+        "state": "rough_cut"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:chopped_produce_blend",
+          "count": 1
+        },
+        "state": "diced"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:chopped_produce_blend",
+      "count": 1
+    },
+    "state": "chopped"
+  }
+}

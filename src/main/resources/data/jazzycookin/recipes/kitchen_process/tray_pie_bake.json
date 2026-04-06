@@ -1,0 +1,28 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "oven",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:assembled_tray_pie"
+      },
+      "required_state": "raw_assembled_pie"
+    }
+  ],
+  "preferred_tool": "baking_tray",
+  "allowed_tools": [
+    "baking_tray"
+  ],
+  "tool_required": true,
+  "mode": "passive",
+  "duration": 240,
+  "preferred_heat": "medium",
+  "requires_preheat": true,
+  "output": {
+    "result": {
+      "id": "jazzycookin:assembled_tray_pie",
+      "count": 1
+    },
+    "state": "baked_pie"
+  }
+}

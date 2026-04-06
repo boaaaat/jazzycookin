@@ -1,0 +1,66 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:tomatoes"
+      },
+      "required_state": "tomatoes"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:onions"
+      },
+      "required_state": "onions"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:table_salt"
+      },
+      "required_state": "table_salt"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:basil"
+      },
+      "required_state": "basil"
+    }
+  ],
+  "preferred_tool": "chef_knife",
+  "allowed_tools": [
+    "chef_knife",
+    "paring_knife"
+  ],
+  "tool_required": true,
+  "duration": 70,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:tomato_soup_base",
+          "count": 1
+        },
+        "state": "chopped"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:tomato_soup_base",
+          "count": 1
+        },
+        "state": "minced"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:tomato_soup_base",
+      "count": 1
+    },
+    "state": "diced"
+  }
+}

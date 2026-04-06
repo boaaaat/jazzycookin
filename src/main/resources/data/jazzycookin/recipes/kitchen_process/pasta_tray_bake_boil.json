@@ -1,0 +1,28 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:pasta"
+      },
+      "required_state": "pasta"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "stock_pot",
+    "saucepan"
+  ],
+  "tool_required": true,
+  "duration": 120,
+  "preferred_heat": "high",
+  "output": {
+    "result": {
+      "id": "jazzycookin:pasta",
+      "count": 1
+    },
+    "state": "boiled"
+  }
+}

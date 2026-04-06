@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "resting_board",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:pan_seared_chicken_prep"
+      },
+      "required_state": "pan_fried"
+    }
+  ],
+  "mode": "passive",
+  "duration": 80,
+  "output": {
+    "result": {
+      "id": "jazzycookin:pan_seared_chicken_prep",
+      "count": 1
+    },
+    "state": "rested"
+  }
+}

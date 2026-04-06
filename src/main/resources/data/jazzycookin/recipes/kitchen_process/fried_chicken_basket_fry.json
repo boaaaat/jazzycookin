@@ -1,0 +1,39 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "stove",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:chicken"
+      },
+      "required_state": "chicken"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:batter_mix"
+      },
+      "required_state": "batter"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:vegetable_oil"
+      },
+      "required_state": "vegetable_oil"
+    }
+  ],
+  "preferred_tool": "pot",
+  "allowed_tools": [
+    "pot",
+    "stock_pot"
+  ],
+  "tool_required": true,
+  "duration": 140,
+  "preferred_heat": "high",
+  "output": {
+    "result": {
+      "id": "jazzycookin:fried_chicken_prep",
+      "count": 1
+    },
+    "state": "deep_fried"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "juicer",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:lemons"
+      },
+      "required_state": "sliced"
+    }
+  ],
+  "duration": 60,
+  "output": {
+    "result": {
+      "id": "jazzycookin:lemon_juice",
+      "count": 1
+    },
+    "byproduct": {
+      "id": "jazzycookin:fruit_pulp",
+      "count": 1
+    },
+    "state": "fresh_juice"
+  }
+}

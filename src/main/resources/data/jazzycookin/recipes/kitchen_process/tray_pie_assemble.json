@@ -1,0 +1,32 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "prep_table",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:pie_dough"
+      },
+      "required_state": "smooth_dough"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:apples"
+      },
+      "required_state": "apples"
+    },
+    {
+      "ingredient": {
+        "item": "jazzycookin:white_sugar"
+      },
+      "required_state": "white_sugar"
+    }
+  ],
+  "duration": 70,
+  "output": {
+    "result": {
+      "id": "jazzycookin:assembled_tray_pie",
+      "count": 1
+    },
+    "state": "raw_assembled_pie"
+  }
+}

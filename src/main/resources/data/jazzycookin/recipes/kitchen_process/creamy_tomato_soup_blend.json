@@ -1,0 +1,42 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "blender",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:tomato_soup_base"
+      },
+      "required_state": "soup_base"
+    }
+  ],
+  "duration": 80,
+  "outcomes": [
+    {
+      "band": "under",
+      "output": {
+        "result": {
+          "id": "jazzycookin:tomato_soup_base",
+          "count": 1
+        },
+        "state": "separated_blend"
+      }
+    },
+    {
+      "band": "over",
+      "output": {
+        "result": {
+          "id": "jazzycookin:tomato_soup_base",
+          "count": 1
+        },
+        "state": "creamy"
+      }
+    }
+  ],
+  "output": {
+    "result": {
+      "id": "jazzycookin:tomato_soup_base",
+      "count": 1
+    },
+    "state": "smooth"
+  }
+}

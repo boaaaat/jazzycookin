@@ -1,0 +1,21 @@
+{
+  "type": "jazzycookin:kitchen_process",
+  "station": "resting_board",
+  "inputs": [
+    {
+      "ingredient": {
+        "item": "jazzycookin:fried_chicken_prep"
+      },
+      "required_state": "deep_fried"
+    }
+  ],
+  "mode": "passive",
+  "duration": 90,
+  "output": {
+    "result": {
+      "id": "jazzycookin:fried_chicken_prep",
+      "count": 1
+    },
+    "state": "rested"
+  }
+}
