@@ -12,8 +12,10 @@ import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 import com.boaat.jazzy_cookin.kitchen.StationCapacityProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.StationUiProfile;
 import com.boaat.jazzy_cookin.kitchen.StorageRules;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
+import com.boaat.jazzy_cookin.kitchen.StorageUiProfile;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
@@ -73,6 +75,25 @@ public final class KitchenGameTests {
         for (JazzyItems.IngredientId ingredientId : JazzyItems.IngredientId.values()) {
             ItemStack stack = new ItemStack(JazzyItems.ingredient(ingredientId).get());
             require(FoodMaterialProfiles.profileFor(stack).isPresent(), "Missing material profile for " + ingredientId.id());
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void kitchenUiProfilesStayWithinBounds(GameTestHelper helper) {
+        for (StationType stationType : StationType.values()) {
+            StationUiProfile profile = StationUiProfile.forStation(stationType);
+            require(profile.layout().workspaceRegion().contains(profile.layout().toolRegion()) || profile.layout().toolRegion() == null,
+                    "Tool region should stay within workspace for " + stationType.getSerializedName());
+            require(profile.layout().previewRegion().contains(profile.layout().outputRegion()),
+                    "Output region should stay within preview for " + stationType.getSerializedName());
+            require(profile.layout().previewRegion().contains(profile.layout().byproductRegion()),
+                    "Byproduct region should stay within preview for " + stationType.getSerializedName());
+        }
+        for (StorageType storageType : StorageType.values()) {
+            StorageUiProfile profile = StorageUiProfile.forType(storageType);
+            require(profile.storageRegion().bottom() < profile.inventoryShelfRegion().y(),
+                    "Storage shelf and player inventory should not overlap for " + storageType.getSerializedName());
         }
         helper.succeed();
     }

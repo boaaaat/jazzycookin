@@ -3,6 +3,7 @@ package com.boaat.jazzy_cookin.menu;
 import com.boaat.jazzy_cookin.block.entity.KitchenStorageBlockEntity;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
+import com.boaat.jazzy_cookin.kitchen.StorageUiProfile;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyMenus;
 
@@ -21,16 +22,11 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
     public static final int PREVIOUS_PAGE_BUTTON_ID = 2000;
     public static final int NEXT_PAGE_BUTTON_ID = 2001;
 
-    private static final int STORAGE_START_X = 34;
-    private static final int STORAGE_START_Y = 43;
-    private static final int PLAYER_INVENTORY_START_X = 34;
-    private static final int PLAYER_INVENTORY_START_Y = 172;
-    private static final int HOTBAR_Y = 230;
-
     private final Container container;
     private final StorageType storageType;
     private final ContainerLevelAccess access;
     private final int storageSlotCount;
+    private final StorageUiProfile uiProfile;
     private int pantryPage;
     private PantrySortTab selectedPantryTab;
 
@@ -70,6 +66,7 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
         this.storageType = storageType;
         this.access = access;
         this.storageSlotCount = container.getContainerSize();
+        this.uiProfile = StorageUiProfile.forType(storageType);
 
         checkContainerSize(container, storageSlotCount(storageType));
         container.startOpen(playerInventory.player);
@@ -78,24 +75,33 @@ public class KitchenStorageMenu extends AbstractContainerMenu {
             for (int col = 0; col < 9; col++) {
                 int visibleIndex = col + row * 9;
                 this.addSlot(this.isPantry()
-                        ? new PagedStorageSlot(container, visibleIndex, STORAGE_START_X + col * 18, STORAGE_START_Y + row * 18)
-                        : new StorageSlot(container, visibleIndex, STORAGE_START_X + col * 18, STORAGE_START_Y + row * 18));
+                        ? new PagedStorageSlot(container, visibleIndex, this.uiProfile.storageStartX() + col * 18, this.uiProfile.storageStartY() + row * 18)
+                        : new StorageSlot(container, visibleIndex, this.uiProfile.storageStartX() + col * 18, this.uiProfile.storageStartY() + row * 18));
             }
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, PLAYER_INVENTORY_START_X + col * 18, PLAYER_INVENTORY_START_Y + row * 18));
+                this.addSlot(new Slot(
+                        playerInventory,
+                        col + row * 9 + 9,
+                        this.uiProfile.playerInventoryStartX() + col * 18,
+                        this.uiProfile.playerInventoryStartY() + row * 18
+                ));
             }
         }
 
         for (int hotbarSlot = 0; hotbarSlot < 9; hotbarSlot++) {
-            this.addSlot(new Slot(playerInventory, hotbarSlot, PLAYER_INVENTORY_START_X + hotbarSlot * 18, HOTBAR_Y));
+            this.addSlot(new Slot(playerInventory, hotbarSlot, this.uiProfile.playerInventoryStartX() + hotbarSlot * 18, this.uiProfile.hotbarY()));
         }
     }
 
     public StorageType storageType() {
         return this.storageType;
+    }
+
+    public StorageUiProfile uiProfile() {
+        return this.uiProfile;
     }
 
     private static StorageType readStorageType(RegistryFriendlyByteBuf extraData) {

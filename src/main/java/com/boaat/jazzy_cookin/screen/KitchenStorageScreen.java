@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
+import com.boaat.jazzy_cookin.kitchen.StationUiProfile;
+import com.boaat.jazzy_cookin.kitchen.StorageUiProfile;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
+import com.boaat.jazzy_cookin.screen.layout.LayoutRegion;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -15,38 +18,17 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorageMenu> {
-    private static final int STORAGE_CARD_X = 14;
-    private static final int STORAGE_CARD_Y = 34;
-    private static final int STORAGE_CARD_WIDTH = 202;
-    private static final int STORAGE_CARD_HEIGHT = 62;
-    private static final int PAGE_BUTTON_X = 219;
-    private static final int PAGE_UP_BUTTON_Y = 48;
-    private static final int PAGE_DOWN_BUTTON_Y = 72;
-    private static final int SHORTCUT_CARD_X = 14;
-    private static final int SHORTCUT_CARD_Y = 104;
-    private static final int SHORTCUT_CARD_WIDTH = 202;
-    private static final int SHORTCUT_CARD_HEIGHT = 58;
-    private static final int STORAGE_HINT_WIDTH = 184;
-    private static final int STORAGE_HINT_START_Y = 116;
-    private static final int STORAGE_HINT_LINE_HEIGHT = 10;
-    private static final int INVENTORY_CARD_X = 14;
-    private static final int INVENTORY_CARD_Y = 164;
-    private static final int INVENTORY_CARD_WIDTH = 202;
-    private static final int INVENTORY_CARD_HEIGHT = 84;
-    private static final int TAB_SIZE = 20;
-    private static final int TAB_GAP_X = 8;
-    private static final int TAB_GAP_Y = 2;
-    private static final int TAB_START_Y = 119;
-
+    private final StorageUiProfile profile;
     private final List<PantryTabButton> pantryTabs = new ArrayList<>();
     private Button previousPageButton;
     private Button nextPageButton;
 
     public KitchenStorageScreen(KitchenStorageMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = 230;
-        this.imageHeight = 256;
-        this.inventoryLabelY = 153;
+        this.profile = menu.uiProfile();
+        this.imageWidth = this.profile.width();
+        this.imageHeight = this.profile.height();
+        this.inventoryLabelY = this.profile.inventoryLabelRegion().y();
     }
 
     @Override
@@ -54,35 +36,27 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         super.init();
         this.pantryTabs.clear();
         if (this.menu.isPantry()) {
+            LayoutRegion up = this.profile.pageUpBounds();
+            LayoutRegion down = this.profile.pageDownBounds();
             this.previousPageButton = this.addRenderableWidget(Button.builder(Component.literal("^"), pressed -> this.changePantryPage(-1))
-                    .bounds(this.leftPos + PAGE_BUTTON_X, this.topPos + PAGE_UP_BUTTON_Y, 10, 10)
+                    .bounds(this.leftPos + up.x(), this.topPos + up.y(), up.width(), up.height())
                     .build());
+            this.previousPageButton.setAlpha(0.0F);
             this.nextPageButton = this.addRenderableWidget(Button.builder(Component.literal("v"), pressed -> this.changePantryPage(1))
-                    .bounds(this.leftPos + PAGE_BUTTON_X, this.topPos + PAGE_DOWN_BUTTON_Y, 10, 10)
+                    .bounds(this.leftPos + down.x(), this.topPos + down.y(), down.width(), down.height())
                     .build());
-            int index = 0;
-            int[] rowCounts = new int[] { 6, 5 };
-            for (int row = 0; row < rowCounts.length; row++) {
-                int count = rowCounts[row];
-                int rowWidth = count * TAB_SIZE + (count - 1) * TAB_GAP_X;
-                int startX = SHORTCUT_CARD_X + 8 + (186 - rowWidth) / 2;
-                for (int col = 0; col < count; col++) {
-                    PantrySortTab tab = PantrySortTab.tabs().get(index++);
-                    this.addTab(
-                            tab,
-                            startX + col * (TAB_SIZE + TAB_GAP_X),
-                            TAB_START_Y + row * (TAB_SIZE + TAB_GAP_Y)
-                    );
-                }
+            this.nextPageButton.setAlpha(0.0F);
+            for (int index = 0; index < PantrySortTab.tabs().size(); index++) {
+                this.addTab(PantrySortTab.tabs().get(index), this.profile.tabBounds(index));
             }
             this.updateTabStates();
             this.updatePageButtons();
         }
     }
 
-    private void addTab(PantrySortTab tab, int x, int y) {
+    private void addTab(PantrySortTab tab, LayoutRegion bounds) {
         Button button = this.addRenderableWidget(Button.builder(Component.empty(), pressed -> this.selectTab(tab))
-                .bounds(this.leftPos + x, this.topPos + y, TAB_SIZE, TAB_SIZE)
+                .bounds(this.leftPos + bounds.x(), this.topPos + bounds.y(), bounds.width(), bounds.height())
                 .build());
         button.setAlpha(0.0F);
         this.pantryTabs.add(new PantryTabButton(button, tab));
@@ -128,66 +102,91 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         int left = this.leftPos;
         int top = this.topPos;
 
-        JazzyGuiRenderer.drawWindow(guiGraphics, left, top, this.imageWidth, this.imageHeight);
-        JazzyGuiRenderer.drawCard(guiGraphics, left + STORAGE_CARD_X, top + STORAGE_CARD_Y, STORAGE_CARD_WIDTH, STORAGE_CARD_HEIGHT);
-        if (this.menu.isPantry()) {
-            JazzyGuiRenderer.drawCard(guiGraphics, left + SHORTCUT_CARD_X, top + SHORTCUT_CARD_Y, SHORTCUT_CARD_WIDTH, SHORTCUT_CARD_HEIGHT);
-        }
-        JazzyGuiRenderer.drawCard(guiGraphics, left + INVENTORY_CARD_X, top + INVENTORY_CARD_Y, INVENTORY_CARD_WIDTH, INVENTORY_CARD_HEIGHT);
+        JazzyGuiRenderer.drawStorageShell(guiGraphics, left, top, this.imageWidth, this.imageHeight, this.menu.storageType());
+        JazzyGuiRenderer.drawPanel(guiGraphics, left + this.profile.storageRegion().x(), top + this.profile.storageRegion().y(),
+                this.profile.storageRegion().width(), this.profile.storageRegion().height(),
+                storageTheme(), JazzyGuiRenderer.PanelStyle.WORKSPACE);
+        JazzyGuiRenderer.drawStorageSupport(guiGraphics, left, top, this.profile.supportRegion(), this.menu.storageType());
+        JazzyGuiRenderer.drawInventoryShelf(guiGraphics, left, top, this.profile.inventoryShelfRegion(), storageTheme());
 
         for (int slotIndex = 0; slotIndex < this.menu.slots.size(); slotIndex++) {
             JazzyGuiRenderer.drawSlot(guiGraphics, left + this.menu.getSlot(slotIndex).x, top + this.menu.getSlot(slotIndex).y);
+        }
+
+        if (this.menu.isPantry()) {
+            for (PantryTabButton tab : this.pantryTabs) {
+                this.drawPantryTab(guiGraphics, tab, mouseX, mouseY);
+            }
+            this.drawPageButton(guiGraphics, this.previousPageButton, this.profile.pageUpBounds(), mouseX, mouseY, "^");
+            this.drawPageButton(guiGraphics, this.nextPageButton, this.profile.pageDownBounds(), mouseX, mouseY, "v");
         }
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component shelfLabel = Component.translatable("screen.jazzycookin.shelves_short");
+        guiGraphics.drawString(this.font, this.title, this.profile.titleRegion().x(), this.profile.titleRegion().y(), JazzyGuiRenderer.TITLE_TEXT, false);
+        this.drawCenteredLabel(guiGraphics, this.menu.storageType().displayName(), this.profile.headerChipRegion().centerX(), this.profile.headerChipRegion().y() + 4,
+                JazzyGuiRenderer.TEXT, false);
 
-        guiGraphics.drawString(this.font, this.title, 14, 10, JazzyGuiRenderer.TITLE_TEXT, false);
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.storage_short"), STORAGE_CARD_X, 35, JazzyGuiRenderer.TEXT_MUTED, false);
-        guiGraphics.drawString(this.font, shelfLabel, STORAGE_CARD_X + STORAGE_CARD_WIDTH - this.font.width(shelfLabel), 35, JazzyGuiRenderer.TEXT_MUTED, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 20, this.inventoryLabelY, JazzyGuiRenderer.TEXT, false);
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.hotbar_short"), 20, 219, JazzyGuiRenderer.TEXT_SOFT, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.storage_short"),
+                this.profile.storageRegion().x() + 8, this.profile.storageRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, this.profile.inventoryLabelRegion().x(), this.profile.inventoryLabelRegion().y(),
+                JazzyGuiRenderer.TEXT, false);
 
         if (this.menu.isPantry()) {
-            this.drawCenteredLabel(
-                    guiGraphics,
-                    Component.translatable("screen.jazzycookin.sort_tabs"),
-                    this.imageWidth / 2,
-                    108,
-                    JazzyGuiRenderer.TEXT_MUTED
-            );
-            this.drawCenteredLabel(
-                    guiGraphics,
+            this.drawTrimmedLabel(guiGraphics, Component.translatable("screen.jazzycookin.sort_tabs"),
+                    this.profile.supportRegion().x() + 10, this.profile.supportRegion().y() + 8, 128, JazzyGuiRenderer.TEXT_MUTED);
+            this.drawRightAlignedLabel(guiGraphics,
                     Component.translatable("screen.jazzycookin.page_short", this.menu.currentPage() + 1, this.menu.pageCount()),
-                    STORAGE_CARD_X + STORAGE_CARD_WIDTH / 2,
-                    86,
-                    JazzyGuiRenderer.TEXT_SOFT
-            );
+                    this.profile.supportRegion().right() - 8, this.profile.supportRegion().y() + 8, JazzyGuiRenderer.TEXT_SOFT, false);
         } else {
             this.drawWrappedCenteredLabel(
                     guiGraphics,
                     Component.translatable(this.menu.storageType().hintTranslationKey()),
-                    this.imageWidth / 2,
-                    STORAGE_HINT_START_Y,
-                    STORAGE_HINT_WIDTH,
+                    this.profile.supportRegion().centerX(),
+                    this.profile.supportRegion().y() + 16,
+                    this.profile.supportRegion().width() - 24,
                     JazzyGuiRenderer.TEXT_MUTED
             );
         }
     }
 
-    private void drawCenteredLabel(GuiGraphics guiGraphics, Component label, int centerX, int y, int color) {
-        guiGraphics.drawString(this.font, label, centerX - this.font.width(label) / 2, y, color, false);
+    private void drawPageButton(GuiGraphics guiGraphics, Button button, LayoutRegion bounds, int mouseX, int mouseY, String label) {
+        if (button == null) {
+            return;
+        }
+        JazzyGuiRenderer.drawPageButton(guiGraphics, this.leftPos + bounds.x(), this.topPos + bounds.y(), bounds.width(), bounds.height(),
+                this.menu.storageType(), button.active, button.isMouseOver(mouseX, mouseY));
+        this.drawCenteredLabel(guiGraphics, Component.literal(label), this.leftPos + bounds.centerX(), this.topPos + bounds.y() + 2,
+                button.active ? 0xFFF8F7F2 : JazzyGuiRenderer.TEXT_SOFT, false);
+    }
+
+    private StationUiProfile.Theme storageTheme() {
+        return switch (this.menu.storageType()) {
+            case PANTRY -> StationUiProfile.Theme.BOARD;
+            case FRIDGE -> StationUiProfile.Theme.COLD;
+            case FREEZER -> StationUiProfile.Theme.GLASS;
+        };
+    }
+
+    private void drawCenteredLabel(GuiGraphics guiGraphics, Component label, int centerX, int y, int color, boolean shadow) {
+        guiGraphics.drawString(this.font, label, centerX - this.font.width(label) / 2, y, color, shadow);
+    }
+
+    private void drawRightAlignedLabel(GuiGraphics guiGraphics, Component label, int rightX, int y, int color, boolean shadow) {
+        guiGraphics.drawString(this.font, label, rightX - this.font.width(label), y, color, shadow);
+    }
+
+    private void drawTrimmedLabel(GuiGraphics guiGraphics, Component label, int x, int y, int maxWidth, int color) {
+        String trimmed = this.font.plainSubstrByWidth(label.getString(), Math.max(0, maxWidth));
+        guiGraphics.drawString(this.font, trimmed, x, y, color, false);
     }
 
     private void drawWrappedCenteredLabel(GuiGraphics guiGraphics, Component label, int centerX, int startY, int width, int color) {
         List<FormattedCharSequence> lines = this.font.split(label, width);
         for (int index = 0; index < lines.size(); index++) {
             FormattedCharSequence line = lines.get(index);
-            int lineX = centerX - this.font.width(line) / 2;
-            int lineY = startY + index * STORAGE_HINT_LINE_HEIGHT;
-            guiGraphics.drawString(this.font, line, lineX, lineY, color, false);
+            guiGraphics.drawString(this.font, line, centerX - this.font.width(line) / 2, startY + index * 10, color, false);
         }
     }
 
@@ -198,9 +197,9 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
         PantryTabButton hoveredTab = null;
         for (PantryTabButton tab : this.pantryTabs) {
-            this.drawPantryTab(guiGraphics, tab, mouseX, mouseY);
             if (this.isMouseOverTab(tab, mouseX, mouseY)) {
                 hoveredTab = tab;
+                break;
             }
         }
 
@@ -229,26 +228,28 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     }
 
     private boolean isMouseOverStorageCard(double mouseX, double mouseY) {
-        int left = this.leftPos + STORAGE_CARD_X;
-        int top = this.topPos + STORAGE_CARD_Y;
-        return mouseX >= left && mouseX < left + STORAGE_CARD_WIDTH && mouseY >= top && mouseY < top + STORAGE_CARD_HEIGHT;
+        LayoutRegion region = this.profile.storageRegion();
+        int left = this.leftPos + region.x();
+        int top = this.topPos + region.y();
+        return mouseX >= left && mouseX < left + region.width() && mouseY >= top && mouseY < top + region.height();
     }
 
     private void drawPantryTab(GuiGraphics guiGraphics, PantryTabButton tab, int mouseX, int mouseY) {
         int x = tab.button().getX();
         int y = tab.button().getY();
-        JazzyGuiRenderer.drawIconTab(guiGraphics, x, y, this.isMouseOverTab(tab, mouseX, mouseY), this.menu.selectedPantryTab() == tab.tab());
+        JazzyGuiRenderer.drawStorageTab(guiGraphics, x, y, this.isMouseOverTab(tab, mouseX, mouseY), this.menu.selectedPantryTab() == tab.tab(),
+                this.menu.storageType());
 
         ItemStack icon = tab.tab().iconStack();
         if (!icon.isEmpty()) {
-            guiGraphics.renderItem(icon, x + 2, y + 2);
+            guiGraphics.renderItem(icon, x + 3, y + 3);
         }
     }
 
     private boolean isMouseOverTab(PantryTabButton tab, double mouseX, double mouseY) {
         int x = tab.button().getX();
         int y = tab.button().getY();
-        return mouseX >= x && mouseX < x + TAB_SIZE && mouseY >= y && mouseY < y + TAB_SIZE;
+        return mouseX >= x && mouseX < x + StorageUiProfile.TAB_SIZE && mouseY >= y && mouseY < y + StorageUiProfile.TAB_SIZE;
     }
 
     private record PantryTabButton(Button button, PantrySortTab tab) {
