@@ -2,6 +2,8 @@ package com.boaat.jazzy_cookin.kitchen;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.item.KitchenMealItem;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 
 import net.minecraft.world.item.ItemStack;
 
@@ -23,7 +25,14 @@ public final class StorageRules {
 
     private static boolean isPantryItem(ItemStack stack) {
         if (stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            return ingredientItem.pantryTab() != PantrySortTab.OTHER;
+            if (ingredientItem.pantryTab() != PantrySortTab.OTHER) {
+                return true;
+            }
+        }
+
+        FoodMatterData matter = KitchenStackUtil.getFoodMatter(stack);
+        if (matter != null && matter.isPreservedShelfStable()) {
+            return true;
         }
         return PantrySortTab.classify(stack) != PantrySortTab.OTHER;
     }
@@ -33,9 +42,18 @@ public final class StorageRules {
             return true;
         }
         if (stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            return ingredientItem.isFridgeSafe();
+            if (ingredientItem.isFridgeSafe()) {
+                return true;
+            }
         }
-        return false;
+
+        FoodMatterData matter = KitchenStackUtil.getFoodMatter(stack);
+        return matter != null
+                && !matter.isPreservedShelfStable()
+                && (matter.protein() >= 0.16F
+                || matter.water() >= 0.56F
+                || matter.hasTrait(FoodTrait.LEAFY_GREEN)
+                || matter.hasTrait(FoodTrait.DAIRY));
     }
 
     private static boolean isFreezerItem(ItemStack stack) {
@@ -43,8 +61,16 @@ public final class StorageRules {
             return true;
         }
         if (stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            return ingredientItem.isFreezerSafe();
+            if (ingredientItem.isFreezerSafe()) {
+                return true;
+            }
         }
-        return false;
+
+        FoodMatterData matter = KitchenStackUtil.getFoodMatter(stack);
+        return matter != null
+                && !matter.hasTrait(FoodTrait.HERB)
+                && !matter.hasTrait(FoodTrait.LEAFY_GREEN)
+                && (matter.protein() >= 0.18F
+                || (matter.finalizedServing() && matter.water() >= 0.24F));
     }
 }

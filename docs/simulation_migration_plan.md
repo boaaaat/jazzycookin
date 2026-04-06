@@ -21,7 +21,7 @@ Status: Completed
 Status: Completed
 
 7. Phase 7: Move storage, spoilage, and preservation onto the same canonical simulation model.
-Status: Pending
+Status: Completed
 
 8. Phase 8: Rebuild the station UI around simulation domains, richer feedback, and domain-specific controls.
 Status: Pending

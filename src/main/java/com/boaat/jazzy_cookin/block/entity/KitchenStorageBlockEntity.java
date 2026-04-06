@@ -1,8 +1,6 @@
 package com.boaat.jazzy_cookin.block.entity;
 
 import com.boaat.jazzy_cookin.block.KitchenStorageBlock;
-import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
-import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StorageRules;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
@@ -112,14 +110,8 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
             return;
         }
 
-        if (extractedStack.getItem() instanceof KitchenIngredientItem) {
-            IngredientStateData data = KitchenStackUtil.getOrCreateData(extractedStack, this.level.getGameTime());
-            if (data != null) {
-                long storedTicks = Math.max(0L, this.level.getGameTime() - this.insertedAt[slot]);
-                long ageReduction = Math.round(storedTicks * (1.0F - this.getStorageType().decayMultiplier()));
-                KitchenStackUtil.setCreatedTick(extractedStack, data.createdTick() + ageReduction, this.level.getGameTime());
-            }
-        }
+        long storedTicks = Math.max(0L, this.level.getGameTime() - this.insertedAt[slot]);
+        KitchenStackUtil.applyStorageExposure(extractedStack, this.getStorageType(), storedTicks, this.level.getGameTime());
     }
 
     @Override

@@ -447,6 +447,54 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void storageExposureUsesCanonicalSpoilageModel(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long start = level.getGameTime();
+        long future = start + 24_000L;
+
+        ItemStack pantryChicken = JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, start);
+        ItemStack fridgeChicken = JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, start);
+        ItemStack freezerChicken = JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, start);
+
+        KitchenStackUtil.applyStorageExposure(pantryChicken, StorageType.PANTRY, 24_000L, future);
+        KitchenStackUtil.applyStorageExposure(fridgeChicken, StorageType.FRIDGE, 24_000L, future);
+        KitchenStackUtil.applyStorageExposure(freezerChicken, StorageType.FREEZER, 24_000L, future);
+
+        float pantryFreshness = KitchenStackUtil.currentFreshnessScore(pantryChicken, future);
+        float fridgeFreshness = KitchenStackUtil.currentFreshnessScore(fridgeChicken, future);
+        float freezerFreshness = KitchenStackUtil.currentFreshnessScore(freezerChicken, future);
+        FoodMatterData pantryMatter = KitchenStackUtil.getFoodMatter(pantryChicken);
+        FoodMatterData fridgeMatter = KitchenStackUtil.getFoodMatter(fridgeChicken);
+        FoodMatterData freezerMatter = KitchenStackUtil.getFoodMatter(freezerChicken);
+
+        require(pantryMatter != null && fridgeMatter != null && freezerMatter != null, "Stored food should keep canonical FOOD_MATTER");
+        require(freezerFreshness > fridgeFreshness && fridgeFreshness > pantryFreshness, "Cold storage should slow spoilage more than pantry storage");
+        require(freezerMatter.coreTempC() < fridgeMatter.coreTempC(), "Freezer exposure should chill food below fridge temperature");
+        require(pantryMatter.microbialLoad() > fridgeMatter.microbialLoad() && fridgeMatter.microbialLoad() > freezerMatter.microbialLoad(),
+                "Cold storage should suppress microbial spoilage on FOOD_MATTER");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void preservedMealPacksBecomePantrySafe(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long start = level.getGameTime();
+        long future = start + 24_000L * 20L;
+
+        ItemStack freezeDriedMealPack = JazzyItems.FREEZE_DRIED_MEAL_PACK.get().createStack(1, start);
+        ItemStack freshMeal = JazzyItems.CHICKEN_CURRY.get().createStack(1, start);
+        FoodMatterData preservedMatter = KitchenStackUtil.getOrCreateFoodMatter(freezeDriedMealPack, start);
+
+        require(preservedMatter != null, "Freeze-dried meal pack should initialize FOOD_MATTER");
+        require(preservedMatter.preservationLevel() >= 0.70F, "Freeze-dried meal pack should carry a strong preservation level");
+        require(StorageRules.canStore(StorageType.PANTRY, freezeDriedMealPack), "Freeze-dried meal pack should be pantry-safe from canonical preservation state");
+        require(!StorageRules.canStore(StorageType.PANTRY, freshMeal), "Fresh plated meals should still stay out of pantry storage");
+        require(KitchenStackUtil.currentFreshnessScore(freezeDriedMealPack, future) > KitchenStackUtil.currentFreshnessScore(freshMeal, future),
+                "Preserved pantry meals should keep freshness far longer than fresh meals");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void recognizerLibraryClassifiesSimulatedOutputs(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         var fakePlayer = FakePlayerFactory.getMinecraft(level);

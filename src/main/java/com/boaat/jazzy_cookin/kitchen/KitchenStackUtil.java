@@ -146,9 +146,28 @@ public final class KitchenStackUtil {
             return 1.0F;
         }
 
+        FoodMatterData matter = getFoodMatter(stack);
         long age = Math.max(0L, gameTime - data.createdTick());
-        float ratio = age / (float) decayTicks;
-        return Mth.clamp(1.0F - ratio, 0.0F, 1.0F);
+        float effectiveDecayTicks = decayTicks;
+        if (matter != null) {
+            effectiveDecayTicks *= 1.0F
+                    + matter.preservationLevel() * 4.5F
+                    + (1.0F - matter.water()) * 0.75F
+                    + (1.0F - matter.microbialLoad()) * 0.45F;
+        }
+
+        float freshness = Mth.clamp(1.0F - (age / Math.max(1.0F, effectiveDecayTicks)), 0.0F, 1.0F);
+        if (matter != null) {
+            freshness = Mth.clamp(
+                    freshness
+                            - matter.oxidation() * 0.24F
+                            - matter.microbialLoad() * 0.38F
+                            + matter.preservationLevel() * 0.08F,
+                    0.0F,
+                    1.0F
+            );
+        }
+        return freshness;
     }
 
     public static FreshnessBand freshnessBand(ItemStack stack, Level level) {
@@ -181,6 +200,44 @@ public final class KitchenStackUtil {
             return ingredientItem.decayTicks();
         }
         return Long.MAX_VALUE / 4L;
+    }
+
+    public static void applyStorageExposure(ItemStack stack, StorageType storageType, long storedTicks, long gameTime) {
+        if (stack.isEmpty() || storedTicks <= 0L) {
+            return;
+        }
+
+        FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
+        if (matter == null) {
+            IngredientStateData data = getOrCreateData(stack, gameTime);
+            if (data != null) {
+                long ageReduction = Math.round(storedTicks * (1.0F - storageType.decayMultiplier()));
+                setCreatedTick(stack, data.createdTick() + ageReduction, gameTime);
+            }
+            return;
+        }
+
+        float effectiveDecayMultiplier = storageDecayMultiplier(storageType, matter);
+        long ageReduction = Math.round(storedTicks * (1.0F - effectiveDecayMultiplier));
+        float storageBlend = Mth.clamp(storedTicks / 4000.0F, 0.0F, 1.0F);
+        float newSurfaceTemp = Mth.lerp(storageBlend, matter.surfaceTempC(), storageType.targetTempC());
+        float newCoreTemp = Mth.lerp(storageBlend * 0.85F, matter.coreTempC(), storageType.targetTempC());
+        float microbialDelta = (storedTicks / 24000.0F)
+                * storageType.microbialFactor()
+                * (0.22F + matter.water() * 0.42F + matter.protein() * 0.22F)
+                * (1.0F - matter.preservationLevel() * 0.70F);
+        float oxidationDelta = (storedTicks / 24000.0F)
+                * storageType.oxidationFactor()
+                * (0.08F + matter.fat() * 0.28F)
+                * (1.0F - matter.preservationLevel() * 0.55F);
+        FoodMatterData adjusted = matter.withCreatedTick(matter.createdTick() + ageReduction)
+                .withTemps(newSurfaceTemp, newCoreTemp)
+                .withPreservationState(
+                        Mth.clamp(matter.preservationLevel(), 0.0F, 1.0F),
+                        Mth.clamp(matter.oxidation() + oxidationDelta, 0.0F, 1.0F),
+                        Mth.clamp(matter.microbialLoad() + microbialDelta, 0.0F, 1.0F)
+                );
+        setFoodMatter(stack, adjusted, gameTime);
     }
 
     private static IngredientStateData deriveIngredientState(ItemStack stack, FoodMatterData matter, long gameTime) {
@@ -229,6 +286,14 @@ public final class KitchenStackUtil {
                 0.05F,
                 1.0F
         );
+        quality = Mth.clamp(
+                quality
+                        + matter.preservationLevel() * 0.05F
+                        - matter.oxidation() * 0.12F
+                        - matter.microbialLoad() * 0.16F,
+                0.05F,
+                1.0F
+        );
         float recipeAccuracy = matter.finalizedServing()
                 ? Mth.clamp(fallback.recipeAccuracy() * 0.45F + 0.40F + matter.proteinSet() * 0.18F - matter.charLevel() * 0.10F, 0.0F, 1.0F)
                 : Mth.clamp(fallback.recipeAccuracy() * 0.50F + 0.20F + matter.whiskWork() * 0.24F + matter.cohesiveness() * 0.08F, 0.0F, 1.0F);
@@ -241,7 +306,9 @@ public final class KitchenStackUtil {
                         + matter.herbLoad() * 0.08F
                         + matter.pepperLoad() * 0.06F
                         + matter.browning() * 0.12F
-                        - matter.charLevel() * 0.22F,
+                        - matter.charLevel() * 0.22F
+                        - matter.oxidation() * 0.14F
+                        - matter.microbialLoad() * 0.18F,
                 0.0F,
                 1.0F
         );
@@ -252,7 +319,8 @@ public final class KitchenStackUtil {
                         + matter.proteinSet() * 0.24F
                         + matter.fragmentation() * 0.10F
                         + matter.browning() * 0.10F
-                        - matter.charLevel() * 0.24F,
+                        - matter.charLevel() * 0.24F
+                        - matter.microbialLoad() * 0.10F,
                 0.0F,
                 1.0F
         );
@@ -320,5 +388,12 @@ public final class KitchenStackUtil {
                 || stack.is(JazzyItems.OMELET.get())
                 || stack.is(JazzyItems.BROWNED_OMELET.get())
                 || stack.is(JazzyItems.BURNT_EGGS.get());
+    }
+
+    private static float storageDecayMultiplier(StorageType storageType, FoodMatterData matter) {
+        float preservationGuard = 1.0F - matter.preservationLevel() * 0.65F;
+        float moistureRisk = 0.55F + matter.water() * 0.35F + matter.protein() * 0.20F;
+        float spoilageBias = 0.70F + matter.microbialLoad() * 0.40F + matter.oxidation() * 0.18F;
+        return Mth.clamp(storageType.decayMultiplier() * preservationGuard * moistureRisk * spoilageBias, 0.01F, 1.0F);
     }
 }
