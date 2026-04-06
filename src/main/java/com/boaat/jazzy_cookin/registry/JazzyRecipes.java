@@ -62,21 +62,29 @@ public final class JazzyRecipes {
             boolean preheated
     ) {
         KitchenProcessInput recipeInput = new KitchenProcessInput(inputs, tool, station, heat, preheated);
+        KitchenProcessRecipe bestRecipe = null;
+        float bestScore = 0.0F;
         for (RecipeHolder<KitchenProcessRecipe> holder : level.getRecipeManager().getAllRecipesFor(KITCHEN_PROCESS_TYPE.get())) {
-            if (holder.value().matches(recipeInput, level)) {
-                return Optional.of(holder.value());
+            float score = holder.value().matchScore(recipeInput, level);
+            if (score > bestScore) {
+                bestRecipe = holder.value();
+                bestScore = score;
             }
         }
-        return Optional.empty();
+        return Optional.ofNullable(bestRecipe);
     }
 
     public static Optional<KitchenPlateRecipe> findPlateRecipe(Level level, List<ItemStack> inputs) {
         KitchenPlateInput recipeInput = new KitchenPlateInput(inputs);
+        KitchenPlateRecipe bestRecipe = null;
+        float bestScore = 0.0F;
         for (RecipeHolder<KitchenPlateRecipe> holder : level.getRecipeManager().getAllRecipesFor(KITCHEN_PLATE_TYPE.get())) {
-            if (holder.value().matches(recipeInput, level)) {
-                return Optional.of(holder.value());
+            float score = holder.value().matchScore(recipeInput, level);
+            if (score > bestScore) {
+                bestRecipe = holder.value();
+                bestScore = score;
             }
         }
-        return Optional.empty();
+        return Optional.ofNullable(bestRecipe);
     }
 }

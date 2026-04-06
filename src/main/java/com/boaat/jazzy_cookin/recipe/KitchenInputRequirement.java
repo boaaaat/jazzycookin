@@ -26,6 +26,17 @@ public record KitchenInputRequirement(Ingredient ingredient, IngredientState req
     );
 
     public boolean matches(ItemStack stack, long gameTime) {
-        return stack.getCount() >= this.count && this.ingredient.test(stack) && KitchenStackUtil.matchesState(stack, this.requiredState, gameTime);
+        return this.matchScore(stack, gameTime) > 0.0F;
+    }
+
+    public boolean ingredientMatches(ItemStack stack) {
+        return this.ingredient.test(stack);
+    }
+
+    public float matchScore(ItemStack stack, long gameTime) {
+        if (stack.getCount() < this.count || !this.ingredient.test(stack)) {
+            return 0.0F;
+        }
+        return KitchenStackUtil.matchesState(stack, this.requiredState, gameTime) ? 1.0F : 0.0F;
     }
 }

@@ -1,6 +1,7 @@
 package com.boaat.jazzy_cookin.recipe;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
@@ -13,27 +14,20 @@ import net.minecraft.world.level.Level;
 
 public record KitchenPlateRecipe(
         List<KitchenInputRequirement> inputs,
+        KitchenRecipeGuideData guide,
         KitchenProcessOutput output
 ) implements Recipe<KitchenPlateInput> {
     @Override
     public boolean matches(KitchenPlateInput input, Level level) {
-        if (input.inputs().size() < this.inputs.size()) {
-            return false;
-        }
+        return this.matchPlan(input, level).isPresent();
+    }
 
-        for (int i = 0; i < this.inputs.size(); i++) {
-            if (!this.inputs.get(i).matches(input.inputs().get(i), level.getGameTime())) {
-                return false;
-            }
-        }
+    public Optional<KitchenRecipeMatchPlan> matchPlan(KitchenPlateInput input, Level level) {
+        return Optional.ofNullable(KitchenRecipeMatching.findBestPlan(input.inputs(), this.inputs, this.guide, level.getGameTime()));
+    }
 
-        for (int i = this.inputs.size(); i < input.inputs().size(); i++) {
-            if (!input.inputs().get(i).isEmpty()) {
-                return false;
-            }
-        }
-
-        return true;
+    public float matchScore(KitchenPlateInput input, Level level) {
+        return this.matchPlan(input, level).map(KitchenRecipeMatchPlan::score).orElse(0.0F);
     }
 
     @Override

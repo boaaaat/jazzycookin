@@ -13,11 +13,13 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 public class KitchenPlateSerializer implements RecipeSerializer<KitchenPlateRecipe> {
     public static final MapCodec<KitchenPlateRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             KitchenInputRequirement.CODEC.listOf().fieldOf("inputs").forGetter(KitchenPlateRecipe::inputs),
+            KitchenRecipeGuideData.CODEC.optionalFieldOf("guide", KitchenRecipeGuideData.DEFAULT).forGetter(KitchenPlateRecipe::guide),
             KitchenProcessOutput.CODEC.fieldOf("output").forGetter(KitchenPlateRecipe::output)
     ).apply(instance, KitchenPlateRecipe::new));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, KitchenPlateRecipe> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.collection(ArrayList::new, KitchenInputRequirement.STREAM_CODEC), KitchenPlateRecipe::inputs,
+            KitchenRecipeGuideData.STREAM_CODEC, KitchenPlateRecipe::guide,
             KitchenProcessOutput.STREAM_CODEC, KitchenPlateRecipe::output,
             KitchenPlateRecipe::new
     );

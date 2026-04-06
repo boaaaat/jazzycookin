@@ -56,6 +56,7 @@ public class KitchenProcessSerializer implements RecipeSerializer<KitchenProcess
                     requiresPreheat,
                     mode,
                     environmentRequirements,
+                    KitchenRecipeGuideData.DEFAULT,
                     outcomes,
                     output
             )));
@@ -108,6 +109,7 @@ public class KitchenProcessSerializer implements RecipeSerializer<KitchenProcess
                     requiresPreheat,
                     mode,
                     environmentRequirements,
+                    KitchenRecipeGuideData.DEFAULT,
                     outcomes,
                     output
             );

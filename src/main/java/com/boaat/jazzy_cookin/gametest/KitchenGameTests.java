@@ -4,6 +4,7 @@ import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.block.entity.KitchenStorageBlockEntity;
 import com.boaat.jazzy_cookin.kitchen.FreshnessBand;
+import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
@@ -317,6 +318,64 @@ public final class KitchenGameTests {
         tickStation(level, stove, 35);
         require(stove.handleButton(6, fakePlayer), "Remove should finalize the add-in scramble");
         require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SCRAMBLED_EGGS.get()), "Add-ins should still resolve to the egg dish family");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void guideRecipesIgnorePrepInputOrder(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity prepTable = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        prepTable.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATO_PASTE).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.GARLIC).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.BEEF).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+
+        require(prepTable.handleButton(0, fakePlayer), "Guide recipes should start even when prep inputs are shuffled");
+        tickStation(level, prepTable, 80);
+        require(prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.BRAISED_BEEF_BASE.get()), "Shuffled prep inputs should still yield braised beef base");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void guideRecipesTolerateSupportiveExtras(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity prepTable = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        prepTable.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.LEMONS).get().createStack(1, level.getGameTime()));
+        prepTable.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.PARING_KNIFE.get()));
+
+        require(prepTable.handleButton(0, fakePlayer), "Guide recipes should tolerate supportive seasoning extras");
+        tickStation(level, prepTable, 50);
+
+        ItemStack output = prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(output.is(JazzyItems.ingredient(JazzyItems.IngredientId.LEMONS).get()), "Lemon cut guide should still output lemons");
+        require(KitchenStackUtil.effectiveState(output, level.getGameTime()) == IngredientState.SLICED, "Guide result should preserve the expected sliced state");
+        require(prepTable.getItem(0).is(JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get()), "Supportive extra seasoning should remain in the input slot");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void guidePlateRecipesIgnoreInputOrder(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity platingStation = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PLATING_STATION.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        ItemStack restedCurryPrep = JazzyItems.CHICKEN_CURRY_PREP.get().createStack(
+                1,
+                level.getGameTime(),
+                JazzyItems.CHICKEN_CURRY_PREP.get().defaultData(level.getGameTime()).withState(IngredientState.RESTED)
+        );
+        platingStation.setItem(0, new ItemStack(JazzyItems.CERAMIC_BOWL.get()));
+        platingStation.setItem(1, restedCurryPrep);
+
+        require(platingStation.handleButton(0, fakePlayer), "Plate guide should start with reversed input order");
+        tickStation(level, platingStation, 30);
+        require(platingStation.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.CHICKEN_CURRY.get()), "Reversed plating inputs should still yield chicken curry");
         helper.succeed();
     }
 

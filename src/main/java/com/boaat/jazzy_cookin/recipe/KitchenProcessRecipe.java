@@ -33,44 +33,37 @@ public record KitchenProcessRecipe(
         boolean requiresPreheat,
         ProcessMode mode,
         KitchenEnvironmentRequirements environmentRequirements,
+        KitchenRecipeGuideData guide,
         List<KitchenProcessOutcome> outcomes,
         KitchenProcessOutput output
 ) implements Recipe<KitchenProcessInput> {
     @Override
     public boolean matches(KitchenProcessInput input, Level level) {
+        return this.matchPlan(input, level).isPresent();
+    }
+
+    public Optional<KitchenRecipeMatchPlan> matchPlan(KitchenProcessInput input, Level level) {
         if (input.station() != this.station) {
-            return false;
+            return Optional.empty();
         }
 
         if (!this.matchesTool(input.tool())) {
-            return false;
+            return Optional.empty();
         }
 
         if (!this.matchesHeat(input.heat())) {
-            return false;
+            return Optional.empty();
         }
 
         if (this.requiresPreheat && !input.preheated()) {
-            return false;
+            return Optional.empty();
         }
 
-        if (input.inputs().size() < this.inputs.size()) {
-            return false;
-        }
+        return Optional.ofNullable(KitchenRecipeMatching.findBestPlan(input.inputs(), this.inputs, this.guide, level.getGameTime()));
+    }
 
-        for (int i = 0; i < this.inputs.size(); i++) {
-            if (!this.inputs.get(i).matches(input.inputs().get(i), level.getGameTime())) {
-                return false;
-            }
-        }
-
-        for (int i = this.inputs.size(); i < input.inputs().size(); i++) {
-            if (!input.inputs().get(i).isEmpty()) {
-                return false;
-            }
-        }
-
-        return true;
+    public float matchScore(KitchenProcessInput input, Level level) {
+        return this.matchPlan(input, level).map(KitchenRecipeMatchPlan::score).orElse(0.0F);
     }
 
     private boolean matchesTool(ItemStack toolStack) {

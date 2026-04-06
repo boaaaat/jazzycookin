@@ -21,9 +21,13 @@ import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationResolver;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.recipe.KitchenEnvironmentRequirements;
+import com.boaat.jazzy_cookin.recipe.KitchenPlateInput;
 import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
+import com.boaat.jazzy_cookin.recipe.KitchenInputRequirement;
+import com.boaat.jazzy_cookin.recipe.KitchenProcessInput;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessOutput;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
+import com.boaat.jazzy_cookin.recipe.KitchenRecipeMatchPlan;
 import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
@@ -312,6 +316,28 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return JazzyRecipes.findPlateRecipe(this.level, List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)));
     }
 
+    private Optional<KitchenRecipeMatchPlan> currentRecipePlan(KitchenProcessRecipe recipe) {
+        return this.level == null ? Optional.empty() : recipe.matchPlan(this.currentProcessInput(), this.level);
+    }
+
+    private Optional<KitchenRecipeMatchPlan> currentPlatePlan(KitchenPlateRecipe recipe) {
+        return this.level == null ? Optional.empty() : recipe.matchPlan(this.currentPlateInput(), this.level);
+    }
+
+    private KitchenProcessInput currentProcessInput() {
+        return new KitchenProcessInput(
+                List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)),
+                this.getItem(TOOL_SLOT),
+                this.getStationType(),
+                this.currentHeatLevel(),
+                this.preheatProgress >= 100
+        );
+    }
+
+    private KitchenPlateInput currentPlateInput() {
+        return new KitchenPlateInput(List.of(this.getItem(0), this.getItem(1), this.getItem(2), this.getItem(3)));
+    }
+
     private KitchenMethod currentMethod() {
         if (this.executionMode() == SimulationExecutionMode.SIMULATION) {
             return StationSimulationResolver.currentMethod(this);
@@ -424,11 +450,17 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return;
         }
 
+        KitchenRecipeMatchPlan matchPlan = this.currentRecipePlan(recipe).orElse(null);
+        if (matchPlan == null) {
+            this.stopProcessing();
+            return;
+        }
+
         List<ItemStack> consumedInputs = List.of(
-                copySized(this.getItem(0), recipe.inputs().size() > 0 ? recipe.inputs().get(0).count() : 0),
-                copySized(this.getItem(1), recipe.inputs().size() > 1 ? recipe.inputs().get(1).count() : 0),
-                copySized(this.getItem(2), recipe.inputs().size() > 2 ? recipe.inputs().get(2).count() : 0),
-                copySized(this.getItem(3), recipe.inputs().size() > 3 ? recipe.inputs().get(3).count() : 0)
+                matchedInputCopy(matchPlan, recipe.inputs(), 0),
+                matchedInputCopy(matchPlan, recipe.inputs(), 1),
+                matchedInputCopy(matchPlan, recipe.inputs(), 2),
+                matchedInputCopy(matchPlan, recipe.inputs(), 3)
         );
 
         KitchenOutcomeBand outcomeBand = this.currentOutcomeBand(recipe);
@@ -444,7 +476,10 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         );
 
         for (int i = 0; i < recipe.inputs().size(); i++) {
-            this.removeItem(i, recipe.inputs().get(i).count());
+            int matchedSlot = matchPlan.slotForRequirement(i);
+            if (matchedSlot >= 0) {
+                this.removeItem(matchedSlot, recipe.inputs().get(i).count());
+            }
         }
 
         ItemStack outputStack = resolvedOutput.result().copy();
@@ -471,16 +506,25 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return;
         }
 
+        KitchenRecipeMatchPlan matchPlan = this.currentPlatePlan(recipe).orElse(null);
+        if (matchPlan == null) {
+            this.stopProcessing();
+            return;
+        }
+
         List<ItemStack> consumedInputs = List.of(
-                copySized(this.getItem(0), recipe.inputs().size() > 0 ? recipe.inputs().get(0).count() : 0),
-                copySized(this.getItem(1), recipe.inputs().size() > 1 ? recipe.inputs().get(1).count() : 0),
-                copySized(this.getItem(2), recipe.inputs().size() > 2 ? recipe.inputs().get(2).count() : 0),
-                copySized(this.getItem(3), recipe.inputs().size() > 3 ? recipe.inputs().get(3).count() : 0)
+                matchedInputCopy(matchPlan, recipe.inputs(), 0),
+                matchedInputCopy(matchPlan, recipe.inputs(), 1),
+                matchedInputCopy(matchPlan, recipe.inputs(), 2),
+                matchedInputCopy(matchPlan, recipe.inputs(), 3)
         );
 
         IngredientStateData outputData = DishEvaluation.evaluatePlate(this.level, recipe, consumedInputs);
         for (int i = 0; i < recipe.inputs().size(); i++) {
-            this.removeItem(i, recipe.inputs().get(i).count());
+            int matchedSlot = matchPlan.slotForRequirement(i);
+            if (matchedSlot >= 0) {
+                this.removeItem(matchedSlot, recipe.inputs().get(i).count());
+            }
         }
 
         ItemStack outputStack = recipe.output().result().copy();
@@ -506,6 +550,14 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         ItemStack copy = stack.copy();
         copy.setCount(count);
         return copy;
+    }
+
+    private ItemStack matchedInputCopy(KitchenRecipeMatchPlan matchPlan, List<KitchenInputRequirement> requirements, int requirementIndex) {
+        if (requirementIndex < 0 || requirementIndex >= requirements.size()) {
+            return ItemStack.EMPTY;
+        }
+        int matchedSlot = matchPlan.slotForRequirement(requirementIndex);
+        return matchedSlot >= 0 ? copySized(this.getItem(matchedSlot), requirements.get(requirementIndex).count()) : ItemStack.EMPTY;
     }
 
     private KitchenOutcomeBand currentOutcomeBand(KitchenProcessRecipe recipe) {
