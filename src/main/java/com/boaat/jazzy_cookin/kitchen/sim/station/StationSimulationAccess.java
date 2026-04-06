@@ -17,6 +17,14 @@ public interface StationSimulationAccess {
 
     int simulationControlSetting();
 
+    int simulationPreheatProgress();
+
+    int simulationProgress();
+
+    int simulationMaxProgress();
+
+    boolean simulationActive();
+
     int inputStart();
 
     int inputEnd();
@@ -44,6 +52,8 @@ public interface StationSimulationAccess {
     CookingBatchState simulationBatch();
 
     void simulationSetBatch(CookingBatchState batch);
+
+    void simulationSetProgress(int progress, int maxProgress, boolean active);
 
     void simulationMarkChanged();
 }

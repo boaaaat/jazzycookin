@@ -197,8 +197,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     private boolean isHoldablePrimaryAction() {
         return this.menu.simulationMode()
-                && this.menu.currentMethod() != KitchenMethod.NONE
-                && this.menu.currentMethod() != KitchenMethod.PAN_FRY;
+                && switch (this.menu.currentMethod()) {
+                    case WHISK, MIX, KNEAD, BATTER, PROCESS, BLEND, JUICE, FREEZE_DRY -> true;
+                    default -> false;
+                };
     }
 
     private void clearHeldAction() {
@@ -449,6 +451,34 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                     new SimMetric(Component.translatable("screen.jazzycookin.metric.frag"), Component.translatable("screen.jazzycookin.metric.fragmentation"), this.menu.simFragmentation() + "%", this.menu.simFragmentation() / 100.0F, JazzyGuiRenderer.ACCENT),
                     new SimMetric(Component.translatable("screen.jazzycookin.metric.air"), Component.translatable("screen.jazzycookin.metric.aeration"), this.menu.simAeration() + "%", this.menu.simAeration() / 100.0F, JazzyGuiRenderer.READY_TEXT)
             );
+            case PREP -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.work"), Component.translatable("screen.jazzycookin.metric.progress_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.ready"), Component.translatable("screen.jazzycookin.metric.readiness"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, this.menu.environmentStatus() == 1 ? JazzyGuiRenderer.READY_TEXT : JazzyGuiRenderer.BLOCKED_TEXT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.ctrl"), Component.translatable("screen.jazzycookin.metric.control"), this.menu.simBrowning() + "%", this.menu.simBrowning() / 100.0F, JazzyGuiRenderer.ACCENT_WARM)
+            );
+            case POT -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.work"), Component.translatable("screen.jazzycookin.metric.progress_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.temp"), Component.translatable("screen.jazzycookin.metric.station_temp"), this.menu.simPanTempF() + "F", this.simPanTempRatio(), JazzyGuiRenderer.ACCENT_WARM),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.ready"), Component.translatable("screen.jazzycookin.metric.readiness"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, this.menu.environmentStatus() == 1 ? JazzyGuiRenderer.READY_TEXT : JazzyGuiRenderer.BLOCKED_TEXT)
+            );
+            case OVEN -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.work"), Component.translatable("screen.jazzycookin.metric.progress_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.temp"), Component.translatable("screen.jazzycookin.metric.station_temp"), this.menu.simPanTempF() + "F", Math.max(0.0F, Math.min(1.0F, (this.menu.simPanTempF() - 72.0F) / 420.0F)), JazzyGuiRenderer.ACCENT_WARM),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.heat"), Component.translatable("screen.jazzycookin.metric.preheat_full"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT)
+            );
+            case PRESERVE -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.work"), Component.translatable("screen.jazzycookin.metric.progress_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.ready"), Component.translatable("screen.jazzycookin.metric.readiness"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, this.menu.environmentStatus() == 1 ? JazzyGuiRenderer.READY_TEXT : JazzyGuiRenderer.BLOCKED_TEXT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.ctrl"), Component.translatable("screen.jazzycookin.metric.control"), this.menu.simBrowning() + "%", this.menu.simBrowning() / 100.0F, JazzyGuiRenderer.ACCENT_WARM)
+            );
+            case REST -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.rest"), Component.translatable("screen.jazzycookin.metric.progress_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.ready"), Component.translatable("screen.jazzycookin.metric.readiness"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, this.menu.environmentStatus() == 1 ? JazzyGuiRenderer.READY_TEXT : JazzyGuiRenderer.BLOCKED_TEXT)
+            );
+            case PLATE -> List.of(
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.plate"), Component.translatable("screen.jazzycookin.metric.progress_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
+                    new SimMetric(Component.translatable("screen.jazzycookin.metric.ready"), Component.translatable("screen.jazzycookin.metric.readiness"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT)
+            );
             default -> List.of(
                     new SimMetric(Component.translatable("screen.jazzycookin.metric.body"), Component.translatable("screen.jazzycookin.metric.body_full"), this.menu.simDoneness() + "%", this.menu.simDoneness() / 100.0F, JazzyGuiRenderer.ACCENT),
                     new SimMetric(Component.translatable("screen.jazzycookin.metric.wet"), Component.translatable("screen.jazzycookin.metric.moisture"), this.menu.simMoisture() + "%", this.menu.simMoisture() / 100.0F, JazzyGuiRenderer.READY_TEXT)
@@ -464,6 +494,11 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             case BLEND -> Component.translatable("screen.jazzycookin.domain.blend");
             case JUICE -> Component.translatable("screen.jazzycookin.domain.juice");
             case DRY -> Component.translatable("screen.jazzycookin.domain.dry");
+            case PREP -> Component.translatable("screen.jazzycookin.domain.prep");
+            case POT -> Component.translatable("screen.jazzycookin.domain.pot");
+            case OVEN -> Component.translatable("screen.jazzycookin.domain.oven");
+            case PRESERVE -> Component.translatable("screen.jazzycookin.domain.preserve");
+            case REST -> Component.translatable("screen.jazzycookin.domain.rest");
             case PLATE -> Component.translatable("screen.jazzycookin.domain.plate");
             default -> Component.translatable("screen.jazzycookin.domain.simulation");
         };
@@ -491,6 +526,12 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             case BLEND -> Component.translatable("screen.jazzycookin.sim_hint.blend");
             case JUICE -> Component.translatable("screen.jazzycookin.sim_hint.juice");
             case DRY -> Component.translatable("screen.jazzycookin.sim_hint.dry");
+            case PREP -> Component.translatable("screen.jazzycookin.sim_hint.prep");
+            case POT -> Component.translatable("screen.jazzycookin.sim_hint.pot");
+            case OVEN -> Component.translatable("screen.jazzycookin.sim_hint.oven");
+            case PRESERVE -> Component.translatable("screen.jazzycookin.sim_hint.preserve");
+            case REST -> Component.translatable("screen.jazzycookin.sim_hint.rest");
+            case PLATE -> Component.translatable("screen.jazzycookin.sim_hint.plate");
             default -> Component.translatable("screen.jazzycookin.sim_hint.generic");
         };
     }
@@ -525,6 +566,24 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             case PAN_FRY -> this.menu.simulationBatchPresent()
                     ? Component.translatable("screen.jazzycookin.action_hint.tap_remove")
                     : Component.translatable("screen.jazzycookin.action_hint.tap_pour");
+            case CUT -> Component.translatable("screen.jazzycookin.action_hint.tap_cut");
+            case GRIND -> Component.translatable("screen.jazzycookin.action_hint.tap_grind");
+            case STRAIN -> Component.translatable("screen.jazzycookin.action_hint.tap_strain");
+            case BOIL -> Component.translatable("screen.jazzycookin.action_hint.tap_boil");
+            case SIMMER -> Component.translatable("screen.jazzycookin.action_hint.tap_simmer");
+            case BAKE -> Component.translatable("screen.jazzycookin.action_hint.tap_bake");
+            case ROAST -> Component.translatable("screen.jazzycookin.action_hint.tap_roast");
+            case BROIL -> Component.translatable("screen.jazzycookin.action_hint.tap_broil");
+            case STEAM -> Component.translatable("screen.jazzycookin.action_hint.tap_steam");
+            case SMOKE -> Component.translatable("screen.jazzycookin.action_hint.tap_smoke");
+            case FERMENT -> Component.translatable("screen.jazzycookin.action_hint.tap_ferment");
+            case CAN -> Component.translatable("screen.jazzycookin.action_hint.tap_can");
+            case DRY -> Component.translatable("screen.jazzycookin.action_hint.tap_dry");
+            case MICROWAVE -> Component.translatable("screen.jazzycookin.action_hint.tap_microwave");
+            case COOL -> Component.translatable("screen.jazzycookin.action_hint.tap_cool");
+            case REST -> Component.translatable("screen.jazzycookin.action_hint.tap_rest");
+            case SLICE -> Component.translatable("screen.jazzycookin.action_hint.tap_slice");
+            case PLATE -> Component.translatable("screen.jazzycookin.action_hint.tap_plate");
             default -> Component.empty();
         };
     }
@@ -617,9 +676,27 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             case PAN_FRY -> this.menu.simulationBatchPresent()
                     ? Component.translatable("screen.jazzycookin.remove")
                     : Component.translatable("screen.jazzycookin.pour");
+            case CUT -> Component.literal("Cut");
+            case GRIND -> Component.literal("Grind");
+            case STRAIN -> Component.literal("Strain");
             case MIX -> Component.literal("Mix");
             case KNEAD -> Component.literal("Knead");
             case BATTER -> Component.literal("Mix");
+            case BOIL -> Component.literal("Boil");
+            case SIMMER -> Component.literal("Simmer");
+            case BAKE -> Component.literal("Bake");
+            case ROAST -> Component.literal("Roast");
+            case BROIL -> Component.literal("Broil");
+            case STEAM -> Component.literal("Steam");
+            case SMOKE -> Component.literal("Smoke");
+            case FERMENT -> Component.literal("Ferment");
+            case CAN -> Component.literal("Can");
+            case DRY -> Component.literal("Dry");
+            case MICROWAVE -> Component.literal("Heat");
+            case COOL -> Component.literal("Cool");
+            case REST -> Component.literal("Rest");
+            case SLICE -> Component.literal("Slice");
+            case PLATE -> Component.literal("Plate");
             case PROCESS -> Component.literal("Pulse");
             case BLEND -> Component.literal("Blend");
             case JUICE -> Component.literal("Juice");
@@ -639,10 +716,13 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (this.isPanSimulation()) {
             return this.menu.simulationBatchPresent() || this.hasInputItems();
         }
+        if (this.menu.simulationWorking()) {
+            return false;
+        }
         if (this.menu.currentMethod() == KitchenMethod.WHISK && this.menu.getSlot(5).hasItem()) {
             return true;
         }
-        return this.hasInputItems();
+        return this.hasInputItems() && this.menu.environmentStatus() != 0;
     }
 
     private boolean hasInputItems() {

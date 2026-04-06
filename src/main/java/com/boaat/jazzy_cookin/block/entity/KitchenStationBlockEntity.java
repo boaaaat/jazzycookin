@@ -139,9 +139,6 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         }
 
         if (blockEntity.executionMode() == SimulationExecutionMode.SIMULATION) {
-            if (blockEntity.processing) {
-                blockEntity.stopProcessing();
-            }
             blockEntity.serverTickSimulation();
             return;
         }
@@ -199,6 +196,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     public boolean handleButton(int buttonId, Player player) {
+        if (buttonId == 0 && this.executionMode() == SimulationExecutionMode.SIMULATION) {
+            return StationSimulationResolver.handleAction(this, 6);
+        }
         if (buttonId >= 6 && buttonId <= 8 && this.executionMode() == SimulationExecutionMode.SIMULATION) {
             return StationSimulationResolver.handleAction(this, buttonId);
         }
@@ -569,7 +569,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     private int environmentStatus() {
         if (this.executionMode() == SimulationExecutionMode.SIMULATION) {
-            return 1;
+            return StationSimulationResolver.environmentStatus(this);
         }
 
         if (this.getStationType() == StationType.PLATING_STATION) {
@@ -752,6 +752,26 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     @Override
+    public int simulationPreheatProgress() {
+        return this.preheatProgress;
+    }
+
+    @Override
+    public int simulationProgress() {
+        return this.progress;
+    }
+
+    @Override
+    public int simulationMaxProgress() {
+        return this.maxProgress;
+    }
+
+    @Override
+    public boolean simulationActive() {
+        return this.processing;
+    }
+
+    @Override
     public int inputStart() {
         return INPUT_START;
     }
@@ -819,6 +839,13 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     @Override
     public void simulationSetBatch(CookingBatchState batch) {
         this.simulationBatch = batch;
+    }
+
+    @Override
+    public void simulationSetProgress(int progress, int maxProgress, boolean active) {
+        this.progress = progress;
+        this.maxProgress = maxProgress;
+        this.processing = active;
     }
 
     @Override

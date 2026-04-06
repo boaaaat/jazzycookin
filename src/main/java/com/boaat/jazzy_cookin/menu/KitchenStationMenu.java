@@ -178,11 +178,23 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         if (!this.simulationMode()) {
             return this.plateMode() ? SimulationDomainType.PLATE : SimulationDomainType.NONE;
         }
-        return this.stationType.simulationDomain();
+        return switch (this.stationType) {
+            case STOVE -> switch (this.currentMethod()) {
+                case BOIL, SIMMER, STEAM -> SimulationDomainType.POT;
+                default -> SimulationDomainType.PAN;
+            };
+            case SPICE_GRINDER, STRAINER -> SimulationDomainType.PROCESS;
+            case PLATING_STATION -> SimulationDomainType.PLATE;
+            default -> this.stationType.simulationDomain();
+        };
+    }
+
+    public boolean simulationWorking() {
+        return this.data.get(9) != 0;
     }
 
     public boolean simulationBatchPresent() {
-        return this.data.get(9) != 0;
+        return this.simulationWorking();
     }
 
     public int simPanTempF() {

@@ -74,6 +74,24 @@ public final class JazzyRecipes {
         return Optional.ofNullable(bestRecipe);
     }
 
+    public static Optional<KitchenProcessRecipe> findProcessRecipeCandidate(
+            Level level,
+            StationType station,
+            List<ItemStack> inputs,
+            ItemStack tool
+    ) {
+        KitchenProcessRecipe bestRecipe = null;
+        float bestScore = 0.0F;
+        for (RecipeHolder<KitchenProcessRecipe> holder : level.getRecipeManager().getAllRecipesFor(KITCHEN_PROCESS_TYPE.get())) {
+            float score = holder.value().candidateScore(station, inputs, tool, level);
+            if (score > bestScore) {
+                bestRecipe = holder.value();
+                bestScore = score;
+            }
+        }
+        return Optional.ofNullable(bestRecipe);
+    }
+
     public static Optional<KitchenPlateRecipe> findPlateRecipe(Level level, List<ItemStack> inputs) {
         KitchenPlateInput recipeInput = new KitchenPlateInput(inputs);
         KitchenPlateRecipe bestRecipe = null;

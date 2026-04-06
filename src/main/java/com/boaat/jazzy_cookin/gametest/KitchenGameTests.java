@@ -384,6 +384,59 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void ovenSimulationRequiresPreheatAndBakesGarlicBread(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity oven = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.OVEN.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        oven.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get().createStack(1, level.getGameTime()));
+        oven.setItem(1, JazzyItems.GARLIC_BUTTER.get().createStack(1, level.getGameTime()));
+        oven.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.BAKING_TRAY.get()));
+        oven.handleButton(2, fakePlayer);
+
+        require(!oven.handleButton(0, fakePlayer), "Oven recipe should stay blocked until preheated");
+        tickStation(level, oven, 50);
+        require(oven.simulationPreheatProgress() >= 100, "Medium oven heat should fully preheat after enough ticks");
+
+        require(oven.handleButton(0, fakePlayer), "Preheated oven should start the garlic bread bake");
+        tickStation(level, oven, 130);
+        require(oven.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.GARLIC_BREAD_PREP.get()), "Oven simulation should bake garlic bread prep");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void restingBoardSimulationAdvancesPassiveRestRecipes(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity restingBoard = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.RESTING_BOARD.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        restingBoard.setItem(0, JazzyItems.BRAISED_BEEF_PREP.get().createStack(1, level.getGameTime()));
+        require(restingBoard.handleButton(0, fakePlayer), "Resting board should start passive rest recipes");
+        tickStation(level, restingBoard, 80);
+
+        ItemStack output = restingBoard.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(output.is(JazzyItems.BRAISED_BEEF_PREP.get()), "Resting board should keep the same prep item");
+        require(KitchenStackUtil.effectiveState(output, level.getGameTime()) == IngredientState.RESTED, "Resting board should advance the item to the rested state");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void canningStationSimulationHandlesHeatedPassivePreserves(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity canningStation = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.CANNING_STATION.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        canningStation.setItem(0, JazzyItems.SYRUP_MIXTURE.get().createStack(1, level.getGameTime()));
+        canningStation.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CANNING_JAR.get()));
+        canningStation.handleButton(1, fakePlayer);
+
+        require(canningStation.handleButton(0, fakePlayer), "Canning station should start heated preserve recipes");
+        tickStation(level, canningStation, 140);
+        require(canningStation.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.HOT_SYRUP_PRESERVE.get()), "Canning station simulation should output hot syrup preserve");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void mixingBowlCanMakePieDoughViaSimulation(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         KitchenStationBlockEntity bowl = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.MIXING_BOWL.get());

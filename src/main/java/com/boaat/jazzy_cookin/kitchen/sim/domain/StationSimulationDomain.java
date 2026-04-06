@@ -17,4 +17,8 @@ public interface StationSimulationDomain {
 
     default void serverTick(StationSimulationAccess access) {
     }
+
+    default int environmentStatus(StationSimulationAccess access) {
+        return 1;
+    }
 }

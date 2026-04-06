@@ -14,6 +14,8 @@ import com.boaat.jazzy_cookin.kitchen.sim.domain.FreezeDrySimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.JuicerSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.MixingSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.PanSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.PlateSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.ProcessRecipeSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.StationSimulationDomain;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
@@ -27,16 +29,15 @@ public final class StationSimulationResolver {
             new FoodProcessorSimulationDomain(),
             new BlenderSimulationDomain(),
             new JuicerSimulationDomain(),
-            new FreezeDrySimulationDomain()
+            new FreezeDrySimulationDomain(),
+            new PlateSimulationDomain(),
+            new ProcessRecipeSimulationDomain()
     );
 
     private StationSimulationResolver() {
     }
 
     public static SimulationExecutionMode executionMode(StationSimulationAccess access) {
-        if (access.simulationStationType() == StationType.PLATING_STATION) {
-            return SimulationExecutionMode.PLATE;
-        }
         return domainFor(access) != null ? SimulationExecutionMode.SIMULATION : SimulationExecutionMode.LEGACY_RECIPE;
     }
 
@@ -61,6 +62,11 @@ public final class StationSimulationResolver {
         if (domain != null) {
             domain.serverTick(access);
         }
+    }
+
+    public static int environmentStatus(StationSimulationAccess access) {
+        StationSimulationDomain domain = domainFor(access);
+        return domain != null ? domain.environmentStatus(access) : 2;
     }
 
     public static StationSimulationDomain domainFor(StationSimulationAccess access) {
