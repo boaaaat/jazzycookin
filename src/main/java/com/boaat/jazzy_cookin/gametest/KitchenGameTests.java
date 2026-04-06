@@ -34,6 +34,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -54,6 +55,7 @@ public final class KitchenGameTests {
         require(data.quality() == 1.0F, "Creative ingredient stack should have max quality");
         require(data.recipeAccuracy() == 1.0F, "Creative ingredient stack should have max recipe accuracy");
         require(KitchenStackUtil.freshnessBand(creativeApples, level) == FreshnessBand.FRESH, "Creative ingredient stack should stay fresh");
+        require(!creativeApples.getItem().isBarVisible(creativeApples), "Creative preview stacks should not show the spoilage bar");
         helper.succeed();
     }
 
@@ -92,6 +94,22 @@ public final class KitchenGameTests {
         require(curry.getItem().isBarVisible(curry), "Meals should show a spoilage bar");
         require(chicken.getItem().getBarWidth(chicken) < chickenBefore, "Ingredient spoilage bar should fall after an in-game hour");
         require(curry.getItem().getBarWidth(curry) < curryBefore, "Meal spoilage bar should fall after an in-game hour");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void droppedIngredientStacksRefreshSpoilageBars(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long start = level.getGameTime();
+
+        ItemStack chicken = JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createCreativeStack(1);
+        KitchenStackUtil.setCreatedTick(chicken, start - 24_000L, start);
+        require(!chicken.getItem().isBarVisible(chicken), "Creative preview stack should start without a spoilage bar");
+
+        ItemEntity droppedChicken = new ItemEntity(level, 0.0, 2.0, 0.0, chicken);
+        chicken.getItem().onEntityItemUpdate(chicken, droppedChicken);
+
+        require(chicken.getItem().isBarVisible(chicken), "Dropped ingredient stack should gain a spoilage bar");
         helper.succeed();
     }
 

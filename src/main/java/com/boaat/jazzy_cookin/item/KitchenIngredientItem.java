@@ -9,11 +9,13 @@ import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
+import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -143,7 +145,9 @@ public class KitchenIngredientItem extends Item {
     }
 
     public ItemStack createCreativeStack(int count) {
-        return this.createStack(count, CREATIVE_CREATED_TICK, this.maxData());
+        ItemStack stack = this.createStack(count, CREATIVE_CREATED_TICK, this.maxData());
+        stack.remove(JazzyDataComponents.SPOILAGE_DISPLAY.get());
+        return stack;
     }
 
     @Override
@@ -156,7 +160,15 @@ public class KitchenIngredientItem extends Item {
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
-        return !stack.isEmpty();
+        return !stack.isEmpty() && stack.get(JazzyDataComponents.SPOILAGE_DISPLAY.get()) != null;
+    }
+
+    @Override
+    public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entity) {
+        if (!entity.level().isClientSide && KitchenStackUtil.refreshSpoilageDisplay(stack, entity.level().getGameTime())) {
+            entity.setItem(stack.copy());
+        }
+        return false;
     }
 
     @Override
