@@ -35,7 +35,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 containerId,
                 playerInventory,
                 new SimpleContainer(7),
-                new SimpleContainerData(8),
+                new SimpleContainerData(20),
                 readStationType(extraData),
                 ContainerLevelAccess.NULL
         );
@@ -67,7 +67,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this.access = access;
 
         checkContainerSize(container, 7);
-        checkContainerDataCount(data, 8);
+        checkContainerDataCount(data, 20);
         container.startOpen(playerInventory.player);
 
         SlotLayout layout = SlotLayout.forStation(this.stationType);
@@ -156,6 +156,58 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         }
         int syncedTemperature = this.data.get(7);
         return syncedTemperature > 0 ? syncedTemperature : HeatLevel.DEFAULT_OVEN_TEMPERATURE;
+    }
+
+    public int executionMode() {
+        return this.data.get(8);
+    }
+
+    public boolean simulationMode() {
+        return this.executionMode() == 2;
+    }
+
+    public boolean simulationBatchPresent() {
+        return this.data.get(9) != 0;
+    }
+
+    public int simPanTempF() {
+        return this.data.get(10);
+    }
+
+    public int simFoodCoreTempF() {
+        return this.data.get(11);
+    }
+
+    public int simFoodSurfaceTempF() {
+        return this.data.get(12);
+    }
+
+    public int simDoneness() {
+        return this.data.get(13);
+    }
+
+    public int simMoisture() {
+        return this.data.get(14);
+    }
+
+    public int simBrowning() {
+        return this.data.get(15);
+    }
+
+    public int simChar() {
+        return this.data.get(16);
+    }
+
+    public int simAeration() {
+        return this.data.get(17);
+    }
+
+    public int simFragmentation() {
+        return this.data.get(18);
+    }
+
+    public int simRecognizerId() {
+        return this.data.get(19);
     }
 
     @Override

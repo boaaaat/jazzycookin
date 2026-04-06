@@ -259,6 +259,7 @@ public final class JazzyItems {
     public static final DeferredItem<Item> BUTTER_KNIFE = utilityItem("butter_knife", 16);
 
     public static final DeferredItem<KitchenIngredientItem> CHOPPED_PRODUCE_BLEND = prepared("chopped_produce_blend", IngredientState.ROUGH_CUT, PantrySortTab.OTHER, DAY * 2L, 0, 2, 1, true, false);
+    public static final DeferredItem<KitchenIngredientItem> EGG_MIXTURE = prepared("egg_mixture", IngredientState.SMOOTH_MIXTURE, PantrySortTab.OTHER, DAY, 0, 4, 2, true, false);
     public static final DeferredItem<KitchenIngredientItem> LEMON_JUICE = prepared("lemon_juice", IngredientState.FRESH_JUICE, PantrySortTab.SAUCES_AND_CONDIMENTS, DAY * 4L, 0, 0, 2, true, false);
     public static final DeferredItem<KitchenIngredientItem> FRUIT_PULP = prepared("fruit_pulp", IngredientState.PULP, PantrySortTab.OTHER, DAY * 2L, 0, 1, 0, true, false);
     public static final DeferredItem<KitchenIngredientItem> MIXED_JUICE = prepared("mixed_juice", IngredientState.FRESH_JUICE, PantrySortTab.OTHER, DAY * 3L, 0, 1, 2, true, false);
@@ -367,6 +368,7 @@ public final class JazzyItems {
 
     private static final List<DeferredItem<KitchenIngredientItem>> PREPARED_ITEM_LIST = List.of(
             CHOPPED_PRODUCE_BLEND,
+            EGG_MIXTURE,
             LEMON_JUICE,
             FRUIT_PULP,
             MIXED_JUICE,
@@ -497,6 +499,11 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenToolItem> TABLE_KNIFE = tool("table_knife", ToolProfile.TABLE_KNIFE, 0.02F, 1.02F, 96);
 
     public static final DeferredItem<KitchenMealItem> FRUIT_JUICE = meal("fruit_juice", IngredientState.PLATED, DAY * 2L, 4, 4, GLASS_CUP);
+    public static final DeferredItem<KitchenMealItem> SOFT_SCRAMBLED_EGGS = meal("soft_scrambled_eggs", IngredientState.PAN_FRIED, DAY, 5, 5);
+    public static final DeferredItem<KitchenMealItem> SCRAMBLED_EGGS = meal("scrambled_eggs", IngredientState.PAN_FRIED, DAY, 5, 5);
+    public static final DeferredItem<KitchenMealItem> OMELET = meal("omelet", IngredientState.PAN_FRIED, DAY, 6, 6);
+    public static final DeferredItem<KitchenMealItem> BROWNED_OMELET = meal("browned_omelet", IngredientState.PAN_FRIED, DAY, 6, 5);
+    public static final DeferredItem<KitchenMealItem> BURNT_EGGS = meal("burnt_eggs", IngredientState.PAN_FRIED, DAY / 2L, 2, 0);
     public static final DeferredItem<KitchenMealItem> CREAMY_TOMATO_SOUP = meal("creamy_tomato_soup", IngredientState.PLATED, DAY * 3L, 7, 4, CERAMIC_BOWL, SPOON);
     public static final DeferredItem<KitchenMealItem> PASTA_TRAY_BAKE = meal("pasta_tray_bake", IngredientState.PLATED, DAY * 4L, 9, 5, SERVING_TRAY, SERVING_SPOON);
     public static final DeferredItem<KitchenMealItem> PAN_SEARED_CHICKEN = meal("pan_seared_chicken", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_PLATE, TABLE_KNIFE, FORK);
@@ -567,6 +574,11 @@ public final class JazzyItems {
 
     private static final List<DeferredItem<KitchenMealItem>> MEAL_ITEM_LIST = List.of(
             FRUIT_JUICE,
+            SOFT_SCRAMBLED_EGGS,
+            SCRAMBLED_EGGS,
+            OMELET,
+            BROWNED_OMELET,
+            BURNT_EGGS,
             CREAMY_TOMATO_SOUP,
             PASTA_TRAY_BAKE,
             PAN_SEARED_CHICKEN,

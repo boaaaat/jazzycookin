@@ -1,6 +1,7 @@
 package com.boaat.jazzy_cookin.gametest;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
+import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.block.entity.KitchenStorageBlockEntity;
 import com.boaat.jazzy_cookin.kitchen.FreshnessBand;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
@@ -10,8 +11,10 @@ import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.StorageRules;
 import com.boaat.jazzy_cookin.kitchen.StorageType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
+import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.BlockPos;
@@ -137,6 +140,154 @@ public final class KitchenGameTests {
         fridgeMenu.removed(fakePlayer);
         freezerMenu.removed(fakePlayer);
         helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void legacyStacksMigrateFoodMatterOnTouch(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ItemStack legacyEggs = JazzyItems.ingredient(JazzyItems.IngredientId.EGGS).get().createStack(1, level.getGameTime());
+        IngredientStateData existing = KitchenStackUtil.getData(legacyEggs);
+        legacyEggs.remove(JazzyDataComponents.FOOD_MATTER.get());
+
+        FoodMatterData migrated = KitchenStackUtil.getOrCreateFoodMatter(legacyEggs, level.getGameTime());
+        require(existing != null, "Legacy stack should start with ingredient data");
+        require(migrated != null, "Legacy stack should migrate FOOD_MATTER on first touch");
+        require(KitchenStackUtil.getData(legacyEggs) != null, "Legacy stack should still expose ingredient data after migration");
+        require(migrated.createdTick() == existing.createdTick(), "Migration should preserve the created tick");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void whiskingEggsCreatesUnstackableEggMixture(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos bowlPos = helper.absolutePos(new BlockPos(0, 1, 0));
+        KitchenStationBlockEntity bowl = placeStation(level, bowlPos, JazzyBlocks.MIXING_BOWL.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        bowl.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.EGGS).get().createStack(1, level.getGameTime()));
+        require(bowl.handleButton(6, fakePlayer), "Whisk action should succeed with eggs in the mixing bowl");
+
+        ItemStack mixture = bowl.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        FoodMatterData matter = KitchenStackUtil.getFoodMatter(mixture);
+        require(mixture.is(JazzyItems.EGG_MIXTURE.get()), "Whisking eggs should produce egg mixture");
+        require(matter != null && matter.aeration() > 0.15F, "Whisking should raise mixture aeration");
+        require(mixture.getMaxStackSize() == 1, "Egg mixture should be unstackable while unfinished");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void lowHeatEarlyRemoveYieldsSoftScrambledEggs(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        ItemStack mixture = whiskSimpleEggMixture(level, helper.absolutePos(new BlockPos(0, 1, 0)), fakePlayer);
+        KitchenStationBlockEntity stove = prepareStove(level, helper.absolutePos(new BlockPos(2, 1, 0)), mixture);
+
+        stove.handleButton(1, fakePlayer);
+        require(stove.handleButton(6, fakePlayer), "Pour should start the stove simulation");
+        tickStation(level, stove, 85);
+        require(stove.handleButton(6, fakePlayer), "Remove should finalize the soft scramble");
+        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SOFT_SCRAMBLED_EGGS.get()), "Low heat early remove should yield soft scrambled eggs");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void mediumHeatStirYieldsScrambledEggs(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        ItemStack mixture = whiskSimpleEggMixture(level, helper.absolutePos(new BlockPos(0, 1, 0)), fakePlayer);
+        KitchenStationBlockEntity stove = prepareStove(level, helper.absolutePos(new BlockPos(2, 1, 0)), mixture);
+
+        stove.handleButton(2, fakePlayer);
+        require(stove.handleButton(6, fakePlayer), "Pour should start the stove simulation");
+        tickStation(level, stove, 60);
+        stove.handleButton(7, fakePlayer);
+        tickStation(level, stove, 40);
+        stove.handleButton(7, fakePlayer);
+        tickStation(level, stove, 35);
+        require(stove.handleButton(6, fakePlayer), "Remove should finalize the scramble");
+        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SCRAMBLED_EGGS.get()), "Medium heat with stirring should yield scrambled eggs");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void foldFlipYieldsOmeletAndHighHeatCanBurn(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        ItemStack mixture = whiskSimpleEggMixture(level, helper.absolutePos(new BlockPos(0, 1, 0)), fakePlayer);
+        KitchenStationBlockEntity stove = prepareStove(level, helper.absolutePos(new BlockPos(2, 1, 0)), mixture);
+
+        stove.handleButton(2, fakePlayer);
+        require(stove.handleButton(6, fakePlayer), "Pour should start the omelet simulation");
+        tickStation(level, stove, 45);
+        stove.handleButton(8, fakePlayer);
+        tickStation(level, stove, 25);
+        stove.handleButton(8, fakePlayer);
+        tickStation(level, stove, 20);
+        require(stove.handleButton(6, fakePlayer), "Remove should finalize the omelet");
+        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.OMELET.get()), "Folding and flipping should yield an omelet");
+
+        ItemStack secondMixture = whiskSimpleEggMixture(level, helper.absolutePos(new BlockPos(4, 1, 0)), fakePlayer);
+        KitchenStationBlockEntity hotStove = prepareStove(level, helper.absolutePos(new BlockPos(6, 1, 0)), secondMixture);
+        hotStove.handleButton(3, fakePlayer);
+        require(hotStove.handleButton(6, fakePlayer), "High heat pour should start the burn path");
+        tickStation(level, hotStove, 320);
+        require(hotStove.dataAccess().get(19) == 5, "High heat should eventually preview burnt eggs");
+        require(hotStove.handleButton(6, fakePlayer), "Remove should finalize the burnt batch");
+        require(hotStove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.BURNT_EGGS.get()), "Prolonged high heat should yield burnt eggs");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void addInsStillResolveToEggDishFamily(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos bowlPos = helper.absolutePos(new BlockPos(0, 1, 0));
+        KitchenStationBlockEntity bowl = placeStation(level, bowlPos, JazzyBlocks.MIXING_BOWL.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        bowl.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.EGGS).get().createStack(1, level.getGameTime()));
+        bowl.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.CHEESE).get().createStack(1, level.getGameTime()));
+        bowl.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get().createStack(1, level.getGameTime()));
+        bowl.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, level.getGameTime()));
+        require(bowl.handleButton(6, fakePlayer), "Whisking eggs with add-ins should still create a mixture");
+
+        KitchenStationBlockEntity stove = prepareStove(level, helper.absolutePos(new BlockPos(2, 1, 0)), bowl.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).copy());
+        stove.handleButton(2, fakePlayer);
+        require(stove.handleButton(6, fakePlayer), "Pour should accept add-in egg mixture");
+        tickStation(level, stove, 60);
+        stove.handleButton(7, fakePlayer);
+        tickStation(level, stove, 45);
+        stove.handleButton(7, fakePlayer);
+        tickStation(level, stove, 35);
+        require(stove.handleButton(6, fakePlayer), "Remove should finalize the add-in scramble");
+        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SCRAMBLED_EGGS.get()), "Add-ins should still resolve to the egg dish family");
+        helper.succeed();
+    }
+
+    private static KitchenStationBlockEntity placeStation(ServerLevel level, BlockPos pos, net.minecraft.world.level.block.Block block) {
+        level.setBlockAndUpdate(pos, block.defaultBlockState());
+        KitchenStationBlockEntity blockEntity = (KitchenStationBlockEntity) level.getBlockEntity(pos);
+        require(blockEntity != null, "Expected kitchen station block entity to exist");
+        return blockEntity;
+    }
+
+    private static ItemStack whiskSimpleEggMixture(ServerLevel level, BlockPos bowlPos, net.minecraft.world.entity.player.Player fakePlayer) {
+        KitchenStationBlockEntity bowl = placeStation(level, bowlPos, JazzyBlocks.MIXING_BOWL.get());
+        bowl.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.EGGS).get().createStack(1, level.getGameTime()));
+        require(bowl.handleButton(6, fakePlayer), "Whisk should produce a simple egg mixture");
+        return bowl.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).copy();
+    }
+
+    private static KitchenStationBlockEntity prepareStove(ServerLevel level, BlockPos stovePos, ItemStack mixture) {
+        KitchenStationBlockEntity stove = placeStation(level, stovePos, JazzyBlocks.STOVE.get());
+        stove.setItem(0, mixture);
+        stove.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.FRYING_PAN.get()));
+        return stove;
+    }
+
+    private static void tickStation(ServerLevel level, KitchenStationBlockEntity station, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            KitchenStationBlockEntity.serverTick(level, station.getBlockPos(), station.getBlockState(), station);
+        }
     }
 
     private static void require(boolean condition, String message) {

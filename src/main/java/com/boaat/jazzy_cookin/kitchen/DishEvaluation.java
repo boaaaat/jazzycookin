@@ -3,6 +3,7 @@ package com.boaat.jazzy_cookin.kitchen;
 import java.util.List;
 
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessOutput;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
@@ -150,17 +151,21 @@ public final class DishEvaluation {
 
         float freshness = KitchenStackUtil.currentFreshnessScore(stack, level);
         IngredientState effectiveState = KitchenStackUtil.effectiveState(stack, level.getGameTime());
+        FoodMatterData foodMatter = KitchenStackUtil.getOrCreateFoodMatter(stack, level.getGameTime());
         float prep = Mth.clamp((data.texture() + data.purity()) * 0.5F, 0.0F, 1.0F);
         float combine = Mth.clamp((data.structure() + data.aeration() + data.moisture()) / 3.0F, 0.0F, 1.0F);
         float cooking = Mth.clamp((data.flavor() + data.moisture() + data.texture()) / 3.0F, 0.0F, 1.0F);
-        float finishing = isFinishedState(effectiveState)
+        boolean finalizedServing = foodMatter != null && foodMatter.finalizedServing();
+        float finishing = finalizedServing
+                ? 0.95F
+                : isFinishedState(effectiveState)
                 ? 0.95F
                 : requiresFinishing(effectiveState)
                 ? 0.18F
                 : data.processDepth() >= 4
                 ? 0.7F
                 : 0.45F;
-        float plating = effectiveState.isPlatedState() ? 1.0F : 0.7F;
+        float plating = finalizedServing || effectiveState.isPlatedState() ? 1.0F : 0.7F;
         float total = Mth.clamp(
                 data.quality() * 0.22F
                         + freshness * 0.14F

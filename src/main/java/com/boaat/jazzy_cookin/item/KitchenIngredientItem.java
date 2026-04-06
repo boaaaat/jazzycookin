@@ -9,6 +9,7 @@ import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -131,19 +132,20 @@ public class KitchenIngredientItem extends Item {
     }
 
     public ItemStack createStack(int count, long gameTime) {
-        ItemStack stack = new ItemStack(this, count);
-        stack.set(com.boaat.jazzy_cookin.registry.JazzyDataComponents.INGREDIENT_STATE.get(), this.defaultData(gameTime));
-        return stack;
+        return this.createStack(count, gameTime, this.defaultData(gameTime));
     }
 
     public ItemStack createStack(int count, long gameTime, IngredientStateData data) {
         ItemStack stack = new ItemStack(this, count);
-        stack.set(com.boaat.jazzy_cookin.registry.JazzyDataComponents.INGREDIENT_STATE.get(), data);
+        FoodMatterData matter = FoodMatterData.fromLegacy(data, this instanceof KitchenMealItem);
+        KitchenStackUtil.initializeStack(stack, data, matter, gameTime);
         return stack;
     }
 
     public ItemStack createCreativeStack(int count) {
-        return this.createStack(count, CREATIVE_CREATED_TICK, this.maxData());
+        ItemStack stack = this.createStack(count, CREATIVE_CREATED_TICK, this.maxData());
+        stack.set(com.boaat.jazzy_cookin.registry.JazzyDataComponents.INGREDIENT_STATE.get(), this.maxData());
+        return stack;
     }
 
     @Override
