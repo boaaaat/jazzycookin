@@ -50,6 +50,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private Button tertiaryActionButton;
     private EditBox ovenTemperatureBox;
     private int pendingOvenTemperature = -1;
+    private Button heldActionButton;
+    private int heldActionButtonId = -1;
+    private double lastMouseX;
+    private double lastMouseY;
 
     public KitchenStationScreen(KitchenStationMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -109,6 +113,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         super.containerTick();
         this.updateButtonStates();
         this.syncOvenTemperatureField();
+        this.tickHeldAction();
     }
 
     private void updateButtonStates() {
@@ -147,6 +152,36 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (this.minecraft != null && this.minecraft.gameMode != null) {
             this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, buttonId);
         }
+    }
+
+    private void tickHeldAction() {
+        if (this.heldActionButtonId < 0 || this.minecraft == null || this.minecraft.getWindow() == null) {
+            return;
+        }
+        if (GLFW.glfwGetMouseButton(this.minecraft.getWindow().getWindow(), GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_PRESS) {
+            this.clearHeldAction();
+            return;
+        }
+        if (this.heldActionButton == null
+                || !this.heldActionButton.visible
+                || !this.heldActionButton.active
+                || !this.heldActionButton.isMouseOver(this.lastMouseX, this.lastMouseY)) {
+            this.clearHeldAction();
+            return;
+        }
+        this.sendButton(this.heldActionButtonId);
+    }
+
+    private void beginHeldAction(Button button, int buttonId) {
+        if (this.menu.simulationMode() && this.menu.stationType() == StationType.MIXING_BOWL && buttonId == 6) {
+            this.heldActionButton = button;
+            this.heldActionButtonId = buttonId;
+        }
+    }
+
+    private void clearHeldAction() {
+        this.heldActionButton = null;
+        this.heldActionButtonId = -1;
     }
 
     private void syncOvenTemperatureField() {
@@ -443,6 +478,8 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        this.lastMouseX = mouseX;
+        this.lastMouseY = mouseY;
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
@@ -450,12 +487,33 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        this.lastMouseX = mouseX;
+        this.lastMouseY = mouseY;
         boolean wasFocused = this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused();
         boolean handled = super.mouseClicked(mouseX, mouseY, button);
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (handled
+                    && this.startButton != null
+                    && this.startButton.visible
+                    && this.startButton.active
+                    && this.startButton.isMouseOver(mouseX, mouseY)) {
+                this.beginHeldAction(this.startButton, this.primaryActionButtonId());
+            } else {
+                this.clearHeldAction();
+            }
+        }
         if (wasFocused && this.ovenTemperatureBox != null && !this.ovenTemperatureBox.isFocused()) {
             this.commitOvenTemperature();
         }
         return handled;
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            this.clearHeldAction();
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
@@ -496,6 +554,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     @Override
     public void removed() {
+        this.clearHeldAction();
         if (this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused()) {
             this.commitOvenTemperature();
         }
