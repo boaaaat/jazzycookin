@@ -60,7 +60,7 @@ public final class PanSimulationDomain implements StationSimulationDomain {
             return new SimulationSnapshot(executionMode, 0, EggPanReactionSolver.toF(access.simulationStationPhysics().panTemperatureC()), 72, 72, 0, 0, 0, 0, 0, 0, 0);
         }
 
-        DishRecognitionResult preview = access.simulationBatch() != null ? DishSchema.preview(matter) : null;
+        DishRecognitionResult preview = access.simulationBatch() != null ? DishSchema.previewMeal(matter) : null;
         return new SimulationSnapshot(
                 executionMode,
                 access.simulationBatch() != null ? 1 : 0,

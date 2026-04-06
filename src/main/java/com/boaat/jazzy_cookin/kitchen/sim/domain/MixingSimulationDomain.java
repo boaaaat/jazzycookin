@@ -142,6 +142,12 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
         if (isCheeseSauce(access, analysis)) {
             return new MixOutcome(KitchenMethod.MIX, JazzyItems.CHEESE_SAUCE.get(), matter -> shapeMatter(matter, analysis, access.simulationControlSetting(), KitchenMethod.MIX));
         }
+        if (isPancakeDryMix(analysis)) {
+            return new MixOutcome(KitchenMethod.MIX, JazzyItems.PANCAKE_DRY_MIX.get(), matter -> shapeMatter(matter, analysis, access.simulationControlSetting(), KitchenMethod.MIX));
+        }
+        if (isCakeDryMix(analysis)) {
+            return new MixOutcome(KitchenMethod.MIX, JazzyItems.CAKE_DRY_MIX.get(), matter -> shapeMatter(matter, analysis, access.simulationControlSetting(), KitchenMethod.MIX));
+        }
         if (isBrownieBatter(access, analysis)) {
             return new MixOutcome(KitchenMethod.BATTER, JazzyItems.BROWNIE_BATTER.get(), matter -> shapeMatter(matter, analysis, access.simulationControlSetting(), KitchenMethod.BATTER));
         }
@@ -249,6 +255,22 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
                 && analysis.has(JazzyItems.ingredient(IngredientId.EGGS).get())
                 && hasLeavenerInput(analysis)
                 && !hasCakeSignal(analysis)
+                && !hasChocolateSignal(analysis);
+    }
+
+    private static boolean isPancakeDryMix(SimulationIngredientAnalysis analysis) {
+        return analysis.hasTrait(FoodTrait.FLOUR)
+                && hasLeavenerInput(analysis)
+                && analysis.has(JazzyItems.ingredient(IngredientId.POWDERED_MILK).get())
+                && !analysis.has(JazzyItems.ingredient(IngredientId.EGGS).get())
+                && !hasCakeSignal(analysis)
+                && !hasChocolateSignal(analysis);
+    }
+
+    private static boolean isCakeDryMix(SimulationIngredientAnalysis analysis) {
+        return !analysis.has(JazzyItems.ingredient(IngredientId.EGGS).get())
+                && (analysis.has(JazzyItems.ingredient(IngredientId.CAKE_FLOUR).get()) || hasCakeSignal(analysis))
+                && hasLeavenerInput(analysis)
                 && !hasChocolateSignal(analysis);
     }
 

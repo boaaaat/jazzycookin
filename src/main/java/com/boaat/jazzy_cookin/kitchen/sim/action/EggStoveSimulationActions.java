@@ -131,7 +131,10 @@ public final class EggStoveSimulationActions {
             return false;
         }
 
-        DishRecognitionResult result = DishSchema.finalizeResult(access.simulationBatch().matter());
+        DishRecognitionResult result = DishSchema.finalizeMeal(access.simulationBatch().matter());
+        if (result == null) {
+            result = DishSchema.descriptor(2);
+        }
         ItemStack outputStack = new ItemStack(result.resultItem().get());
         FoodMatterData finalized = access.simulationBatch().matter().withWorkingState(
                 access.simulationBatch().matter().water(),

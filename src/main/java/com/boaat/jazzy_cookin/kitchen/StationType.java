@@ -84,8 +84,8 @@ public enum StationType implements StringRepresentable {
             case JUICER -> SimulationDomainType.JUICE;
             case FREEZE_DRYER -> SimulationDomainType.DRY;
             case PREP_TABLE -> SimulationDomainType.PREP;
-            case CANNING_STATION, FERMENTATION_CROCK, DRYING_RACK, SMOKER, STEAMER -> SimulationDomainType.PRESERVE;
-            case OVEN -> SimulationDomainType.OVEN;
+            case CANNING_STATION, FERMENTATION_CROCK, DRYING_RACK -> SimulationDomainType.PRESERVE;
+            case OVEN, MICROWAVE, SMOKER, STEAMER -> SimulationDomainType.OVEN;
             case COOLING_RACK, RESTING_BOARD -> SimulationDomainType.REST;
             default -> SimulationDomainType.NONE;
         };

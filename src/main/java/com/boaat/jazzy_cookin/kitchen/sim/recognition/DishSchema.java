@@ -1,17 +1,28 @@
 package com.boaat.jazzy_cookin.kitchen.sim.recognition;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
+import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfile;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 public final class DishSchema {
     @FunctionalInterface
@@ -397,7 +408,7 @@ public final class DishSchema {
             )
     );
 
-    private static final List<Schema> ALL_SCHEMAS = List.of(
+    private static final List<Schema> MANUAL_SCHEMAS = List.of(
             BURNT_EGGS,
             SOFT_SCRAMBLED_EGGS,
             SCRAMBLED_EGGS,
@@ -418,17 +429,45 @@ public final class DishSchema {
             PACKED_FREEZE_DRY_APPLES,
             FREEZE_DRIED_MEAL
     );
-    private static final Map<Integer, Schema> BY_PREVIEW_ID = indexByPreviewId();
+    private static final List<Schema> EGG_DISH_SCHEMAS = List.of(BURNT_EGGS, SOFT_SCRAMBLED_EGGS, SCRAMBLED_EGGS, OMELET, BROWNED_OMELET);
+    private static List<Schema> allSchemas;
+    private static Map<Integer, Schema> byPreviewId;
 
     private DishSchema() {
     }
 
     public static DishRecognitionResult preview(FoodMatterData matter) {
+        DishRecognitionResult eggDish = previewEggDish(matter);
+        if (eggDish != null) {
+            return eggDish;
+        }
+        if (matter != null && (matter.finalizedServing() || isFinishedServingState(matter))) {
+            DishRecognitionResult meal = previewMeal(matter);
+            if (meal != null) {
+                return meal;
+            }
+        }
+        return preview(matter, item -> true);
+    }
+
+    public static DishRecognitionResult previewPrepared(FoodMatterData matter) {
+        return preview(matter, DishSchema::isPreparedFood);
+    }
+
+    public static DishRecognitionResult previewMeal(FoodMatterData matter) {
+        return preview(matter, DishSchema::isMeal);
+    }
+
+    public static DishRecognitionResult preview(FoodMatterData matter, Predicate<Item> filter) {
         if (matter == null) {
             return null;
         }
+        ensureSchemas();
         DishRecognitionResult best = null;
-        for (Schema schema : ALL_SCHEMAS) {
+        for (Schema schema : allSchemas) {
+            if (!filter.test(schema.resultItem().get())) {
+                continue;
+            }
             DishRecognitionResult result = schema.preview(matter);
             if (isBetterMatch(best, result)) {
                 best = result;
@@ -438,22 +477,62 @@ public final class DishSchema {
     }
 
     public static DishRecognitionResult finalizeResult(FoodMatterData matter) {
-        if (matter == null) {
-            return SCRAMBLED_EGGS.descriptor();
+        DishRecognitionResult eggDish = finalizeEggDish(matter);
+        if (eggDish != null) {
+            return eggDish;
         }
+        if (matter != null && (matter.finalizedServing() || isFinishedServingState(matter))) {
+            DishRecognitionResult meal = finalizeMeal(matter);
+            if (meal != null) {
+                return meal;
+            }
+        }
+        return finalizeResult(matter, item -> true);
+    }
+
+    public static DishRecognitionResult finalizePrepared(FoodMatterData matter) {
+        return finalizeResult(matter, DishSchema::isPreparedFood);
+    }
+
+    public static DishRecognitionResult finalizeMeal(FoodMatterData matter) {
+        return finalizeResult(matter, DishSchema::isMeal);
+    }
+
+    public static DishRecognitionResult finalizeResult(FoodMatterData matter, Predicate<Item> filter) {
+        if (matter == null) {
+            return null;
+        }
+        ensureSchemas();
         DishRecognitionResult best = null;
-        for (Schema schema : ALL_SCHEMAS) {
+        for (Schema schema : allSchemas) {
+            if (!filter.test(schema.resultItem().get())) {
+                continue;
+            }
             DishRecognitionResult result = schema.finalizeMatch(matter);
             if (isBetterMatch(best, result)) {
                 best = result;
             }
         }
-        return best != null ? best : SCRAMBLED_EGGS.descriptor();
+        if (best != null) {
+            return best;
+        }
+        return preview(matter, filter);
     }
 
     public static DishRecognitionResult descriptor(int previewId) {
-        Schema schema = BY_PREVIEW_ID.get(previewId);
+        ensureSchemas();
+        Schema schema = byPreviewId.get(previewId);
         return schema != null ? schema.descriptor() : null;
+    }
+
+    public static boolean hasRecognizerFor(Item item) {
+        ensureSchemas();
+        for (Schema schema : allSchemas) {
+            if (schema.resultItem().get() == item) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Schema schema(
@@ -484,9 +563,273 @@ public final class DishSchema {
         return false;
     }
 
-    private static Map<Integer, Schema> indexByPreviewId() {
+    private static synchronized void ensureSchemas() {
+        if (allSchemas != null && byPreviewId != null) {
+            return;
+        }
+
+        List<Schema> generated = buildCatalogSchemas();
+        List<Schema> combined = new ArrayList<>(MANUAL_SCHEMAS);
+        combined.addAll(generated);
+        allSchemas = List.copyOf(combined);
+        byPreviewId = indexByPreviewId(allSchemas);
+    }
+
+    private static List<Schema> buildCatalogSchemas() {
+        Set<Item> manualItems = new HashSet<>();
+        for (Schema schema : MANUAL_SCHEMAS) {
+            manualItems.add(schema.resultItem().get());
+        }
+
+        List<Schema> generated = new ArrayList<>();
+        int previewId = 100;
+        for (var ingredient : JazzyItems.ingredientItems()) {
+            Item item = ingredient.get();
+            if (manualItems.add(item)) {
+                generated.add(generatedSchema(item, previewId++, false));
+            }
+        }
+        for (var prepared : JazzyItems.preparedItems()) {
+            Item item = prepared.get();
+            if (manualItems.add(item)) {
+                generated.add(generatedSchema(item, previewId++, false));
+            }
+        }
+        for (var meal : JazzyItems.mealItems()) {
+            Item item = meal.get();
+            if (manualItems.add(item)) {
+                generated.add(generatedSchema(item, previewId++, true));
+            }
+        }
+        return generated;
+    }
+
+    private static Schema generatedSchema(Item item, int previewId, boolean meal) {
+        FoodMaterialProfile profile = FoodMaterialProfiles.profileFor(new ItemStack(item)).orElseThrow(
+                () -> new IllegalStateException("Missing generated recognizer profile for " + BuiltInRegistries.ITEM.getKey(item))
+        );
+        IngredientState expectedState = expectedState(item);
+        float previewThreshold = meal ? 0.54F : 0.50F;
+        float finalizeThreshold = meal ? 0.58F : 0.54F;
+        float desirability = meal ? 0.84F : 0.72F;
+        return schema(
+                BuiltInRegistries.ITEM.getKey(item).getPath(),
+                previewId,
+                () -> item,
+                previewThreshold,
+                finalizeThreshold,
+                desirability,
+                matter -> generatedScore(matter, profile, expectedState, meal, item)
+        );
+    }
+
+    private static float generatedScore(
+            FoodMatterData matter,
+            FoodMaterialProfile profile,
+            IngredientState expectedState,
+            boolean meal,
+            Item item
+    ) {
+        float stateScore = generatedStateFit(matter, expectedState, item);
+        float traitCoverage = generatedTraitCoverage(matter.traitMask(), profile.traitMask());
+        float compositionScore = average(
+                closeness(matter.water(), profile.water()),
+                closeness(matter.fat(), profile.fat()),
+                closeness(matter.protein(), profile.protein()),
+                closeness(matter.seasoningLoad(), profile.seasoningLoad()),
+                closeness(matter.cheeseLoad(), profile.cheeseLoad()),
+                closeness(matter.onionLoad(), profile.onionLoad()),
+                closeness(matter.herbLoad(), profile.herbLoad()),
+                closeness(matter.pepperLoad(), profile.pepperLoad())
+        );
+        float processScore = meal
+                ? average(matter.finalizedServing() ? 1.0F : 0.48F, Mth.clamp(matter.processDepth() / 4.0F, 0.0F, 1.0F))
+                : average(!matter.finalizedServing() ? 1.0F : 0.62F, Mth.clamp(matter.processDepth() / 3.0F, 0.0F, 1.0F));
+        float conditionScore = average(
+                1.0F - matter.charLevel(),
+                1.0F - Mth.clamp(matter.microbialLoad(), 0.0F, 1.0F),
+                Mth.clamp(0.45F + matter.preservationLevel() * 0.30F, 0.0F, 1.0F)
+        );
+        float score = average(stateScore, traitCoverage, compositionScore, processScore, conditionScore);
+        if (!meal && expectedState.isPlatedState() != (matter.summaryHint() != null && matter.summaryHint().state().isPlatedState())) {
+            score *= 0.35F;
+        }
+        if (item instanceof KitchenIngredientItem && !(item instanceof KitchenMealItem) && isCookedMatter(matter) && isPantryLikeState(expectedState)) {
+            score *= 0.12F;
+        }
+        if (item instanceof KitchenIngredientItem && !(item instanceof KitchenMealItem) && matter.finalizedServing()) {
+            score *= 0.30F;
+        }
+        if (item instanceof KitchenMealItem && !matter.finalizedServing() && !isFinishedServingState(matter)) {
+            score *= 0.88F;
+        }
+        return Mth.clamp(score, 0.0F, 1.0F);
+    }
+
+    private static float generatedStateFit(FoodMatterData matter, IngredientState expectedState, Item item) {
+        IngredientState current = matter.summaryHint() != null ? matter.summaryHint().state() : IngredientState.PANTRY_READY;
+        if (current == expectedState) {
+            return 1.0F;
+        }
+        if (expectedState.isPlatedState()) {
+            return current.isPlatedState() || matter.finalizedServing() ? 1.0F : 0.28F;
+        }
+        if (current.isPlatedState() && !expectedState.isPlatedState()) {
+            return 0.18F;
+        }
+        if (item instanceof KitchenMealItem) {
+            return matter.finalizedServing() ? 0.82F : 0.32F;
+        }
+        if (item instanceof KitchenIngredientItem && isPrepLikeState(current) && isPantryLikeState(expectedState)) {
+            return 0.82F;
+        }
+        if (sameStateFamily(current, expectedState)) {
+            return 0.76F;
+        }
+        return 0.34F;
+    }
+
+    private static boolean sameStateFamily(IngredientState current, IngredientState expectedState) {
+        if ((isSimmeredFamily(current) && isSimmeredFamily(expectedState))
+                || (isBakedFamily(current) && isBakedFamily(expectedState))
+                || (isFriedFamily(current) && isFriedFamily(expectedState))
+                || (isPowderFamily(current) && isPowderFamily(expectedState))
+                || (isPrepLikeState(current) && isPrepLikeState(expectedState))) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isPantryLikeState(IngredientState state) {
+        return state == IngredientState.PANTRY_READY || state.name().equals(state.getSerializedName().toUpperCase()) || state.ordinal() >= IngredientState.WHITE_SUGAR.ordinal();
+    }
+
+    private static boolean isPrepLikeState(IngredientState state) {
+        return switch (state) {
+            case RAW, WASHED, WHOLE, PEELED, SLICED, CHOPPED, DICED, MINCED, ROUGH_CUT, STRAINED, CRUSHED,
+                    STUFFED, SHAPED_BASE, SLICED_APPLE, CHOPPED_TOMATO, CHOPPED_HERB, CHOPPED_CABBAGE,
+                    DICED_ONION, CLEANED_FISH, SLICED_BREAD, GROUND_SPICE, GROUND_HERB -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isSimmeredFamily(IngredientState state) {
+        return switch (state) {
+            case BOILED, SIMMERED, SOUP_BASE, STRAINED_SOUP, SIMMERED_FILLING, GLAZED, MARINATED, MARINATED_PROTEIN -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isBakedFamily(IngredientState state) {
+        return switch (state) {
+            case BAKED, ROASTED, BAKED_BREAD, BAKED_PIE, COOLED_PIE, RESTED_PIE, RAW_ASSEMBLED_PIE, RAW_ASSEMBLED_PIZZA, BREAD_DOUGH, DOUGH -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isFriedFamily(IngredientState state) {
+        return switch (state) {
+            case PAN_FRIED, DEEP_FRIED, FRIED_PROTEIN, PANTRY_READY, GLAZED -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isPowderFamily(IngredientState state) {
+        return switch (state) {
+            case COARSE_POWDER, FINE_POWDER, GROUND_SPICE, GROUND_HERB -> true;
+            default -> false;
+        };
+    }
+
+    private static float generatedTraitCoverage(long matterTraits, long expectedTraits) {
+        if (expectedTraits == 0L) {
+            return 0.45F;
+        }
+        int expectedCount = 0;
+        int matched = 0;
+        for (FoodTrait trait : FoodTrait.unpack(expectedTraits)) {
+            expectedCount++;
+            if (FoodTrait.has(matterTraits, trait)) {
+                matched++;
+            }
+        }
+        return expectedCount > 0 ? matched / (float) expectedCount : 0.0F;
+    }
+
+    private static float closeness(float actual, float expected) {
+        return Mth.clamp(1.0F - Math.abs(actual - expected), 0.0F, 1.0F);
+    }
+
+    private static IngredientState expectedState(Item item) {
+        if (item instanceof KitchenIngredientItem ingredientItem) {
+            return ingredientItem.defaultData(0L).state();
+        }
+        return IngredientState.PANTRY_READY;
+    }
+
+    private static boolean isPreparedFood(Item item) {
+        return item instanceof KitchenIngredientItem && !(item instanceof KitchenMealItem);
+    }
+
+    private static boolean isMeal(Item item) {
+        return item instanceof KitchenMealItem;
+    }
+
+    private static DishRecognitionResult previewEggDish(FoodMatterData matter) {
+        if (!isEggDishMatter(matter)) {
+            return null;
+        }
+        return bestMatch(EGG_DISH_SCHEMAS, matter, false, item -> true);
+    }
+
+    private static DishRecognitionResult finalizeEggDish(FoodMatterData matter) {
+        if (!isEggDishMatter(matter)) {
+            return null;
+        }
+        return bestMatch(EGG_DISH_SCHEMAS, matter, true, item -> true);
+    }
+
+    private static boolean isFinishedServingState(FoodMatterData matter) {
+        if (matter.summaryHint() == null) {
+            return false;
+        }
+        IngredientState state = matter.summaryHint().state();
+        return state.isPlatedState() || state == IngredientState.PAN_FRIED;
+    }
+
+    private static boolean isCookedMatter(FoodMatterData matter) {
+        return matter.finalizedServing()
+                || matter.proteinSet() >= 0.28F
+                || matter.browning() >= 0.08F
+                || matter.charLevel() > 0.0F
+                || matter.timeInPan() > 0
+                || matter.processDepth() > 1
+                || (matter.summaryHint() != null && !isPantryLikeState(matter.summaryHint().state()));
+    }
+
+    private static boolean isEggDishMatter(FoodMatterData matter) {
+        return matter != null
+                && matter.hasTrait(FoodTrait.EGG)
+                && (matter.timeInPan() > 0 || matter.proteinSet() >= 0.25F || matter.finalizedServing());
+    }
+
+    private static DishRecognitionResult bestMatch(List<Schema> schemas, FoodMatterData matter, boolean finalize, Predicate<Item> filter) {
+        DishRecognitionResult best = null;
+        for (Schema schema : schemas) {
+            if (!filter.test(schema.resultItem().get())) {
+                continue;
+            }
+            DishRecognitionResult result = finalize ? schema.finalizeMatch(matter) : schema.preview(matter);
+            if (isBetterMatch(best, result)) {
+                best = result;
+            }
+        }
+        return best;
+    }
+
+    private static Map<Integer, Schema> indexByPreviewId(List<Schema> schemas) {
         Map<Integer, Schema> byPreviewId = new LinkedHashMap<>();
-        for (Schema schema : ALL_SCHEMAS) {
+        for (Schema schema : schemas) {
             byPreviewId.put(schema.previewId(), schema);
         }
         return byPreviewId;

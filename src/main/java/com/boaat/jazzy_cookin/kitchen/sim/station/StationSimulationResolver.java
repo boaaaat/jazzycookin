@@ -11,11 +11,15 @@ import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.BlenderSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.FoodProcessorSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.FreezeDrySimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.HeatChamberSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.JuicerSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.MixingSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.PanSimulationDomain;
-import com.boaat.jazzy_cookin.kitchen.sim.domain.PlateSimulationDomain;
-import com.boaat.jazzy_cookin.kitchen.sim.domain.ProcessRecipeSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.PlateAssemblySimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.PotSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.PrepSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.PreserveSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.RestSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.StationSimulationDomain;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
@@ -26,12 +30,16 @@ public final class StationSimulationResolver {
     private static final List<StationSimulationDomain> DOMAINS = List.of(
             new PanSimulationDomain(),
             new MixingSimulationDomain(),
+            new PrepSimulationDomain(),
+            new PotSimulationDomain(),
+            new HeatChamberSimulationDomain(),
+            new PreserveSimulationDomain(),
+            new RestSimulationDomain(),
             new FoodProcessorSimulationDomain(),
             new BlenderSimulationDomain(),
             new JuicerSimulationDomain(),
             new FreezeDrySimulationDomain(),
-            new PlateSimulationDomain(),
-            new ProcessRecipeSimulationDomain()
+            new PlateAssemblySimulationDomain()
     );
 
     private StationSimulationResolver() {
