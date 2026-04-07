@@ -104,8 +104,12 @@ public final class JazzyRecipeBookPlanner {
             StepKind kind,
             OutputKey outputKey,
             ItemStack outputStack,
-            List<StepOption> options
+            List<StepOption> options,
+            List<String> dependencyStepIds
     ) {
+        public boolean expandable() {
+            return !this.dependencyStepIds.isEmpty();
+        }
     }
 
     public record Plan(
@@ -113,8 +117,22 @@ public final class JazzyRecipeBookPlanner {
             IngredientState state,
             String chainKey,
             ItemStack targetStack,
+            String rootStepId,
             List<PlanStep> steps
     ) {
+        public Optional<PlanStep> step(String stepId) {
+            return this.steps.stream().filter(step -> step.id().equals(stepId)).findFirst();
+        }
+
+        public int indexOfStep(String stepId) {
+            for (int index = 0; index < this.steps.size(); index++) {
+                if (this.steps.get(index).id().equals(stepId)) {
+                    return index;
+                }
+            }
+            return -1;
+        }
+
         public int currentStepIndex(Set<String> completedStepIds) {
             for (int index = 0; index < this.steps.size(); index++) {
                 if (!completedStepIds.contains(this.steps.get(index).id())) {
@@ -136,6 +154,29 @@ public final class JazzyRecipeBookPlanner {
             return this.steps.get(this.steps.size() - 1);
         }
 
+        public int focusedStepIndex(Set<String> completedStepIds, @Nullable String preferredStepId) {
+            PlanStep step = this.focusedStep(completedStepIds, preferredStepId);
+            return step == null ? -1 : Math.max(0, this.indexOfStep(step.id()));
+        }
+
+        public @Nullable PlanStep focusedStep(Set<String> completedStepIds, @Nullable String preferredStepId) {
+            if (this.steps.isEmpty()) {
+                return null;
+            }
+            if (preferredStepId != null && !preferredStepId.isBlank()) {
+                int startIndex = this.indexOfStep(preferredStepId);
+                if (startIndex >= 0) {
+                    for (int index = startIndex; index < this.steps.size(); index++) {
+                        PlanStep step = this.steps.get(index);
+                        if (!completedStepIds.contains(step.id())) {
+                            return step;
+                        }
+                    }
+                }
+            }
+            return this.currentStep(completedStepIds);
+        }
+
         public boolean isComplete(Set<String> completedStepIds) {
             return !this.steps.isEmpty() && this.steps.stream().allMatch(step -> completedStepIds.contains(step.id()));
         }
@@ -149,7 +190,7 @@ public final class JazzyRecipeBookPlanner {
             return JazzyRecipeBookPlanner.stepId(this.chainKey, this.outputKey);
         }
 
-        private PlanStep toStep() {
+        private PlanStep toStep(List<String> dependencyStepIds) {
             StepKind mergedKind = this.options.stream()
                     .map(StepOption::kind)
                     .findFirst()
@@ -159,7 +200,7 @@ public final class JazzyRecipeBookPlanner {
                     .findFirst()
                     .map(ItemStack::copy)
                     .orElse(ItemStack.EMPTY);
-            return new PlanStep(this.stepId(), this.chainKey, mergedKind, this.outputKey, outputStack, List.copyOf(this.options));
+            return new PlanStep(this.stepId(), this.chainKey, mergedKind, this.outputKey, outputStack, List.copyOf(this.options), List.copyOf(dependencyStepIds));
         }
     }
 
@@ -420,12 +461,27 @@ public final class JazzyRecipeBookPlanner {
         LinkedHashMap<String, PlanStep> orderedSteps = new LinkedHashMap<>();
         Set<String> visiting = new HashSet<>();
         this.collectSteps(rootGroup.outputKey(), rootGroup.chainKey(), orderedSteps, visiting);
+        LinkedHashMap<String, PlanStep> enrichedSteps = new LinkedHashMap<>();
+        for (PlanStep step : orderedSteps.values()) {
+            OptionGroup group = this.resolveGroup(step.outputKey(), step.chainKey());
+            List<String> dependencyStepIds = group == null ? List.of() : this.dependencyStepIds(group);
+            enrichedSteps.put(step.id(), new PlanStep(
+                    step.id(),
+                    step.chainKey(),
+                    step.kind(),
+                    step.outputKey(),
+                    step.outputStack().copy(),
+                    step.options(),
+                    dependencyStepIds
+            ));
+        }
         return new Plan(
                 rootGroup.outputKey().itemId(),
                 rootGroup.outputKey().state(),
                 rootGroup.chainKey(),
-                rootGroup.toStep().outputStack().copy(),
-                List.copyOf(orderedSteps.values())
+                rootGroup.toStep(List.of()).outputStack().copy(),
+                rootGroup.stepId(),
+                List.copyOf(enrichedSteps.values())
         );
     }
 
@@ -448,8 +504,26 @@ public final class JazzyRecipeBookPlanner {
             this.collectSteps(requirement.dependencyKey(), preferredChainKey, orderedSteps, visiting);
         }
 
-        orderedSteps.putIfAbsent(group.stepId(), group.toStep());
+        orderedSteps.putIfAbsent(group.stepId(), group.toStep(List.of()));
         visiting.remove(visitKey);
+    }
+
+    private List<String> dependencyStepIds(OptionGroup group) {
+        LinkedHashSet<String> dependencyIds = new LinkedHashSet<>();
+        StepOption canonicalOption = group.options().get(0);
+        for (OutputKey prerequisite : canonicalOption.prerequisites()) {
+            OptionGroup dependency = this.resolveGroup(prerequisite, group.chainKey());
+            if (dependency != null) {
+                dependencyIds.add(dependency.stepId());
+            }
+        }
+        for (Requirement requirement : canonicalOption.recursiveRequirements()) {
+            OptionGroup dependency = this.resolveGroup(requirement.dependencyKey(), group.chainKey());
+            if (dependency != null) {
+                dependencyIds.add(dependency.stepId());
+            }
+        }
+        return List.copyOf(dependencyIds);
     }
 
     private @Nullable OptionGroup resolveGroup(OutputKey outputKey, @Nullable String preferredChainKey) {

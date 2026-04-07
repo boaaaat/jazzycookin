@@ -35,5 +35,6 @@ public class JazzyCookin {
         NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onPlayerCloned);
         NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onItemCrafted);
+        NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onPlayerTick);
     }
 }

@@ -43,6 +43,7 @@ public final class RecipeBookClientState {
 
     private static JazzyRecipeBookPlanner planner;
     private static JazzyRecipeBookSelection activeSelection;
+    private static String focusedStepId = "";
     private static ResourceLocation lastViewedItemId;
     private static IngredientState lastViewedState;
     private static String lastViewedChainKey = "";
@@ -85,12 +86,12 @@ public final class RecipeBookClientState {
 
         JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
         Set<String> completed = completedStepIds();
-        JazzyRecipeBookPlanner.PlanStep currentStep = plan.currentStep(completed);
+        JazzyRecipeBookPlanner.PlanStep currentStep = plan.focusedStep(completed, focusedStepId());
         if (currentStep == null) {
             return;
         }
 
-        int currentIndex = Math.max(0, plan.currentStepIndex(completed));
+        int currentIndex = Math.max(0, plan.focusedStepIndex(completed, focusedStepId()));
         GuiGraphics guiGraphics = event.getGuiGraphics();
         int x = 8;
         int y = minecraft.getWindow().getGuiScaledHeight() - OVERLAY_HEIGHT - 48;
@@ -156,6 +157,7 @@ public final class RecipeBookClientState {
 
     public static void applySync(RecipeBookSyncPayload payload) {
         activeSelection = payload.selection();
+        focusedStepId = payload.focusedStepId() == null ? "" : payload.focusedStepId();
         completedStepIds.clear();
         completedStepIds.addAll(payload.completedStepIds());
         if (activeSelection != null) {
@@ -180,6 +182,10 @@ public final class RecipeBookClientState {
         return activeSelection;
     }
 
+    public static @Nullable String focusedStepId() {
+        return focusedStepId.isBlank() ? null : focusedStepId;
+    }
+
     public static Set<String> completedStepIds() {
         return Set.copyOf(completedStepIds);
     }
@@ -189,8 +195,12 @@ public final class RecipeBookClientState {
     }
 
     public static void pinSelection(JazzyRecipeBookSelection selection) {
+        pinSelection(selection, null);
+    }
+
+    public static void pinSelection(JazzyRecipeBookSelection selection, @Nullable String stepId) {
         rememberSelection(selection);
-        PacketDistributor.sendToServer(RecipeBookSelectionPayload.pin(selection));
+        PacketDistributor.sendToServer(RecipeBookSelectionPayload.pin(selection, stepId));
     }
 
     public static void unpinSelection() {

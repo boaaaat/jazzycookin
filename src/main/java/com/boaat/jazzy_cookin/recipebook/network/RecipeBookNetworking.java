@@ -5,6 +5,7 @@ import com.boaat.jazzy_cookin.recipebook.client.RecipeBookClientState;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -21,7 +22,7 @@ public final class RecipeBookNetworking {
                         return;
                     }
                     if (payload.pinned() && payload.selection() != null) {
-                        RecipeBookProgress.pin(serverPlayer, payload.selection());
+                        RecipeBookProgress.pin(serverPlayer, payload.selection(), payload.focusedStepId());
                     } else {
                         RecipeBookProgress.unpin(serverPlayer);
                     }
@@ -39,6 +40,7 @@ public final class RecipeBookNetworking {
 
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            RecipeBookProgress.reconcilePinnedGuide(player);
             sync(player);
         }
     }
@@ -52,6 +54,12 @@ public final class RecipeBookNetworking {
 
     public static void onItemCrafted(PlayerEvent.ItemCraftedEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && RecipeBookProgress.recordCraft(player, event.getCrafting())) {
+            sync(player);
+        }
+    }
+
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (event.getEntity() instanceof ServerPlayer player && RecipeBookProgress.reconcilePinnedGuide(player)) {
             sync(player);
         }
     }

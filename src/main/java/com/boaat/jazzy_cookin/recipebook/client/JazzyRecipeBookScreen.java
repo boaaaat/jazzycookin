@@ -1,7 +1,11 @@
 package com.boaat.jazzy_cookin.recipebook.client;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -10,7 +14,6 @@ import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookPlanner;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookSelection;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -20,6 +23,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 public class JazzyRecipeBookScreen extends Screen {
+    private record VisibleStep(JazzyRecipeBookPlanner.PlanStep step, int depth, boolean expanded) {
+        public boolean expandable() {
+            return this.step.expandable();
+        }
+    }
+
     private static final int PANEL_WIDTH = 374;
     private static final int PANEL_HEIGHT = 222;
     private static final int HEADER_HEIGHT = 20;
@@ -30,6 +39,9 @@ public class JazzyRecipeBookScreen extends Screen {
     private static final int ITEM_LIST_BOTTOM = 208;
     private static final int STEP_LIST_TOP = 78;
     private static final int STEP_LIST_BOTTOM = 184;
+    private static final int STEP_ROW_HEIGHT = 24;
+    private static final int STEP_INDENT = 12;
+    private static final int STEP_EXPAND_SIZE = 10;
 
     private EditBox searchBox;
     private Button pinButton;
@@ -40,11 +52,15 @@ public class JazzyRecipeBookScreen extends Screen {
     private int panelLeft;
     private int panelTop;
     private final List<JazzyRecipeBookPlanner.CatalogEntry> filteredEntries = new ArrayList<>();
+    private final Map<String, Integer> catalogNameCounts = new HashMap<>();
+    private final Map<String, Boolean> expandedSteps = new HashMap<>();
     private int itemScroll;
     private int stepScroll;
     private ResourceLocation selectedItemId;
     private IngredientState selectedState;
     private String selectedChainKey = "";
+    private String selectedStepId = "";
+    private String displayedPlanKey = "";
 
     public JazzyRecipeBookScreen() {
         super(Component.translatable("screen.jazzycookin.recipe_book.title"));
@@ -67,6 +83,7 @@ public class JazzyRecipeBookScreen extends Screen {
         this.searchBox.setResponder(value -> {
             this.itemScroll = 0;
             this.refreshEntries();
+            this.refreshSelection();
         });
 
         this.stateBackButton = this.addRenderableWidget(Button.builder(Component.literal("<"), button -> this.cycleState(-1))
@@ -93,19 +110,34 @@ public class JazzyRecipeBookScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
+        if (this.isPinnedSelection()) {
+            String focusedStepId = RecipeBookClientState.focusedStepId();
+            if (focusedStepId != null && !focusedStepId.equals(this.selectedStepId)) {
+                this.selectedStepId = focusedStepId;
+                this.currentPlan().ifPresent(plan -> {
+                    this.ensureExpandedPath(plan, focusedStepId);
+                    this.ensureSelectedStepVisible();
+                });
+            }
+        }
         this.refreshButtons();
     }
 
     private void refreshEntries() {
         this.filteredEntries.clear();
+        this.catalogNameCounts.clear();
         JazzyRecipeBookPlanner planner = RecipeBookClientState.planner();
         if (planner == null) {
             return;
         }
 
-        String query = this.searchBox == null ? "" : this.searchBox.getValue().trim().toLowerCase(java.util.Locale.ROOT);
         for (JazzyRecipeBookPlanner.CatalogEntry entry : planner.catalog()) {
-            if (query.isBlank() || entry.displayName().toLowerCase(java.util.Locale.ROOT).contains(query)) {
+            this.catalogNameCounts.merge(entry.displayName().toLowerCase(Locale.ROOT), 1, Integer::sum);
+        }
+
+        String query = this.searchQuery();
+        for (JazzyRecipeBookPlanner.CatalogEntry entry : planner.catalog()) {
+            if (query.isBlank() || this.catalogMatches(entry, query)) {
                 this.filteredEntries.add(entry);
             }
         }
@@ -113,6 +145,8 @@ public class JazzyRecipeBookScreen extends Screen {
             this.selectedItemId = null;
             this.selectedState = null;
             this.selectedChainKey = "";
+            this.selectedStepId = "";
+            this.displayedPlanKey = "";
             return;
         }
 
@@ -122,6 +156,16 @@ public class JazzyRecipeBookScreen extends Screen {
             this.selectedState = first.producibleStates().get(0);
             this.selectedChainKey = "";
         }
+    }
+
+    private String searchQuery() {
+        return this.searchBox == null ? "" : this.searchBox.getValue().trim().toLowerCase(Locale.ROOT);
+    }
+
+    private boolean catalogMatches(JazzyRecipeBookPlanner.CatalogEntry entry, String query) {
+        String normalizedPath = entry.itemId().getPath().replace('_', ' ').toLowerCase(Locale.ROOT);
+        String normalizedDisplay = entry.displayName().toLowerCase(Locale.ROOT);
+        return normalizedDisplay.contains(query) || normalizedPath.contains(query);
     }
 
     private void restoreSelection() {
@@ -148,6 +192,9 @@ public class JazzyRecipeBookScreen extends Screen {
         if (states.isEmpty()) {
             this.selectedState = IngredientState.PANTRY_READY;
             this.selectedChainKey = "";
+            this.selectedStepId = "";
+            this.expandedSteps.clear();
+            this.displayedPlanKey = "";
             return;
         }
         if (this.selectedState == null || !states.contains(this.selectedState)) {
@@ -157,17 +204,49 @@ public class JazzyRecipeBookScreen extends Screen {
         List<JazzyRecipeBookPlanner.Plan> plans = planner.plansFor(this.selectedItemId, this.selectedState);
         if (plans.isEmpty()) {
             this.selectedChainKey = "";
+            this.selectedStepId = "";
+            this.expandedSteps.clear();
+            this.displayedPlanKey = "";
         } else if (plans.stream().noneMatch(plan -> Objects.equals(plan.chainKey(), this.selectedChainKey))) {
             this.selectedChainKey = plans.get(0).chainKey();
         }
 
         RecipeBookClientState.rememberSelection(new JazzyRecipeBookSelection(this.selectedItemId, this.selectedState, this.selectedChainKey));
-        this.stepScroll = 0;
+
+        Optional<JazzyRecipeBookPlanner.Plan> optionalPlan = this.currentPlan();
+        String planKey = this.planKey();
+        if (optionalPlan.isEmpty()) {
+            this.displayedPlanKey = "";
+            this.selectedStepId = "";
+            this.expandedSteps.clear();
+            this.stepScroll = 0;
+            return;
+        }
+
+        JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
+        if (!planKey.equals(this.displayedPlanKey)) {
+            this.displayedPlanKey = planKey;
+            this.expandedSteps.clear();
+            this.stepScroll = 0;
+        }
+        if (this.selectedStepId.isBlank() || plan.step(this.selectedStepId).isEmpty()) {
+            this.selectedStepId = this.defaultSelectedStepId(plan);
+        }
+        this.ensureExpandedPath(plan, this.selectedStepId);
+        this.ensureSelectedStepVisible();
     }
 
     private void refreshButtons() {
+        if (this.pinButton == null || this.stateBackButton == null || this.stateForwardButton == null || this.chainBackButton == null || this.chainForwardButton == null) {
+            return;
+        }
+
         JazzyRecipeBookPlanner planner = RecipeBookClientState.planner();
         if (planner == null || this.selectedItemId == null || this.selectedState == null) {
+            this.stateBackButton.visible = false;
+            this.stateForwardButton.visible = false;
+            this.chainBackButton.visible = false;
+            this.chainForwardButton.visible = false;
             this.pinButton.active = false;
             return;
         }
@@ -197,6 +276,7 @@ public class JazzyRecipeBookScreen extends Screen {
         int index = Math.max(0, states.indexOf(this.selectedState));
         this.selectedState = states.get(Math.floorMod(index + delta, states.size()));
         this.selectedChainKey = "";
+        this.selectedStepId = "";
         this.refreshSelection();
     }
 
@@ -213,6 +293,7 @@ public class JazzyRecipeBookScreen extends Screen {
             }
         }
         this.selectedChainKey = plans.get(Math.floorMod(index + delta, plans.size())).chainKey();
+        this.selectedStepId = "";
         this.refreshSelection();
     }
 
@@ -224,7 +305,7 @@ public class JazzyRecipeBookScreen extends Screen {
         if (this.isPinnedSelection()) {
             RecipeBookClientState.unpinSelection();
         } else {
-            RecipeBookClientState.pinSelection(selection);
+            RecipeBookClientState.pinSelection(selection, this.selectedStepId);
         }
     }
 
@@ -250,9 +331,158 @@ public class JazzyRecipeBookScreen extends Screen {
         return this.availablePlans().stream().filter(plan -> Objects.equals(plan.chainKey(), this.selectedChainKey)).findFirst();
     }
 
+    private String planKey() {
+        if (this.selectedItemId == null || this.selectedState == null) {
+            return "";
+        }
+        return this.selectedItemId + "|" + this.selectedState.getSerializedName() + "|" + this.selectedChainKey;
+    }
+
+    private Set<String> currentCompletedStepIds() {
+        return this.isPinnedSelection() ? RecipeBookClientState.completedStepIds() : Set.of();
+    }
+
+    private String defaultSelectedStepId(JazzyRecipeBookPlanner.Plan plan) {
+        String preferredStepId = this.isPinnedSelection()
+                ? Objects.requireNonNullElse(RecipeBookClientState.focusedStepId(), "")
+                : this.selectedStepId;
+        JazzyRecipeBookPlanner.PlanStep step = plan.focusedStep(this.currentCompletedStepIds(), preferredStepId);
+        if (step != null) {
+            return step.id();
+        }
+        return plan.rootStepId();
+    }
+
+    private List<VisibleStep> currentVisibleSteps() {
+        Optional<JazzyRecipeBookPlanner.Plan> optionalPlan = this.currentPlan();
+        if (optionalPlan.isEmpty()) {
+            return List.of();
+        }
+
+        JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
+        List<VisibleStep> visibleSteps = new ArrayList<>();
+        this.appendVisibleStep(plan, plan.rootStepId(), 0, visibleSteps, new HashSet<>());
+        return visibleSteps;
+    }
+
+    private void appendVisibleStep(
+            JazzyRecipeBookPlanner.Plan plan,
+            String stepId,
+            int depth,
+            List<VisibleStep> visibleSteps,
+            Set<String> path
+    ) {
+        if (!path.add(stepId)) {
+            return;
+        }
+        Optional<JazzyRecipeBookPlanner.PlanStep> optionalStep = plan.step(stepId);
+        if (optionalStep.isEmpty()) {
+            path.remove(stepId);
+            return;
+        }
+
+        JazzyRecipeBookPlanner.PlanStep step = optionalStep.get();
+        boolean expanded = this.expandedSteps.getOrDefault(step.id(), step.id().equals(plan.rootStepId()));
+        visibleSteps.add(new VisibleStep(step, depth, expanded));
+        if (expanded) {
+            for (String dependencyStepId : step.dependencyStepIds()) {
+                this.appendVisibleStep(plan, dependencyStepId, depth + 1, visibleSteps, path);
+            }
+        }
+        path.remove(stepId);
+    }
+
+    private void ensureExpandedPath(JazzyRecipeBookPlanner.Plan plan, String stepId) {
+        if (stepId == null || stepId.isBlank()) {
+            this.expandedSteps.put(plan.rootStepId(), true);
+            return;
+        }
+        this.expandedSteps.put(plan.rootStepId(), true);
+        this.expandPathToStep(plan, plan.rootStepId(), stepId);
+    }
+
+    private boolean expandPathToStep(JazzyRecipeBookPlanner.Plan plan, String currentStepId, String targetStepId) {
+        if (currentStepId.equals(targetStepId)) {
+            return true;
+        }
+        Optional<JazzyRecipeBookPlanner.PlanStep> optionalStep = plan.step(currentStepId);
+        if (optionalStep.isEmpty()) {
+            return false;
+        }
+        for (String dependencyStepId : optionalStep.get().dependencyStepIds()) {
+            if (this.expandPathToStep(plan, dependencyStepId, targetStepId)) {
+                this.expandedSteps.put(currentStepId, true);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isDescendantStep(JazzyRecipeBookPlanner.Plan plan, String ancestorStepId, String targetStepId) {
+        if (targetStepId == null || targetStepId.isBlank()) {
+            return false;
+        }
+        if (ancestorStepId.equals(targetStepId)) {
+            return true;
+        }
+        Optional<JazzyRecipeBookPlanner.PlanStep> optionalStep = plan.step(ancestorStepId);
+        if (optionalStep.isEmpty()) {
+            return false;
+        }
+        for (String dependencyStepId : optionalStep.get().dependencyStepIds()) {
+            if (this.isDescendantStep(plan, dependencyStepId, targetStepId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void ensureSelectedStepVisible() {
+        if (this.selectedStepId.isBlank()) {
+            return;
+        }
+        List<VisibleStep> visibleSteps = this.currentVisibleSteps();
+        int rowIndex = -1;
+        for (int index = 0; index < visibleSteps.size(); index++) {
+            if (visibleSteps.get(index).step().id().equals(this.selectedStepId)) {
+                rowIndex = index;
+                break;
+            }
+        }
+        if (rowIndex < 0) {
+            return;
+        }
+
+        int visibleRows = this.visibleStepRows();
+        if (rowIndex < this.stepScroll) {
+            this.stepScroll = rowIndex;
+        } else if (rowIndex >= this.stepScroll + visibleRows) {
+            this.stepScroll = Math.max(0, rowIndex - visibleRows + 1);
+        }
+    }
+
+    private int visibleStepRows() {
+        return Math.max(1, (STEP_LIST_BOTTOM - STEP_LIST_TOP) / STEP_ROW_HEIGHT);
+    }
+
+    private void selectStep(String stepId) {
+        this.selectedStepId = stepId;
+        this.currentPlan().ifPresent(plan -> {
+            this.ensureExpandedPath(plan, stepId);
+            this.ensureSelectedStepVisible();
+        });
+
+        if (this.isPinnedSelection() && this.selectedItemId != null && this.selectedState != null) {
+            RecipeBookClientState.pinSelection(new JazzyRecipeBookSelection(this.selectedItemId, this.selectedState, this.selectedChainKey), stepId);
+        }
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (this.clickedItem(mouseX, mouseY)) {
+            return true;
+        }
+        if (this.clickedStep(mouseX, mouseY)) {
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -267,9 +497,7 @@ public class JazzyRecipeBookScreen extends Screen {
             return true;
         }
         if (this.isMouseOverStepList(mouseX, mouseY)) {
-            int totalSteps = this.currentPlan().map(plan -> plan.steps().size()).orElse(0);
-            int visibleRows = Math.max(1, (STEP_LIST_BOTTOM - STEP_LIST_TOP) / 22);
-            int maxScroll = Math.max(0, totalSteps - visibleRows);
+            int maxScroll = Math.max(0, this.currentVisibleSteps().size() - this.visibleStepRows());
             this.stepScroll = Math.max(0, Math.min(maxScroll, this.stepScroll + (scrollY > 0 ? -1 : 1)));
             return true;
         }
@@ -290,7 +518,39 @@ public class JazzyRecipeBookScreen extends Screen {
         this.selectedItemId = entry.itemId();
         this.selectedState = entry.producibleStates().get(0);
         this.selectedChainKey = "";
+        this.selectedStepId = "";
         this.refreshSelection();
+        return true;
+    }
+
+    private boolean clickedStep(double mouseX, double mouseY) {
+        if (!this.isMouseOverStepList(mouseX, mouseY)) {
+            return false;
+        }
+        List<VisibleStep> visibleSteps = this.currentVisibleSteps();
+        int row = this.clickedStepRow(mouseY);
+        int index = this.stepScroll + row;
+        if (index < 0 || index >= visibleSteps.size()) {
+            return false;
+        }
+
+        VisibleStep visibleStep = visibleSteps.get(index);
+        int cardTop = this.panelTop + STEP_LIST_TOP + 6 + row * STEP_ROW_HEIGHT;
+        int expandLeft = this.expandButtonLeft(visibleStep);
+        if (visibleStep.expandable()
+                && mouseX >= expandLeft
+                && mouseX < expandLeft + STEP_EXPAND_SIZE
+                && mouseY >= cardTop + 6
+                && mouseY < cardTop + 6 + STEP_EXPAND_SIZE) {
+            boolean expanded = !visibleStep.expanded();
+            this.expandedSteps.put(visibleStep.step().id(), expanded);
+            if (!expanded && this.currentPlan().filter(plan -> this.isDescendantStep(plan, visibleStep.step().id(), this.selectedStepId)).isPresent()) {
+                this.selectStep(visibleStep.step().id());
+            }
+            return true;
+        }
+
+        this.selectStep(visibleStep.step().id());
         return true;
     }
 
@@ -319,12 +579,25 @@ public class JazzyRecipeBookScreen extends Screen {
         guiGraphics.drawString(this.font, this.title, this.panelLeft + 10, this.panelTop + 6, 0xFFF3E9DB, false);
 
         this.renderItemList(guiGraphics, mouseX, mouseY);
-        this.renderDetails(guiGraphics, mouseX, mouseY);
+        this.renderDetails(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    protected void renderBlurredBackground(float partialTick) {
+    }
+
+    @Override
+    public void renderTransparentBackground(GuiGraphics guiGraphics) {
     }
 
     private void renderItemList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.catalog"), this.panelLeft + 10, this.panelTop + 24, 0xFFC7CDD6, false);
+        if (this.filteredEntries.isEmpty()) {
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.no_matches"), this.panelLeft + 10, this.panelTop + ITEM_LIST_TOP + 8, 0xFFB4BBC4, false);
+            return;
+        }
+
         int visibleRows = (ITEM_LIST_BOTTOM - ITEM_LIST_TOP) / ITEM_ROW_HEIGHT;
         for (int row = 0; row < visibleRows; row++) {
             int index = this.itemScroll + row;
@@ -335,17 +608,25 @@ public class JazzyRecipeBookScreen extends Screen {
             int y = this.panelTop + ITEM_LIST_TOP + row * ITEM_ROW_HEIGHT;
             boolean selected = entry.itemId().equals(this.selectedItemId);
             int bg = selected ? 0xFF36404C : 0x66212730;
-            if (this.isMouseOverItemList(mouseX, mouseY) && this.clickedRow(mouseY) == row) {
+            if (this.isMouseOverItemList(mouseX, mouseY) && this.clickedItemRow(mouseY) == row) {
                 bg = 0xFF3E4855;
             }
             guiGraphics.fill(this.panelLeft + 8, y, this.panelLeft + LEFT_WIDTH - 8, y + ITEM_ROW_HEIGHT - 2, bg);
             ItemStack icon = new ItemStack(entry.item());
             guiGraphics.renderItem(icon, this.panelLeft + 12, y + 1);
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(entry.displayName(), LEFT_WIDTH - 34), this.panelLeft + 32, y + 5, 0xFFF1F4F8, false);
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.catalogLabel(entry), LEFT_WIDTH - 34), this.panelLeft + 32, y + 5, 0xFFF1F4F8, false);
         }
     }
 
-    private void renderDetails(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private String catalogLabel(JazzyRecipeBookPlanner.CatalogEntry entry) {
+        String displayName = entry.displayName();
+        if (this.catalogNameCounts.getOrDefault(displayName.toLowerCase(Locale.ROOT), 0) <= 1) {
+            return displayName;
+        }
+        return displayName + " [" + entry.itemId().getPath().replace('_', ' ') + "]";
+    }
+
+    private void renderDetails(GuiGraphics guiGraphics) {
         int x = this.panelLeft + LEFT_WIDTH + 10;
         int y = this.panelTop + 24;
         if (this.selectedItemId == null) {
@@ -379,7 +660,7 @@ public class JazzyRecipeBookScreen extends Screen {
             );
         }
 
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.steps"), x, this.panelTop + 78 - 12, 0xFFC7CDD6, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.steps"), x, this.panelTop + STEP_LIST_TOP - 12, 0xFFC7CDD6, false);
         guiGraphics.fill(x, this.panelTop + STEP_LIST_TOP, this.panelLeft + PANEL_WIDTH - 10, this.panelTop + STEP_LIST_BOTTOM, 0x661A2027);
 
         Optional<JazzyRecipeBookPlanner.Plan> optionalPlan = this.currentPlan();
@@ -389,39 +670,95 @@ public class JazzyRecipeBookScreen extends Screen {
         }
 
         JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
-        Set<String> completed = this.isPinnedSelection() ? RecipeBookClientState.completedStepIds() : Set.of();
+        Set<String> completed = this.currentCompletedStepIds();
+        List<VisibleStep> visibleSteps = this.currentVisibleSteps();
+        int visibleRows = this.visibleStepRows();
         int rowY = this.panelTop + STEP_LIST_TOP + 6;
-        int visibleRows = Math.max(1, (STEP_LIST_BOTTOM - STEP_LIST_TOP) / 22);
         for (int row = 0; row < visibleRows; row++) {
             int index = this.stepScroll + row;
-            if (index >= plan.steps().size()) {
+            if (index >= visibleSteps.size()) {
                 break;
             }
-            JazzyRecipeBookPlanner.PlanStep step = plan.steps().get(index);
+
+            VisibleStep visibleStep = visibleSteps.get(index);
+            JazzyRecipeBookPlanner.PlanStep step = visibleStep.step();
             boolean complete = completed.contains(step.id());
-            int cardTop = rowY + row * 22;
-            guiGraphics.fill(x + 4, cardTop, this.panelLeft + PANEL_WIDTH - 14, cardTop + 18, complete ? 0xAA254F37 : 0xAA28303A);
-            guiGraphics.drawString(this.font, Component.literal((index + 1) + "."), x + 8, cardTop + 5, complete ? 0xFF8AD79E : 0xFFE9D7B6, false);
-            guiGraphics.renderItem(step.outputStack(), x + 20, cardTop + 1);
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(step.outputStack().getHoverName().getString(), PANEL_WIDTH - LEFT_WIDTH - 72),
-                    x + 40, cardTop + 2, 0xFFF0F2F5, false);
-            if (!step.options().isEmpty()) {
-                String detail = this.stepDetail(step.options().get(0));
-                guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(detail, PANEL_WIDTH - LEFT_WIDTH - 72), x + 40, cardTop + 10, 0xFFB6BEC8, false);
+            boolean selected = step.id().equals(this.selectedStepId);
+            int cardTop = rowY + row * STEP_ROW_HEIGHT;
+            guiGraphics.fill(this.stepCardLeft(), cardTop, this.stepCardRight(), cardTop + STEP_ROW_HEIGHT - 2, this.stepBackgroundColor(complete, selected));
+
+            for (int depth = 0; depth < visibleStep.depth(); depth++) {
+                int guideX = this.stepCardLeft() + 30 + depth * STEP_INDENT;
+                guiGraphics.fill(guideX, cardTop + 3, guideX + 1, cardTop + STEP_ROW_HEIGHT - 5, 0x6636404A);
             }
+
+            guiGraphics.drawString(this.font, Component.literal((plan.indexOfStep(step.id()) + 1) + "."), this.stepCardLeft() + 8, cardTop + 6,
+                    complete ? 0xFF8AD79E : 0xFFE9D7B6, false);
+
+            if (visibleStep.expandable()) {
+                int expandLeft = this.expandButtonLeft(visibleStep);
+                guiGraphics.fill(expandLeft, cardTop + 6, expandLeft + STEP_EXPAND_SIZE, cardTop + 6 + STEP_EXPAND_SIZE, 0xFF3A434E);
+                guiGraphics.drawString(this.font, Component.literal(visibleStep.expanded() ? "-" : "+"), expandLeft + 3, cardTop + 7, 0xFFF2F5F8, false);
+            }
+
+            int iconX = this.stepIconLeft(visibleStep);
+            guiGraphics.renderItem(step.outputStack(), iconX, cardTop + 4);
+            int textX = iconX + 20;
+            int textWidth = this.stepCardRight() - textX - 6;
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(step.outputStack().getHoverName().getString(), textWidth), textX, cardTop + 3, 0xFFF0F2F5, false);
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.stepDetail(step, visibleStep), textWidth), textX, cardTop + 13, 0xFFB6BEC8, false);
         }
     }
 
-    private String stepDetail(JazzyRecipeBookPlanner.StepOption option) {
-        if (option.station() != null) {
-            return option.station().displayName().getString();
+    private int stepCardLeft() {
+        return this.panelLeft + LEFT_WIDTH + 14;
+    }
+
+    private int stepCardRight() {
+        return this.panelLeft + PANEL_WIDTH - 14;
+    }
+
+    private int expandButtonLeft(VisibleStep visibleStep) {
+        return this.stepCardLeft() + 26 + visibleStep.depth() * STEP_INDENT;
+    }
+
+    private int stepIconLeft(VisibleStep visibleStep) {
+        int baseLeft = this.stepCardLeft() + 40 + visibleStep.depth() * STEP_INDENT;
+        return visibleStep.expandable() ? baseLeft : baseLeft - 10;
+    }
+
+    private int stepBackgroundColor(boolean complete, boolean selected) {
+        if (complete && selected) {
+            return 0xCC2D5A46;
         }
-        if (!option.requirements().isEmpty()) {
-            ItemStack firstChoice = option.requirements().get(0).choices().isEmpty() ? ItemStack.EMPTY : option.requirements().get(0).choices().get(0);
-            return firstChoice.isEmpty() ? Component.translatable("screen.jazzycookin.recipe_book.materials").getString() : firstChoice.getHoverName().getString();
+        if (selected) {
+            return 0xCC344457;
         }
-        if (!option.notes().isEmpty()) {
-            return option.notes().get(0);
+        if (complete) {
+            return 0xAA254F37;
+        }
+        return 0xAA28303A;
+    }
+
+    private String stepDetail(JazzyRecipeBookPlanner.PlanStep step, VisibleStep visibleStep) {
+        if (step.expandable() && !visibleStep.expanded()) {
+            return Component.translatable("screen.jazzycookin.recipe_book.expand_hint").getString();
+        }
+        if (!step.options().isEmpty()) {
+            JazzyRecipeBookPlanner.StepOption option = step.options().get(0);
+            if (option.station() != null) {
+                return option.station().displayName().getString();
+            }
+            if (!option.requirements().isEmpty()) {
+                JazzyRecipeBookPlanner.Requirement requirement = option.requirements().get(0);
+                ItemStack choice = requirement.choices().isEmpty() ? ItemStack.EMPTY : requirement.choices().get(0);
+                return choice.isEmpty()
+                        ? Component.translatable("screen.jazzycookin.recipe_book.materials").getString()
+                        : choice.getHoverName().getString();
+            }
+            if (!option.notes().isEmpty()) {
+                return option.notes().get(0);
+            }
         }
         return Component.translatable("screen.jazzycookin.recipe_book.step").getString();
     }
@@ -437,7 +774,11 @@ public class JazzyRecipeBookScreen extends Screen {
                 && mouseY >= this.panelTop + STEP_LIST_TOP && mouseY < this.panelTop + STEP_LIST_BOTTOM;
     }
 
-    private int clickedRow(double mouseY) {
+    private int clickedItemRow(double mouseY) {
         return ((int) mouseY - (this.panelTop + ITEM_LIST_TOP)) / ITEM_ROW_HEIGHT;
+    }
+
+    private int clickedStepRow(double mouseY) {
+        return ((int) mouseY - (this.panelTop + STEP_LIST_TOP + 6)) / STEP_ROW_HEIGHT;
     }
 }

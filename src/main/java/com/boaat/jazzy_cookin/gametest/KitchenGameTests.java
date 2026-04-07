@@ -954,6 +954,29 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void recipeBookPlannerBuildsExpandableDependencySteps(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+        JazzyRecipeBookSelection appleSelection = selection(
+                JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get(),
+                defaultState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get()),
+                "apple_sapling"
+        );
+        JazzyRecipeBookPlanner.Plan applePlan = requirePlan(planner, appleSelection);
+        JazzyRecipeBookPlanner.PlanStep sourceStep = applePlan.step(applePlan.rootStepId())
+                .orElseThrow(() -> new AssertionError("Apple guide should expose its root step"));
+
+        require(sourceStep.kind() == JazzyRecipeBookPlanner.StepKind.SOURCE, "Apples should root on the harvest step");
+        require(sourceStep.expandable(), "Harvest step should be expandable when it depends on a craftable source");
+        require(sourceStep.dependencyStepIds().size() == 1, "Apple harvest should depend on exactly one sapling craft step");
+
+        JazzyRecipeBookPlanner.PlanStep craftStep = applePlan.step(sourceStep.dependencyStepIds().get(0))
+                .orElseThrow(() -> new AssertionError("Apple guide should resolve the sapling prerequisite"));
+        require(craftStep.kind() == JazzyRecipeBookPlanner.StepKind.CRAFT, "Expanded apple prerequisite should be a crafting step");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void recipeBookProgressAdvancesPinnedKitchenGuides(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
@@ -985,6 +1008,37 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void recipeBookProgressPersistsManualFocusedStep(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        fakePlayer.getInventory().clearContent();
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+        JazzyRecipeBookSelection selection = selection(JazzyItems.PACKED_BREADCRUMBS.get(), IngredientState.COARSE_POWDER, "breadcrumbs");
+        JazzyRecipeBookPlanner.Plan plan = requirePlan(planner, selection);
+        JazzyRecipeBookPlanner.PlanStep processStep = plan.steps().stream()
+                .filter(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.PROCESS)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Breadcrumb guide should include a process step"));
+        JazzyRecipeBookPlanner.PlanStep plateStep = plan.steps().stream()
+                .filter(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.PLATE)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Breadcrumb guide should include a plating step"));
+
+        RecipeBookProgress.pin(fakePlayer, selection, plateStep.id());
+        require(plateStep.id().equals(RecipeBookProgress.syncState(fakePlayer).focusedStepId()),
+                "Pinning with a manual step should store the chosen focused step");
+
+        fakePlayer.getInventory().setItem(0, stackWithState(JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get(), IngredientState.COARSE_POWDER));
+        require(RecipeBookProgress.reconcilePinnedGuide(fakePlayer),
+                "Matching inventory items should still complete earlier steps when a later step is focused");
+        require(RecipeBookProgress.completedSteps(fakePlayer).contains(processStep.id()),
+                "Inventory reconciliation should still complete upstream steps");
+        require(plateStep.id().equals(RecipeBookProgress.syncState(fakePlayer).focusedStepId()),
+                "Completing earlier steps should preserve a manually focused later step");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void recipeBookProgressTracksCraftAndSourceHarvest(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
@@ -1005,8 +1059,9 @@ public final class KitchenGameTests {
         );
         JazzyRecipeBookPlanner.Plan applePlan = requirePlan(planner, appleSelection);
         RecipeBookProgress.pin(fakePlayer, appleSelection);
-        require(RecipeBookProgress.recordCraft(fakePlayer, new ItemStack(JazzyBlocks.APPLE_SAPLING.get())),
-                "Crafting the apple sapling should complete the source prerequisite step");
+        fakePlayer.getInventory().setItem(0, new ItemStack(JazzyBlocks.APPLE_SAPLING.get()));
+        require(RecipeBookProgress.reconcilePinnedGuide(fakePlayer),
+                "Adding the apple sapling to inventory should complete the source prerequisite step");
 
         Set<String> completedAfterSapling = RecipeBookProgress.completedSteps(fakePlayer);
         require(applePlan.currentStep(completedAfterSapling) != null && applePlan.currentStep(completedAfterSapling).kind() == JazzyRecipeBookPlanner.StepKind.SOURCE,
@@ -1018,6 +1073,45 @@ public final class KitchenGameTests {
                 "Harvesting the tracked source output should complete the source step");
         require(applePlan.isComplete(RecipeBookProgress.completedSteps(fakePlayer)),
                 "Craft plus source harvest should finish the apple guide");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeBookProgressCompletesStepsFromInventory(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        fakePlayer.getInventory().clearContent();
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+        JazzyRecipeBookSelection appleSelection = selection(
+                JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get(),
+                defaultState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get()),
+                "apple_sapling"
+        );
+        JazzyRecipeBookPlanner.Plan applePlan = requirePlan(planner, appleSelection);
+        JazzyRecipeBookPlanner.PlanStep craftStep = applePlan.steps().stream()
+                .filter(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.CRAFT)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Apple guide should include a craft step"));
+        JazzyRecipeBookPlanner.PlanStep sourceStep = applePlan.steps().stream()
+                .filter(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.SOURCE)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Apple guide should include a source step"));
+
+        RecipeBookProgress.pin(fakePlayer, appleSelection);
+        fakePlayer.getInventory().setItem(0, new ItemStack(JazzyBlocks.APPLE_SAPLING.get()));
+        require(RecipeBookProgress.reconcilePinnedGuide(fakePlayer),
+                "Guide progress should update when the tracked crafted item appears in inventory");
+        require(RecipeBookProgress.completedSteps(fakePlayer).contains(craftStep.id()),
+                "Inventory reconciliation should complete the sapling craft step");
+        require(!RecipeBookProgress.completedSteps(fakePlayer).contains(sourceStep.id()),
+                "Inventory reconciliation should not complete unrelated steps early");
+
+        fakePlayer.getInventory().setItem(1, stackWithState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get(),
+                defaultState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get())));
+        require(RecipeBookProgress.reconcilePinnedGuide(fakePlayer),
+                "Guide progress should update when the harvested ingredient appears in inventory");
+        require(applePlan.isComplete(RecipeBookProgress.completedSteps(fakePlayer)),
+                "Matching items in inventory should be able to finish a pinned guide");
         helper.succeed();
     }
 
