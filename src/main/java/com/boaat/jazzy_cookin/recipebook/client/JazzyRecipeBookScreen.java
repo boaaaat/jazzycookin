@@ -22,10 +22,12 @@ import net.minecraft.world.item.ItemStack;
 public class JazzyRecipeBookScreen extends Screen {
     private static final int PANEL_WIDTH = 374;
     private static final int PANEL_HEIGHT = 222;
+    private static final int HEADER_HEIGHT = 20;
     private static final int LEFT_WIDTH = 144;
     private static final int ITEM_ROW_HEIGHT = 18;
-    private static final int ITEM_LIST_TOP = 34;
-    private static final int ITEM_LIST_BOTTOM = 198;
+    private static final int SEARCH_TOP = 38;
+    private static final int ITEM_LIST_TOP = 60;
+    private static final int ITEM_LIST_BOTTOM = 208;
     private static final int STEP_LIST_TOP = 78;
     private static final int STEP_LIST_BOTTOM = 184;
 
@@ -57,7 +59,7 @@ public class JazzyRecipeBookScreen extends Screen {
         this.searchBox = this.addRenderableWidget(new EditBox(
                 this.font,
                 this.panelLeft + 10,
-                this.panelTop + 10,
+                this.panelTop + SEARCH_TOP,
                 LEFT_WIDTH - 20,
                 16,
                 Component.translatable("screen.jazzycookin.recipe_book.search")
@@ -310,10 +312,10 @@ public class JazzyRecipeBookScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        guiGraphics.fill(0, 0, this.width, this.height, 0x70070A0E);
         guiGraphics.fill(this.panelLeft, this.panelTop, this.panelLeft + PANEL_WIDTH, this.panelTop + PANEL_HEIGHT, 0xF0181B20);
-        guiGraphics.fill(this.panelLeft, this.panelTop, this.panelLeft + PANEL_WIDTH, this.panelTop + 20, 0xFF7A5C32);
-        guiGraphics.fill(this.panelLeft + LEFT_WIDTH, this.panelTop + 20, this.panelLeft + LEFT_WIDTH + 1, this.panelTop + PANEL_HEIGHT, 0xFF2A313B);
+        guiGraphics.fill(this.panelLeft, this.panelTop, this.panelLeft + PANEL_WIDTH, this.panelTop + HEADER_HEIGHT, 0xFF7A5C32);
+        guiGraphics.fill(this.panelLeft + LEFT_WIDTH, this.panelTop + HEADER_HEIGHT, this.panelLeft + LEFT_WIDTH + 1, this.panelTop + PANEL_HEIGHT, 0xFF2A313B);
         guiGraphics.drawString(this.font, this.title, this.panelLeft + 10, this.panelTop + 6, 0xFFF3E9DB, false);
 
         this.renderItemList(guiGraphics, mouseX, mouseY);
