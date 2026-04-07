@@ -26,5 +26,8 @@
                                   "count":  1
                               },
                    "state":  "plated_roast_meal"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "adobo_pork"
+                    }
 }

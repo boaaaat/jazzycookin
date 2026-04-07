@@ -2,6 +2,7 @@ package com.boaat.jazzy_cookin.block.entity;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import com.boaat.jazzy_cookin.block.KitchenStationBlock;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
@@ -105,6 +106,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     private HeatLevel heatLevel = HeatLevel.OFF;
     private StationPhysicsState stationPhysics = StationPhysicsState.idle();
     private CookingBatchState simulationBatch;
+    private UUID activeGuidePlayerId;
 
     public KitchenStationBlockEntity(BlockPos pos, BlockState blockState) {
         super(JazzyBlockEntities.KITCHEN_STATION.get(), pos, blockState);
@@ -172,10 +174,18 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     public boolean handleButton(int buttonId, Player player) {
         if (buttonId == 0) {
-            return StationSimulationResolver.handleAction(this, 6);
+            boolean handled = StationSimulationResolver.handleAction(this, 6);
+            if (handled) {
+                this.activeGuidePlayerId = player.getUUID();
+            }
+            return handled;
         }
         if (buttonId >= 6 && buttonId <= 8) {
-            return StationSimulationResolver.handleAction(this, buttonId);
+            boolean handled = StationSimulationResolver.handleAction(this, buttonId);
+            if (handled) {
+                this.activeGuidePlayerId = player.getUUID();
+            }
+            return handled;
         }
 
         if (this.getStationType() == StationType.OVEN) {
@@ -219,7 +229,12 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.maxProgress = 0;
         this.simulationBatch = null;
         this.stationPhysics = StationPhysicsState.idle();
+        this.activeGuidePlayerId = null;
         this.setChanged();
+    }
+
+    public UUID activeGuidePlayerId() {
+        return this.activeGuidePlayerId;
     }
 
     private KitchenMethod currentMethod() {
@@ -347,6 +362,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.maxProgress = 0;
         this.simulationBatch = null;
         this.stationPhysics = StationPhysicsState.idle();
+        this.activeGuidePlayerId = null;
         this.setChanged();
     }
 
@@ -369,6 +385,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         tag.putInt("ControlSetting", this.controlSetting);
         tag.putBoolean("Processing", this.processing);
         tag.putString("HeatLevel", this.heatLevel.getSerializedName());
+        if (this.activeGuidePlayerId != null) {
+            tag.putUUID("ActiveGuidePlayer", this.activeGuidePlayerId);
+        }
         encodeCodec(tag, "SimulationPhysics", StationPhysicsState.CODEC, this.stationPhysics);
         if (this.simulationBatch != null) {
             encodeCodec(tag, "SimulationBatch", CookingBatchState.CODEC, this.simulationBatch);
@@ -388,6 +407,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 : HeatLevel.DEFAULT_OVEN_TEMPERATURE;
         this.controlSetting = Math.max(0, Math.min(2, tag.getInt("ControlSetting")));
         this.processing = tag.getBoolean("Processing");
+        this.activeGuidePlayerId = tag.hasUUID("ActiveGuidePlayer") ? tag.getUUID("ActiveGuidePlayer") : null;
         this.stationPhysics = decodeCodec(tag, "SimulationPhysics", StationPhysicsState.CODEC).orElse(StationPhysicsState.idle());
         this.simulationBatch = decodeCodec(tag, "SimulationBatch", CookingBatchState.CODEC).orElse(null);
     }

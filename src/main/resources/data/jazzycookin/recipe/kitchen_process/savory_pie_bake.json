@@ -25,5 +25,8 @@
                                   "count":  1
                               },
                    "state":  "baked_pie"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "savory_pie"
+                    }
 }

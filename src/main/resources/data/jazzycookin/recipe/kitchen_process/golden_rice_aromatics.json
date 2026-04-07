@@ -50,5 +50,8 @@
                                   "count":  1
                               },
                    "state":  "diced"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "golden_rice"
+                    }
 }

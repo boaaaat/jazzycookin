@@ -1,5 +1,7 @@
 package com.boaat.jazzy_cookin.gametest;
 
+import java.util.Set;
+
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.block.entity.KitchenStorageBlockEntity;
@@ -25,17 +27,25 @@ import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
 import com.boaat.jazzy_cookin.kitchen.sim.station.SimulationExecutionMode;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
+import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookPlanner;
+import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookSelection;
+import com.boaat.jazzy_cookin.recipebook.RecipeBookDisplayUtil;
+import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
+import com.boaat.jazzy_cookin.recipebook.SourceGuideRegistry;
+import com.boaat.jazzy_cookin.recipebook.network.RecipeBookSyncPayload;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 
@@ -847,6 +857,170 @@ public final class KitchenGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void recipeBookPlannerBuildsSpaghettiPomodoroChain(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+        JazzyRecipeBookPlanner.Plan plan = requirePlan(
+                planner,
+                selection(JazzyItems.SPAGHETTI_POMODORO.get(), IngredientState.PLATED, "spaghetti_pomodoro")
+        );
+
+        require(plan.steps().size() >= 2, "Spaghetti pomodoro should include at least prep and plating steps");
+        require(plan.steps().get(plan.steps().size() - 1).kind() == JazzyRecipeBookPlanner.StepKind.PLATE,
+                "Spaghetti pomodoro should end with a plating step");
+        require(plan.steps().stream().anyMatch(step ->
+                        step.kind() == JazzyRecipeBookPlanner.StepKind.PROCESS
+                                && step.outputKey().equals(outputKey(JazzyItems.SPAGHETTI_POMODORO_PREP.get(), IngredientState.MIXED))),
+                "Spaghetti pomodoro should include its upstream simmer/process step");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeBookPlannerDisambiguatesDuplicatesAndMergesAlternatives(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+
+        Set<String> pieChains = planner.plansFor(itemId(JazzyItems.PIE_DOUGH.get()), IngredientState.SMOOTH_DOUGH).stream()
+                .map(JazzyRecipeBookPlanner.Plan::chainKey)
+                .collect(java.util.stream.Collectors.toSet());
+        require(pieChains.contains("savory_pie") && pieChains.contains("tray_pie") && pieChains.size() == 2,
+                "Pie dough should expose distinct savory-pie and tray-pie paths");
+
+        Set<String> seasoningChains = planner.plansFor(itemId(JazzyItems.SEASONING_BLEND.get()), IngredientState.FINE_POWDER).stream()
+                .map(JazzyRecipeBookPlanner.Plan::chainKey)
+                .collect(java.util.stream.Collectors.toSet());
+        require(seasoningChains.contains("pan_seared_chicken")
+                        && seasoningChains.contains("golden_rice")
+                        && seasoningChains.contains("fried_jalapeno_bites")
+                        && seasoningChains.size() == 3,
+                "Seasoning blend should stay disambiguated by chain key");
+
+        JazzyRecipeBookPlanner.Plan toastPlan = requirePlan(
+                planner,
+                selection(JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get(), IngredientState.BAKED_BREAD, "jam_on_toast")
+        );
+        require(toastPlan.steps().size() == 1, "Jam on toast bread step should stay merged into a single guide step");
+        require(toastPlan.steps().get(0).options().size() == 2,
+                "Jam on toast should merge oven and stove toast alternatives into one step");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeBookPlannerIncludesCraftingAndSourceGuides(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+        ItemStack apples = stackWithState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get(), defaultState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get()));
+        JazzyRecipeBookPlanner.Plan applePlan = planner.plansFor(itemId(apples.getItem()), RecipeBookDisplayUtil.actualStateForStack(apples, level.getGameTime()))
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Apples should have a recipe-book plan"));
+
+        require(applePlan.steps().stream().anyMatch(step ->
+                        step.kind() == JazzyRecipeBookPlanner.StepKind.CRAFT
+                                && step.outputKey().equals(outputKey(JazzyBlocks.APPLE_SAPLING.get(), IngredientState.PANTRY_READY))),
+                "Apple guide should include crafting the apple sapling first");
+        require(applePlan.steps().stream().anyMatch(step ->
+                        step.kind() == JazzyRecipeBookPlanner.StepKind.SOURCE
+                                && step.outputKey().equals(outputKey(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get(), RecipeBookDisplayUtil.actualStateForStack(apples, level.getGameTime())))),
+                "Apple guide should include the harvest step after crafting the source block");
+
+        require(planner.catalogEntry(itemId(JazzyBlocks.STOVE.get())).isPresent(), "Stove should appear in the recipe-book catalog");
+        JazzyRecipeBookPlanner.Plan stovePlan = requirePlan(planner, selection(JazzyBlocks.STOVE.get(), IngredientState.PANTRY_READY, ""));
+        require(stovePlan.steps().size() == 1 && stovePlan.steps().get(0).kind() == JazzyRecipeBookPlanner.StepKind.CRAFT,
+                "Stove should resolve through a crafting step");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeBookPlannerMarksRandomSourcesAsRandom(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+        IngredientState basilState = defaultState(JazzyItems.ingredient(JazzyItems.IngredientId.BASIL).get());
+        JazzyRecipeBookPlanner.Plan basilPlan = planner.plansFor(itemId(JazzyItems.ingredient(JazzyItems.IngredientId.BASIL).get()), basilState)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Basil should have a source-guide plan"));
+        JazzyRecipeBookPlanner.PlanStep sourceStep = basilPlan.steps().stream()
+                .filter(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.SOURCE)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Basil plan should include a source step"));
+
+        require(SourceGuideRegistry.guideForOutput(itemId(JazzyItems.ingredient(JazzyItems.IngredientId.BASIL).get()), basilState).isPresent(),
+                "Basil should resolve through the shared source-guide registry");
+        require(sourceStep.options().get(0).notes().stream().anyMatch(note -> note.contains("not guaranteed")),
+                "Random-output sources should warn that harvest results are not guaranteed");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeBookProgressAdvancesPinnedKitchenGuides(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+        JazzyRecipeBookSelection selection = selection(JazzyItems.PACKED_BREADCRUMBS.get(), IngredientState.COARSE_POWDER, "breadcrumbs");
+        JazzyRecipeBookPlanner.Plan plan = requirePlan(planner, selection);
+
+        RecipeBookProgress.pin(fakePlayer, selection);
+        require(RecipeBookProgress.recordKitchenOutput(fakePlayer,
+                        stackWithState(JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get(), IngredientState.COARSE_POWDER),
+                        "breadcrumbs"),
+                "Prep output should complete the upstream process step");
+
+        Set<String> completedAfterPrep = RecipeBookProgress.completedSteps(fakePlayer);
+        require(completedAfterPrep.size() == 1, "Recording the prep output should complete exactly one step");
+        require(plan.currentStep(completedAfterPrep) != null && plan.currentStep(completedAfterPrep).kind() == JazzyRecipeBookPlanner.StepKind.PLATE,
+                "After prep completion the guide should advance to the plating step");
+
+        require(RecipeBookProgress.recordKitchenOutput(fakePlayer, stackWithState(JazzyItems.PACKED_BREADCRUMBS.get(), IngredientState.COARSE_POWDER), "breadcrumbs"),
+                "Plated output should complete the final serve step");
+
+        Set<String> completedAfterPlate = RecipeBookProgress.completedSteps(fakePlayer);
+        require(plan.isComplete(completedAfterPlate), "Process plus plating outputs should complete the pinned guide");
+        RecipeBookSyncPayload sync = RecipeBookSyncPayload.from(RecipeBookProgress.syncState(fakePlayer));
+        require(sync.selection() != null && sync.selection().itemId().equals(selection.itemId()),
+                "Sync payload should keep the active pinned selection");
+        require(sync.completedStepIds().size() == 2, "Sync payload should include both completed kitchen steps");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeBookProgressTracksCraftAndSourceHarvest(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+
+        JazzyRecipeBookSelection stoveSelection = selection(JazzyBlocks.STOVE.get(), IngredientState.PANTRY_READY, "");
+        JazzyRecipeBookPlanner.Plan stovePlan = requirePlan(planner, stoveSelection);
+        RecipeBookProgress.pin(fakePlayer, stoveSelection);
+        require(RecipeBookProgress.recordCraft(fakePlayer, new ItemStack(JazzyBlocks.STOVE.get())),
+                "Crafting a mod block should complete its pinned crafting guide");
+        require(stovePlan.isComplete(RecipeBookProgress.completedSteps(fakePlayer)),
+                "Crafting a stove should finish the stove guide");
+
+        JazzyRecipeBookSelection appleSelection = selection(
+                JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get(),
+                defaultState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get()),
+                "apple_sapling"
+        );
+        JazzyRecipeBookPlanner.Plan applePlan = requirePlan(planner, appleSelection);
+        RecipeBookProgress.pin(fakePlayer, appleSelection);
+        require(RecipeBookProgress.recordCraft(fakePlayer, new ItemStack(JazzyBlocks.APPLE_SAPLING.get())),
+                "Crafting the apple sapling should complete the source prerequisite step");
+
+        Set<String> completedAfterSapling = RecipeBookProgress.completedSteps(fakePlayer);
+        require(applePlan.currentStep(completedAfterSapling) != null && applePlan.currentStep(completedAfterSapling).kind() == JazzyRecipeBookPlanner.StepKind.SOURCE,
+                "After crafting the sapling the guide should advance to the harvest step");
+
+        require(RecipeBookProgress.recordSourceHarvest(fakePlayer,
+                        stackWithState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get(), defaultState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get())),
+                        "apple_sapling"),
+                "Harvesting the tracked source output should complete the source step");
+        require(applePlan.isComplete(RecipeBookProgress.completedSteps(fakePlayer)),
+                "Craft plus source harvest should finish the apple guide");
+        helper.succeed();
+    }
+
     private static KitchenStationBlockEntity placeStation(ServerLevel level, BlockPos pos, net.minecraft.world.level.block.Block block) {
         level.setBlockAndUpdate(pos, block.defaultBlockState());
         KitchenStationBlockEntity blockEntity = (KitchenStationBlockEntity) level.getBlockEntity(pos);
@@ -879,6 +1053,32 @@ public final class KitchenGameTests {
         DishRecognitionResult recognition = DishSchema.preview(matter);
         require(recognition != null, "Expected recognizer result for " + stack.getItemHolder().unwrapKey().map(key -> key.location().getPath()).orElse("unknown_stack"));
         require(expectedKey.equals(recognition.key()), "Expected recognizer key " + expectedKey + " but got " + recognition.key());
+    }
+
+    private static JazzyRecipeBookPlanner.Plan requirePlan(JazzyRecipeBookPlanner planner, JazzyRecipeBookSelection selection) {
+        return planner.planFor(selection).orElseThrow(() -> new AssertionError(
+                "Expected recipe-book plan for " + selection.itemId() + "@" + selection.state().getSerializedName() + " (" + selection.normalizedChainKey() + ")"
+        ));
+    }
+
+    private static JazzyRecipeBookSelection selection(ItemLike itemLike, IngredientState state, String chainKey) {
+        return new JazzyRecipeBookSelection(itemId(itemLike), state, chainKey);
+    }
+
+    private static ResourceLocation itemId(ItemLike itemLike) {
+        return BuiltInRegistries.ITEM.getKey(itemLike.asItem());
+    }
+
+    private static JazzyRecipeBookPlanner.OutputKey outputKey(ItemLike itemLike, IngredientState state) {
+        return RecipeBookDisplayUtil.outputKey(itemLike.asItem(), state);
+    }
+
+    private static IngredientState defaultState(ItemLike itemLike) {
+        return RecipeBookDisplayUtil.defaultStateForItem(itemLike.asItem());
+    }
+
+    private static ItemStack stackWithState(ItemLike itemLike, IngredientState state) {
+        return RecipeBookDisplayUtil.displayStack(new ItemStack(itemLike), state, 1);
     }
 
     private static void require(boolean condition, String message) {

@@ -30,5 +30,8 @@
                                   "count":  1
                               },
                    "state":  "sticked_product"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "brownies"
+                    }
 }

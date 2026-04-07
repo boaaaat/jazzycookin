@@ -50,5 +50,8 @@
                                   "count":  1
                               },
                    "state":  "smooth_mixture"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "pasta_tray_bake"
+                    }
 }

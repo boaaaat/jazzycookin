@@ -22,5 +22,8 @@
                                   "count":  1
                               },
                    "state":  "mixed"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "jam_on_toast"
+                    }
 }

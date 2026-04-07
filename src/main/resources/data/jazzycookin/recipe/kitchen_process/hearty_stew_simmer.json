@@ -37,5 +37,8 @@
                                   "count":  1
                               },
                    "state":  "simmered"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "hearty_stew"
+                    }
 }

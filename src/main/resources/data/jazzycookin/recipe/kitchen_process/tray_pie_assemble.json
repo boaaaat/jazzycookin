@@ -28,5 +28,8 @@
                                   "count":  1
                               },
                    "state":  "raw_assembled_pie"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "tray_pie"
+                    }
 }

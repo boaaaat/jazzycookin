@@ -44,5 +44,8 @@
                                   "count":  1
                               },
                    "state":  "sliced_apple"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "freeze_dried_apples"
+                    }
 }

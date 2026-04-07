@@ -24,5 +24,8 @@
                                   "count":  1
                               },
                    "state":  "hot_preserve"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "syrup_preserve"
+                    }
 }

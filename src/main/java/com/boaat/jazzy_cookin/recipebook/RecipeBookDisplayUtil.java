@@ -1,8 +1,9 @@
-package com.boaat.jazzy_cookin.integration.jei;
+package com.boaat.jazzy_cookin.recipebook;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
@@ -11,14 +12,16 @@ import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.recipe.KitchenInputRequirement;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessOutput;
-import com.boaat.jazzy_cookin.registry.JazzyBlocks;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
-public final class JazzyJeiStackUtil {
-    private JazzyJeiStackUtil() {
+public final class RecipeBookDisplayUtil {
+    private RecipeBookDisplayUtil() {
     }
 
     public static List<ItemStack> displayStacks(KitchenInputRequirement requirement) {
@@ -52,15 +55,42 @@ public final class JazzyJeiStackUtil {
         return copy;
     }
 
-    public static List<ItemStack> toolStacks(List<ToolProfile> profiles) {
-        List<ItemStack> stacks = new ArrayList<>();
-        for (ToolProfile profile : profiles) {
-            ItemStack stack = toolStack(profile);
-            if (!stack.isEmpty()) {
-                stacks.add(stack);
-            }
+    public static IngredientState defaultStateForItem(Item item) {
+        if (item instanceof KitchenIngredientItem ingredientItem) {
+            return ingredientItem.defaultState();
         }
-        return stacks;
+        return IngredientState.PANTRY_READY;
+    }
+
+    public static IngredientState actualStateForStack(ItemStack stack, long gameTime) {
+        if (stack.isEmpty()) {
+            return IngredientState.PANTRY_READY;
+        }
+        IngredientStateData data = KitchenStackUtil.getData(stack);
+        if (data != null) {
+            return KitchenStackUtil.effectiveState(stack, gameTime);
+        }
+        return defaultStateForItem(stack.getItem());
+    }
+
+    public static boolean isModItem(Item item) {
+        return BuiltInRegistries.ITEM.getKey(item).getNamespace().equals(JazzyCookin.MODID);
+    }
+
+    public static ResourceLocation itemId(Item item) {
+        return BuiltInRegistries.ITEM.getKey(item);
+    }
+
+    public static JazzyRecipeBookPlanner.OutputKey outputKey(ItemStack stack, IngredientState state) {
+        return new JazzyRecipeBookPlanner.OutputKey(itemId(stack.getItem()), state);
+    }
+
+    public static JazzyRecipeBookPlanner.OutputKey outputKey(Item item, IngredientState state) {
+        return new JazzyRecipeBookPlanner.OutputKey(itemId(item), state);
+    }
+
+    public static JazzyRecipeBookPlanner.OutputKey outputKeyFromActualStack(ItemStack stack, long gameTime) {
+        return outputKey(stack, actualStateForStack(stack, gameTime));
     }
 
     public static ItemStack toolStack(ToolProfile profile) {

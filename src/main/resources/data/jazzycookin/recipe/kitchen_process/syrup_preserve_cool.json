@@ -17,5 +17,8 @@
                                   "count":  1
                               },
                    "state":  "syrup_preserves"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "syrup_preserve"
+                    }
 }

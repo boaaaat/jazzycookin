@@ -48,5 +48,8 @@
                                   "count":  1
                               },
                    "state":  "simmered"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "jeera_rice"
+                    }
 }

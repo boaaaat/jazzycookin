@@ -26,5 +26,8 @@
                                   "count":  1
                               },
                    "state":  "plated_soup_meal"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "apple_oatmeal"
+                    }
 }

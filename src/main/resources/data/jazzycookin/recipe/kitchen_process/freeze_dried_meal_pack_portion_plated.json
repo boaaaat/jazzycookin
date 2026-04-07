@@ -22,5 +22,8 @@
                                   "count":  1
                               },
                    "state":  "portioned_meal"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "freeze_dried_meal_pack"
+                    }
 }

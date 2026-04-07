@@ -40,5 +40,8 @@
                                   "count":  1
                               },
                    "state":  "smooth_mixture"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "curry_base"
+                    }
 }

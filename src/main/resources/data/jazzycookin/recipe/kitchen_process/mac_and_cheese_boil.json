@@ -24,5 +24,8 @@
                                   "count":  1
                               },
                    "state":  "boiled"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "mac_and_cheese"
+                    }
 }

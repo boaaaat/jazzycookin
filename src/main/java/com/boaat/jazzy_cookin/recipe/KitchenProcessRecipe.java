@@ -34,6 +34,7 @@ public record KitchenProcessRecipe(
         ProcessMode mode,
         KitchenEnvironmentRequirements environmentRequirements,
         KitchenRecipeGuideData guide,
+        KitchenRecipeBookData recipeBook,
         List<KitchenProcessOutcome> outcomes,
         KitchenProcessOutput output
 ) implements Recipe<KitchenProcessInput> {

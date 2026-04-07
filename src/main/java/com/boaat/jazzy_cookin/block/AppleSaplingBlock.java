@@ -2,11 +2,14 @@ package com.boaat.jazzy_cookin.block;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
-import com.boaat.jazzy_cookin.registry.JazzyItems;
+import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
+import com.boaat.jazzy_cookin.recipebook.SourceGuideRegistry;
+import com.boaat.jazzy_cookin.recipebook.network.RecipeBookNetworking;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
@@ -86,7 +89,7 @@ public class AppleSaplingBlock extends BushBlock implements BonemealableBlock {
         }
 
         if (!level.isClientSide) {
-            KitchenIngredientItem appleItem = JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get();
+            KitchenIngredientItem appleItem = (KitchenIngredientItem) SourceGuideRegistry.appleHarvestItem();
             float quality = this.harvestQuality(level, pos, age);
             IngredientStateData baseData = appleItem.defaultData(level.getGameTime());
             IngredientStateData harvestData = baseData.withMetrics(
@@ -104,8 +107,12 @@ public class AppleSaplingBlock extends BushBlock implements BonemealableBlock {
                     baseData.nourishment(),
                     baseData.enjoyment()
             );
-            Containers.dropItemStack(level, pos.getX(), pos.getY() + 0.75D, pos.getZ(), appleItem.createStack(1, level.getGameTime(), harvestData));
+            net.minecraft.world.item.ItemStack harvestStack = appleItem.createStack(1, level.getGameTime(), harvestData);
+            Containers.dropItemStack(level, pos.getX(), pos.getY() + 0.75D, pos.getZ(), harvestStack);
             level.setBlock(pos, state.setValue(AGE, 4), 2);
+            if (player instanceof ServerPlayer serverPlayer && RecipeBookProgress.recordSourceHarvest(serverPlayer, harvestStack, "apple_sapling")) {
+                RecipeBookNetworking.sync(serverPlayer);
+            }
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide);

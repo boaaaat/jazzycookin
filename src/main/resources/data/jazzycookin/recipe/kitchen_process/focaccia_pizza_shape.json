@@ -21,5 +21,8 @@
                                   "count":  1
                               },
                    "state":  "shaped_base"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "focaccia_pizza"
+                    }
 }

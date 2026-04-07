@@ -28,5 +28,8 @@
                                   "count":  1
                               },
                    "state":  "chopped"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "sandwich"
+                    }
 }

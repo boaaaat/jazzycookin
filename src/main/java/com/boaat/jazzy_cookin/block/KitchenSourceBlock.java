@@ -3,11 +3,14 @@ package com.boaat.jazzy_cookin.block;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenSourceProfile;
-import com.boaat.jazzy_cookin.registry.JazzyItems;
+import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
+import com.boaat.jazzy_cookin.recipebook.SourceGuideRegistry;
+import com.boaat.jazzy_cookin.recipebook.network.RecipeBookNetworking;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
@@ -101,38 +104,21 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
         }
 
         if (!level.isClientSide) {
-            Containers.dropItemStack(level, pos.getX(), pos.getY() + 0.75D, pos.getZ(), this.createHarvestStack(level, state, pos));
+            ItemStack harvestStack = this.createHarvestStack(level, state, pos);
+            Containers.dropItemStack(level, pos.getX(), pos.getY() + 0.75D, pos.getZ(), harvestStack);
             int resetAge = this.profile.plantLike() ? Math.max(0, this.profile.ripeAge() - 2) : 0;
             level.setBlock(pos, state.setValue(AGE, resetAge), 2);
+            if (player instanceof ServerPlayer serverPlayer
+                    && RecipeBookProgress.recordSourceHarvest(serverPlayer, harvestStack, this.profile.getSerializedName())) {
+                RecipeBookNetworking.sync(serverPlayer);
+            }
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     private ItemStack createHarvestStack(Level level, BlockState state, BlockPos pos) {
-        KitchenIngredientItem ingredientItem = switch (this.profile) {
-            case TOMATO_VINE -> JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get();
-            case HERB_BED -> randomIngredient(level,
-                    JazzyItems.IngredientId.BASIL,
-                    JazzyItems.IngredientId.PARSLEY,
-                    JazzyItems.IngredientId.DILL,
-                    JazzyItems.IngredientId.OREGANO
-            );
-            case WHEAT_PATCH -> JazzyItems.ingredient(JazzyItems.IngredientId.WHOLE_WHEAT_FLOUR).get();
-            case CABBAGE_PATCH -> JazzyItems.ingredient(JazzyItems.IngredientId.CABBAGE).get();
-            case ONION_PATCH -> JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get();
-            case CHICKEN_COOP -> level.random.nextFloat() < 0.35F
-                    ? JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get()
-                    : JazzyItems.ingredient(JazzyItems.IngredientId.EGGS).get();
-            case DAIRY_STALL -> level.random.nextFloat() < 0.40F
-                    ? JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get()
-                    : JazzyItems.ingredient(JazzyItems.IngredientId.SHELF_STABLE_CREAM).get();
-            case FISHING_TRAP -> JazzyItems.ingredient(JazzyItems.IngredientId.FISH_FILLET).get();
-            case FORAGE_SHRUB -> randomIngredient(level,
-                    JazzyItems.IngredientId.MINT,
-                    JazzyItems.IngredientId.ROSEMARY
-            );
-        };
+        KitchenIngredientItem ingredientItem = (KitchenIngredientItem) SourceGuideRegistry.selectHarvestItem(this.profile, level.random);
 
         float quality = harvestQuality(level, state, pos);
         IngredientStateData baseData = ingredientItem.defaultData(level.getGameTime());
@@ -151,10 +137,6 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
                 baseData.enjoyment()
         );
         return ingredientItem.createStack(1, level.getGameTime(), harvestData);
-    }
-
-    private static KitchenIngredientItem randomIngredient(Level level, JazzyItems.IngredientId... candidates) {
-        return JazzyItems.ingredient(candidates[level.random.nextInt(candidates.length)]).get();
     }
 
     private float harvestQuality(Level level, BlockState state, BlockPos pos) {

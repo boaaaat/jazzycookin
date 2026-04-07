@@ -50,5 +50,8 @@
                                   "count":  1
                               },
                    "state":  "mixed"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "garlic_butter"
+                    }
 }

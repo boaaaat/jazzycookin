@@ -44,5 +44,8 @@
                                   "count":  1
                               },
                    "state":  "smooth"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "smoothie_blend"
+                    }
 }

@@ -20,5 +20,8 @@
                                   "count":  1
                               },
                    "state":  "plated"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "fruit_juice_blend"
+                    }
 }

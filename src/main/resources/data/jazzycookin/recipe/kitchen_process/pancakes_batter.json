@@ -44,5 +44,8 @@
                                   "count":  1
                               },
                    "state":  "batter"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "pancakes"
+                    }
 }

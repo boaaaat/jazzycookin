@@ -50,5 +50,8 @@
                                   "count":  1
                               },
                    "state":  "fine_powder"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "pan_seared_chicken"
+                    }
 }

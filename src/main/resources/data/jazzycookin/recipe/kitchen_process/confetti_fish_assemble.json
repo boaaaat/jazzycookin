@@ -22,5 +22,8 @@
                                   "count":  1
                               },
                    "state":  "battered_protein"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "confetti_rice_with_fish"
+                    }
 }

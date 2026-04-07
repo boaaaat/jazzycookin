@@ -15,6 +15,7 @@ import net.minecraft.world.level.Level;
 public record KitchenPlateRecipe(
         List<KitchenInputRequirement> inputs,
         KitchenRecipeGuideData guide,
+        KitchenRecipeBookData recipeBook,
         KitchenProcessOutput output
 ) implements Recipe<KitchenPlateInput> {
     @Override

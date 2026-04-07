@@ -23,5 +23,8 @@
                                   "count":  1
                               },
                    "state":  "baked_bread"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "jam_on_toast"
+                    }
 }

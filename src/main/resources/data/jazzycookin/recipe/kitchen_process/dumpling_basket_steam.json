@@ -25,5 +25,8 @@
                                   "count":  1
                               },
                    "state":  "steamed_dumplings"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "dumpling_basket"
+                    }
 }

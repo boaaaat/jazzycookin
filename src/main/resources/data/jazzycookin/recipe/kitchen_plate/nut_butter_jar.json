@@ -20,5 +20,8 @@
                                   "count":  1
                               },
                    "state":  "paste"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "nut_butter"
+                    }
 }

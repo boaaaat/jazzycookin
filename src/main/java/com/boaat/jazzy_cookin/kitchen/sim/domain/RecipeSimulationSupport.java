@@ -3,6 +3,7 @@ package com.boaat.jazzy_cookin.kitchen.sim.domain;
 import java.util.List;
 import java.util.Optional;
 
+import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
@@ -10,6 +11,8 @@ import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenOutcomeBand;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
+import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
+import com.boaat.jazzy_cookin.recipebook.network.RecipeBookNetworking;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
@@ -25,6 +28,7 @@ import com.boaat.jazzy_cookin.recipe.KitchenRecipeMatchPlan;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.ItemStack;
@@ -236,11 +240,16 @@ final class RecipeSimulationSupport {
             }
         }
 
-        access.simulationMergeIntoSlot(access.outputSlot(), createOutputStack(resolvedOutput.result(), outputData, level.getGameTime()));
+        ItemStack outputStack = createOutputStack(resolvedOutput.result(), outputData, level.getGameTime());
+        access.simulationMergeIntoSlot(access.outputSlot(), outputStack);
         if (!resolvedOutput.byproduct().isEmpty()) {
             access.simulationMergeIntoSlot(access.byproductSlot(), createOutputStack(resolvedOutput.byproduct(), null, level.getGameTime()));
         }
         damageTool(access, recipe);
+        if (guidePlayer(access) instanceof ServerPlayer player
+                && RecipeBookProgress.recordKitchenOutput(player, outputStack, recipe.recipeBook().normalizedChainKey())) {
+            RecipeBookNetworking.sync(player);
+        }
         stop(access);
         access.simulationMarkChanged();
     }
@@ -268,9 +277,14 @@ final class RecipeSimulationSupport {
             }
         }
 
-        access.simulationMergeIntoSlot(access.outputSlot(), createOutputStack(recipe.output().result(), outputData, level.getGameTime()));
+        ItemStack outputStack = createOutputStack(recipe.output().result(), outputData, level.getGameTime());
+        access.simulationMergeIntoSlot(access.outputSlot(), outputStack);
         if (!recipe.output().byproduct().isEmpty()) {
             access.simulationMergeIntoSlot(access.byproductSlot(), createOutputStack(recipe.output().byproduct(), null, level.getGameTime()));
+        }
+        if (guidePlayer(access) instanceof ServerPlayer player
+                && RecipeBookProgress.recordKitchenOutput(player, outputStack, recipe.recipeBook().normalizedChainKey())) {
+            RecipeBookNetworking.sync(player);
         }
         stop(access);
         access.simulationMarkChanged();
@@ -420,5 +434,14 @@ final class RecipeSimulationSupport {
         ItemStack copy = stack.copy();
         copy.setCount(count);
         return copy;
+    }
+
+    private static ServerPlayer guidePlayer(StationSimulationAccess access) {
+        if (!(access instanceof KitchenStationBlockEntity station) || station.simulationLevel() == null || station.activeGuidePlayerId() == null) {
+            return null;
+        }
+        return station.simulationLevel().getServer() != null
+                ? station.simulationLevel().getServer().getPlayerList().getPlayer(station.activeGuidePlayerId())
+                : null;
     }
 }

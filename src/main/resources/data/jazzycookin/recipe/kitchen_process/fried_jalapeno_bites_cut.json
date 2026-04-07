@@ -22,5 +22,8 @@
                                   "count":  1
                               },
                    "state":  "sliced"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "fried_jalapeno_bites"
+                    }
 }

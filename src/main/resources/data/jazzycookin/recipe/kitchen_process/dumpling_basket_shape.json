@@ -22,5 +22,8 @@
                                   "count":  1
                               },
                    "state":  "raw_dumplings"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "dumpling_basket"
+                    }
 }

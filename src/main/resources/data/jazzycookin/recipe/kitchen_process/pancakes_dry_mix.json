@@ -40,5 +40,8 @@
                                   "count":  1
                               },
                    "state":  "coarse_powder"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "pancakes"
+                    }
 }

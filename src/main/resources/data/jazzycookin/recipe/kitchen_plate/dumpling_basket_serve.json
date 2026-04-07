@@ -26,5 +26,8 @@
                                   "count":  1
                               },
                    "state":  "plated_dumpling_meal"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "dumpling_basket"
+                    }
 }

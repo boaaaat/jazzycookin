@@ -50,5 +50,8 @@
                                   "count":  1
                               },
                    "state":  "creamy"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "mac_and_cheese"
+                    }
 }

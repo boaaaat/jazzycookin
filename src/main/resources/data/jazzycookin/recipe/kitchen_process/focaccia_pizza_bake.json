@@ -19,5 +19,8 @@
                                   "count":  1
                               },
                    "state":  "baked"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "focaccia_pizza"
+                    }
 }

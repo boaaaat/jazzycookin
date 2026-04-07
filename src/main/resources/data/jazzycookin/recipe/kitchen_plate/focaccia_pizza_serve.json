@@ -20,5 +20,8 @@
                                   "count":  1
                               },
                    "state":  "plated"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "focaccia_pizza"
+                    }
 }

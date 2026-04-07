@@ -23,5 +23,8 @@
                                   "count":  1
                               },
                    "state":  "pan_fried"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "pancakes"
+                    }
 }

@@ -44,5 +44,8 @@
                                   "count":  1
                               },
                    "state":  "sliced"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "fresh_lemon_juice"
+                    }
 }

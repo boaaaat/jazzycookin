@@ -38,5 +38,8 @@
                                   "count":  1
                               },
                    "state":  "smooth"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "fruit_juice_blend"
+                    }
 }

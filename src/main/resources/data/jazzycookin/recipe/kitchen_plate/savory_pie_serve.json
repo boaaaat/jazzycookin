@@ -26,5 +26,8 @@
                                   "count":  1
                               },
                    "state":  "plated_slice"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "savory_pie"
+                    }
 }

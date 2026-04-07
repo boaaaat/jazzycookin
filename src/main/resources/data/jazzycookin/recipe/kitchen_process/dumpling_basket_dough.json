@@ -44,5 +44,8 @@
                                   "count":  1
                               },
                    "state":  "smooth_dough"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "dumpling_basket"
+                    }
 }

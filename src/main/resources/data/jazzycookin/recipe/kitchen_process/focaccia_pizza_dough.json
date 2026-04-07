@@ -56,5 +56,8 @@
                                   "count":  1
                               },
                    "state":  "bread_dough"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "focaccia_pizza"
+                    }
 }

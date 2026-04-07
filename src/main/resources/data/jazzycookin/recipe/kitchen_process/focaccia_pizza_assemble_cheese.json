@@ -28,5 +28,8 @@
                                   "count":  1
                               },
                    "state":  "raw_assembled_pizza"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "focaccia_pizza"
+                    }
 }

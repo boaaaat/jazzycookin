@@ -86,6 +86,10 @@ public class KitchenIngredientItem extends Item {
         return this.pantryTab;
     }
 
+    public IngredientState defaultState() {
+        return this.defaultState;
+    }
+
     public boolean isFridgeSafe() {
         return this.fridgeSafe;
     }

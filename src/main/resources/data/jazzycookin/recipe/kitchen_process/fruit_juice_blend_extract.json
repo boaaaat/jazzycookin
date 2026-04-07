@@ -20,5 +20,8 @@
                                      "count":  1
                                  },
                    "state":  "fresh_juice"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "fruit_juice_blend"
+                    }
 }

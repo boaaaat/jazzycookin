@@ -50,5 +50,8 @@
                                   "count":  1
                               },
                    "state":  "smooth_dough"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "savory_pie"
+                    }
 }

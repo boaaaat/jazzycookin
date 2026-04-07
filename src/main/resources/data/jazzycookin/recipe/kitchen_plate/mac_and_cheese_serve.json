@@ -20,5 +20,8 @@
                                   "count":  1
                               },
                    "state":  "plated"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "mac_and_cheese"
+                    }
 }

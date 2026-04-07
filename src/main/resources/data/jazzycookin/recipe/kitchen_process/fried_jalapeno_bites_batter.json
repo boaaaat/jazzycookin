@@ -56,5 +56,8 @@
                                   "count":  1
                               },
                    "state":  "batter"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "fried_jalapeno_bites"
+                    }
 }

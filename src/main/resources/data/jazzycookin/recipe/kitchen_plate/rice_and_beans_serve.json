@@ -26,5 +26,8 @@
                                   "count":  1
                               },
                    "state":  "plated"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "rice_and_beans"
+                    }
 }

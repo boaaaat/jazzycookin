@@ -44,5 +44,8 @@
                                   "count":  1
                               },
                    "state":  "chopped_cabbage"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "sandwich_cabbage"
+                    }
 }

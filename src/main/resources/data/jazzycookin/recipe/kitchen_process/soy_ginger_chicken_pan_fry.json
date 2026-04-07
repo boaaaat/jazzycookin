@@ -35,5 +35,8 @@
                                   "count":  1
                               },
                    "state":  "glazed"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "soy_ginger_chicken"
+                    }
 }

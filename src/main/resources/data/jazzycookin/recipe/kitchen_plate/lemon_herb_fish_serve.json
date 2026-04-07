@@ -26,5 +26,8 @@
                                   "count":  1
                               },
                    "state":  "plated_roast_meal"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "lemon_herb_fish"
+                    }
 }

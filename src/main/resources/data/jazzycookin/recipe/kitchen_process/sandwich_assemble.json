@@ -34,5 +34,8 @@
                                   "count":  1
                               },
                    "state":  "assembled_sandwich"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "sandwich"
+                    }
 }

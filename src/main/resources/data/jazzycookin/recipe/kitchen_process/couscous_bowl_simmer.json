@@ -54,5 +54,8 @@
                                   "count":  1
                               },
                    "state":  "simmered"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "couscous_bowl"
+                    }
 }

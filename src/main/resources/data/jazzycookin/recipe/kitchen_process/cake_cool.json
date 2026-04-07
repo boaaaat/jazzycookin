@@ -17,5 +17,8 @@
                                   "count":  1
                               },
                    "state":  "cooled"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "cake"
+                    }
 }

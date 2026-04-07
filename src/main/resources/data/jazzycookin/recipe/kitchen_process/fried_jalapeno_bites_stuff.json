@@ -28,5 +28,8 @@
                                   "count":  1
                               },
                    "state":  "stuffed"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "fried_jalapeno_bites"
+                    }
 }

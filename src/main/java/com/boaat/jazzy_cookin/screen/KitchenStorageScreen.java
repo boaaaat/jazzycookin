@@ -7,6 +7,7 @@ import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.StationUiProfile;
 import com.boaat.jazzy_cookin.kitchen.StorageUiProfile;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
+import com.boaat.jazzy_cookin.recipebook.client.RecipeBookClientState;
 import com.boaat.jazzy_cookin.screen.layout.LayoutRegion;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -20,6 +21,7 @@ import net.minecraft.world.item.ItemStack;
 public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorageMenu> {
     private final StorageUiProfile profile;
     private final List<PantryTabButton> pantryTabs = new ArrayList<>();
+    private Button recipeBookButton;
     private Button previousPageButton;
     private Button nextPageButton;
 
@@ -35,6 +37,8 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     protected void init() {
         super.init();
         this.pantryTabs.clear();
+        this.recipeBookButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.recipe_book_short"),
+                button -> RecipeBookClientState.openRecipeBook()).bounds(this.leftPos + this.imageWidth - 68, this.topPos + 8, 58, 18).build());
         if (this.menu.isPantry()) {
             LayoutRegion up = this.profile.pageUpBounds();
             LayoutRegion down = this.profile.pageDownBounds();

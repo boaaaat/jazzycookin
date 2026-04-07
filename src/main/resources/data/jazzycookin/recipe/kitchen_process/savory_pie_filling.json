@@ -40,5 +40,8 @@
                                   "count":  1
                               },
                    "state":  "simmered_filling"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "savory_pie_filling"
+                    }
 }

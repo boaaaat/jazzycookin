@@ -22,5 +22,8 @@
                                   "count":  1
                               },
                    "state":  "strained_soup"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "creamy_tomato_soup"
+                    }
 }

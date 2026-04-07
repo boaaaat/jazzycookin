@@ -20,5 +20,8 @@
                                   "count":  1
                               },
                    "state":  "plated_fried_meal"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "falafel_plate"
+                    }
 }

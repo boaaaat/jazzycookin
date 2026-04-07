@@ -17,5 +17,8 @@
                                   "count":  1
                               },
                    "state":  "freeze_dried"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "freeze_dried_apples"
+                    }
 }

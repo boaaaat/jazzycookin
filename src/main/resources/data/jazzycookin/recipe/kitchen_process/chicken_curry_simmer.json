@@ -30,5 +30,8 @@
                                   "count":  1
                               },
                    "state":  "simmered"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "chicken_curry"
+                    }
 }

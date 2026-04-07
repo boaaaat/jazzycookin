@@ -34,5 +34,8 @@
                                   "count":  1
                               },
                    "state":  "mixed"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "brownies"
+                    }
 }

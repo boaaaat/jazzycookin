@@ -17,5 +17,8 @@
                                   "count":  1
                               },
                    "state":  "cooled_pie"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "tray_pie"
+                    }
 }

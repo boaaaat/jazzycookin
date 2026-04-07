@@ -28,8 +28,8 @@
                    },
                    {
                        "ingredient":  {
-                                         "item":  "jazzycookin:garlic"
-                                     },
+                                          "item":  "jazzycookin:garlic"
+                                      },
                        "required_state":  "garlic"
                    },
                    {
@@ -54,5 +54,8 @@
                                   "count":  1
                               },
                    "state":  "simmered"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "pasta_e_fagioli"
+                    }
 }

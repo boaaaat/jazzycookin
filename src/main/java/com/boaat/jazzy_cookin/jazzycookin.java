@@ -9,10 +9,12 @@ import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.boaat.jazzy_cookin.registry.JazzyMenus;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
+import com.boaat.jazzy_cookin.recipebook.network.RecipeBookNetworking;
 import com.mojang.logging.LogUtils;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(JazzyCookin.MODID)
 public class JazzyCookin {
@@ -28,5 +30,10 @@ public class JazzyCookin {
         JazzyRecipes.RECIPE_TYPES.register(modEventBus);
         JazzyRecipes.RECIPE_SERIALIZERS.register(modEventBus);
         JazzyCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
+
+        modEventBus.addListener(RecipeBookNetworking::register);
+        NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onPlayerCloned);
+        NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onItemCrafted);
     }
 }

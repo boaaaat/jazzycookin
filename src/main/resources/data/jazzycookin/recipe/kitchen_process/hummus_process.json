@@ -56,5 +56,8 @@
                                   "count":  1
                               },
                    "state":  "smooth_paste"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "hummus"
+                    }
 }

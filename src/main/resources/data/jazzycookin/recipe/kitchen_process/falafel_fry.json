@@ -41,5 +41,8 @@
                                   "count":  1
                               },
                    "state":  "deep_fried"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "falafel_fry"
+                    }
 }

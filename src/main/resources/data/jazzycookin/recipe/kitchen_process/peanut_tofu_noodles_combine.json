@@ -36,5 +36,8 @@
                                   "count":  1
                               },
                    "state":  "mixed"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "peanut_tofu_noodles"
+                    }
 }

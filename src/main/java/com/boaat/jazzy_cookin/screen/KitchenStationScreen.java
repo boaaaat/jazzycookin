@@ -12,6 +12,7 @@ import com.boaat.jazzy_cookin.kitchen.StationUiProfile.KitchenScreenLayout;
 import com.boaat.jazzy_cookin.kitchen.StationUiProfile.MetricWidgetSpec;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.SimulationDomainType;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
+import com.boaat.jazzy_cookin.recipebook.client.RecipeBookClientState;
 import com.boaat.jazzy_cookin.screen.layout.ActionWidgetSpec;
 import com.boaat.jazzy_cookin.screen.layout.LayoutRegion;
 
@@ -34,6 +35,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private Button raiseControlButton;
     private Button secondaryActionButton;
     private Button tertiaryActionButton;
+    private Button recipeBookButton;
     private EditBox ovenTemperatureBox;
     private int pendingOvenTemperature = -1;
     private Button heldActionButton;
@@ -62,6 +64,8 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                 .bounds(this.leftPos + primary.x(), this.topPos + primary.y(), primary.width(), primary.height())
                 .build());
         this.startButton.setAlpha(0.0F);
+        this.recipeBookButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.recipe_book_short"),
+                button -> RecipeBookClientState.openRecipeBook()).bounds(this.leftPos + this.imageWidth - 68, this.topPos + 8, 58, 18).build());
         LayoutRegion secondary = this.layout.secondaryAction().bounds();
         this.secondaryActionButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.stir"), button -> this.sendButton(7))
                 .bounds(this.leftPos + secondary.x(), this.topPos + secondary.y(), secondary.width(), secondary.height())

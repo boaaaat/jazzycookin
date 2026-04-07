@@ -28,5 +28,8 @@
                                   "count":  1
                               },
                    "state":  "dumpling_filling"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "dumpling_basket"
+                    }
 }

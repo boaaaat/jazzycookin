@@ -9,6 +9,7 @@ import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.ProcessMode;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -19,47 +20,127 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
 public class KitchenProcessSerializer implements RecipeSerializer<KitchenProcessRecipe> {
-    public static final MapCodec<KitchenProcessRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            StationType.CODEC.fieldOf("station").forGetter(KitchenProcessRecipe::station),
-            KitchenInputRequirement.CODEC.listOf().fieldOf("inputs").forGetter(KitchenProcessRecipe::inputs),
-            KitchenMethod.CODEC.optionalFieldOf("method", KitchenMethod.NONE).forGetter(KitchenProcessRecipe::method),
-            ToolProfile.CODEC.optionalFieldOf("preferred_tool").forGetter(KitchenProcessRecipe::preferredTool),
-            ToolProfile.CODEC.listOf().optionalFieldOf("allowed_tools", List.of()).forGetter(KitchenProcessRecipe::allowedTools),
-            Codec.BOOL.optionalFieldOf("tool_required", false).forGetter(KitchenProcessRecipe::toolRequired),
-            Codec.INT.optionalFieldOf("duration", 60).forGetter(KitchenProcessRecipe::duration),
-            Codec.INT.optionalFieldOf("passive_duration_ticks", 0).forGetter(KitchenProcessRecipe::passiveDurationTicks),
-            HeatLevel.CODEC.optionalFieldOf("preferred_heat", HeatLevel.OFF).forGetter(KitchenProcessRecipe::preferredHeat),
-            HeatLevel.CODEC.optionalFieldOf("minimum_heat", HeatLevel.OFF).forGetter(KitchenProcessRecipe::minimumHeat),
-            HeatLevel.CODEC.optionalFieldOf("maximum_heat", HeatLevel.OFF).forGetter(KitchenProcessRecipe::maximumHeat),
-            Codec.BOOL.optionalFieldOf("requires_preheat", false).forGetter(KitchenProcessRecipe::requiresPreheat),
-            ProcessMode.CODEC.optionalFieldOf("mode", ProcessMode.ACTIVE).forGetter(KitchenProcessRecipe::mode),
-            KitchenEnvironmentRequirements.CODEC.optionalFieldOf("environment_requirements", KitchenEnvironmentRequirements.NONE)
-                    .forGetter(KitchenProcessRecipe::environmentRequirements),
-            KitchenProcessOutcome.CODEC.listOf().optionalFieldOf("outcomes", List.of()).forGetter(KitchenProcessRecipe::outcomes),
-            KitchenProcessOutput.CODEC.fieldOf("output").forGetter(KitchenProcessRecipe::output)
-    ).apply(instance, (station, inputs, method, preferredTool, allowedTools, toolRequired, duration, passiveDurationTicks, preferredHeat, minimumHeat, maximumHeat,
-            requiresPreheat, mode, environmentRequirements, outcomes, output) ->
-            new KitchenProcessRecipe(
-                    station,
-                    inputs,
-                    method == KitchenMethod.NONE
-                            ? KitchenMethod.infer(station, preferredHeat, preferredTool.orElse(ToolProfile.NONE), output.state(), mode, environmentRequirements.nearbyWater(), requiresPreheat)
-                            : method,
-                    preferredTool,
-                    allowedTools.isEmpty() && preferredTool.isPresent() ? List.of(preferredTool.get()) : allowedTools,
-                    toolRequired,
-                    duration,
-                    passiveDurationTicks,
-                    preferredHeat,
-                    minimumHeat == HeatLevel.OFF && preferredHeat != HeatLevel.OFF ? preferredHeat : minimumHeat,
-                    maximumHeat == HeatLevel.OFF && preferredHeat != HeatLevel.OFF ? preferredHeat : maximumHeat,
-                    requiresPreheat,
-                    mode,
-                    environmentRequirements,
-                    KitchenRecipeGuideData.DEFAULT,
-                    outcomes,
-                    output
-            )));
+    private record BasicRecipeData(
+            StationType station,
+            List<KitchenInputRequirement> inputs,
+            KitchenMethod method,
+            List<KitchenProcessOutcome> outcomes,
+            KitchenProcessOutput output
+    ) {
+        private static final MapCodec<BasicRecipeData> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                StationType.CODEC.fieldOf("station").forGetter(BasicRecipeData::station),
+                KitchenInputRequirement.CODEC.listOf().fieldOf("inputs").forGetter(BasicRecipeData::inputs),
+                KitchenMethod.CODEC.optionalFieldOf("method", KitchenMethod.NONE).forGetter(BasicRecipeData::method),
+                KitchenProcessOutcome.CODEC.listOf().optionalFieldOf("outcomes", List.of()).forGetter(BasicRecipeData::outcomes),
+                KitchenProcessOutput.CODEC.fieldOf("output").forGetter(BasicRecipeData::output)
+        ).apply(instance, BasicRecipeData::new));
+
+        private static BasicRecipeData from(KitchenProcessRecipe recipe) {
+            return new BasicRecipeData(recipe.station(), recipe.inputs(), recipe.method(), recipe.outcomes(), recipe.output());
+        }
+    }
+
+    private record ToolConfig(Optional<ToolProfile> preferredTool, List<ToolProfile> allowedTools, boolean toolRequired) {
+        private static final MapCodec<ToolConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                ToolProfile.CODEC.optionalFieldOf("preferred_tool").forGetter(ToolConfig::preferredTool),
+                ToolProfile.CODEC.listOf().optionalFieldOf("allowed_tools", List.of()).forGetter(ToolConfig::allowedTools),
+                Codec.BOOL.optionalFieldOf("tool_required", false).forGetter(ToolConfig::toolRequired)
+        ).apply(instance, ToolConfig::new));
+
+        private static ToolConfig from(KitchenProcessRecipe recipe) {
+            return new ToolConfig(recipe.preferredTool(), recipe.allowedTools(), recipe.toolRequired());
+        }
+    }
+
+    private record ProcessConfig(
+            int duration,
+            int passiveDurationTicks,
+            HeatLevel preferredHeat,
+            HeatLevel minimumHeat,
+            HeatLevel maximumHeat,
+            boolean requiresPreheat,
+            ProcessMode mode,
+            KitchenEnvironmentRequirements environmentRequirements,
+            KitchenRecipeGuideData guide,
+            KitchenRecipeBookData recipeBook
+    ) {
+        private static final MapCodec<ProcessConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                Codec.INT.optionalFieldOf("duration", 60).forGetter(ProcessConfig::duration),
+                Codec.INT.optionalFieldOf("passive_duration_ticks", 0).forGetter(ProcessConfig::passiveDurationTicks),
+                HeatLevel.CODEC.optionalFieldOf("preferred_heat", HeatLevel.OFF).forGetter(ProcessConfig::preferredHeat),
+                HeatLevel.CODEC.optionalFieldOf("minimum_heat", HeatLevel.OFF).forGetter(ProcessConfig::minimumHeat),
+                HeatLevel.CODEC.optionalFieldOf("maximum_heat", HeatLevel.OFF).forGetter(ProcessConfig::maximumHeat),
+                Codec.BOOL.optionalFieldOf("requires_preheat", false).forGetter(ProcessConfig::requiresPreheat),
+                ProcessMode.CODEC.optionalFieldOf("mode", ProcessMode.ACTIVE).forGetter(ProcessConfig::mode),
+                KitchenEnvironmentRequirements.CODEC.optionalFieldOf("environment_requirements", KitchenEnvironmentRequirements.NONE)
+                        .forGetter(ProcessConfig::environmentRequirements),
+                KitchenRecipeGuideData.CODEC.optionalFieldOf("guide", KitchenRecipeGuideData.DEFAULT).forGetter(ProcessConfig::guide),
+                KitchenRecipeBookData.CODEC.fieldOf("recipe_book").forGetter(ProcessConfig::recipeBook)
+        ).apply(instance, ProcessConfig::new));
+
+        private static ProcessConfig from(KitchenProcessRecipe recipe) {
+            return new ProcessConfig(
+                    recipe.duration(),
+                    recipe.passiveDurationTicks(),
+                    recipe.preferredHeat(),
+                    recipe.minimumHeat(),
+                    recipe.maximumHeat(),
+                    recipe.requiresPreheat(),
+                    recipe.mode(),
+                    recipe.environmentRequirements(),
+                    recipe.guide(),
+                    recipe.recipeBook()
+            );
+        }
+    }
+
+    public static final MapCodec<KitchenProcessRecipe> CODEC = Codec.mapPair(
+            BasicRecipeData.CODEC,
+            Codec.mapPair(ToolConfig.CODEC, ProcessConfig.CODEC)
+    ).xmap(
+            data -> {
+                BasicRecipeData basic = data.getFirst();
+                ToolConfig toolConfig = data.getSecond().getFirst();
+                ProcessConfig processConfig = data.getSecond().getSecond();
+                return new KitchenProcessRecipe(
+                        basic.station(),
+                        basic.inputs(),
+                        basic.method() == KitchenMethod.NONE
+                                ? KitchenMethod.infer(
+                                basic.station(),
+                                processConfig.preferredHeat(),
+                                toolConfig.preferredTool().orElse(ToolProfile.NONE),
+                                basic.output().state(),
+                                processConfig.mode(),
+                                processConfig.environmentRequirements().nearbyWater(),
+                                processConfig.requiresPreheat())
+                                : basic.method(),
+                        toolConfig.preferredTool(),
+                        toolConfig.allowedTools().isEmpty() && toolConfig.preferredTool().isPresent() ? List.of(toolConfig.preferredTool().get()) : toolConfig.allowedTools(),
+                        toolConfig.toolRequired(),
+                        processConfig.duration(),
+                        processConfig.passiveDurationTicks(),
+                        processConfig.preferredHeat(),
+                        processConfig.minimumHeat() == HeatLevel.OFF && processConfig.preferredHeat() != HeatLevel.OFF
+                                ? processConfig.preferredHeat()
+                                : processConfig.minimumHeat(),
+                        processConfig.maximumHeat() == HeatLevel.OFF && processConfig.preferredHeat() != HeatLevel.OFF
+                                ? processConfig.preferredHeat()
+                                : processConfig.maximumHeat(),
+                        processConfig.requiresPreheat(),
+                        processConfig.mode(),
+                        processConfig.environmentRequirements(),
+                        processConfig.guide(),
+                        processConfig.recipeBook(),
+                        basic.outcomes(),
+                        basic.output()
+                );
+            },
+            recipe -> Pair.of(
+                    BasicRecipeData.from(recipe),
+                    Pair.of(ToolConfig.from(recipe), ProcessConfig.from(recipe))
+            )
+    );
 
     public static final StreamCodec<RegistryFriendlyByteBuf, KitchenProcessRecipe> STREAM_CODEC = new StreamCodec<>() {
         @Override
@@ -88,6 +169,8 @@ public class KitchenProcessSerializer implements RecipeSerializer<KitchenProcess
             boolean requiresPreheat = buffer.readBoolean();
             ProcessMode mode = ProcessMode.STREAM_CODEC.decode(buffer);
             KitchenEnvironmentRequirements environmentRequirements = KitchenEnvironmentRequirements.STREAM_CODEC.decode(buffer);
+            KitchenRecipeGuideData guide = KitchenRecipeGuideData.STREAM_CODEC.decode(buffer);
+            KitchenRecipeBookData recipeBook = KitchenRecipeBookData.STREAM_CODEC.decode(buffer);
             List<KitchenProcessOutcome> outcomes = new ArrayList<>();
             int outcomeCount = buffer.readVarInt();
             for (int i = 0; i < outcomeCount; i++) {
@@ -109,7 +192,8 @@ public class KitchenProcessSerializer implements RecipeSerializer<KitchenProcess
                     requiresPreheat,
                     mode,
                     environmentRequirements,
-                    KitchenRecipeGuideData.DEFAULT,
+                    guide,
+                    recipeBook,
                     outcomes,
                     output
             );
@@ -134,6 +218,8 @@ public class KitchenProcessSerializer implements RecipeSerializer<KitchenProcess
             buffer.writeBoolean(value.requiresPreheat());
             ProcessMode.STREAM_CODEC.encode(buffer, value.mode());
             KitchenEnvironmentRequirements.STREAM_CODEC.encode(buffer, value.environmentRequirements());
+            KitchenRecipeGuideData.STREAM_CODEC.encode(buffer, value.guide());
+            KitchenRecipeBookData.STREAM_CODEC.encode(buffer, value.recipeBook());
             buffer.writeVarInt(value.outcomes().size());
             value.outcomes().forEach(outcome -> KitchenProcessOutcome.STREAM_CODEC.encode(buffer, outcome));
             KitchenProcessOutput.STREAM_CODEC.encode(buffer, value.output());

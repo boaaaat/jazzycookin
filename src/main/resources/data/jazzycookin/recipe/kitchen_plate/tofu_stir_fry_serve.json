@@ -26,5 +26,8 @@
                                   "count":  1
                               },
                    "state":  "plated"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "tofu_stir_fry"
+                    }
 }

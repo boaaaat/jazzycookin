@@ -24,5 +24,8 @@
                                   "count":  1
                               },
                    "state":  "smoked"
-               }
+               },
+    "recipe_book":  {
+                        "chain_key":  "smoked_meat_platter"
+                    }
 }
