@@ -58,6 +58,8 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     @Override
     protected void init() {
         super.init();
+        this.leftPos = Math.max(0, this.leftPos);
+        this.topPos = Math.max(0, this.topPos);
 
         LayoutRegion primary = this.layout.primaryAction().bounds();
         this.startButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.start"), button -> this.sendButton(this.primaryActionButtonId()))

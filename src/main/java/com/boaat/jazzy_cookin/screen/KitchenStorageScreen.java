@@ -36,6 +36,8 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     @Override
     protected void init() {
         super.init();
+        this.leftPos = Math.max(0, this.leftPos);
+        this.topPos = Math.max(0, this.topPos);
         this.pantryTabs.clear();
         this.recipeBookButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.recipe_book_short"),
                 button -> RecipeBookClientState.openRecipeBook()).bounds(this.leftPos + this.imageWidth - 68, this.topPos + 8, 58, 18).build());
