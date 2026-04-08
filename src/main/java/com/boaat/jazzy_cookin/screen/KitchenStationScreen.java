@@ -30,6 +30,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class KitchenStationScreen extends AbstractContainerScreen<KitchenStationMenu> {
+    private static final int STOVE_BURNER_COUNT = 6;
+    private static final int[] STOVE_BURNER_SIZES = {34, 26, 22, 28, 36, 24};
+
     private final StationUiProfile baseProfile;
     private StationUiProfile profile;
     private KitchenScreenLayout layout;
@@ -58,12 +61,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private ApplianceUiLibComponents.ApplianceLabel applianceInventoryLabel;
     private ApplianceUiLibComponents.ApplianceLabel applianceTemperatureLabel;
     private ApplianceUiLibComponents.ApplianceLabel applianceTemperatureSuffixLabel;
+    private ApplianceUiLibComponents.ApplianceLabel applianceFuelLabel;
+    private ApplianceUiLibComponents.ApplianceStatusChip applianceFuelChip;
     private ApplianceUiLibComponents.ApplianceTextField applianceOvenTemperatureField;
-    private ApplianceUiLibComponents.StoveDialWidget applianceStoveDial;
-    private ApplianceUiLibComponents.ApplianceStatusChip appliancePreheatChip;
+    private ApplianceUiLibComponents.ApplianceButton appliancePreheatAction;
     private ApplianceUiLibComponents.ApplianceStatusChip applianceCookTimeChip;
-    private int pendingStoveDialLevel = -1;
+    private final int[] pendingStoveBurnerLevels = new int[STOVE_BURNER_COUNT];
     private int pendingOvenTemperature = -1;
+    private int pendingOvenCookTimeMinutes = -1;
     private int pendingMicrowaveDuration = -1;
     private Button heldActionButton;
     private int heldActionButtonId = -1;
@@ -206,11 +211,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         this.applianceInventoryLabel = null;
         this.applianceTemperatureLabel = null;
         this.applianceTemperatureSuffixLabel = null;
+        this.applianceFuelLabel = null;
+        this.applianceFuelChip = null;
         this.applianceOvenTemperatureField = null;
-        this.applianceStoveDial = null;
-        this.appliancePreheatChip = null;
+        this.appliancePreheatAction = null;
         this.applianceCookTimeChip = null;
-        this.pendingStoveDialLevel = -1;
+        this.pendingOvenCookTimeMinutes = -1;
+        for (int burnerIndex = 0; burnerIndex < this.pendingStoveBurnerLevels.length; burnerIndex++) {
+            this.pendingStoveBurnerLevels[burnerIndex] = -1;
+        }
     }
 
     private void initApplianceUiLib() {
@@ -261,28 +270,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.applianceOverlayRoot.addChild(this.applianceStatusSecondaryLabel);
         }
 
-        LayoutRegion inventory = this.applianceInventoryRegion();
-        this.applianceInventoryLabel = new ApplianceUiLibComponents.ApplianceLabel((this.imageWidth - 96) / 2, inventory.y() + 10,
-                96, 12, this.playerInventoryTitle, ApplianceUiLibComponents.LabelAlign.CENTER);
-        this.applianceInventoryLabel.setColor(JazzyGuiRenderer.TEXT);
-        this.applianceOverlayRoot.addChild(this.applianceInventoryLabel);
-
         LayoutRegion control = this.applianceControlRegion();
         if (this.menu.stationType() == StationType.STOVE) {
-            ApplianceUiLibComponents.ApplianceLabel dialLabel = new ApplianceUiLibComponents.ApplianceLabel(control.x() + 12,
-                    control.y() + 12, 30, 12, Component.translatable("screen.jazzycookin.stove_dial"),
-                    ApplianceUiLibComponents.LabelAlign.LEFT);
-            dialLabel.setColor(JazzyGuiRenderer.TEXT_MUTED);
-            this.applianceOverlayRoot.addChild(dialLabel);
+            this.applianceFuelLabel = new ApplianceUiLibComponents.ApplianceLabel(control.x() + 8, control.y() + 11,
+                    56, 12, Component.literal("⛽"), ApplianceUiLibComponents.LabelAlign.LEFT);
+            this.applianceFuelLabel.setColor(JazzyGuiRenderer.TEXT_MUTED);
+            this.applianceOverlayRoot.addChild(this.applianceFuelLabel);
 
-            this.applianceStoveDial = new ApplianceUiLibComponents.StoveDialWidget(control.x() + 44, control.y() + 7, 30, 20,
-                    this.profile.theme(), this.menu.stoveDialLevel(), value -> {
-                        this.pendingStoveDialLevel = value;
-                        this.sendButton(3000 + value);
-                    });
-            this.applianceOverlayRoot.addChild(this.applianceStoveDial);
-
-            int startWidth = 72;
+            int startWidth = 76;
             int actionWidth = 56;
             int startX = control.right() - startWidth - 8;
             this.applianceStartAction = new ApplianceUiLibComponents.ApplianceButton(startX, control.y() + 7, startWidth, 20,
@@ -300,41 +295,42 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                     () -> this.sendButton(8));
             this.applianceOverlayRoot.addChild(this.applianceTertiaryAction);
         } else {
-            this.applianceTemperatureLabel = new ApplianceUiLibComponents.ApplianceLabel(control.x() + 10, control.y() + 12,
-                    66, 12, Component.translatable("screen.jazzycookin.temperature_full"),
+            this.applianceTemperatureLabel = new ApplianceUiLibComponents.ApplianceLabel(control.x() + 10, control.y() + 6,
+                    18, 12, Component.literal("🌡"),
                     ApplianceUiLibComponents.LabelAlign.LEFT);
             this.applianceTemperatureLabel.setColor(JazzyGuiRenderer.TEXT_MUTED);
             this.applianceOverlayRoot.addChild(this.applianceTemperatureLabel);
 
-            this.applianceOvenTemperatureField = new ApplianceUiLibComponents.ApplianceTextField(control.x() + 82, control.y() + 8,
-                    42, 18, Integer.toString(this.menu.ovenTemperature()));
+            this.applianceOvenTemperatureField = new ApplianceUiLibComponents.ApplianceTextField(control.x() + 28, control.y() + 2,
+                    44, 18, Integer.toString(this.menu.ovenTemperature()));
             this.applianceOvenTemperatureField.setMaxLength(3);
             this.applianceOvenTemperatureField.setTextPredicate(ApplianceUiLibComponents.ApplianceTextField.INTEGER_INPUT_PREDICATE);
             this.applianceOvenTemperatureField.setTextColor(JazzyGuiRenderer.TEXT);
             this.applianceOvenTemperatureField.setTextColorUneditable(JazzyGuiRenderer.TEXT);
             this.applianceOverlayRoot.addChild(this.applianceOvenTemperatureField);
 
-            this.applianceTemperatureSuffixLabel = new ApplianceUiLibComponents.ApplianceLabel(control.x() + 128, control.y() + 12,
+            this.applianceTemperatureSuffixLabel = new ApplianceUiLibComponents.ApplianceLabel(control.x() + 76, control.y() + 6,
                     12, 12, Component.literal("F"), ApplianceUiLibComponents.LabelAlign.LEFT);
             this.applianceTemperatureSuffixLabel.setColor(JazzyGuiRenderer.TEXT_MUTED);
             this.applianceOverlayRoot.addChild(this.applianceTemperatureSuffixLabel);
 
-            int startWidth = 68;
-            int cookWidth = 86;
-            int preheatWidth = 74;
-            int startX = control.right() - startWidth - 8;
-            int cookX = startX - cookWidth - 6;
-            int preheatX = cookX - preheatWidth - 6;
+            this.applianceFuelChip = new ApplianceUiLibComponents.ApplianceStatusChip(control.x() + 118, control.y() + 2,
+                    72, 18, this.profile.theme(), Component.empty());
+            this.applianceOverlayRoot.addChild(this.applianceFuelChip);
 
-            this.appliancePreheatChip = new ApplianceUiLibComponents.ApplianceStatusChip(preheatX, control.y() + 7,
-                    preheatWidth, 20, this.profile.theme(), Component.empty());
-            this.applianceOverlayRoot.addChild(this.appliancePreheatChip);
+            int actionWidth = 92;
+            int startX = control.right() - actionWidth - 8;
+            int cookX = control.x() + 28;
 
-            this.applianceCookTimeChip = new ApplianceUiLibComponents.ApplianceStatusChip(cookX, control.y() + 7,
-                    cookWidth, 20, this.profile.theme(), Component.empty());
+            this.appliancePreheatAction = new ApplianceUiLibComponents.ApplianceButton(startX, control.y() + 2, actionWidth, 18,
+                    this.profile.theme(), Component.empty(), () -> this.sendButton(4000));
+            this.applianceOverlayRoot.addChild(this.appliancePreheatAction);
+
+            this.applianceCookTimeChip = new ApplianceUiLibComponents.ApplianceStatusChip(cookX, control.y() + 24,
+                    118, 18, this.profile.theme(), Component.empty());
             this.applianceOverlayRoot.addChild(this.applianceCookTimeChip);
 
-            this.applianceStartAction = new ApplianceUiLibComponents.ApplianceButton(startX, control.y() + 7, startWidth, 20,
+            this.applianceStartAction = new ApplianceUiLibComponents.ApplianceButton(startX, control.y() + 24, actionWidth, 18,
                     this.profile.theme(), Component.translatable("screen.jazzycookin.start"),
                     () -> this.sendButton(this.primaryActionButtonId()));
             this.applianceOverlayRoot.addChild(this.applianceStartAction);
@@ -342,11 +338,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private LayoutRegion applianceWorkspaceRegion() {
-        return new LayoutRegion(18, 42, 190, 92);
+        return this.menu.stationType() == StationType.STOVE
+                ? new LayoutRegion(18, 42, 204, 108)
+                : new LayoutRegion(18, 42, 192, 114);
     }
 
     private LayoutRegion appliancePreviewRegion() {
-        return new LayoutRegion(this.imageWidth - 120, 42, 102, 82);
+        return this.menu.stationType() == StationType.STOVE
+                ? new LayoutRegion(this.imageWidth - 114, 42, 96, 108)
+                : new LayoutRegion(this.imageWidth - 126, 42, 108, 114);
     }
 
     private LayoutRegion applianceStatusRegion() {
@@ -354,16 +354,60 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private LayoutRegion applianceControlRegion() {
-        return new LayoutRegion(18, 130, this.imageWidth - 36, 34);
+        return this.menu.stationType() == StationType.STOVE
+                ? new LayoutRegion(18, 146, this.imageWidth - 36, 40)
+                : new LayoutRegion(18, 140, this.imageWidth - 36, 50);
     }
 
     private LayoutRegion applianceInventoryRegion() {
-        return new LayoutRegion(14, this.imageHeight - 106, this.imageWidth - 28, 96);
+        return new LayoutRegion(14, this.profile.playerInventoryStartY() - 2, this.imageWidth - 28, 84);
     }
 
     private LayoutRegion applianceRecipeButtonRegion() {
         int width = Math.max(84, this.font.width(Component.translatable("screen.jazzycookin.recipe_book_short")) + 20);
         return new LayoutRegion(this.imageWidth - width - 12, 8, width, 20);
+    }
+
+    private LayoutRegion stoveBurnerRegion(int burnerIndex) {
+        Slot slot = this.menu.getSlot(burnerIndex);
+        int size = STOVE_BURNER_SIZES[Math.max(0, Math.min(STOVE_BURNER_SIZES.length - 1, burnerIndex))];
+        return new LayoutRegion(slot.x + 8 - size / 2, slot.y + 8 - size / 2 - 2, size, size);
+    }
+
+    private StationUiProfile.Point applianceFuelSlotPosition() {
+        LayoutRegion control = this.applianceControlRegion();
+        return this.menu.stationType() == StationType.STOVE
+                ? new StationUiProfile.Point(control.x() + 38, control.y() + 9)
+                : new StationUiProfile.Point(control.x() + 94, control.y() + 2);
+    }
+
+    private LayoutRegion ovenCookTimeRegion() {
+        LayoutRegion control = this.applianceControlRegion();
+        return new LayoutRegion(control.right() - 178, control.y() + 13, 84, 20);
+    }
+
+    private int stoveBurnerLevel(int burnerIndex) {
+        if (burnerIndex < 0 || burnerIndex >= STOVE_BURNER_COUNT) {
+            return 0;
+        }
+        int pending = this.pendingStoveBurnerLevels[burnerIndex];
+        return pending >= 0 ? pending : this.menu.stoveBurnerLevel(burnerIndex);
+    }
+
+    private int hoveredStoveBurnerIndex(double mouseX, double mouseY) {
+        if (this.menu.stationType() != StationType.STOVE) {
+            return -1;
+        }
+        for (int burnerIndex = 0; burnerIndex < this.menu.activeInputCount(); burnerIndex++) {
+            LayoutRegion burner = this.stoveBurnerRegion(burnerIndex);
+            int absoluteLeft = this.leftPos + burner.x();
+            int absoluteTop = this.topPos + burner.y();
+            if (mouseX >= absoluteLeft && mouseX <= absoluteLeft + burner.width()
+                    && mouseY >= absoluteTop && mouseY <= absoluteTop + burner.height()) {
+                return burnerIndex;
+            }
+        }
+        return -1;
     }
 
     private void repositionSlots() {
@@ -375,6 +419,12 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
         Slot toolSlot = this.menu.getSlot(this.menu.toolMenuSlotIndex());
         SlotPositioning.setPosition(toolSlot, this.profile.toolPosition().x(), this.profile.toolPosition().y());
+
+        if (this.menu.usesFuelSlot()) {
+            StationUiProfile.Point fuel = this.usesApplianceUiLib() ? this.applianceFuelSlotPosition() : this.profile.toolPosition();
+            Slot fuelSlot = this.menu.getSlot(this.menu.fuelMenuSlotIndex());
+            SlotPositioning.setPosition(fuelSlot, fuel.x(), fuel.y());
+        }
 
         Slot outputSlot = this.menu.getSlot(this.menu.outputMenuSlotIndex());
         SlotPositioning.setPosition(outputSlot, this.profile.outputPosition().x(), this.profile.outputPosition().y());
@@ -402,8 +452,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     protected void containerTick() {
         super.containerTick();
         this.updateButtonStates();
-        this.syncStoveDialWidget();
+        this.syncStoveBurners();
         this.syncOvenTemperatureField();
+        this.syncOvenCookTimeSelection();
         this.syncMicrowaveDurationField();
         this.tickHeldAction();
     }
@@ -439,7 +490,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.raiseControlButton.active = this.menu.controlSetting() < 2;
         }
         if (this.applianceStartAction != null) {
-            this.applianceStartAction.setMessage(this.primaryActionLabel());
+            this.applianceStartAction.setMessage(this.appliancePrimaryActionLabel());
             this.applianceStartAction.setActive(this.primaryActionActive());
         }
         if (this.applianceSecondaryAction != null) {
@@ -466,9 +517,16 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.applianceStatusSecondaryLabel.setText(secondary);
             this.applianceStatusSecondaryLabel.setColor(this.secondaryStatusColor());
         }
-        if (this.appliancePreheatChip != null) {
-            this.appliancePreheatChip.setText(this.ovenPreheatChipText());
-            this.appliancePreheatChip.setTextColor(this.secondaryStatusColor());
+        if (this.applianceFuelLabel != null && this.menu.usesFuelSlot()) {
+            this.applianceFuelLabel.setText(this.applianceFuelText());
+        }
+        if (this.applianceFuelChip != null && this.menu.usesFuelSlot()) {
+            this.applianceFuelChip.setText(this.applianceFuelText());
+            this.applianceFuelChip.setTextColor(this.applianceFuelColor());
+        }
+        if (this.appliancePreheatAction != null) {
+            this.appliancePreheatAction.setMessage(this.ovenPreheatButtonText());
+            this.appliancePreheatAction.setActive(true);
         }
         if (this.applianceCookTimeChip != null) {
             this.applianceCookTimeChip.setText(this.ovenCookTimeChipText());
@@ -528,18 +586,25 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         this.heldActionButtonId = -1;
     }
 
-    private void syncStoveDialWidget() {
-        if (this.applianceStoveDial == null) {
+    private void syncStoveBurners() {
+        if (this.menu.stationType() != StationType.STOVE) {
             return;
         }
-        int syncedDial = this.menu.stoveDialLevel();
-        if (this.pendingStoveDialLevel == syncedDial) {
-            this.pendingStoveDialLevel = -1;
+        for (int burnerIndex = 0; burnerIndex < Math.min(this.menu.activeInputCount(), this.pendingStoveBurnerLevels.length); burnerIndex++) {
+            int syncedLevel = this.menu.stoveBurnerLevel(burnerIndex);
+            if (this.pendingStoveBurnerLevels[burnerIndex] == syncedLevel) {
+                this.pendingStoveBurnerLevels[burnerIndex] = -1;
+            }
         }
-        int displayDial = this.pendingStoveDialLevel > 0 ? this.pendingStoveDialLevel : syncedDial;
-        if (displayDial > 0 && this.applianceStoveDial.dialValue() != displayDial) {
-            this.applianceStoveDial.setDialValue(displayDial);
+    }
+
+    private void applyStoveBurnerLevel(int burnerIndex, int level) {
+        if (burnerIndex < 0 || burnerIndex >= this.pendingStoveBurnerLevels.length) {
+            return;
         }
+        int normalizedLevel = KitchenStationBlockEntity.normalizeStoveBurnerLevel(level);
+        this.pendingStoveBurnerLevels[burnerIndex] = normalizedLevel;
+        this.sendButton(3100 + burnerIndex * 10 + normalizedLevel);
     }
 
     private void syncOvenTemperatureField() {
@@ -561,6 +626,16 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         }
         if (this.applianceOvenTemperatureField != null && !this.applianceOvenTemperatureField.textValue().equals(displayText)) {
             this.applianceOvenTemperatureField.setText(displayText);
+        }
+    }
+
+    private void syncOvenCookTimeSelection() {
+        if (this.menu.stationType() != StationType.OVEN) {
+            return;
+        }
+        int syncedMinutes = this.menu.ovenCookTimeMinutes();
+        if (this.pendingOvenCookTimeMinutes == syncedMinutes) {
+            this.pendingOvenCookTimeMinutes = -1;
         }
     }
 
@@ -599,6 +674,16 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.applianceOvenTemperatureField.setText(Integer.toString(normalizedTemperature));
         }
         this.sendButton(1000 + normalizedTemperature);
+    }
+
+    private int ovenCookTimeMinutes() {
+        return this.pendingOvenCookTimeMinutes > 0 ? this.pendingOvenCookTimeMinutes : this.menu.ovenCookTimeMinutes();
+    }
+
+    private void applyOvenCookTimeMinutes(int minutes) {
+        int normalizedMinutes = KitchenStationBlockEntity.normalizeOvenCookTimeMinutes(minutes);
+        this.pendingOvenCookTimeMinutes = normalizedMinutes;
+        this.sendButton(5000 + normalizedMinutes);
     }
 
     private void syncMicrowaveDurationField() {
@@ -734,28 +819,82 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         }
         JazzyGuiRenderer.drawPanel(guiGraphics, left + control.x(), top + control.y(), control.width(), control.height(), theme,
                 JazzyGuiRenderer.PanelStyle.CONTROL);
-        JazzyGuiRenderer.drawInventoryShelf(guiGraphics, left, top, inventory, theme);
+        JazzyGuiRenderer.drawPanel(guiGraphics, left + inventory.x(), top + inventory.y(), inventory.width(), inventory.height(), theme,
+                JazzyGuiRenderer.PanelStyle.INVENTORY);
 
         guiGraphics.fill(left + preview.x() + 20, top + preview.y() + 30, left + preview.right() - 20, top + preview.y() + 31, 0x44231A13);
         guiGraphics.fill(left + preview.x() + 20, top + preview.y() + 58, left + preview.right() - 20, top + preview.y() + 59, 0x44231A13);
 
         if (this.menu.stationType() == StationType.STOVE) {
-            guiGraphics.fill(left + workspace.x() + 14, top + workspace.y() + 18, left + workspace.right() - 14, top + workspace.bottom() - 14, 0x22130F0B);
-            for (int inputIndex = 0; inputIndex < this.menu.activeInputCount(); inputIndex++) {
-                Slot slot = this.menu.getSlot(inputIndex);
-                guiGraphics.fill(left + slot.x - 6, top + slot.y - 6, left + slot.x + 22, top + slot.y + 22, 0x331B1510);
-            }
+            guiGraphics.fill(left + workspace.x() + 12, top + workspace.y() + 18, left + workspace.right() - 12, top + workspace.bottom() - 12, 0x22130F0B);
+            guiGraphics.fill(left + workspace.x() + 16, top + workspace.y() + 24, left + workspace.right() - 16, top + workspace.bottom() - 18, 0x2619130E);
+            this.renderStoveBurnerDeck(guiGraphics, left, top);
             Slot toolSlot = this.menu.getSlot(this.menu.toolMenuSlotIndex());
             guiGraphics.fill(left + toolSlot.x - 8, top + toolSlot.y - 8, left + toolSlot.x + 24, top + toolSlot.y + 24, 0x33211610);
+            if (this.menu.usesFuelSlot()) {
+                Slot fuelSlot = this.menu.getSlot(this.menu.fuelMenuSlotIndex());
+                guiGraphics.fill(left + fuelSlot.x - 8, top + fuelSlot.y - 8, left + fuelSlot.x + 24, top + fuelSlot.y + 24, 0x33211610);
+            }
         } else {
             guiGraphics.fill(left + workspace.x() + 14, top + workspace.y() + 14, left + workspace.right() - 14, top + workspace.bottom() - 14, 0x22110D0A);
-            for (int rail = 0; rail < 4; rail++) {
-                int railY = top + workspace.y() + 24 + rail * 16;
-                guiGraphics.fill(left + workspace.x() + 18, railY, left + workspace.right() - 18, railY + 2, 0x44372B20);
+            guiGraphics.fill(left + workspace.x() + 22, top + workspace.y() + 16, left + workspace.x() + 92, top + workspace.bottom() - 14, 0x2A20160E);
+            for (int rail = 0; rail < 5; rail++) {
+                int railY = top + workspace.y() + 20 + rail * 22;
+                guiGraphics.fill(left + workspace.x() + 18, railY, left + workspace.right() - 20, railY + 2, 0x44372B20);
             }
-            guiGraphics.fill(left + workspace.x() + 28, top + workspace.bottom() - 22, left + workspace.right() - 28, top + workspace.bottom() - 16, 0x33221610);
+            guiGraphics.fill(left + workspace.x() + 34, top + workspace.bottom() - 18, left + workspace.right() - 30, top + workspace.bottom() - 14, 0x33221610);
             Slot toolSlot = this.menu.getSlot(this.menu.toolMenuSlotIndex());
             guiGraphics.fill(left + toolSlot.x - 8, top + toolSlot.y - 8, left + toolSlot.x + 24, top + toolSlot.y + 24, 0x33211610);
+            if (this.menu.usesFuelSlot()) {
+                Slot fuelSlot = this.menu.getSlot(this.menu.fuelMenuSlotIndex());
+                guiGraphics.fill(left + fuelSlot.x - 8, top + fuelSlot.y - 8, left + fuelSlot.x + 24, top + fuelSlot.y + 24, 0x33211610);
+            }
+        }
+    }
+
+    private void renderStoveBurnerDeck(GuiGraphics guiGraphics, int left, int top) {
+        final int[] heatColors = {
+                0xFF5A2A18,
+                0xFF7A3418,
+                0xFF9A451A,
+                0xFFBC5A1E,
+                0xFFE18428,
+                0xFFFFC14A
+        };
+        int hoveredBurner = this.hoveredStoveBurnerIndex(this.lastMouseX, this.lastMouseY);
+        for (int burnerIndex = 0; burnerIndex < this.menu.activeInputCount(); burnerIndex++) {
+            LayoutRegion burner = this.stoveBurnerRegion(burnerIndex);
+            int burnerLeft = left + burner.x();
+            int burnerTop = top + burner.y();
+            int burnerRight = burnerLeft + burner.width();
+            int burnerBottom = burnerTop + burner.height();
+            int level = this.stoveBurnerLevel(burnerIndex);
+            boolean hovered = burnerIndex == hoveredBurner;
+
+            guiGraphics.fill(burnerLeft, burnerTop, burnerRight, burnerBottom, hovered ? 0x55324334 : 0x44271D16);
+            guiGraphics.fill(burnerLeft + 2, burnerTop + 2, burnerRight - 2, burnerBottom - 2, 0xFF14110E);
+            guiGraphics.fill(burnerLeft + 4, burnerTop + 4, burnerRight - 4, burnerBottom - 4, 0xFF231C16);
+            guiGraphics.fill(burnerLeft + 7, burnerTop + 7, burnerRight - 7, burnerBottom - 7, 0xFF0F0C09);
+
+            if (level > 0) {
+                int glowInset = Math.max(4, 11 - level);
+                int glowColor = level <= 2 ? 0x667A3418 : level <= 4 ? 0x88BC5A1E : 0x99FFC14A;
+                guiGraphics.fill(burnerLeft + glowInset, burnerTop + glowInset, burnerRight - glowInset, burnerBottom - glowInset, glowColor);
+            }
+
+            int meterLeft = burnerLeft + 4;
+            int meterTop = burnerBottom + 3;
+            int meterWidth = Math.max(18, burner.width() - 8);
+            int meterHeight = 5;
+            int segmentGap = 1;
+            int segmentWidth = Math.max(2, (meterWidth - 5 * segmentGap) / 6);
+            guiGraphics.fill(meterLeft - 1, meterTop - 1, meterLeft + meterWidth + 1, meterTop + meterHeight + 1, 0xCC120F0C);
+            for (int segment = 0; segment < 6; segment++) {
+                int segmentLeft = meterLeft + segment * (segmentWidth + segmentGap);
+                int segmentRight = segmentLeft + segmentWidth;
+                int color = segment < level ? heatColors[segment] : 0xFF2A211A;
+                guiGraphics.fill(segmentLeft, meterTop, segmentRight, meterTop + meterHeight, color);
+            }
         }
     }
 
@@ -1152,9 +1291,19 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     private Component secondaryStatusText() {
         if (this.menu.stationType() == StationType.OVEN) {
-            return this.menu.preheatProgress() >= 100
-                    ? Component.translatable("screen.jazzycookin.hot_short")
-                    : Component.translatable("screen.jazzycookin.warm_short");
+            if (this.menu.maxProgress() > 0) {
+                return Component.literal("▶ Cooking");
+            }
+            if (this.menu.preheatProgress() >= 100) {
+                return Component.literal("🔥 Ready");
+            }
+            if (this.ovenWaitingForFuel()) {
+                return Component.literal("⛽ Load Fuel");
+            }
+            if (this.menu.ovenPreheating()) {
+                return Component.literal("🔥 Preheating");
+            }
+            return this.menu.preheatProgress() > 0 ? Component.literal("❄ Cooling") : Component.literal("Idle");
         }
         if (this.menu.stationType() == StationType.MICROWAVE) {
             return this.menu.maxProgress() > 0
@@ -1169,7 +1318,18 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     private int secondaryStatusColor() {
         if (this.menu.stationType() == StationType.OVEN) {
-            return this.menu.preheatProgress() >= 100 ? JazzyGuiRenderer.READY_TEXT : JazzyGuiRenderer.ACCENT_WARM;
+            if (this.menu.maxProgress() > 0) {
+                return JazzyGuiRenderer.TEXT;
+            }
+            if (this.menu.preheatProgress() >= 100) {
+                return JazzyGuiRenderer.READY_TEXT;
+            }
+            if (this.ovenWaitingForFuel()) {
+                return JazzyGuiRenderer.BLOCKED_TEXT;
+            }
+            return this.menu.ovenPreheating() || this.menu.preheatProgress() > 0
+                    ? JazzyGuiRenderer.ACCENT_WARM
+                    : JazzyGuiRenderer.TEXT_SOFT;
         }
         if (this.menu.maxProgress() > 0) {
             return JazzyGuiRenderer.TEXT_MUTED;
@@ -1183,23 +1343,56 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         return JazzyGuiRenderer.TEXT_SOFT;
     }
 
-    private Component ovenPreheatChipText() {
-        String prefix = Component.translatable("screen.jazzycookin.preheat_short").getString();
-        if (this.menu.preheatProgress() >= 100) {
-            return Component.literal(prefix + " " + Component.translatable("screen.jazzycookin.ready_short").getString());
+    private Component applianceFuelText() {
+        if (!this.menu.usesFuelSlot()) {
+            return Component.empty();
         }
-        return Component.literal(prefix + " " + this.menu.preheatProgress() + "%");
+        int fuelPercent = this.menu.fuelPercent();
+        if (fuelPercent > 0 || this.menu.getSlot(this.menu.fuelMenuSlotIndex()).hasItem()) {
+            return Component.literal("⛽ " + fuelPercent + "%");
+        }
+        return Component.literal("⛽ --");
+    }
+
+    private int applianceFuelColor() {
+        if (!this.menu.usesFuelSlot()) {
+            return JazzyGuiRenderer.TEXT_MUTED;
+        }
+        if (this.menu.fuelBurnTime() > 0) {
+            return JazzyGuiRenderer.ACCENT_WARM;
+        }
+        if (this.menu.getSlot(this.menu.fuelMenuSlotIndex()).hasItem()) {
+            return JazzyGuiRenderer.TEXT;
+        }
+        return JazzyGuiRenderer.TEXT_MUTED;
+    }
+
+    private boolean ovenWaitingForFuel() {
+        return this.menu.stationType() == StationType.OVEN
+                && this.menu.ovenPreheating()
+                && this.menu.fuelBurnTime() <= 0
+                && !this.menu.getSlot(this.menu.fuelMenuSlotIndex()).hasItem();
+    }
+
+    private Component ovenPreheatButtonText() {
+        if (!this.menu.ovenPreheating()) {
+            return Component.literal("🔥 Preheat");
+        }
+        if (this.menu.preheatProgress() >= 100) {
+            return Component.literal("🔥 Ready");
+        }
+        if (this.ovenWaitingForFuel()) {
+            return Component.literal("⛽ Fuel");
+        }
+        return Component.literal("🔥 " + this.menu.preheatProgress() + "%");
     }
 
     private Component ovenCookTimeChipText() {
-        String prefix = Component.translatable("screen.jazzycookin.cook_time").getString();
         if (this.menu.maxProgress() > 0) {
             int remaining = Math.max(0, this.menu.maxProgress() - this.menu.progress());
-            return Component.literal(prefix + " " + this.formatDurationTicks(remaining) + "/" + this.formatDurationTicks(this.menu.maxProgress()));
+            return Component.literal("⏱ " + this.formatDurationTicks(remaining) + "/" + this.formatDurationTicks(this.menu.maxProgress()));
         }
-        return this.ovenCandidateRecipe()
-                .map(recipe -> Component.literal(prefix + " " + this.formatDurationTicks(recipe.effectiveDuration())))
-                .orElse(Component.literal(prefix + " --"));
+        return Component.literal("⏱ " + this.ovenCookTimeMinutes() + "m");
     }
 
     private Optional<KitchenProcessRecipe> ovenCandidateRecipe() {
@@ -1219,8 +1412,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private String formatDurationTicks(int ticks) {
-        int seconds = Math.max(1, Math.round(ticks / 20.0F));
-        return seconds + "s";
+        int totalSeconds = Math.max(0, Math.round(ticks / 20.0F));
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return minutes + ":" + String.format("%02d", seconds);
     }
 
     private void drawCenteredLabel(GuiGraphics guiGraphics, Component label, int centerX, int y, int color, boolean shadow) {
@@ -1396,6 +1591,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             case FREEZE_DRY -> Component.literal("Dry");
             default -> Component.translatable("screen.jazzycookin.start");
         };
+    }
+
+    private Component appliancePrimaryActionLabel() {
+        return Component.literal("▶ ").append(this.primaryActionLabel());
     }
 
     private int primaryActionButtonId() {
@@ -1604,12 +1803,28 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (this.usesApplianceUiLib()) {
+            if (this.menu.stationType() == StationType.STOVE && scrollY != 0.0D) {
+                int burnerIndex = this.hoveredStoveBurnerIndex(mouseX, mouseY);
+                if (burnerIndex >= 0) {
+                    int nextLevel = this.stoveBurnerLevel(burnerIndex) + (scrollY > 0.0D ? 1 : -1);
+                    this.applyStoveBurnerLevel(burnerIndex, nextLevel);
+                    return true;
+                }
+            }
             if (this.applianceOvenTemperatureField != null
                     && scrollY != 0.0D
                     && (this.applianceOvenTemperatureField.isMouseOver(mouseX, mouseY) || this.applianceOvenTemperatureField.isFocused())) {
                 int baseTemperature = this.pendingOvenTemperature > 0 ? this.pendingOvenTemperature : this.menu.ovenTemperature();
                 int nextTemperature = baseTemperature + (scrollY > 0.0D ? HeatLevel.OVEN_TEMPERATURE_STEP : -HeatLevel.OVEN_TEMPERATURE_STEP);
                 this.applyOvenTemperature(nextTemperature);
+                return true;
+            }
+            if (this.applianceCookTimeChip != null
+                    && scrollY != 0.0D
+                    && this.applianceCookTimeChip.isMouseOver(mouseX, mouseY)) {
+                int stepMinutes = hasShiftDown() ? 5 : 1;
+                int nextMinutes = this.ovenCookTimeMinutes() + (scrollY > 0.0D ? stepMinutes : -stepMinutes);
+                this.applyOvenCookTimeMinutes(nextMinutes);
                 return true;
             }
             if (this.applianceOverlayRoot != null && this.applianceOverlayRoot.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {

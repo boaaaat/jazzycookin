@@ -310,5 +310,9 @@ final class ApplianceUiLibComponents {
         void setTextColor(int color) {
             this.label.setColor(color);
         }
+
+        boolean isMouseOver(double mouseX, double mouseY) {
+            return this.isTotalHovered(mouseX, mouseY);
+        }
     }
 }

@@ -39,7 +39,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 containerId,
                 playerInventory,
                 new SimpleContainer(StationCapacityProfile.TOTAL_SLOTS),
-                new SimpleContainerData(21),
+                new SimpleContainerData(31),
                 readStationType(extraData),
                 ContainerLevelAccess.NULL
         );
@@ -73,7 +73,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this.capacity = this.uiProfile.capacity();
 
         checkContainerSize(container, StationCapacityProfile.TOTAL_SLOTS);
-        checkContainerDataCount(data, 21);
+        checkContainerDataCount(data, 31);
         container.startOpen(playerInventory.player);
 
         for (int inputIndex = 0; inputIndex < this.capacity.inputCount(); inputIndex++) {
@@ -82,6 +82,15 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
                     return !(stack.getItem() instanceof KitchenToolItem);
+                }
+            });
+        }
+
+        if (this.stationType.usesFuel()) {
+            this.addSlot(new Slot(container, StationCapacityProfile.FUEL_SLOT, this.uiProfile.toolPosition().x(), this.uiProfile.toolPosition().y()) {
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return KitchenStationBlockEntity.isFuel(stack);
                 }
             });
         }
@@ -136,19 +145,27 @@ public class KitchenStationMenu extends AbstractContainerMenu {
     }
 
     public int visibleStationSlotCount() {
-        return this.capacity.visibleStationSlotCount();
+        return this.activeInputCount() + (this.usesFuelSlot() ? 1 : 0) + 3;
+    }
+
+    public boolean usesFuelSlot() {
+        return this.stationType.usesFuel();
+    }
+
+    public int fuelMenuSlotIndex() {
+        return this.activeInputCount();
     }
 
     public int toolMenuSlotIndex() {
-        return this.capacity.toolMenuSlotIndex();
+        return this.activeInputCount() + (this.usesFuelSlot() ? 1 : 0);
     }
 
     public int outputMenuSlotIndex() {
-        return this.capacity.outputMenuSlotIndex();
+        return this.toolMenuSlotIndex() + 1;
     }
 
     public int byproductMenuSlotIndex() {
-        return this.capacity.byproductMenuSlotIndex();
+        return this.outputMenuSlotIndex() + 1;
     }
 
     private static StationType readStationType(RegistryFriendlyByteBuf extraData) {
@@ -184,7 +201,16 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         if (this.stationType != StationType.STOVE) {
             return 0;
         }
-        return KitchenStationBlockEntity.normalizeStoveDialLevel(this.data.get(5));
+        int syncedLevel = this.data.get(5);
+        return syncedLevel <= 0 ? 0 : KitchenStationBlockEntity.normalizeStoveDialLevel(syncedLevel);
+    }
+
+    public int stoveBurnerLevel(int burnerIndex) {
+        if (this.stationType != StationType.STOVE) {
+            return 0;
+        }
+        int clampedIndex = Math.max(0, Math.min(StationCapacityProfile.forStation(StationType.STOVE).inputCount() - 1, burnerIndex));
+        return KitchenStationBlockEntity.normalizeStoveBurnerLevel(this.data.get(21 + clampedIndex));
     }
 
     public int environmentStatus() {
@@ -205,6 +231,33 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
     public int microwaveDurationSeconds() {
         return this.stationType == StationType.MICROWAVE ? Math.max(10, this.data.get(20)) : 0;
+    }
+
+    public int fuelBurnTime() {
+        return this.usesFuelSlot() ? Math.max(0, this.data.get(27)) : 0;
+    }
+
+    public int fuelBurnDuration() {
+        return this.usesFuelSlot() ? Math.max(0, this.data.get(28)) : 0;
+    }
+
+    public int fuelPercent() {
+        if (!this.usesFuelSlot()) {
+            return 0;
+        }
+        int duration = this.fuelBurnDuration();
+        if (duration <= 0) {
+            return this.getSlot(this.fuelMenuSlotIndex()).hasItem() ? 100 : 0;
+        }
+        return Math.max(0, Math.min(100, Math.round(this.fuelBurnTime() * 100.0F / duration)));
+    }
+
+    public int ovenCookTimeMinutes() {
+        return this.stationType == StationType.OVEN ? Math.max(1, this.data.get(29)) : 0;
+    }
+
+    public boolean ovenPreheating() {
+        return this.stationType == StationType.OVEN && this.data.get(30) != 0;
     }
 
     public boolean simulationMode() {
@@ -309,6 +362,10 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
             if (!this.moveItemStackTo(slotStack, this.toolMenuSlotIndex(), this.toolMenuSlotIndex() + 1, false)) {
+                return ItemStack.EMPTY;
+            }
+        } else if (this.usesFuelSlot() && KitchenStationBlockEntity.isFuel(slotStack)) {
+            if (!this.moveItemStackTo(slotStack, this.fuelMenuSlotIndex(), this.fuelMenuSlotIndex() + 1, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (!this.moveItemStackTo(slotStack, 0, this.activeInputCount(), false)) {

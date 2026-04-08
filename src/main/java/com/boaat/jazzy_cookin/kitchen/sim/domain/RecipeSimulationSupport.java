@@ -189,12 +189,8 @@ final class RecipeSimulationSupport {
 
     static int approximateStationTempF(StationSimulationAccess access) {
         if (access.simulationStationType() == com.boaat.jazzy_cookin.kitchen.StationType.OVEN) {
-            return switch (access.simulationHeatLevel()) {
-                case LOW -> 250;
-                case MEDIUM -> HeatLevel.DEFAULT_OVEN_TEMPERATURE;
-                case HIGH -> 450;
-                default -> 72;
-            };
+            int target = Math.max(HeatLevel.MIN_OVEN_TEMPERATURE, access.simulationTargetTemperatureF());
+            return Math.max(72, Math.round(target * (access.simulationPreheatProgress() / 100.0F)));
         }
         return switch (access.simulationHeatLevel()) {
             case LOW -> 220;
@@ -357,6 +353,9 @@ final class RecipeSimulationSupport {
     }
 
     private static int effectiveDuration(StationSimulationAccess access, KitchenProcessRecipe recipe) {
+        if (access.simulationStationType() == com.boaat.jazzy_cookin.kitchen.StationType.OVEN && access.simulationOvenCookTimeTicks() > 0) {
+            return access.simulationOvenCookTimeTicks();
+        }
         if (recipe.mode() == com.boaat.jazzy_cookin.kitchen.ProcessMode.PASSIVE) {
             return Math.max(40, recipe.effectiveDuration());
         }

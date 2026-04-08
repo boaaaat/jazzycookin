@@ -74,6 +74,10 @@ public enum StationType implements StringRepresentable {
                 || this == BLENDER;
     }
 
+    public boolean usesFuel() {
+        return this == STOVE || this == OVEN;
+    }
+
     public SimulationDomainType simulationDomain() {
         return switch (this) {
             case PLATING_STATION -> SimulationDomainType.PLATE;

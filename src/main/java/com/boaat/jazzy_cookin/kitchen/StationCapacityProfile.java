@@ -4,6 +4,7 @@ public record StationCapacityProfile(int inputCount) {
     public static final int INPUT_START = 0;
     public static final int MAX_INPUT_SLOTS = 10;
     public static final int MAX_INPUT_SLOT = INPUT_START + MAX_INPUT_SLOTS - 1;
+    public static final int FUEL_SLOT = MAX_INPUT_SLOT;
     public static final int TOOL_SLOT = 10;
     public static final int OUTPUT_SLOT = 11;
     public static final int BYPRODUCT_SLOT = 12;
@@ -19,7 +20,8 @@ public record StationCapacityProfile(int inputCount) {
         return switch (stationType) {
             case PREP_TABLE -> new StationCapacityProfile(10);
             case MIXING_BOWL, PLATING_STATION -> new StationCapacityProfile(8);
-            case STOVE, OVEN, FOOD_PROCESSOR, BLENDER, FERMENTATION_CROCK, CANNING_STATION, STEAMER -> new StationCapacityProfile(6);
+            case STOVE, FOOD_PROCESSOR, BLENDER, FERMENTATION_CROCK, CANNING_STATION, STEAMER -> new StationCapacityProfile(6);
+            case OVEN -> new StationCapacityProfile(3);
             case FREEZE_DRYER, DRYING_RACK, SMOKER -> new StationCapacityProfile(5);
             case MICROWAVE, JUICER, SPICE_GRINDER, STRAINER, COOLING_RACK, RESTING_BOARD -> new StationCapacityProfile(4);
         };

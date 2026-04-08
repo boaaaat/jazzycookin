@@ -24,6 +24,7 @@ public record StationUiProfile(
 ) {
     private static final int LARGE_WIDTH = 344;
     private static final int LARGE_HEIGHT = 264;
+    private static final int APPLIANCE_HEIGHT = 304;
     private static final int MID_WIDTH = 328;
     private static final int MID_HEIGHT = 258;
     private static final int COMPACT_WIDTH = 312;
@@ -91,9 +92,16 @@ public record StationUiProfile(
                     stationType,
                     Theme.RANGE,
                     LARGE_WIDTH,
-                    LARGE_HEIGHT,
-                    grid(46, 60, 3, 2, 26, 24),
-                    new Point(146, 78),
+                    APPLIANCE_HEIGHT,
+                    new Point[] {
+                            new Point(48, 56),
+                            new Point(96, 52),
+                            new Point(144, 58),
+                            new Point(56, 102),
+                            new Point(104, 108),
+                            new Point(152, 100)
+                    },
+                    new Point(176, 80),
                     new Point(282, 62),
                     new Point(282, 102)
             );
@@ -101,9 +109,13 @@ public record StationUiProfile(
                     stationType,
                     Theme.OVEN,
                     LARGE_WIDTH,
-                    LARGE_HEIGHT,
-                    grid(46, 60, 3, 2, 28, 24),
-                    new Point(150, 78),
+                    APPLIANCE_HEIGHT,
+                    new Point[] {
+                            new Point(58, 54),
+                            new Point(58, 82),
+                            new Point(58, 110)
+                    },
+                    new Point(152, 82),
                     new Point(282, 62),
                     new Point(282, 102)
             );

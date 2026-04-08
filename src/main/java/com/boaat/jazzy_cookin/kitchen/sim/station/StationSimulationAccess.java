@@ -20,6 +20,14 @@ public interface StationSimulationAccess {
 
     int simulationPreheatProgress();
 
+    default int simulationOvenCookTimeTicks() {
+        return 0;
+    }
+
+    default int simulationTargetTemperatureF() {
+        return 0;
+    }
+
     default int simulationMicrowaveDurationSeconds() {
         return 30;
     }

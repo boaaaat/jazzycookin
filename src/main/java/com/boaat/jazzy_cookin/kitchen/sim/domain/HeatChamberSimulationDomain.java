@@ -49,7 +49,9 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
             return SimulationSnapshot.inactive(executionMode);
         }
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
-        int chamberTempF = Math.round(Mth.clamp(CompositionalSimulationSupport.targetTempC(access.simulationHeatLevel()) * 1.8F + 32.0F, 72.0F, 500.0F));
+        int chamberTempF = access.simulationStationType() == StationType.OVEN
+                ? Math.max(72, Math.round(Math.max(200, access.simulationTargetTemperatureF()) * (access.simulationPreheatProgress() / 100.0F)))
+                : Math.round(Mth.clamp(CompositionalSimulationSupport.targetTempC(access.simulationHeatLevel()) * 1.8F + 32.0F, 72.0F, 500.0F));
         return new SimulationSnapshot(
                 executionMode,
                 access.simulationActive() ? 1 : 0,
@@ -83,6 +85,9 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
             case MICROWAVE -> access.simulationMicrowaveDurationSeconds() * 20;
             case SMOKER -> 160;
             case STEAMER -> 120;
+            case OVEN -> access.simulationOvenCookTimeTicks() > 0
+                    ? access.simulationOvenCookTimeTicks()
+                    : (targeted == JazzyItems.GARLIC_BREAD_PREP.get() ? 110 : 140);
             default -> targeted == JazzyItems.GARLIC_BREAD_PREP.get() ? 110 : 140;
         };
         access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, duration), true);

@@ -45,6 +45,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -235,7 +236,7 @@ public final class KitchenGameTests {
         require(StationCapacityProfile.forStation(StationType.MIXING_BOWL).inputCount() == 8, "Mixing bowl should expose 8 inputs");
         require(StationCapacityProfile.forStation(StationType.PLATING_STATION).inputCount() == 8, "Plating station should expose 8 inputs");
         require(StationCapacityProfile.forStation(StationType.STOVE).inputCount() == 6, "Stove should expose 6 inputs");
-        require(StationCapacityProfile.forStation(StationType.OVEN).inputCount() == 6, "Oven should expose 6 inputs");
+        require(StationCapacityProfile.forStation(StationType.OVEN).inputCount() == 3, "Oven should expose 3 inputs");
         require(StationCapacityProfile.forStation(StationType.FREEZE_DRYER).inputCount() == 5, "Freeze dryer should expose 5 inputs");
         require(StationCapacityProfile.forStation(StationType.MICROWAVE).inputCount() == 4, "Microwave should expose 4 inputs");
         helper.succeed();
@@ -604,14 +605,15 @@ public final class KitchenGameTests {
         oven.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get().createStack(1, level.getGameTime()));
         oven.setItem(1, JazzyItems.GARLIC_BUTTER.get().createStack(1, level.getGameTime()));
         oven.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.BAKING_TRAY.get()));
-        oven.handleButton(2, fakePlayer);
 
         require(!oven.handleButton(0, fakePlayer), "Oven recipe should stay blocked until preheated");
-        tickStation(level, oven, 50);
+        oven.handleButton(4000, fakePlayer);
+        oven.handleButton(5001, fakePlayer);
+        tickStation(level, oven, 720);
         require(oven.simulationPreheatProgress() >= 100, "Medium oven heat should fully preheat after enough ticks");
 
         require(oven.handleButton(0, fakePlayer), "Preheated oven should start the garlic bread bake");
-        tickStation(level, oven, 130);
+        tickStation(level, oven, 1210);
         require(oven.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.GARLIC_BREAD_PREP.get()), "Oven simulation should bake garlic bread prep");
         helper.succeed();
     }
@@ -1119,6 +1121,9 @@ public final class KitchenGameTests {
         level.setBlockAndUpdate(pos, block.defaultBlockState());
         KitchenStationBlockEntity blockEntity = (KitchenStationBlockEntity) level.getBlockEntity(pos);
         require(blockEntity != null, "Expected kitchen station block entity to exist");
+        if (blockEntity.getStationType().usesFuel()) {
+            blockEntity.setItem(StationCapacityProfile.FUEL_SLOT, new ItemStack(Items.COAL, 8));
+        }
         return blockEntity;
     }
 
