@@ -10,25 +10,20 @@ import com.boaat.jazzy_cookin.screen.layout.LayoutRegion;
 import net.minecraft.client.gui.GuiGraphics;
 
 final class JazzyGuiRenderer {
-    static final int TITLE_TEXT = 0xF9F8F3;
-    static final int TEXT = 0x263241;
-    static final int TEXT_MUTED = 0x667284;
-    static final int TEXT_SOFT = 0x8C96A4;
-    static final int READY_TEXT = 0x2F7D61;
-    static final int BLOCKED_TEXT = 0xB24E5D;
-    static final int ACCENT = 0x4C95A0;
-    static final int ACCENT_WARM = 0xD89A4B;
+    static final int TITLE_TEXT = 0xF0F2F5;
+    static final int TEXT = 0xDCE0E8;
+    static final int TEXT_MUTED = 0x8C95A6;
+    static final int TEXT_SOFT = 0x606878;
+    static final int READY_TEXT = 0x4ADE80;
+    static final int BLOCKED_TEXT = 0xF87171;
+    static final int ACCENT = 0x5CC8D0;
+    static final int ACCENT_WARM = 0xF0B429;
 
-    private static final int FRAME_OUTER = 0xFF222B38;
-    private static final int FRAME_INNER = 0xFF4A5667;
-    private static final int SURFACE = 0xFFF1EDE4;
-    private static final int HEADER_TEXT = 0xFFF9F8F3;
-    private static final int SLOT_EDGE = 0xFF6D7582;
-    private static final int SLOT_EDGE_SOFT = 0xFFECE6DB;
-    private static final int SLOT_BASE = 0xFFBBB2A6;
-    private static final int SLOT_INNER = 0xFF333B48;
-    private static final int SLOT_DISABLED = 0x887A7470;
-    private static final int BUTTON_TEXT = 0xFFF8F7F2;
+    private static final int FRAME_OUTER = 0xFF101318;
+    private static final int SLOT_EDGE = 0xFF353C4A;
+    private static final int SLOT_BASE = 0xFF262C36;
+    private static final int SLOT_INNER = 0xFF14181E;
+    private static final int SLOT_DISABLED = 0x88101418;
 
     private JazzyGuiRenderer() {
     }
@@ -36,11 +31,10 @@ final class JazzyGuiRenderer {
     static void drawStationShell(GuiGraphics guiGraphics, int x, int y, int width, int height, StationUiProfile.Theme theme) {
         Palette palette = paletteFor(theme);
         guiGraphics.fill(x, y, x + width, y + height, FRAME_OUTER);
-        guiGraphics.fill(x + 2, y + 2, x + width - 2, y + height - 2, FRAME_INNER);
-        guiGraphics.fill(x + 4, y + 4, x + width - 4, y + height - 4, palette.windowSurface());
-        guiGraphics.fill(x + 6, y + 6, x + width - 6, y + 28, palette.headerBg());
-        guiGraphics.fill(x + 6, y + 28, x + width - 6, y + 31, palette.headerAccent());
-        guiGraphics.fill(x + 6, y + height - 92, x + width - 6, y + height - 90, palette.headerAccent());
+        guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, palette.windowSurface());
+        guiGraphics.fill(x + 1, y + 1, x + width - 1, y + 28, palette.headerBg());
+        guiGraphics.fill(x + 1, y + 28, x + width - 1, y + 30, palette.headerAccent());
+        guiGraphics.fill(x + 8, y + height - 92, x + width - 8, y + height - 91, palette.panelBorder());
     }
 
     static void drawStorageShell(GuiGraphics guiGraphics, int x, int y, int width, int height, StorageType storageType) {
@@ -54,7 +48,7 @@ final class JazzyGuiRenderer {
 
     static void drawPanel(GuiGraphics guiGraphics, int x, int y, int width, int height, StationUiProfile.Theme theme, PanelStyle style) {
         Palette palette = paletteFor(theme);
-        int border = style == PanelStyle.RAISED ? palette.panelBorder() : palette.shadow();
+        int border = style == PanelStyle.RAISED ? pale(palette.panelBorder(), 0.12F) : palette.panelBorder();
         int frame = switch (style) {
             case WORKSPACE -> palette.workSurface();
             case PREVIEW -> palette.previewSurface();
@@ -65,9 +59,8 @@ final class JazzyGuiRenderer {
             case RAISED -> palette.panelSurface();
         };
         guiGraphics.fill(x, y, x + width, y + height, border);
-        guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, palette.shadow());
-        guiGraphics.fill(x + 3, y + 3, x + width - 3, y + height - 3, frame);
-        guiGraphics.fill(x + 3, y + 3, x + width - 3, y + 10, pale(frame, 0.08F));
+        guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, frame);
+        guiGraphics.fill(x + 1, y + 1, x + width - 1, y + 3, pale(frame, 0.04F));
     }
 
     static void drawWorkspaceBackdrop(
@@ -134,7 +127,7 @@ final class JazzyGuiRenderer {
     static void drawInventoryShelf(GuiGraphics guiGraphics, int left, int top, LayoutRegion region, StationUiProfile.Theme theme) {
         Palette palette = paletteFor(theme);
         drawPanel(guiGraphics, left + region.x(), top + region.y(), region.width(), region.height(), theme, PanelStyle.INVENTORY);
-        guiGraphics.fill(left + region.x() + 12, top + region.y() + 16, left + region.right() - 12, top + region.y() + 18, palette.shadow());
+        guiGraphics.fill(left + region.x() + 12, top + region.y() + 16, left + region.right() - 12, top + region.y() + 17, palette.panelBorder());
     }
 
     static void drawStorageSupport(GuiGraphics guiGraphics, int left, int top, LayoutRegion region, StorageType storageType) {
@@ -153,27 +146,39 @@ final class JazzyGuiRenderer {
     ) {
         Palette palette = paletteFor(theme);
         LayoutRegion bounds = spec.bounds();
-        int edge = !active ? palette.shadow() : pressed ? palette.headerAccent() : hovered ? pale(palette.headerAccent(), 0.12F) : palette.panelBorder();
-        int fill = !active ? darken(palette.controlSurface(), 0.10F) : pressed ? darken(palette.headerBg(), 0.08F) : hovered ? pale(palette.headerBg(), 0.06F) : palette.headerBg();
-        guiGraphics.fill(left + bounds.x(), top + bounds.y(), left + bounds.right(), top + bounds.bottom(), edge);
-        guiGraphics.fill(left + bounds.x() + 1, top + bounds.y() + 1, left + bounds.right() - 1, top + bounds.bottom() - 1, fill);
-        guiGraphics.fill(left + bounds.x() + 2, top + bounds.y() + 2, left + bounds.right() - 2, top + bounds.y() + 4, pale(fill, 0.14F));
+        int bx = left + bounds.x();
+        int by = top + bounds.y();
+        int bx2 = left + bounds.right();
+        int by2 = top + bounds.bottom();
+        if (!active) {
+            guiGraphics.fill(bx, by, bx2, by2, palette.panelBorder());
+            guiGraphics.fill(bx + 1, by + 1, bx2 - 1, by2 - 1, darken(palette.controlSurface(), 0.12F));
+        } else if (pressed) {
+            guiGraphics.fill(bx, by, bx2, by2, palette.headerAccent());
+            guiGraphics.fill(bx + 1, by + 1, bx2 - 1, by2 - 1, darken(palette.headerBg(), 0.08F));
+        } else if (hovered) {
+            guiGraphics.fill(bx, by, bx2, by2, palette.headerAccent());
+            guiGraphics.fill(bx + 1, by + 1, bx2 - 1, by2 - 1, pale(palette.headerBg(), 0.10F));
+        } else {
+            guiGraphics.fill(bx, by, bx2, by2, pale(palette.headerBg(), 0.18F));
+            guiGraphics.fill(bx + 1, by + 1, bx2 - 1, by2 - 1, palette.headerBg());
+            guiGraphics.fill(bx + 1, by + 1, bx2 - 1, by + 3, pale(palette.headerBg(), 0.10F));
+        }
     }
 
     static void drawChip(GuiGraphics guiGraphics, int x, int y, int width, int height, boolean warm, StationUiProfile.Theme theme) {
         Palette palette = paletteFor(theme);
-        guiGraphics.fill(x, y, x + width, y + height, palette.panelBorder());
-        guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, warm ? palette.chipWarm() : palette.chipCool());
+        int bg = warm ? palette.chipWarm() : palette.chipCool();
+        guiGraphics.fill(x, y, x + width, y + height, pale(bg, 0.18F));
+        guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, bg);
     }
 
     static void drawSlot(GuiGraphics guiGraphics, int x, int y) {
         guiGraphics.fill(x - 1, y - 1, x + 17, y + 17, SLOT_EDGE);
-        guiGraphics.fill(x - 1, y - 1, x + 16, y, SLOT_EDGE_SOFT);
-        guiGraphics.fill(x - 1, y - 1, x, y + 16, SLOT_EDGE_SOFT);
         guiGraphics.fill(x, y, x + 16, y + 16, SLOT_BASE);
+        guiGraphics.fill(x, y, x + 16, y + 1, SLOT_INNER);
+        guiGraphics.fill(x, y, x + 1, y + 16, SLOT_INNER);
         guiGraphics.fill(x + 1, y + 1, x + 15, y + 15, SLOT_INNER);
-        guiGraphics.fill(x + 16, y - 1, x + 17, y + 17, SLOT_EDGE);
-        guiGraphics.fill(x - 1, y + 16, x + 17, y + 17, SLOT_EDGE);
     }
 
     static void drawDisabledSlot(GuiGraphics guiGraphics, int x, int y) {
@@ -183,10 +188,9 @@ final class JazzyGuiRenderer {
 
     static void drawStorageTab(GuiGraphics guiGraphics, int x, int y, boolean hovered, boolean selected, StorageType storageType) {
         Palette palette = paletteFor(storageTheme(storageType));
-        int frame = selected ? palette.headerAccent() : hovered ? pale(palette.headerAccent(), 0.10F) : palette.panelBorder();
+        int frame = selected ? palette.headerAccent() : hovered ? pale(palette.headerAccent(), 0.30F) : palette.panelBorder();
         guiGraphics.fill(x, y, x + 22, y + 22, frame);
         guiGraphics.fill(x + 1, y + 1, x + 21, y + 21, palette.panelSurface());
-        guiGraphics.fill(x + 2, y + 2, x + 20, y + 7, pale(palette.panelSurface(), 0.08F));
         drawSlot(guiGraphics, x + 3, y + 3);
     }
 
@@ -212,60 +216,64 @@ final class JazzyGuiRenderer {
     }
 
     private static void drawBowlBackdrop(GuiGraphics guiGraphics, int x, int y, int width, int height, Palette palette) {
-        drawRing(guiGraphics, x + width / 2 - 44, y + 14, 88, 68, palette.shadow(), palette.panelSurface(), palette.previewSurface());
-        guiGraphics.fill(x + 18, y + height - 22, x + width - 18, y + height - 18, palette.shadow());
+        drawRing(guiGraphics, x + width / 2 - 44, y + 14, 88, 68,
+                darken(palette.workSurface(), 0.15F), pale(palette.workSurface(), 0.04F), darken(palette.workSurface(), 0.08F));
+        guiGraphics.fill(x + 18, y + height - 22, x + width - 18, y + height - 18, darken(palette.workSurface(), 0.10F));
     }
 
     private static void drawBoardBackdrop(GuiGraphics guiGraphics, int x, int y, int width, int height, Palette palette) {
-        guiGraphics.fill(x + 10, y + 12, x + width - 10, y + height - 12, palette.previewSurface());
+        guiGraphics.fill(x + 10, y + 12, x + width - 10, y + height - 12, darken(palette.workSurface(), 0.06F));
         for (int stripe = 0; stripe < 5; stripe++) {
             int stripeX = x + 18 + stripe * 28;
-            guiGraphics.fill(stripeX, y + 16, stripeX + 10, y + height - 16, pale(palette.workSurface(), 0.04F));
+            guiGraphics.fill(stripeX, y + 16, stripeX + 10, y + height - 16, pale(palette.workSurface(), 0.03F));
         }
-        guiGraphics.fill(x + width - 32, y + 16, x + width - 26, y + height - 16, palette.headerAccent());
+        guiGraphics.fill(x + width - 32, y + 16, x + width - 26, y + height - 16, darken(palette.headerAccent(), 0.50F));
     }
 
     private static void drawRangeBackdrop(GuiGraphics guiGraphics, int x, int y, int width, int height, Palette palette) {
-        guiGraphics.fill(x + 12, y + 16, x + width - 12, y + height - 16, palette.previewSurface());
-        drawRing(guiGraphics, x + 80, y + 28, 38, 28, palette.shadow(), palette.metricInset(), SLOT_INNER);
-        drawRing(guiGraphics, x + 126, y + 38, 44, 34, palette.shadow(), palette.metricInset(), SLOT_INNER);
+        guiGraphics.fill(x + 12, y + 16, x + width - 12, y + height - 16, darken(palette.workSurface(), 0.06F));
+        drawRing(guiGraphics, x + 80, y + 28, 38, 28,
+                darken(palette.workSurface(), 0.12F), darken(palette.workSurface(), 0.20F), darken(palette.workSurface(), 0.30F));
+        drawRing(guiGraphics, x + 126, y + 38, 44, 34,
+                darken(palette.workSurface(), 0.12F), darken(palette.workSurface(), 0.20F), darken(palette.workSurface(), 0.30F));
     }
 
     private static void drawChamberBackdrop(GuiGraphics guiGraphics, int x, int y, int width, int height, Palette palette) {
-        guiGraphics.fill(x + 14, y + 14, x + width - 14, y + height - 14, SLOT_INNER);
+        guiGraphics.fill(x + 14, y + 14, x + width - 14, y + height - 14, darken(palette.workSurface(), 0.20F));
         for (int rail = 0; rail < 4; rail++) {
             int railY = y + 24 + rail * 16;
-            guiGraphics.fill(x + 20, railY, x + width - 20, railY + 2, pale(palette.previewSurface(), 0.10F));
+            guiGraphics.fill(x + 20, railY, x + width - 20, railY + 2, pale(palette.workSurface(), 0.06F));
         }
-        guiGraphics.fill(x + 30, y + height - 28, x + width - 30, y + height - 20, palette.previewSurface());
+        guiGraphics.fill(x + 30, y + height - 28, x + width - 30, y + height - 20, darken(palette.workSurface(), 0.08F));
     }
 
     private static void drawMachineBackdrop(GuiGraphics guiGraphics, int x, int y, int width, int height, Palette palette) {
-        guiGraphics.fill(x + width - 78, y + 12, x + width - 30, y + height - 14, SLOT_INNER);
-        guiGraphics.fill(x + width - 68, y + 18, x + width - 40, y + height - 20, palette.previewSurface());
-        guiGraphics.fill(x + 18, y + height - 24, x + width - 22, y + height - 18, palette.shadow());
-        guiGraphics.fill(x + 36, y + 14, x + 74, y + 24, pale(palette.previewSurface(), 0.08F));
+        guiGraphics.fill(x + width - 78, y + 12, x + width - 30, y + height - 14, darken(palette.workSurface(), 0.20F));
+        guiGraphics.fill(x + width - 68, y + 18, x + width - 40, y + height - 20, pale(palette.workSurface(), 0.03F));
+        guiGraphics.fill(x + 18, y + height - 24, x + width - 22, y + height - 18, darken(palette.workSurface(), 0.10F));
+        guiGraphics.fill(x + 36, y + 14, x + 74, y + 24, pale(palette.workSurface(), 0.04F));
     }
 
     private static void drawPreserveBackdrop(GuiGraphics guiGraphics, int x, int y, int width, int height, Palette palette) {
-        guiGraphics.fill(x + 14, y + height - 22, x + width - 14, y + height - 18, palette.shadow());
+        guiGraphics.fill(x + 14, y + height - 22, x + width - 14, y + height - 18, darken(palette.workSurface(), 0.10F));
         for (int jar = 0; jar < 3; jar++) {
             int jarX = x + 28 + jar * 34;
-            guiGraphics.fill(jarX, y + 26, jarX + 18, y + 54, palette.previewSurface());
-            guiGraphics.fill(jarX + 2, y + 20, jarX + 16, y + 26, palette.headerAccent());
+            guiGraphics.fill(jarX, y + 26, jarX + 18, y + 54, pale(palette.workSurface(), 0.04F));
+            guiGraphics.fill(jarX + 2, y + 20, jarX + 16, y + 26, darken(palette.headerAccent(), 0.50F));
         }
     }
 
     private static void drawRestBackdrop(GuiGraphics guiGraphics, int x, int y, int width, int height, Palette palette) {
         for (int slat = 0; slat < 5; slat++) {
             int slatY = y + 18 + slat * 12;
-            guiGraphics.fill(x + 16, slatY, x + width - 16, slatY + 6, pale(palette.workSurface(), 0.05F));
+            guiGraphics.fill(x + 16, slatY, x + width - 16, slatY + 6, pale(palette.workSurface(), 0.03F));
         }
     }
 
     private static void drawPlateBackdrop(GuiGraphics guiGraphics, int x, int y, int width, int height, Palette palette) {
-        drawRing(guiGraphics, x + width / 2 - 42, y + 18, 84, 60, palette.shadow(), palette.previewSurface(), SURFACE);
-        guiGraphics.fill(x + 24, y + height - 22, x + width - 24, y + height - 18, palette.shadow());
+        drawRing(guiGraphics, x + width / 2 - 42, y + 18, 84, 60,
+                darken(palette.workSurface(), 0.12F), pale(palette.workSurface(), 0.04F), darken(palette.workSurface(), 0.06F));
+        guiGraphics.fill(x + 24, y + height - 22, x + width - 24, y + height - 18, darken(palette.workSurface(), 0.10F));
     }
 
     private static void drawRing(GuiGraphics guiGraphics, int x, int y, int width, int height, int outer, int mid, int inner) {
@@ -303,38 +311,38 @@ final class JazzyGuiRenderer {
 
     private static Palette paletteFor(StationUiProfile.Theme theme) {
         return switch (theme) {
-            case BOWL -> new Palette(0xFF314A60, 0xFF7AC2CC, 0xFFD0C4B7, 0xFFF8F4EC, 0xFFF3EFE6, 0xFFEAF5F7, 0xFFE2F1F4, 0xFFE8DED1,
-                    0xFF344558, 0xFFE4DED3, 0xFFCCD8DD, 0xFFF3F9FA, 0xFFF6EEE3, 0xFFEBF4F6);
-            case SERVICE -> new Palette(0xFF394357, 0xFFC9A24B, 0xFFD0C3B0, 0xFFFBF7EF, 0xFFF4EFE4, 0xFFF7F0E3, 0xFFF6EFE2, 0xFFE7DED1,
-                    0xFF4E596C, 0xFFF1EADC, 0xFFD9D0C2, 0xFFFBF8F3, 0xFFF8EED7, 0xFFF1EEE8);
-            case RANGE -> new Palette(0xFF3E4450, 0xFFE28B42, 0xFFD0C6B9, 0xFFF8F5F0, 0xFFF1ECE4, 0xFFE7E0D6, 0xFFF1ECE4, 0xFFE1D8CC,
-                    0xFF343B46, 0xFFE8DFD4, 0xFFD0C8BD, 0xFFF7F4EE, 0xFFF7E8DD, 0xFFECE6DC);
-            case OVEN -> new Palette(0xFF5A4032, 0xFFDA8752, 0xFFD7C3B6, 0xFFFBF5EE, 0xFFF5ECE4, 0xFFF4E6D9, 0xFFF5ECE4, 0xFFE6D8CC,
-                    0xFF47352C, 0xFFEDE1D5, 0xFFD8C8BD, 0xFFFBF7F1, 0xFFF7E3D1, 0xFFEFE7DE);
-            case MACHINE -> new Palette(0xFF304A60, 0xFF5DB8CC, 0xFFCBD7DD, 0xFFF4F9FB, 0xFFEFF5F7, 0xFFE8F4F8, 0xFFE9F5F9, 0xFFDDE7EC,
-                    0xFF385464, 0xFFE2EDF1, 0xFFD2DEE3, 0xFFF6FAFB, 0xFFEAF6FA, 0xFFEFF4F7);
-            case GLASS -> new Palette(0xFF355264, 0xFF7DB7D0, 0xFFC7D7DD, 0xFFF4FAFC, 0xFFEFF7F9, 0xFFE8F4F8, 0xFFE9F6F8, 0xFFDDE8EB,
-                    0xFF3D5B6D, 0xFFE5EFF3, 0xFFD3E2E7, 0xFFF6FBFC, 0xFFE7F5F9, 0xFFEEF5F7);
-            case CROCK -> new Palette(0xFF5C4637, 0xFFAA8359, 0xFFD4C3B4, 0xFFF7F2EB, 0xFFF0E8DE, 0xFFEEE1D2, 0xFFF2E8DC, 0xFFE2D4C5,
-                    0xFF513E31, 0xFFE7DACC, 0xFFD2C1B2, 0xFFF8F4ED, 0xFFF3E5D6, 0xFFEDE4DA);
-            case PRESERVE -> new Palette(0xFF4D3F5C, 0xFFD06C66, 0xFFD2C4CF, 0xFFFAF5F8, 0xFFF2EAF0, 0xFFF3E7E4, 0xFFF2EBF0, 0xFFE1D5DE,
-                    0xFF4A3F56, 0xFFEAE0E8, 0xFFD8CDD6, 0xFFFBF8FA, 0xFFF6E5E2, 0xFFF0EBF0);
-            case STEAM -> new Palette(0xFF35515A, 0xFF63B7AE, 0xFFCBDBD8, 0xFFF7FAF8, 0xFFEFF4F1, 0xFFE6F4F1, 0xFFEAF6F2, 0xFFDBE6E3,
-                    0xFF3C575F, 0xFFE3EFEA, 0xFFD1E0DC, 0xFFF8FBF9, 0xFFE7F7F2, 0xFFEEF4F2);
-            case COLD -> new Palette(0xFF2F4360, 0xFF7FB6E8, 0xFFC7D4E2, 0xFFF4F8FD, 0xFFEAF0F8, 0xFFE5EDF9, 0xFFE9F0FB, 0xFFD9E3F1,
-                    0xFF36506E, 0xFFE1EAF5, 0xFFD0DDEB, 0xFFF7FAFE, 0xFFE7F0FC, 0xFFECF2F8);
-            case RACK -> new Palette(0xFF4E5147, 0xFF9BB06C, 0xFFD3D0C1, 0xFFF8F7F1, 0xFFF0EFE8, 0xFFEEF0E1, 0xFFF2F3E8, 0xFFE1DDD0,
-                    0xFF53574B, 0xFFE7E6DA, 0xFFD2D0C4, 0xFFF9F8F3, 0xFFF0F1E2, 0xFFEFEEE6);
-            case SMOKE -> new Palette(0xFF403F46, 0xFFC0895A, 0xFFD0C7C0, 0xFFF8F5F2, 0xFFF0ECE8, 0xFFF1E7DD, 0xFFF1ECE8, 0xFFE2D9D3,
-                    0xFF434046, 0xFFE7E0DA, 0xFFD2CBC6, 0xFFF8F5F3, 0xFFF3E6DB, 0xFFEDE9E4);
-            case MICROWAVE -> new Palette(0xFF2D4960, 0xFF65BDD7, 0xFFC8D6DD, 0xFFF4FAFB, 0xFFEFF5F7, 0xFFE7F5F8, 0xFFE9F6F8, 0xFFDCE7EB,
-                    0xFF365267, 0xFFE3EDF2, 0xFFD3DFE4, 0xFFF7FBFC, 0xFFE7F5F9, 0xFFEEF4F7);
-            case CITRUS -> new Palette(0xFF42604A, 0xFFF0B54B, 0xFFD6D2BF, 0xFFF9F8F2, 0xFFF2F0E6, 0xFFFBF0D8, 0xFFF7F3E6, 0xFFE5E1D0,
-                    0xFF496854, 0xFFEEE9D9, 0xFFD8D3C4, 0xFFFAF8F3, 0xFFFBEFD9, 0xFFF1EEE4);
-            case SPICE -> new Palette(0xFF5A4132, 0xFFD47E4E, 0xFFD8C6BC, 0xFFF9F4F0, 0xFFF2ECE5, 0xFFF5E9DD, 0xFFF4EEE7, 0xFFE5D6CB,
-                    0xFF5C4738, 0xFFEADCD2, 0xFFD5C5BB, 0xFFF9F5F1, 0xFFF7E8DE, 0xFFF2ECE6);
-            case BOARD -> new Palette(0xFF344558, 0xFF5AAAB1, 0xFFD3C8BB, 0xFFF8F5EE, 0xFFF1ECE4, 0xFFF0E8DC, 0xFFF1ECE4, 0xFFE5DDD1,
-                    0xFF364658, 0xFFE7E0D5, 0xFFD4CCC0, 0xFFF9F6F0, 0xFFF4ECDD, 0xFFF1EEE7);
+            case BOWL -> new Palette(0xFF1E3550, 0xFF5BC9D4, 0xFF2A3548, 0xFF212838, 0xFF1C2535, 0xFF1E2838, 0xFF1F2735, 0xFF1A2230,
+                    0xFF192430, 0xFF161D28, 0xFF253040, 0xFF1A2E40, 0xFF332B18, 0xFF1A1F2A);
+            case SERVICE -> new Palette(0xFF302818, 0xFFD4A84E, 0xFF38342A, 0xFF262420, 0xFF222018, 0xFF24221A, 0xFF23211C, 0xFF1E1C18,
+                    0xFF1C1A15, 0xFF18160F, 0xFF2E2A20, 0xFF1E2430, 0xFF35291A, 0xFF1D1C1A);
+            case RANGE -> new Palette(0xFF302015, 0xFFE28B42, 0xFF36302A, 0xFF252220, 0xFF201E18, 0xFF221E18, 0xFF22201A, 0xFF1C1A16,
+                    0xFF1A1815, 0xFF161412, 0xFF2C2820, 0xFF1E2430, 0xFF352818, 0xFF1C1A18);
+            case OVEN -> new Palette(0xFF35221A, 0xFFDA8752, 0xFF38302A, 0xFF282420, 0xFF222018, 0xFF24201A, 0xFF24221C, 0xFF1E1C18,
+                    0xFF1C1A15, 0xFF181510, 0xFF2E2A20, 0xFF1E2430, 0xFF35281A, 0xFF1D1A18);
+            case MACHINE -> new Palette(0xFF1A3050, 0xFF5DB8CC, 0xFF2A3544, 0xFF212734, 0xFF1C2432, 0xFF1E2636, 0xFF1F2534, 0xFF1A2030,
+                    0xFF18222E, 0xFF161C26, 0xFF242E3C, 0xFF1A2C3E, 0xFF302A1A, 0xFF1A1E28);
+            case GLASS -> new Palette(0xFF1A3048, 0xFF7DB7D0, 0xFF2A3445, 0xFF212835, 0xFF1C2432, 0xFF1E2838, 0xFF1F2635, 0xFF1A2130,
+                    0xFF18222F, 0xFF161C28, 0xFF242F3E, 0xFF1A2D40, 0xFF302B1A, 0xFF1A1F28);
+            case CROCK -> new Palette(0xFF30221A, 0xFFAA8359, 0xFF36302A, 0xFF262320, 0xFF222018, 0xFF241E18, 0xFF24211C, 0xFF1E1C18,
+                    0xFF1C1A15, 0xFF181510, 0xFF2C2820, 0xFF1E2430, 0xFF35261A, 0xFF1D1A18);
+            case PRESERVE -> new Palette(0xFF2A1E30, 0xFFD06C66, 0xFF34303A, 0xFF252230, 0xFF201E28, 0xFF221E26, 0xFF22202A, 0xFF1C1A22,
+                    0xFF1A1820, 0xFF16141C, 0xFF2A2834, 0xFF1E2438, 0xFF352220, 0xFF1C1A20);
+            case STEAM -> new Palette(0xFF1A3030, 0xFF63B7AE, 0xFF2A3540, 0xFF212830, 0xFF1C2428, 0xFF1E2830, 0xFF1F262E, 0xFF1A2128,
+                    0xFF18222A, 0xFF161C22, 0xFF242E38, 0xFF1A2E38, 0xFF302A1A, 0xFF1A1E22);
+            case COLD -> new Palette(0xFF1A2848, 0xFF7FB6E8, 0xFF2A3248, 0xFF212738, 0xFF1C2236, 0xFF1E2638, 0xFF1F2536, 0xFF1A2030,
+                    0xFF181E30, 0xFF161A26, 0xFF242C3E, 0xFF1A2A42, 0xFF302A1A, 0xFF1A1E2A);
+            case RACK -> new Palette(0xFF223020, 0xFF9BB06C, 0xFF303630, 0xFF232828, 0xFF1E2420, 0xFF202620, 0xFF202522, 0xFF1A201E,
+                    0xFF181E1A, 0xFF161A18, 0xFF262E28, 0xFF1E2E30, 0xFF302A1A, 0xFF1A1E1C);
+            case SMOKE -> new Palette(0xFF282428, 0xFFC0895A, 0xFF343038, 0xFF252328, 0xFF201E22, 0xFF222022, 0xFF222022, 0xFF1C1A1E,
+                    0xFF1A181C, 0xFF161418, 0xFF2A2830, 0xFF1E2230, 0xFF352218, 0xFF1C1B1E);
+            case MICROWAVE -> new Palette(0xFF1A2C48, 0xFF65BDD7, 0xFF2A3345, 0xFF212834, 0xFF1C2332, 0xFF1E2636, 0xFF1F2534, 0xFF1A2030,
+                    0xFF18222E, 0xFF161C26, 0xFF242E3C, 0xFF1A2C3E, 0xFF302A1A, 0xFF1A1E28);
+            case CITRUS -> new Palette(0xFF243020, 0xFFF0B54B, 0xFF303428, 0xFF24262A, 0xFF1E2218, 0xFF22241C, 0xFF22241E, 0xFF1C1E18,
+                    0xFF1A1C18, 0xFF161812, 0xFF282C22, 0xFF1E2830, 0xFF352C1A, 0xFF1C1E1A);
+            case SPICE -> new Palette(0xFF30201A, 0xFFD47E4E, 0xFF38302A, 0xFF262420, 0xFF222018, 0xFF24201A, 0xFF24221C, 0xFF1E1C18,
+                    0xFF1C1A15, 0xFF181510, 0xFF2C2820, 0xFF1E2430, 0xFF352418, 0xFF1D1A18);
+            case BOARD -> new Palette(0xFF1A3040, 0xFF5AAAB1, 0xFF2A3442, 0xFF212834, 0xFF1C2430, 0xFF1E2632, 0xFF1F2632, 0xFF1A2028,
+                    0xFF18222C, 0xFF161C24, 0xFF242E3A, 0xFF1A2C3C, 0xFF30281A, 0xFF1A1F26);
         };
     }
 

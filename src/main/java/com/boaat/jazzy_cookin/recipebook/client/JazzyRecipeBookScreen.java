@@ -572,11 +572,13 @@ public class JazzyRecipeBookScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        guiGraphics.fill(0, 0, this.width, this.height, 0x70070A0E);
-        guiGraphics.fill(this.panelLeft, this.panelTop, this.panelLeft + PANEL_WIDTH, this.panelTop + PANEL_HEIGHT, 0xF0181B20);
-        guiGraphics.fill(this.panelLeft, this.panelTop, this.panelLeft + PANEL_WIDTH, this.panelTop + HEADER_HEIGHT, 0xFF7A5C32);
-        guiGraphics.fill(this.panelLeft + LEFT_WIDTH, this.panelTop + HEADER_HEIGHT, this.panelLeft + LEFT_WIDTH + 1, this.panelTop + PANEL_HEIGHT, 0xFF2A313B);
-        guiGraphics.drawString(this.font, this.title, this.panelLeft + 10, this.panelTop + 6, 0xFFF3E9DB, false);
+        guiGraphics.fill(0, 0, this.width, this.height, 0x80060810);
+        guiGraphics.fill(this.panelLeft, this.panelTop, this.panelLeft + PANEL_WIDTH, this.panelTop + PANEL_HEIGHT, 0xFF101318);
+        guiGraphics.fill(this.panelLeft + 1, this.panelTop + 1, this.panelLeft + PANEL_WIDTH - 1, this.panelTop + PANEL_HEIGHT - 1, 0xFF181C22);
+        guiGraphics.fill(this.panelLeft + 1, this.panelTop + 1, this.panelLeft + PANEL_WIDTH - 1, this.panelTop + HEADER_HEIGHT, 0xFF1A3040);
+        guiGraphics.fill(this.panelLeft + 1, this.panelTop + HEADER_HEIGHT, this.panelLeft + PANEL_WIDTH - 1, this.panelTop + HEADER_HEIGHT + 2, 0xFF5AAAB1);
+        guiGraphics.fill(this.panelLeft + LEFT_WIDTH, this.panelTop + HEADER_HEIGHT + 2, this.panelLeft + LEFT_WIDTH + 1, this.panelTop + PANEL_HEIGHT - 1, 0xFF2A3442);
+        guiGraphics.drawString(this.font, this.title, this.panelLeft + 10, this.panelTop + 6, 0xFFF0F2F5, false);
 
         this.renderItemList(guiGraphics, mouseX, mouseY);
         this.renderDetails(guiGraphics);
@@ -592,9 +594,9 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private void renderItemList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.catalog"), this.panelLeft + 10, this.panelTop + 24, 0xFFC7CDD6, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.catalog"), this.panelLeft + 10, this.panelTop + 26, 0xFF8C95A6, false);
         if (this.filteredEntries.isEmpty()) {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.no_matches"), this.panelLeft + 10, this.panelTop + ITEM_LIST_TOP + 8, 0xFFB4BBC4, false);
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.no_matches"), this.panelLeft + 10, this.panelTop + ITEM_LIST_TOP + 8, 0xFF606878, false);
             return;
         }
 
@@ -607,14 +609,14 @@ public class JazzyRecipeBookScreen extends Screen {
             JazzyRecipeBookPlanner.CatalogEntry entry = this.filteredEntries.get(index);
             int y = this.panelTop + ITEM_LIST_TOP + row * ITEM_ROW_HEIGHT;
             boolean selected = entry.itemId().equals(this.selectedItemId);
-            int bg = selected ? 0xFF36404C : 0x66212730;
+            int bg = selected ? 0xFF242E3A : 0x44181C22;
             if (this.isMouseOverItemList(mouseX, mouseY) && this.clickedItemRow(mouseY) == row) {
-                bg = 0xFF3E4855;
+                bg = 0xFF2A3442;
             }
             guiGraphics.fill(this.panelLeft + 8, y, this.panelLeft + LEFT_WIDTH - 8, y + ITEM_ROW_HEIGHT - 2, bg);
             ItemStack icon = new ItemStack(entry.item());
             guiGraphics.renderItem(icon, this.panelLeft + 12, y + 1);
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.catalogLabel(entry), LEFT_WIDTH - 34), this.panelLeft + 32, y + 5, 0xFFF1F4F8, false);
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.catalogLabel(entry), LEFT_WIDTH - 34), this.panelLeft + 32, y + 5, 0xFFDCE0E8, false);
         }
     }
 
@@ -628,23 +630,23 @@ public class JazzyRecipeBookScreen extends Screen {
 
     private void renderDetails(GuiGraphics guiGraphics) {
         int x = this.panelLeft + LEFT_WIDTH + 10;
-        int y = this.panelTop + 24;
+        int y = this.panelTop + 26;
         if (this.selectedItemId == null) {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.empty"), x, y, 0xFFB6BCC6, false);
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.empty"), x, y, 0xFF606878, false);
             return;
         }
 
         ItemStack stack = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(this.selectedItemId));
         guiGraphics.renderItem(stack, x, y);
-        guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(stack.getHoverName().getString(), PANEL_WIDTH - LEFT_WIDTH - 46), x + 20, y + 4, 0xFFF5F5F1, false);
+        guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(stack.getHoverName().getString(), PANEL_WIDTH - LEFT_WIDTH - 46), x + 20, y + 4, 0xFFF0F2F5, false);
 
         if (this.selectedState != null) {
             guiGraphics.drawString(
                     this.font,
                     Component.translatable("screen.jazzycookin.recipe_book.state", Component.translatable("state.jazzycookin." + this.selectedState.getSerializedName())),
                     x + 22,
-                    this.panelTop + 38,
-                    0xFFCFD6DE,
+                    this.panelTop + 40,
+                    0xFF8C95A6,
                     false
             );
         }
@@ -654,18 +656,18 @@ public class JazzyRecipeBookScreen extends Screen {
                     this.font,
                     Component.translatable("screen.jazzycookin.recipe_book.path", RecipeBookClientState.chainLabel(this.selectedChainKey)),
                     x + 22,
-                    this.panelTop + 60,
-                    0xFFCFD6DE,
+                    this.panelTop + 62,
+                    0xFF8C95A6,
                     false
             );
         }
 
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.steps"), x, this.panelTop + STEP_LIST_TOP - 12, 0xFFC7CDD6, false);
-        guiGraphics.fill(x, this.panelTop + STEP_LIST_TOP, this.panelLeft + PANEL_WIDTH - 10, this.panelTop + STEP_LIST_BOTTOM, 0x661A2027);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.steps"), x, this.panelTop + STEP_LIST_TOP - 12, 0xFF8C95A6, false);
+        guiGraphics.fill(x, this.panelTop + STEP_LIST_TOP, this.panelLeft + PANEL_WIDTH - 10, this.panelTop + STEP_LIST_BOTTOM, 0x44101418);
 
         Optional<JazzyRecipeBookPlanner.Plan> optionalPlan = this.currentPlan();
         if (optionalPlan.isEmpty()) {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.no_path"), x + 6, this.panelTop + STEP_LIST_TOP + 8, 0xFFB4BBC4, false);
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.no_path"), x + 6, this.panelTop + STEP_LIST_TOP + 8, 0xFF606878, false);
             return;
         }
 
@@ -689,24 +691,24 @@ public class JazzyRecipeBookScreen extends Screen {
 
             for (int depth = 0; depth < visibleStep.depth(); depth++) {
                 int guideX = this.stepCardLeft() + 30 + depth * STEP_INDENT;
-                guiGraphics.fill(guideX, cardTop + 3, guideX + 1, cardTop + STEP_ROW_HEIGHT - 5, 0x6636404A);
+                guiGraphics.fill(guideX, cardTop + 3, guideX + 1, cardTop + STEP_ROW_HEIGHT - 5, 0x442A3442);
             }
 
             guiGraphics.drawString(this.font, Component.literal((plan.indexOfStep(step.id()) + 1) + "."), this.stepCardLeft() + 8, cardTop + 6,
-                    complete ? 0xFF8AD79E : 0xFFE9D7B6, false);
+                    complete ? 0xFF4ADE80 : 0xFFF0B429, false);
 
             if (visibleStep.expandable()) {
                 int expandLeft = this.expandButtonLeft(visibleStep);
-                guiGraphics.fill(expandLeft, cardTop + 6, expandLeft + STEP_EXPAND_SIZE, cardTop + 6 + STEP_EXPAND_SIZE, 0xFF3A434E);
-                guiGraphics.drawString(this.font, Component.literal(visibleStep.expanded() ? "-" : "+"), expandLeft + 3, cardTop + 7, 0xFFF2F5F8, false);
+                guiGraphics.fill(expandLeft, cardTop + 6, expandLeft + STEP_EXPAND_SIZE, cardTop + 6 + STEP_EXPAND_SIZE, 0xFF2A3442);
+                guiGraphics.drawString(this.font, Component.literal(visibleStep.expanded() ? "-" : "+"), expandLeft + 3, cardTop + 7, 0xFFDCE0E8, false);
             }
 
             int iconX = this.stepIconLeft(visibleStep);
             guiGraphics.renderItem(step.outputStack(), iconX, cardTop + 4);
             int textX = iconX + 20;
             int textWidth = this.stepCardRight() - textX - 6;
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(step.outputStack().getHoverName().getString(), textWidth), textX, cardTop + 3, 0xFFF0F2F5, false);
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.stepDetail(step, visibleStep), textWidth), textX, cardTop + 13, 0xFFB6BEC8, false);
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(step.outputStack().getHoverName().getString(), textWidth), textX, cardTop + 3, 0xFFDCE0E8, false);
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.stepDetail(step, visibleStep), textWidth), textX, cardTop + 13, 0xFF8C95A6, false);
         }
     }
 
@@ -729,15 +731,15 @@ public class JazzyRecipeBookScreen extends Screen {
 
     private int stepBackgroundColor(boolean complete, boolean selected) {
         if (complete && selected) {
-            return 0xCC2D5A46;
+            return 0xCC1A3A2C;
         }
         if (selected) {
-            return 0xCC344457;
+            return 0xCC1C2C3C;
         }
         if (complete) {
-            return 0xAA254F37;
+            return 0xAA163028;
         }
-        return 0xAA28303A;
+        return 0xAA141A22;
     }
 
     private String stepDetail(JazzyRecipeBookPlanner.PlanStep step, VisibleStep visibleStep) {
