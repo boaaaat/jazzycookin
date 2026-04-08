@@ -92,8 +92,8 @@ public record StationUiProfile(
                     Theme.RANGE,
                     LARGE_WIDTH,
                     LARGE_HEIGHT,
-                    grid(34, 58, 3, 2, 24, 22),
-                    new Point(130, 76),
+                    grid(46, 60, 3, 2, 26, 24),
+                    new Point(146, 78),
                     new Point(282, 62),
                     new Point(282, 102)
             );
@@ -102,8 +102,8 @@ public record StationUiProfile(
                     Theme.OVEN,
                     LARGE_WIDTH,
                     LARGE_HEIGHT,
-                    grid(34, 58, 3, 2, 26, 24),
-                    new Point(132, 76),
+                    grid(46, 60, 3, 2, 28, 24),
+                    new Point(150, 78),
                     new Point(282, 62),
                     new Point(282, 102)
             );

@@ -50,6 +50,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     private static final int MIN_MICROWAVE_DURATION_SECONDS = 10;
     private static final int MAX_MICROWAVE_DURATION_SECONDS = 300;
     private static final int MICROWAVE_DURATION_STEP_SECONDS = 10;
+    private static final int MIN_STOVE_DIAL_LEVEL = 1;
+    private static final int MAX_STOVE_DIAL_LEVEL = 6;
+    private static final int DEFAULT_STOVE_DIAL_LEVEL = 3;
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private final ContainerData dataAccess = new ContainerData() {
@@ -62,7 +65,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 2 -> KitchenStationBlockEntity.this.currentHeatLevel().ordinal();
                 case 3 -> KitchenStationBlockEntity.this.preheatProgress;
                 case 4 -> KitchenStationBlockEntity.this.currentMethod().ordinal();
-                case 5 -> KitchenStationBlockEntity.this.controlSetting;
+                case 5 -> KitchenStationBlockEntity.this.getStationType() == StationType.STOVE
+                        ? KitchenStationBlockEntity.this.stoveDialLevel()
+                        : KitchenStationBlockEntity.this.controlSetting;
                 case 6 -> KitchenStationBlockEntity.this.environmentStatus();
                 case 7 -> KitchenStationBlockEntity.this.ovenTemperature;
                 case 8 -> snapshot.executionMode();
@@ -89,7 +94,13 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 1 -> KitchenStationBlockEntity.this.maxProgress = value;
                 case 2 -> KitchenStationBlockEntity.this.heatLevel = HeatLevel.values()[Math.max(0, Math.min(HeatLevel.values().length - 1, value))];
                 case 3 -> KitchenStationBlockEntity.this.preheatProgress = value;
-                case 5 -> KitchenStationBlockEntity.this.controlSetting = Math.max(0, Math.min(2, value));
+                case 5 -> {
+                    if (KitchenStationBlockEntity.this.getStationType() == StationType.STOVE) {
+                        KitchenStationBlockEntity.this.applyStoveDialLevel(value);
+                    } else {
+                        KitchenStationBlockEntity.this.controlSetting = Math.max(0, Math.min(2, value));
+                    }
+                }
                 case 7 -> KitchenStationBlockEntity.this.ovenTemperature = HeatLevel.normalizeOvenTemperature(value);
                 case 20 -> KitchenStationBlockEntity.this.microwaveDurationSeconds = normalizeMicrowaveDuration(value);
                 default -> {
@@ -173,6 +184,16 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return this.ovenTemperature;
     }
 
+    public int stoveDialLevel() {
+        if (this.getStationType() != StationType.STOVE) {
+            return 0;
+        }
+        if (this.controlSetting >= MIN_STOVE_DIAL_LEVEL && this.controlSetting <= MAX_STOVE_DIAL_LEVEL) {
+            return this.controlSetting;
+        }
+        return stoveDialLevelForHeat(this.heatLevel);
+    }
+
     @Override
     public int simulationMicrowaveDurationSeconds() {
         return this.microwaveDurationSeconds;
@@ -181,6 +202,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     private HeatLevel currentHeatLevel() {
         if (this.getStationType() == StationType.MICROWAVE) {
             return HeatLevel.MEDIUM;
+        }
+        if (this.getStationType() == StationType.STOVE && this.heatLevel != HeatLevel.OFF) {
+            return heatLevelForStoveDial(this.stoveDialLevel());
         }
         return this.getStationType() == StationType.OVEN
                 ? HeatLevel.fromOvenTemperature(this.ovenTemperature)
@@ -215,6 +239,11 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             this.setChanged();
             return true;
         }
+        if (this.getStationType() == StationType.STOVE && buttonId >= 3001 && buttonId <= 3006) {
+            this.applyStoveDialLevel(buttonId - 3000);
+            this.setChanged();
+            return true;
+        }
 
         if (this.getStationType().supportsHeat() && this.getStationType() != StationType.MICROWAVE) {
             this.heatLevel = switch (buttonId) {
@@ -223,6 +252,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 3 -> HeatLevel.HIGH;
                 default -> this.heatLevel;
             };
+            if (this.getStationType() == StationType.STOVE && buttonId >= 1 && buttonId <= 3) {
+                this.controlSetting = stoveDialLevelForHeat(this.heatLevel);
+            }
             this.setChanged();
             return true;
         }
@@ -403,7 +435,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         tag.putInt("PreheatProgress", this.preheatProgress);
         tag.putInt("OvenTemperature", this.ovenTemperature);
         tag.putInt("MicrowaveDurationSeconds", this.microwaveDurationSeconds);
-        tag.putInt("ControlSetting", this.controlSetting);
+        tag.putInt("ControlSetting", this.getStationType() == StationType.STOVE ? this.stoveDialLevel() : this.controlSetting);
         tag.putBoolean("Processing", this.processing);
         tag.putString("HeatLevel", this.heatLevel.getSerializedName());
         if (this.activeGuidePlayerId != null) {
@@ -429,7 +461,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.microwaveDurationSeconds = tag.contains("MicrowaveDurationSeconds")
                 ? normalizeMicrowaveDuration(tag.getInt("MicrowaveDurationSeconds"))
                 : DEFAULT_MICROWAVE_DURATION_SECONDS;
-        this.controlSetting = Math.max(0, Math.min(2, tag.getInt("ControlSetting")));
+        this.controlSetting = this.getStationType() == StationType.STOVE
+                ? normalizeStoveDialLevel(tag.contains("ControlSetting") ? tag.getInt("ControlSetting") : stoveDialLevelForHeat(this.heatLevel))
+                : Math.max(0, Math.min(2, tag.getInt("ControlSetting")));
         this.processing = tag.getBoolean("Processing");
         this.activeGuidePlayerId = tag.hasUUID("ActiveGuidePlayer") ? tag.getUUID("ActiveGuidePlayer") : null;
         this.stationPhysics = decodeCodec(tag, "SimulationPhysics", StationPhysicsState.CODEC).orElse(StationPhysicsState.idle());
@@ -444,6 +478,35 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         int clamped = Math.max(MIN_MICROWAVE_DURATION_SECONDS, Math.min(MAX_MICROWAVE_DURATION_SECONDS, seconds));
         int steps = Math.round(clamped / (float) MICROWAVE_DURATION_STEP_SECONDS);
         return Math.max(MIN_MICROWAVE_DURATION_SECONDS, steps * MICROWAVE_DURATION_STEP_SECONDS);
+    }
+
+    public static int normalizeStoveDialLevel(int level) {
+        return Math.max(MIN_STOVE_DIAL_LEVEL, Math.min(MAX_STOVE_DIAL_LEVEL, level));
+    }
+
+    private void applyStoveDialLevel(int level) {
+        int normalized = normalizeStoveDialLevel(level);
+        this.controlSetting = normalized;
+        this.heatLevel = heatLevelForStoveDial(normalized);
+    }
+
+    private static HeatLevel heatLevelForStoveDial(int level) {
+        int normalized = normalizeStoveDialLevel(level);
+        if (normalized <= 2) {
+            return HeatLevel.LOW;
+        }
+        if (normalized <= 4) {
+            return HeatLevel.MEDIUM;
+        }
+        return HeatLevel.HIGH;
+    }
+
+    private static int stoveDialLevelForHeat(HeatLevel heatLevel) {
+        return switch (heatLevel) {
+            case LOW -> 2;
+            case HIGH -> 5;
+            case OFF, MEDIUM -> DEFAULT_STOVE_DIAL_LEVEL;
+        };
     }
 
     @Override

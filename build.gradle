@@ -128,6 +128,12 @@ dependencies {
     // For more info:
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
+    // UI Lib is shipped as a normal client-side mod dependency for 1.21.1.
+    compileOnly files(project.uilib_jar)
+    compileOnly files(project.architectury_jar)
+
+    localRuntime files(project.uilib_jar)
+    localRuntime files(project.architectury_jar)
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

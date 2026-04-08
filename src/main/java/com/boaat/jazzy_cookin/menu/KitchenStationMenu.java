@@ -180,6 +180,13 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         return Math.max(0, Math.min(2, this.data.get(5)));
     }
 
+    public int stoveDialLevel() {
+        if (this.stationType != StationType.STOVE) {
+            return 0;
+        }
+        return KitchenStationBlockEntity.normalizeStoveDialLevel(this.data.get(5));
+    }
+
     public int environmentStatus() {
         return this.data.get(6);
     }
