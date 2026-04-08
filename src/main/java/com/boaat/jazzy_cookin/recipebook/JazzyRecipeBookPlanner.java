@@ -278,18 +278,12 @@ public final class JazzyRecipeBookPlanner {
 
     public static JazzyRecipeBookPlanner create(RecipeManager recipeManager, HolderLookup.Provider registries) {
         List<StepOptionBuilder> builders = new ArrayList<>();
+        Set<OutputKey> consumedOutputKeys = new LinkedHashSet<>();
 
         for (RecipeHolder<KitchenProcessRecipe> holder : recipeManager.getAllRecipesFor(JazzyRecipes.KITCHEN_PROCESS_TYPE.get())) {
             KitchenProcessRecipe recipe = holder.value();
             builders.add(processBuilder(holder.id().toString(), recipe, recipe.output(), KitchenOutcomeBand.IDEAL));
-            for (KitchenProcessOutcome outcome : recipe.outcomes()) {
-                builders.add(processBuilder(
-                        holder.id() + "#" + outcome.band().getSerializedName(),
-                        recipe,
-                        outcome.output(),
-                        outcome.band()
-                ));
-            }
+            collectDependencyKeys(consumedOutputKeys, recipe.inputs());
         }
 
         for (RecipeHolder<KitchenPlateRecipe> holder : recipeManager.getAllRecipesFor(JazzyRecipes.KITCHEN_PLATE_TYPE.get())) {
@@ -317,6 +311,7 @@ public final class JazzyRecipeBookPlanner {
                     ProcessMode.ACTIVE,
                     List.of("Plate the prepared dish with the serving pieces shown.")
             ));
+            collectDependencyKeys(consumedOutputKeys, recipe.inputs());
         }
 
         for (RecipeHolder<CraftingRecipe> holder : recipeManager.getAllRecipesFor(RecipeType.CRAFTING)) {
@@ -378,17 +373,20 @@ public final class JazzyRecipeBookPlanner {
         });
 
         Map<ResourceLocation, Set<IngredientState>> statesByItem = new HashMap<>();
-        groupsByOutput.keySet().forEach(output -> statesByItem.computeIfAbsent(output.itemId(), key -> new LinkedHashSet<>()).add(output.state()));
+        groupsByOutput.keySet().stream()
+                .filter(output -> !consumedOutputKeys.contains(output))
+                .filter(output -> shouldCatalogOutput(groupsByOutput.get(output)))
+                .forEach(output -> statesByItem.computeIfAbsent(output.itemId(), key -> new LinkedHashSet<>()).add(output.state()));
 
-        List<CatalogEntry> catalog = BuiltInRegistries.ITEM.stream()
-                .filter(RecipeBookDisplayUtil::isModItem)
-                .map(item -> {
-                    ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(item);
-                    Set<IngredientState> states = statesByItem.computeIfAbsent(itemId, key -> new LinkedHashSet<>());
-                    if (states.isEmpty()) {
-                        states.add(RecipeBookDisplayUtil.defaultStateForItem(item));
-                    }
-                    return new CatalogEntry(itemId, item, new ItemStack(item).getHoverName().getString(), states.stream().sorted(STATE_ORDER).toList());
+        List<CatalogEntry> catalog = statesByItem.entrySet().stream()
+                .map(entry -> {
+                    Item item = BuiltInRegistries.ITEM.get(entry.getKey());
+                    return new CatalogEntry(
+                            entry.getKey(),
+                            item,
+                            new ItemStack(item).getHoverName().getString(),
+                            entry.getValue().stream().sorted(STATE_ORDER).toList()
+                    );
                 })
                 .sorted(Comparator.comparing(CatalogEntry::displayName, String.CASE_INSENSITIVE_ORDER))
                 .toList();
@@ -647,6 +645,15 @@ public final class JazzyRecipeBookPlanner {
                 .toList();
     }
 
+    private static void collectDependencyKeys(Set<OutputKey> consumedOutputKeys, List<KitchenInputRequirement> inputs) {
+        for (KitchenInputRequirement input : inputs) {
+            Arrays.stream(input.ingredient().getItems())
+                    .filter(stack -> !stack.isEmpty() && RecipeBookDisplayUtil.isModItem(stack.getItem()))
+                    .map(stack -> RecipeBookDisplayUtil.outputKey(stack, input.requiredState()))
+                    .forEach(consumedOutputKeys::add);
+        }
+    }
+
     private static List<Requirement> craftingRequirements(Collection<Ingredient> ingredients) {
         List<Requirement> expanded = new ArrayList<>();
         for (Ingredient ingredient : ingredients) {
@@ -689,6 +696,16 @@ public final class JazzyRecipeBookPlanner {
             dependencyKey = RecipeBookDisplayUtil.outputKey(choices.get(0), requiredState);
         }
         return new Requirement(choices, requiredState, count, dependencyKey);
+    }
+
+    private static boolean shouldCatalogOutput(@Nullable Map<String, OptionGroup> groups) {
+        if (groups == null || groups.isEmpty()) {
+            return false;
+        }
+        return groups.values().stream()
+                .flatMap(group -> group.options().stream())
+                .map(StepOption::kind)
+                .anyMatch(kind -> kind == StepKind.PROCESS || kind == StepKind.PLATE);
     }
 
     private static int stateRank(IngredientState state) {

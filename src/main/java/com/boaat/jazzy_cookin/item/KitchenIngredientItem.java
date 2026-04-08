@@ -7,6 +7,7 @@ import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
+import com.boaat.jazzy_cookin.kitchen.KitchenStateRules;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
@@ -14,12 +15,18 @@ import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUtils;
 
 public class KitchenIngredientItem extends Item {
     private static final long MINECRAFT_DAY_TICKS = 24_000L;
@@ -60,7 +67,13 @@ public class KitchenIngredientItem extends Item {
             boolean fridgeSafe,
             boolean freezerSafe
     ) {
-        super(properties);
+        super(nourishment > 0
+                ? properties.food(new net.minecraft.world.food.FoodProperties.Builder()
+                .nutrition(Math.max(1, nourishment))
+                .saturationModifier(Math.max(0.2F, nourishment / 10.0F))
+                .alwaysEdible()
+                .build())
+                : properties);
         this.defaultState = defaultState;
         this.pantryTab = pantryTab;
         this.baseQuality = baseQuality;
@@ -218,6 +231,38 @@ public class KitchenIngredientItem extends Item {
         }
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.nourishment", data.nourishment()).withStyle(ChatFormatting.BLUE));
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.enjoyment", data.enjoyment()).withStyle(ChatFormatting.LIGHT_PURPLE));
+        if (level != null && this.canConsume(stack, level)) {
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.meal_hint").withStyle(ChatFormatting.AQUA));
+        }
+    }
+
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+        ItemStack stack = player.getItemInHand(usedHand);
+        if (this.canConsume(stack, level)) {
+            return ItemUtils.startUsingInstantly(level, player, usedHand);
+        }
+        return InteractionResultHolder.pass(stack);
+    }
+
+    @Override
+    public int getUseDuration(ItemStack stack, LivingEntity entity) {
+        return 32;
+    }
+
+    @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return switch (KitchenStackUtil.getData(stack) != null ? KitchenStackUtil.getData(stack).state() : this.defaultState) {
+            case FRESH_JUICE, SMOOTH, CREAMY -> UseAnim.DRINK;
+            default -> UseAnim.EAT;
+        };
+    }
+
+    protected boolean canConsume(ItemStack stack, Level level) {
+        if (this instanceof KitchenMealItem) {
+            return true;
+        }
+        return KitchenStateRules.isFinishedUnplatedState(KitchenStackUtil.effectiveState(stack, level.getGameTime()));
     }
 
     private Component shelfLifeLabel() {

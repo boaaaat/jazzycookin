@@ -2,6 +2,7 @@ package com.boaat.jazzy_cookin.registry;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
+import com.boaat.jazzy_cookin.kitchen.KitchenSystemsSlice;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -22,11 +23,16 @@ public final class JazzyCreativeTabs {
                     .title(Component.translatable("itemGroup.jazzycookin.ingredients"))
                     .icon(() -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.APPLES))
                     .displayItems((parameters, output) -> {
-                        for (DeferredItem<KitchenIngredientItem> ingredient : JazzyItems.ingredientItems()) {
-                            output.accept(ingredient.get().createCreativeStack(1));
+                        for (JazzyItems.IngredientId ingredientId : JazzyItems.IngredientId.values()) {
+                            if (!KitchenSystemsSlice.keepIngredient(ingredientId)) {
+                                continue;
+                            }
+                            output.accept(JazzyItems.ingredient(ingredientId).get().createCreativeStack(1));
                         }
                         for (DeferredItem<KitchenIngredientItem> preparedItem : JazzyItems.preparedItems()) {
-                            output.accept(preparedItem.get().createCreativeStack(1));
+                            if (KitchenSystemsSlice.keepPreparedItem(preparedItem.get())) {
+                                output.accept(preparedItem.get().createCreativeStack(1));
+                            }
                         }
                     })
                     .build()
@@ -36,10 +42,12 @@ public final class JazzyCreativeTabs {
             "meals",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.jazzycookin.meals"))
-                    .icon(() -> JazzyItems.CREAMY_TOMATO_SOUP.get().createCreativeStack(1))
+                    .icon(() -> JazzyItems.FRUIT_JUICE.get().createCreativeStack(1))
                     .displayItems((parameters, output) -> {
                         for (DeferredItem<? extends KitchenIngredientItem> meal : JazzyItems.mealItems()) {
-                            output.accept(meal.get().createCreativeStack(1));
+                            if (KitchenSystemsSlice.keepMealItem(meal.get())) {
+                                output.accept(meal.get().createCreativeStack(1));
+                            }
                         }
                     })
                     .build()
@@ -50,43 +58,23 @@ public final class JazzyCreativeTabs {
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.jazzycookin.tools"))
                     .icon(() -> JazzyItems.CHEF_KNIFE.get().getDefaultInstance())
-                    .displayItems((parameters, output) -> acceptAll(
-                            output,
-                            JazzyItems.TUPPERWARE,
-                            JazzyItems.CERAMIC_PLATE,
-                            JazzyItems.CERAMIC_BOWL,
-                            JazzyItems.GLASS_CUP,
-                            JazzyItems.WOODEN_BOARD,
-                            JazzyItems.SERVING_TRAY,
-                            JazzyItems.SERVING_SPOON,
-                            JazzyItems.BAMBOO_TRAY,
-                            JazzyItems.CHOPSTICKS,
-                            JazzyItems.STRAW,
-                            JazzyItems.BASKET,
-                            JazzyItems.PAPER_LINER,
-                            JazzyItems.BUTTER_KNIFE,
-                            JazzyItems.CANNING_JAR,
-                            JazzyItems.GLASS_JAR,
-                            JazzyItems.PARING_KNIFE,
-                            JazzyItems.CHEF_KNIFE,
-                            JazzyItems.CLEAVER,
-                            JazzyItems.TABLE_KNIFE,
-                            JazzyItems.FORK,
-                            JazzyItems.SPOON,
-                            JazzyItems.WHISK,
-                            JazzyItems.ROLLING_PIN,
-                            JazzyItems.MORTAR_PESTLE,
-                            JazzyItems.STOCK_POT,
-                            JazzyItems.POT,
-                            JazzyItems.SAUCEPAN,
-                            JazzyItems.FRYING_SKILLET,
-                            JazzyItems.FRYING_PAN,
-                            JazzyItems.FINE_STRAINER,
-                            JazzyItems.COARSE_STRAINER,
-                            JazzyItems.STEAMER_BASKET,
-                            JazzyItems.BAKING_TRAY,
-                            JazzyItems.PIE_TIN
-                    ))
+                    .displayItems((parameters, output) -> {
+                        for (DeferredItem<? extends Item> item : java.util.List.of(
+                                JazzyItems.GLASS_CUP,
+                                JazzyItems.WOODEN_BOARD,
+                                JazzyItems.SERVING_TRAY,
+                                JazzyItems.GLASS_JAR,
+                                JazzyItems.PARING_KNIFE,
+                                JazzyItems.CHEF_KNIFE,
+                                JazzyItems.CLEAVER,
+                                JazzyItems.TABLE_KNIFE,
+                                JazzyItems.BAKING_TRAY
+                        )) {
+                            if (KitchenSystemsSlice.keepToolItem(item.get())) {
+                                output.accept(item.get());
+                            }
+                        }
+                    })
                     .build()
     );
 
@@ -128,19 +116,17 @@ public final class JazzyCreativeTabs {
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.jazzycookin.sources"))
                     .icon(() -> JazzyItems.APPLE_SAPLING_ITEM.get().getDefaultInstance())
-                    .displayItems((parameters, output) -> acceptAll(
-                            output,
-                            JazzyItems.APPLE_SAPLING_ITEM,
-                            JazzyItems.TOMATO_VINE_ITEM,
-                            JazzyItems.HERB_BED_ITEM,
-                            JazzyItems.WHEAT_PATCH_ITEM,
-                            JazzyItems.CABBAGE_PATCH_ITEM,
-                            JazzyItems.ONION_PATCH_ITEM,
-                            JazzyItems.CHICKEN_COOP_ITEM,
-                            JazzyItems.DAIRY_STALL_ITEM,
-                            JazzyItems.FISHING_TRAP_ITEM,
-                            JazzyItems.FORAGE_SHRUB_ITEM
-                    ))
+                    .displayItems((parameters, output) -> {
+                        for (DeferredItem<? extends Item> item : java.util.List.of(
+                                JazzyItems.APPLE_SAPLING_ITEM,
+                                JazzyItems.CHICKEN_COOP_ITEM,
+                                JazzyItems.DAIRY_STALL_ITEM
+                        )) {
+                            if (KitchenSystemsSlice.keepSourceItem(item.get())) {
+                                output.accept(item.get());
+                            }
+                        }
+                    })
                     .build()
     );
 

@@ -155,7 +155,8 @@ final class RecipeSimulationSupport {
                 consumedInputs,
                 access.simulationItem(access.toolSlot()),
                 access.simulationHeatLevel(),
-                access.simulationPreheatProgress() >= 100
+                access.simulationPreheatProgress() >= 100,
+                matchPlan.score()
         );
         return createOutputStack(resolvedOutput.result(), outputData, level.getGameTime());
     }
@@ -172,7 +173,7 @@ final class RecipeSimulationSupport {
         }
 
         List<ItemStack> consumedInputs = matchedInputs(access, matchPlan, recipe.inputs());
-        IngredientStateData outputData = DishEvaluation.evaluatePlate(level, recipe, consumedInputs);
+        IngredientStateData outputData = DishEvaluation.evaluatePlate(level, recipe, consumedInputs, matchPlan.score());
         return createOutputStack(recipe.output().result(), outputData, level.getGameTime());
     }
 
@@ -230,7 +231,8 @@ final class RecipeSimulationSupport {
                 consumedInputs,
                 access.simulationItem(access.toolSlot()),
                 access.simulationHeatLevel(),
-                access.simulationPreheatProgress() >= 100
+                access.simulationPreheatProgress() >= 100,
+                matchPlan.score()
         );
 
         for (int i = 0; i < recipe.inputs().size(); i++) {
@@ -269,7 +271,7 @@ final class RecipeSimulationSupport {
 
         List<ItemStack> consumedInputs = matchedInputs(access, matchPlan, recipe.inputs());
 
-        IngredientStateData outputData = DishEvaluation.evaluatePlate(level, recipe, consumedInputs);
+        IngredientStateData outputData = DishEvaluation.evaluatePlate(level, recipe, consumedInputs, matchPlan.score());
         for (int i = 0; i < recipe.inputs().size(); i++) {
             int matchedSlot = matchPlan.slotForRequirement(i);
             if (matchedSlot >= 0) {

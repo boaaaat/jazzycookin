@@ -291,6 +291,32 @@ public record StationUiProfile(
         return this.layout.inventoryLabelRegion().y();
     }
 
+    public StationUiProfile resolve(int screenWidth, int screenHeight) {
+        float scale = resolveScale(screenWidth, screenHeight, this.width, this.height);
+        if (Math.abs(scale - 1.0F) < 0.01F) {
+            return this;
+        }
+
+        Point[] scaledInputs = Arrays.stream(this.inputPositions)
+                .map(point -> scale(point, scale))
+                .toArray(Point[]::new);
+        return new StationUiProfile(
+                this.stationType,
+                this.capacity,
+                this.theme,
+                Math.round(this.width * scale),
+                Math.round(this.height * scale),
+                scaledInputs,
+                scale(this.toolPosition, scale),
+                scale(this.outputPosition, scale),
+                scale(this.byproductPosition, scale),
+                Math.round(this.playerInventoryStartX * scale),
+                Math.round(this.playerInventoryStartY * scale),
+                Math.round(this.hotbarY * scale),
+                scale(this.layout, scale)
+        );
+    }
+
     private static StationUiProfile boardProfile(
             StationType stationType,
             Theme theme,
@@ -602,7 +628,7 @@ public record StationUiProfile(
                 stationType.supportsStationControl() ? lowerControlAction : null,
                 stationType.supportsStationControl() ? raiseControlAction : null,
                 stationType == StationType.OVEN ? null : (stationType.supportsHeat() || stationType.supportsStationControl() ? controlChip : null),
-                stationType == StationType.OVEN ? ovenField : null
+                stationType == StationType.OVEN || stationType == StationType.MICROWAVE ? ovenField : null
         );
 
         return new StationUiProfile(
@@ -626,6 +652,65 @@ public record StationUiProfile(
         LayoutRegion bounds = new LayoutRegion(x, y, width, height);
         LayoutRegion label = new LayoutRegion(x, y + 4, width, 8);
         return new ActionWidgetSpec(bounds, label);
+    }
+
+    private static Point scale(Point point, float scale) {
+        return new Point(Math.round(point.x() * scale), Math.round(point.y() * scale));
+    }
+
+    private static LayoutRegion scale(LayoutRegion region, float scale) {
+        if (region == null) {
+            return null;
+        }
+        return new LayoutRegion(
+                Math.round(region.x() * scale),
+                Math.round(region.y() * scale),
+                Math.round(region.width() * scale),
+                Math.round(region.height() * scale)
+        );
+    }
+
+    private static ActionWidgetSpec scale(ActionWidgetSpec spec, float scale) {
+        if (spec == null) {
+            return null;
+        }
+        return new ActionWidgetSpec(scale(spec.bounds(), scale), scale(spec.captionBounds(), scale));
+    }
+
+    private static KitchenScreenLayout scale(KitchenScreenLayout layout, float scale) {
+        return new KitchenScreenLayout(
+                layout.family(),
+                scale(layout.workspaceRegion(), scale),
+                scale(layout.toolRegion(), scale),
+                scale(layout.previewRegion(), scale),
+                scale(layout.outputRegion(), scale),
+                scale(layout.byproductRegion(), scale),
+                scale(layout.metricClusterRegion(), scale),
+                scale(layout.controlStripRegion(), scale),
+                scale(layout.inventoryShelfRegion(), scale),
+                scale(layout.titleRegion(), scale),
+                scale(layout.headerChipRegion(), scale),
+                scale(layout.helperTextRegion(), scale),
+                scale(layout.inventoryLabelRegion(), scale),
+                scale(layout.primaryAction(), scale),
+                scale(layout.secondaryAction(), scale),
+                scale(layout.tertiaryAction(), scale),
+                scale(layout.lowHeatAction(), scale),
+                scale(layout.mediumHeatAction(), scale),
+                scale(layout.highHeatAction(), scale),
+                scale(layout.lowerControlAction(), scale),
+                scale(layout.raiseControlAction(), scale),
+                scale(layout.controlChipRegion(), scale),
+                scale(layout.ovenFieldRegion(), scale)
+        );
+    }
+
+    private static float resolveScale(int screenWidth, int screenHeight, int baseWidth, int baseHeight) {
+        float widthScale = Math.max(0.82F, (screenWidth - 24.0F) / Math.max(1.0F, baseWidth));
+        float heightScale = Math.max(0.82F, (screenHeight - 24.0F) / Math.max(1.0F, baseHeight));
+        float aspect = screenHeight <= 0 ? 1.0F : screenWidth / (float) screenHeight;
+        float aspectModifier = aspect > 2.0F ? 1.06F : aspect < 1.18F ? 0.94F : 1.0F;
+        return Math.max(0.82F, Math.min(1.55F, Math.min(widthScale, heightScale) * aspectModifier));
     }
 
     private static LayoutRegion regionAround(Point center, int width, int height) {

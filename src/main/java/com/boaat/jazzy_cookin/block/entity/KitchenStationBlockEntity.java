@@ -45,7 +45,11 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     public static final int OUTPUT_SLOT = StationCapacityProfile.OUTPUT_SLOT;
     public static final int BYPRODUCT_SLOT = StationCapacityProfile.BYPRODUCT_SLOT;
     private static final int CONTAINER_SIZE = StationCapacityProfile.TOTAL_SLOTS;
-    private static final int DATA_COUNT = 20;
+    private static final int DATA_COUNT = 21;
+    private static final int DEFAULT_MICROWAVE_DURATION_SECONDS = 30;
+    private static final int MIN_MICROWAVE_DURATION_SECONDS = 10;
+    private static final int MAX_MICROWAVE_DURATION_SECONDS = 300;
+    private static final int MICROWAVE_DURATION_STEP_SECONDS = 10;
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private final ContainerData dataAccess = new ContainerData() {
@@ -73,6 +77,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 17 -> snapshot.aeration();
                 case 18 -> snapshot.fragmentation();
                 case 19 -> snapshot.recognizerId();
+                case 20 -> KitchenStationBlockEntity.this.microwaveDurationSeconds;
                 default -> 0;
             };
         }
@@ -86,6 +91,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 3 -> KitchenStationBlockEntity.this.preheatProgress = value;
                 case 5 -> KitchenStationBlockEntity.this.controlSetting = Math.max(0, Math.min(2, value));
                 case 7 -> KitchenStationBlockEntity.this.ovenTemperature = HeatLevel.normalizeOvenTemperature(value);
+                case 20 -> KitchenStationBlockEntity.this.microwaveDurationSeconds = normalizeMicrowaveDuration(value);
                 default -> {
                 }
             }
@@ -101,6 +107,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     private int maxProgress;
     private int preheatProgress;
     private int ovenTemperature = HeatLevel.DEFAULT_OVEN_TEMPERATURE;
+    private int microwaveDurationSeconds = DEFAULT_MICROWAVE_DURATION_SECONDS;
     private int controlSetting = 1;
     private boolean processing;
     private HeatLevel heatLevel = HeatLevel.OFF;
@@ -166,7 +173,15 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return this.ovenTemperature;
     }
 
+    @Override
+    public int simulationMicrowaveDurationSeconds() {
+        return this.microwaveDurationSeconds;
+    }
+
     private HeatLevel currentHeatLevel() {
+        if (this.getStationType() == StationType.MICROWAVE) {
+            return HeatLevel.MEDIUM;
+        }
         return this.getStationType() == StationType.OVEN
                 ? HeatLevel.fromOvenTemperature(this.ovenTemperature)
                 : this.heatLevel;
@@ -195,8 +210,13 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 return true;
             }
         }
+        if (this.getStationType() == StationType.MICROWAVE && buttonId >= 2000) {
+            this.microwaveDurationSeconds = normalizeMicrowaveDuration(buttonId - 2000);
+            this.setChanged();
+            return true;
+        }
 
-        if (this.getStationType().supportsHeat()) {
+        if (this.getStationType().supportsHeat() && this.getStationType() != StationType.MICROWAVE) {
             this.heatLevel = switch (buttonId) {
                 case 1 -> HeatLevel.LOW;
                 case 2 -> HeatLevel.MEDIUM;
@@ -382,6 +402,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         tag.putInt("MaxProgress", this.maxProgress);
         tag.putInt("PreheatProgress", this.preheatProgress);
         tag.putInt("OvenTemperature", this.ovenTemperature);
+        tag.putInt("MicrowaveDurationSeconds", this.microwaveDurationSeconds);
         tag.putInt("ControlSetting", this.controlSetting);
         tag.putBoolean("Processing", this.processing);
         tag.putString("HeatLevel", this.heatLevel.getSerializedName());
@@ -405,6 +426,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.ovenTemperature = tag.contains("OvenTemperature")
                 ? HeatLevel.normalizeOvenTemperature(tag.getInt("OvenTemperature"))
                 : HeatLevel.DEFAULT_OVEN_TEMPERATURE;
+        this.microwaveDurationSeconds = tag.contains("MicrowaveDurationSeconds")
+                ? normalizeMicrowaveDuration(tag.getInt("MicrowaveDurationSeconds"))
+                : DEFAULT_MICROWAVE_DURATION_SECONDS;
         this.controlSetting = Math.max(0, Math.min(2, tag.getInt("ControlSetting")));
         this.processing = tag.getBoolean("Processing");
         this.activeGuidePlayerId = tag.hasUUID("ActiveGuidePlayer") ? tag.getUUID("ActiveGuidePlayer") : null;
@@ -414,6 +438,12 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     private void serverTickSimulation() {
         StationSimulationResolver.serverTick(this);
+    }
+
+    public static int normalizeMicrowaveDuration(int seconds) {
+        int clamped = Math.max(MIN_MICROWAVE_DURATION_SECONDS, Math.min(MAX_MICROWAVE_DURATION_SECONDS, seconds));
+        int steps = Math.round(clamped / (float) MICROWAVE_DURATION_STEP_SECONDS);
+        return Math.max(MIN_MICROWAVE_DURATION_SECONDS, steps * MICROWAVE_DURATION_STEP_SECONDS);
     }
 
     @Override

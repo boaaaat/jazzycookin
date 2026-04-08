@@ -39,7 +39,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 containerId,
                 playerInventory,
                 new SimpleContainer(StationCapacityProfile.TOTAL_SLOTS),
-                new SimpleContainerData(20),
+                new SimpleContainerData(21),
                 readStationType(extraData),
                 ContainerLevelAccess.NULL
         );
@@ -73,7 +73,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this.capacity = this.uiProfile.capacity();
 
         checkContainerSize(container, StationCapacityProfile.TOTAL_SLOTS);
-        checkContainerDataCount(data, 20);
+        checkContainerDataCount(data, 21);
         container.startOpen(playerInventory.player);
 
         for (int inputIndex = 0; inputIndex < this.capacity.inputCount(); inputIndex++) {
@@ -194,6 +194,10 @@ public class KitchenStationMenu extends AbstractContainerMenu {
 
     public int executionMode() {
         return this.data.get(8);
+    }
+
+    public int microwaveDurationSeconds() {
+        return this.stationType == StationType.MICROWAVE ? Math.max(10, this.data.get(20)) : 0;
     }
 
     public boolean simulationMode() {

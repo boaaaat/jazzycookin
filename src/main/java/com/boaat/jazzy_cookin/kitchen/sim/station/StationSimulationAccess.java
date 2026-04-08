@@ -20,6 +20,10 @@ public interface StationSimulationAccess {
 
     int simulationPreheatProgress();
 
+    default int simulationMicrowaveDurationSeconds() {
+        return 30;
+    }
+
     int simulationProgress();
 
     int simulationMaxProgress();

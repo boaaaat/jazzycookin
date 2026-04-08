@@ -19,7 +19,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorageMenu> {
-    private final StorageUiProfile profile;
+    private final StorageUiProfile baseProfile;
+    private StorageUiProfile profile;
     private final List<PantryTabButton> pantryTabs = new ArrayList<>();
     private Button recipeBookButton;
     private Button previousPageButton;
@@ -27,7 +28,8 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
     public KitchenStorageScreen(KitchenStorageMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.profile = menu.uiProfile();
+        this.baseProfile = menu.uiProfile();
+        this.profile = this.baseProfile;
         this.imageWidth = this.profile.width();
         this.imageHeight = this.profile.height();
         this.inventoryLabelY = this.profile.inventoryLabelRegion().y();
@@ -35,12 +37,20 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
     @Override
     protected void init() {
+        this.profile = this.baseProfile.resolve(this.width, this.height);
+        this.imageWidth = this.profile.width();
+        this.imageHeight = this.profile.height();
+        this.inventoryLabelY = this.profile.inventoryLabelRegion().y();
         super.init();
         this.leftPos = Math.max(0, this.leftPos);
         this.topPos = Math.max(0, this.topPos);
+        this.repositionSlots();
         this.pantryTabs.clear();
+        int recipeButtonWidth = Math.max(72, this.font.width(Component.translatable("screen.jazzycookin.recipe_book_short")) + 16);
         this.recipeBookButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.recipe_book_short"),
-                button -> RecipeBookClientState.openRecipeBook()).bounds(this.leftPos + this.imageWidth - 68, this.topPos + 8, 58, 18).build());
+                button -> RecipeBookClientState.openRecipeBook())
+                .bounds(this.leftPos + this.imageWidth - recipeButtonWidth - 10, this.topPos + 8, recipeButtonWidth, 18)
+                .build());
         if (this.menu.isPantry()) {
             LayoutRegion up = this.profile.pageUpBounds();
             LayoutRegion down = this.profile.pageDownBounds();
@@ -57,6 +67,27 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
             }
             this.updateTabStates();
             this.updatePageButtons();
+        }
+    }
+
+    private void repositionSlots() {
+        for (int row = 0; row < 2; row++) {
+            for (int col = 0; col < 9; col++) {
+                int slotIndex = col + row * 9;
+                SlotPositioning.setPosition(this.menu.getSlot(slotIndex), this.profile.storageStartX() + col * 18, this.profile.storageStartY() + row * 18);
+            }
+        }
+        int inventoryBase = 18;
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                int slotIndex = inventoryBase + col + row * 9;
+                SlotPositioning.setPosition(this.menu.getSlot(slotIndex), this.profile.playerInventoryStartX() + col * 18, this.profile.playerInventoryStartY() + row * 18);
+            }
+        }
+        int hotbarBase = inventoryBase + 27;
+        for (int col = 0; col < 9; col++) {
+            int slotIndex = hotbarBase + col;
+            SlotPositioning.setPosition(this.menu.getSlot(slotIndex), this.profile.playerInventoryStartX() + col * 18, this.profile.hotbarY());
         }
     }
 
@@ -126,13 +157,21 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
             this.drawPageButton(guiGraphics, this.previousPageButton, this.profile.pageUpBounds(), mouseX, mouseY, "^");
             this.drawPageButton(guiGraphics, this.nextPageButton, this.profile.pageDownBounds(), mouseX, mouseY, "v");
         }
+
+        LayoutRegion chipBounds = this.headerChipBounds();
+        if (chipBounds != null) {
+            JazzyGuiRenderer.drawChip(guiGraphics, left + chipBounds.x(), top + chipBounds.y(), chipBounds.width(), chipBounds.height(), false, storageTheme());
+        }
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(this.font, this.title, this.profile.titleRegion().x(), this.profile.titleRegion().y(), JazzyGuiRenderer.TITLE_TEXT, false);
-        this.drawCenteredLabel(guiGraphics, this.menu.storageType().displayName(), this.profile.headerChipRegion().centerX(), this.profile.headerChipRegion().y() + 4,
-                JazzyGuiRenderer.TEXT, false);
+        LayoutRegion chipBounds = this.headerChipBounds();
+        if (chipBounds != null) {
+            this.drawCenteredTrimmedLabel(guiGraphics, this.menu.storageType().displayName(), chipBounds.centerX(), chipBounds.y() + 4,
+                    chipBounds.width() - 10, JazzyGuiRenderer.TEXT, false);
+        }
 
         guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.storage_short"),
                 this.profile.storageRegion().x() + 8, this.profile.storageRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
@@ -178,6 +217,11 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
     private void drawCenteredLabel(GuiGraphics guiGraphics, Component label, int centerX, int y, int color, boolean shadow) {
         guiGraphics.drawString(this.font, label, centerX - this.font.width(label) / 2, y, color, shadow);
+    }
+
+    private void drawCenteredTrimmedLabel(GuiGraphics guiGraphics, Component label, int centerX, int y, int maxWidth, int color, boolean shadow) {
+        String text = this.font.plainSubstrByWidth(label.getString(), Math.max(0, maxWidth));
+        guiGraphics.drawString(this.font, text, centerX - this.font.width(text) / 2, y, color, shadow);
     }
 
     private void drawRightAlignedLabel(GuiGraphics guiGraphics, Component label, int rightX, int y, int color, boolean shadow) {
@@ -256,7 +300,18 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     private boolean isMouseOverTab(PantryTabButton tab, double mouseX, double mouseY) {
         int x = tab.button().getX();
         int y = tab.button().getY();
-        return mouseX >= x && mouseX < x + StorageUiProfile.TAB_SIZE && mouseY >= y && mouseY < y + StorageUiProfile.TAB_SIZE;
+        return mouseX >= x && mouseX < x + tab.button().getWidth() && mouseY >= y && mouseY < y + tab.button().getHeight();
+    }
+
+    private LayoutRegion headerChipBounds() {
+        LayoutRegion chipRegion = this.profile.headerChipRegion();
+        int maxRight = this.recipeBookButton == null ? chipRegion.right() : this.recipeBookButton.getX() - this.leftPos - 8;
+        int minLeft = Math.max(chipRegion.x(), this.profile.titleRegion().right() + 10);
+        int width = maxRight - minLeft;
+        if (width < 48) {
+            return null;
+        }
+        return new LayoutRegion(minLeft, chipRegion.y(), width, chipRegion.height());
     }
 
     private record PantryTabButton(Button button, PantrySortTab tab) {

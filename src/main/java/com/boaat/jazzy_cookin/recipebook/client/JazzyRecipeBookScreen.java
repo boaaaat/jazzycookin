@@ -47,6 +47,7 @@ public class JazzyRecipeBookScreen extends Screen {
     private Button stateForwardButton;
     private Button chainBackButton;
     private Button chainForwardButton;
+    private float panelScale = 1.0F;
     private int panelLeft;
     private int panelTop;
     private int panelW;
@@ -72,20 +73,21 @@ public class JazzyRecipeBookScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.panelW = Math.min(DESIGN_PANEL_WIDTH, this.width - 8);
-        this.panelH = Math.min(DESIGN_PANEL_HEIGHT, this.height - 8);
-        this.leftW = this.panelW * DESIGN_LEFT_WIDTH / DESIGN_PANEL_WIDTH;
+        this.panelScale = this.resolvePanelScale();
+        this.panelW = Math.min(this.width - 8, Math.round(DESIGN_PANEL_WIDTH * this.panelScale));
+        this.panelH = Math.min(this.height - 8, Math.round(DESIGN_PANEL_HEIGHT * this.panelScale));
+        this.leftW = Math.max(136, Math.round(DESIGN_LEFT_WIDTH * this.panelScale));
         this.panelLeft = Math.max(4, (this.width - this.panelW) / 2);
         this.panelTop = Math.max(4, (this.height - this.panelH) / 2);
-        this.itemListBottom = Math.max(ITEM_LIST_TOP + ITEM_ROW_HEIGHT, this.panelH - 14);
-        this.stepListBottom = Math.max(STEP_LIST_TOP + STEP_ROW_HEIGHT, this.panelH - 38);
+        this.itemListBottom = Math.max(this.sy(ITEM_LIST_TOP) + this.sy(ITEM_ROW_HEIGHT), this.panelH - this.sy(14));
+        this.stepListBottom = Math.max(this.sy(STEP_LIST_TOP) + this.sy(STEP_ROW_HEIGHT), this.panelH - this.sy(38));
 
         this.searchBox = this.addRenderableWidget(new EditBox(
                 this.font,
-                this.panelLeft + 10,
-                this.panelTop + SEARCH_TOP,
-                this.leftW - 20,
-                16,
+                this.panelLeft + this.sx(10),
+                this.panelTop + this.sy(SEARCH_TOP),
+                this.leftW - this.sx(20),
+                Math.max(16, this.sy(16)),
                 Component.translatable("screen.jazzycookin.recipe_book.search")
         ));
         this.searchBox.setResponder(value -> {
@@ -95,19 +97,19 @@ public class JazzyRecipeBookScreen extends Screen {
         });
 
         this.stateBackButton = this.addRenderableWidget(Button.builder(Component.literal("<"), button -> this.cycleState(-1))
-                .bounds(this.panelLeft + this.leftW + 18, this.panelTop + 34, 18, 18)
+                .bounds(this.panelLeft + this.leftW + this.sx(18), this.panelTop + this.sy(34), this.sx(18), this.sy(18))
                 .build());
         this.stateForwardButton = this.addRenderableWidget(Button.builder(Component.literal(">"), button -> this.cycleState(1))
-                .bounds(this.panelLeft + this.panelW - 28, this.panelTop + 34, 18, 18)
+                .bounds(this.panelLeft + this.panelW - this.sx(28), this.panelTop + this.sy(34), this.sx(18), this.sy(18))
                 .build());
         this.chainBackButton = this.addRenderableWidget(Button.builder(Component.literal("<"), button -> this.cycleChain(-1))
-                .bounds(this.panelLeft + this.leftW + 18, this.panelTop + 56, 18, 18)
+                .bounds(this.panelLeft + this.leftW + this.sx(18), this.panelTop + this.sy(56), this.sx(18), this.sy(18))
                 .build());
         this.chainForwardButton = this.addRenderableWidget(Button.builder(Component.literal(">"), button -> this.cycleChain(1))
-                .bounds(this.panelLeft + this.panelW - 28, this.panelTop + 56, 18, 18)
+                .bounds(this.panelLeft + this.panelW - this.sx(28), this.panelTop + this.sy(56), this.sx(18), this.sy(18))
                 .build());
         this.pinButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> this.togglePin())
-                .bounds(this.panelLeft + this.leftW + 18, this.panelTop + this.panelH - 30, this.panelW - this.leftW - 28, 20)
+                .bounds(this.panelLeft + this.leftW + this.sx(18), this.panelTop + this.panelH - this.sy(30), this.panelW - this.leftW - this.sx(28), this.sy(20))
                 .build());
 
         this.refreshEntries();
@@ -460,7 +462,7 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private int visibleStepRows() {
-        return Math.max(1, (this.stepListBottom - STEP_LIST_TOP) / STEP_ROW_HEIGHT);
+        return Math.max(1, (this.stepListBottom - this.sy(STEP_LIST_TOP)) / this.sy(STEP_ROW_HEIGHT));
     }
 
     private void selectStep(String stepId) {
@@ -489,7 +491,7 @@ public class JazzyRecipeBookScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (this.isMouseOverItemList(mouseX, mouseY)) {
-            int visibleRows = (this.itemListBottom - ITEM_LIST_TOP) / ITEM_ROW_HEIGHT;
+            int visibleRows = (this.itemListBottom - this.sy(ITEM_LIST_TOP)) / this.sy(ITEM_ROW_HEIGHT);
             int maxScroll = Math.max(0, this.filteredEntries.size() - visibleRows);
             this.itemScroll = Math.max(0, Math.min(maxScroll, this.itemScroll + (scrollY > 0 ? -1 : 1)));
             return true;
@@ -506,8 +508,8 @@ public class JazzyRecipeBookScreen extends Screen {
         if (!this.isMouseOverItemList(mouseX, mouseY)) {
             return false;
         }
-        int relativeY = (int) mouseY - (this.panelTop + ITEM_LIST_TOP);
-        int row = relativeY / ITEM_ROW_HEIGHT;
+        int relativeY = (int) mouseY - (this.panelTop + this.sy(ITEM_LIST_TOP));
+        int row = relativeY / this.sy(ITEM_ROW_HEIGHT);
         int index = this.itemScroll + row;
         if (index < 0 || index >= this.filteredEntries.size()) {
             return false;
@@ -534,13 +536,13 @@ public class JazzyRecipeBookScreen extends Screen {
 
         VisibleStep visibleStep = visibleSteps.get(index);
         if (visibleStep.expandable()) {
-            int indent = visibleStep.depth() * STEP_INDENT;
-            int numX = this.stepCardLeft() + 6 + indent;
+            int indent = visibleStep.depth() * this.sx(STEP_INDENT);
+            int numX = this.stepCardLeft() + this.sx(6) + indent;
             int numWidth = this.font.width((index + 1) + ".") + 4;
             int arrowLeft = numX + numWidth;
-            int arrowRight = arrowLeft + 10;
-            int cardTop = this.panelTop + STEP_LIST_TOP + 4 + row * STEP_ROW_HEIGHT;
-            if (mouseX >= arrowLeft && mouseX < arrowRight && mouseY >= cardTop && mouseY < cardTop + STEP_ROW_HEIGHT - 2) {
+            int arrowRight = arrowLeft + this.sx(STEP_EXPAND_SIZE);
+            int cardTop = this.panelTop + this.sy(STEP_LIST_TOP) + this.sy(4) + row * this.sy(STEP_ROW_HEIGHT);
+            if (mouseX >= arrowLeft && mouseX < arrowRight && mouseY >= cardTop && mouseY < cardTop + this.sy(STEP_ROW_HEIGHT) - 2) {
                 boolean expanded = !visibleStep.expanded();
                 this.expandedSteps.put(visibleStep.step().id(), expanded);
                 if (!expanded && this.currentPlan().filter(plan -> this.isDescendantStep(plan, visibleStep.step().id(), this.selectedStepId)).isPresent()) {
@@ -575,10 +577,10 @@ public class JazzyRecipeBookScreen extends Screen {
         guiGraphics.fill(0, 0, this.width, this.height, 0x80060810);
         guiGraphics.fill(this.panelLeft, this.panelTop, this.panelLeft + this.panelW, this.panelTop + this.panelH, 0xFF101318);
         guiGraphics.fill(this.panelLeft + 1, this.panelTop + 1, this.panelLeft + this.panelW - 1, this.panelTop + this.panelH - 1, 0xFF181C22);
-        guiGraphics.fill(this.panelLeft + 1, this.panelTop + 1, this.panelLeft + this.panelW - 1, this.panelTop + HEADER_HEIGHT, 0xFF1A3040);
-        guiGraphics.fill(this.panelLeft + 1, this.panelTop + HEADER_HEIGHT, this.panelLeft + this.panelW - 1, this.panelTop + HEADER_HEIGHT + 2, 0xFF5AAAB1);
-        guiGraphics.fill(this.panelLeft + this.leftW, this.panelTop + HEADER_HEIGHT + 2, this.panelLeft + this.leftW + 1, this.panelTop + this.panelH - 1, 0xFF2A3442);
-        guiGraphics.drawString(this.font, this.title, this.panelLeft + 10, this.panelTop + 6, 0xFFF0F2F5, false);
+        guiGraphics.fill(this.panelLeft + 1, this.panelTop + 1, this.panelLeft + this.panelW - 1, this.panelTop + this.sy(HEADER_HEIGHT), 0xFF1A3040);
+        guiGraphics.fill(this.panelLeft + 1, this.panelTop + this.sy(HEADER_HEIGHT), this.panelLeft + this.panelW - 1, this.panelTop + this.sy(HEADER_HEIGHT) + 2, 0xFF67CED7);
+        guiGraphics.fill(this.panelLeft + this.leftW, this.panelTop + this.sy(HEADER_HEIGHT) + 2, this.panelLeft + this.leftW + 1, this.panelTop + this.panelH - 1, 0xFF354150);
+        guiGraphics.drawString(this.font, this.title, this.panelLeft + this.sx(10), this.panelTop + this.sy(6), 0xFFF4F7FB, false);
 
         this.renderItemList(guiGraphics, mouseX, mouseY);
         this.renderDetails(guiGraphics);
@@ -594,29 +596,31 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private void renderItemList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.catalog"), this.panelLeft + 10, this.panelTop + 26, 0xFF8C95A6, false);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.catalog"), this.panelLeft + this.sx(10), this.panelTop + this.sy(26), 0xFFAEB8C9, false);
         if (this.filteredEntries.isEmpty()) {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.no_matches"), this.panelLeft + 10, this.panelTop + ITEM_LIST_TOP + 8, 0xFF606878, false);
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.no_matches"),
+                    this.panelLeft + this.sx(10), this.panelTop + this.sy(ITEM_LIST_TOP) + this.sy(8), 0xFF9099A8, false);
             return;
         }
 
-        int visibleRows = (this.itemListBottom - ITEM_LIST_TOP) / ITEM_ROW_HEIGHT;
+        int visibleRows = (this.itemListBottom - this.sy(ITEM_LIST_TOP)) / this.sy(ITEM_ROW_HEIGHT);
         for (int row = 0; row < visibleRows; row++) {
             int index = this.itemScroll + row;
             if (index >= this.filteredEntries.size()) {
                 break;
             }
             JazzyRecipeBookPlanner.CatalogEntry entry = this.filteredEntries.get(index);
-            int y = this.panelTop + ITEM_LIST_TOP + row * ITEM_ROW_HEIGHT;
+            int y = this.panelTop + this.sy(ITEM_LIST_TOP) + row * this.sy(ITEM_ROW_HEIGHT);
             boolean selected = entry.itemId().equals(this.selectedItemId);
             int bg = selected ? 0xFF242E3A : 0x44181C22;
             if (this.isMouseOverItemList(mouseX, mouseY) && this.clickedItemRow(mouseY) == row) {
                 bg = 0xFF2A3442;
             }
-            guiGraphics.fill(this.panelLeft + 8, y, this.panelLeft + this.leftW - 8, y + ITEM_ROW_HEIGHT - 2, bg);
+            guiGraphics.fill(this.panelLeft + this.sx(8), y, this.panelLeft + this.leftW - this.sx(8), y + this.sy(ITEM_ROW_HEIGHT) - 2, bg);
             ItemStack icon = new ItemStack(entry.item());
-            guiGraphics.renderItem(icon, this.panelLeft + 12, y + 1);
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.catalogLabel(entry), this.leftW - 34), this.panelLeft + 32, y + 5, 0xFFDCE0E8, false);
+            guiGraphics.renderItem(icon, this.panelLeft + this.sx(12), y + Math.max(1, this.sy(1)));
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.catalogLabel(entry), this.leftW - this.sx(40)),
+                    this.panelLeft + this.sx(32), y + this.sy(5), 0xFFE8EDF6, false);
         }
     }
 
@@ -629,24 +633,25 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private void renderDetails(GuiGraphics guiGraphics) {
-        int x = this.panelLeft + this.leftW + 10;
-        int y = this.panelTop + 26;
+        int x = this.panelLeft + this.leftW + this.sx(10);
+        int y = this.panelTop + this.sy(26);
         if (this.selectedItemId == null) {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.empty"), x, y, 0xFF606878, false);
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.empty"), x, y, 0xFF9099A8, false);
             return;
         }
 
         ItemStack stack = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(this.selectedItemId));
         guiGraphics.renderItem(stack, x, y);
-        guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(stack.getHoverName().getString(), this.panelW - this.leftW - 46), x + 20, y + 4, 0xFFF0F2F5, false);
+        guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(stack.getHoverName().getString(), this.panelW - this.leftW - this.sx(48)),
+                x + this.sx(20), y + this.sy(4), 0xFFF4F7FB, false);
 
         if (this.selectedState != null) {
             guiGraphics.drawString(
                     this.font,
                     Component.translatable("screen.jazzycookin.recipe_book.state", Component.translatable("state.jazzycookin." + this.selectedState.getSerializedName())),
-                    x + 22,
-                    this.panelTop + 40,
-                    0xFF8C95A6,
+                    x + this.sx(22),
+                    this.panelTop + this.sy(40),
+                    0xFFAEB8C9,
                     false
             );
         }
@@ -655,19 +660,20 @@ public class JazzyRecipeBookScreen extends Screen {
             guiGraphics.drawString(
                     this.font,
                     Component.translatable("screen.jazzycookin.recipe_book.path", RecipeBookClientState.chainLabel(this.selectedChainKey)),
-                    x + 22,
-                    this.panelTop + 62,
-                    0xFF8C95A6,
+                    x + this.sx(22),
+                    this.panelTop + this.sy(62),
+                    0xFFAEB8C9,
                     false
             );
         }
 
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.steps"), x, this.panelTop + STEP_LIST_TOP - 12, 0xFF8C95A6, false);
-        guiGraphics.fill(x, this.panelTop + STEP_LIST_TOP, this.panelLeft + this.panelW - 10, this.panelTop + this.stepListBottom, 0x44101418);
+        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.steps"), x, this.panelTop + this.sy(STEP_LIST_TOP) - this.sy(12), 0xFFAEB8C9, false);
+        guiGraphics.fill(x, this.panelTop + this.sy(STEP_LIST_TOP), this.panelLeft + this.panelW - this.sx(10), this.panelTop + this.stepListBottom, 0x44101418);
 
         Optional<JazzyRecipeBookPlanner.Plan> optionalPlan = this.currentPlan();
         if (optionalPlan.isEmpty()) {
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.no_path"), x + 6, this.panelTop + STEP_LIST_TOP + 8, 0xFF606878, false);
+            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.recipe_book.no_path"),
+                    x + this.sx(6), this.panelTop + this.sy(STEP_LIST_TOP) + this.sy(8), 0xFF9099A8, false);
             return;
         }
 
@@ -675,7 +681,7 @@ public class JazzyRecipeBookScreen extends Screen {
         Set<String> completed = this.currentCompletedStepIds();
         List<VisibleStep> visibleSteps = this.currentVisibleSteps();
         int visibleRows = this.visibleStepRows();
-        int rowY = this.panelTop + STEP_LIST_TOP + 4;
+        int rowY = this.panelTop + this.sy(STEP_LIST_TOP) + this.sy(4);
         for (int row = 0; row < visibleRows; row++) {
             int index = this.stepScroll + row;
             if (index >= visibleSteps.size()) {
@@ -686,35 +692,35 @@ public class JazzyRecipeBookScreen extends Screen {
             JazzyRecipeBookPlanner.PlanStep step = visibleStep.step();
             boolean complete = completed.contains(step.id());
             boolean selected = step.id().equals(this.selectedStepId);
-            int cardTop = rowY + row * STEP_ROW_HEIGHT;
-            guiGraphics.fill(this.stepCardLeft(), cardTop, this.stepCardRight(), cardTop + STEP_ROW_HEIGHT - 2, this.stepBackgroundColor(complete, selected));
+            int cardTop = rowY + row * this.sy(STEP_ROW_HEIGHT);
+            guiGraphics.fill(this.stepCardLeft(), cardTop, this.stepCardRight(), cardTop + this.sy(STEP_ROW_HEIGHT) - 2, this.stepBackgroundColor(complete, selected));
             if (selected) {
-                guiGraphics.fill(this.stepCardLeft(), cardTop, this.stepCardLeft() + 2, cardTop + STEP_ROW_HEIGHT - 2, complete ? 0xFF4ADE80 : 0xFF5AAAB1);
+                guiGraphics.fill(this.stepCardLeft(), cardTop, this.stepCardLeft() + 2, cardTop + this.sy(STEP_ROW_HEIGHT) - 2, complete ? 0xFF4ADE80 : 0xFF5AAAB1);
             }
 
-            int indent = visibleStep.depth() * STEP_INDENT;
+            int indent = visibleStep.depth() * this.sx(STEP_INDENT);
             for (int depth = 0; depth < visibleStep.depth(); depth++) {
-                int guideX = this.stepCardLeft() + 8 + depth * STEP_INDENT;
-                guiGraphics.fill(guideX, cardTop + 2, guideX + 1, cardTop + STEP_ROW_HEIGHT - 4, 0x332A3442);
+                int guideX = this.stepCardLeft() + this.sx(8) + depth * this.sx(STEP_INDENT);
+                guiGraphics.fill(guideX, cardTop + 2, guideX + 1, cardTop + this.sy(STEP_ROW_HEIGHT) - 4, 0x33404D60);
             }
 
-            int numX = this.stepCardLeft() + 6 + indent;
-            guiGraphics.drawString(this.font, Component.literal((index + 1) + "."), numX, cardTop + 4,
+            int numX = this.stepCardLeft() + this.sx(6) + indent;
+            guiGraphics.drawString(this.font, Component.literal((index + 1) + "."), numX, cardTop + this.sy(4),
                     complete ? 0xFF4ADE80 : 0xFFF0B429, false);
 
             int afterNum = numX + this.font.width((index + 1) + ".") + 4;
             if (visibleStep.expandable()) {
                 String arrow = visibleStep.expanded() ? "\u25BC" : "\u25B6";
-                guiGraphics.drawString(this.font, Component.literal(arrow), afterNum, cardTop + 4, 0xFF8C95A6, false);
-                afterNum += 10;
+                guiGraphics.drawString(this.font, Component.literal(arrow), afterNum, cardTop + this.sy(4), 0xFFAEB8C9, false);
+                afterNum += this.sx(STEP_EXPAND_SIZE);
             }
 
-            int iconX = afterNum + 2;
-            guiGraphics.renderItem(step.outputStack(), iconX, cardTop + 4);
-            int textX = iconX + 18;
-            int textWidth = Math.max(10, this.stepCardRight() - textX - 4);
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(step.outputStack().getHoverName().getString(), textWidth), textX, cardTop + 3, 0xFFDCE0E8, false);
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.stepDetail(step, visibleStep), textWidth), textX, cardTop + 13, 0xFF8C95A6, false);
+            int iconX = afterNum + this.sx(2);
+            guiGraphics.renderItem(step.outputStack(), iconX, cardTop + this.sy(4));
+            int textX = iconX + this.sx(18);
+            int textWidth = Math.max(10, this.stepCardRight() - textX - this.sx(4));
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(step.outputStack().getHoverName().getString(), textWidth), textX, cardTop + this.sy(3), 0xFFE8EDF6, false);
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.stepDetail(step, visibleStep), textWidth), textX, cardTop + this.sy(13), 0xFFAEB8C9, false);
         }
     }
 
@@ -745,15 +751,28 @@ public class JazzyRecipeBookScreen extends Screen {
         }
         if (!step.options().isEmpty()) {
             JazzyRecipeBookPlanner.StepOption option = step.options().get(0);
+            List<String> parts = new ArrayList<>();
             if (option.station() != null) {
-                return option.station().displayName().getString();
+                parts.add(option.station().displayName().getString());
+            } else if (option.method() != null) {
+                parts.add(option.method().displayName().getString());
             }
             if (!option.requirements().isEmpty()) {
                 JazzyRecipeBookPlanner.Requirement requirement = option.requirements().get(0);
                 ItemStack choice = requirement.choices().isEmpty() ? ItemStack.EMPTY : requirement.choices().get(0);
-                return choice.isEmpty()
-                        ? Component.translatable("screen.jazzycookin.recipe_book.materials").getString()
-                        : choice.getHoverName().getString();
+                if (!choice.isEmpty()) {
+                    String requirementText = (requirement.count() > 1 ? requirement.count() + "x " : "") + choice.getHoverName().getString();
+                    if (option.requirements().size() > 1) {
+                        requirementText += " +" + (option.requirements().size() - 1);
+                    }
+                    parts.add(requirementText);
+                }
+            }
+            if (option.requiresPreheat()) {
+                parts.add("Preheat");
+            }
+            if (!parts.isEmpty()) {
+                return String.join(" | ", parts);
             }
             if (!option.notes().isEmpty()) {
                 return option.notes().get(0);
@@ -763,21 +782,35 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private boolean isMouseOverItemList(double mouseX, double mouseY) {
-        return mouseX >= this.panelLeft + 8 && mouseX < this.panelLeft + this.leftW - 8
-                && mouseY >= this.panelTop + ITEM_LIST_TOP && mouseY < this.panelTop + this.itemListBottom;
+        return mouseX >= this.panelLeft + this.sx(8) && mouseX < this.panelLeft + this.leftW - this.sx(8)
+                && mouseY >= this.panelTop + this.sy(ITEM_LIST_TOP) && mouseY < this.panelTop + this.itemListBottom;
     }
 
     private boolean isMouseOverStepList(double mouseX, double mouseY) {
-        int x = this.panelLeft + this.leftW + 10;
-        return mouseX >= x && mouseX < this.panelLeft + this.panelW - 10
-                && mouseY >= this.panelTop + STEP_LIST_TOP && mouseY < this.panelTop + this.stepListBottom;
+        int x = this.panelLeft + this.leftW + this.sx(10);
+        return mouseX >= x && mouseX < this.panelLeft + this.panelW - this.sx(10)
+                && mouseY >= this.panelTop + this.sy(STEP_LIST_TOP) && mouseY < this.panelTop + this.stepListBottom;
     }
 
     private int clickedItemRow(double mouseY) {
-        return ((int) mouseY - (this.panelTop + ITEM_LIST_TOP)) / ITEM_ROW_HEIGHT;
+        return ((int) mouseY - (this.panelTop + this.sy(ITEM_LIST_TOP))) / this.sy(ITEM_ROW_HEIGHT);
     }
 
     private int clickedStepRow(double mouseY) {
-        return ((int) mouseY - (this.panelTop + STEP_LIST_TOP + 4)) / STEP_ROW_HEIGHT;
+        return ((int) mouseY - (this.panelTop + this.sy(STEP_LIST_TOP) + this.sy(4))) / this.sy(STEP_ROW_HEIGHT);
+    }
+
+    private int sx(int designPx) {
+        return Math.max(1, Math.round(designPx * this.panelScale));
+    }
+
+    private int sy(int designPx) {
+        return Math.max(1, Math.round(designPx * this.panelScale));
+    }
+
+    private float resolvePanelScale() {
+        float widthScale = (this.width - 24.0F) / DESIGN_PANEL_WIDTH;
+        float heightScale = (this.height - 24.0F) / DESIGN_PANEL_HEIGHT;
+        return Math.max(0.92F, Math.min(1.85F, Math.min(widthScale, heightScale)));
     }
 }

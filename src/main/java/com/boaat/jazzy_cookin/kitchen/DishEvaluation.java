@@ -54,11 +54,17 @@ public final class DishEvaluation {
             List<ItemStack> inputs,
             ItemStack toolStack,
             HeatLevel actualHeat,
-            boolean preheated
+            boolean preheated,
+            float inputMatchScore
     ) {
         AggregateStats stats = aggregate(level, inputs);
         ToolProfile actualProfile = ToolProfile.fromStack(toolStack);
         List<ToolProfile> allowedTools = recipe.allowedToolsOrPreferred();
+        float normalizedInputScore = Mth.clamp(inputMatchScore, 0.0F, 1.0F);
+        float matchPenalty = (1.0F - normalizedInputScore) * 0.28F;
+        float repeatPenalty = Mth.clamp(Math.max(0, stats.maxDepth() - 1) * 0.05F, 0.0F, 0.22F);
+        float microwaveQualityPenalty = recipe.method() == KitchenMethod.MICROWAVE ? 0.10F : 0.0F;
+        int enjoymentPenalty = (recipe.method() == KitchenMethod.MICROWAVE ? 1 : 0) + Math.min(2, Math.max(0, stats.maxDepth() - 2));
 
         float toolAccuracy = 0.0F;
         float toolQuality = 0.0F;
@@ -83,13 +89,16 @@ public final class DishEvaluation {
         float preheatAccuracy = recipe.requiresPreheat() ? (preheated ? 0.10F : -0.14F) : 0.02F;
         MethodAdjustment adjustment = methodAdjustment(recipe.method(), heatAccuracy, toolAccuracy, recipe.mode());
         float recipeAccuracy = Mth.clamp(
-                stats.recipeAccuracy() * 0.45F
-                        + 0.45F
+                stats.recipeAccuracy() * 0.36F
+                        + normalizedInputScore * 0.28F
+                        + 0.18F
                         + toolAccuracy
                         + heatAccuracy
                         + preheatAccuracy
                         + adjustment.recipeAccuracy()
-                        + output.recipeAccuracyDelta(),
+                        + output.recipeAccuracyDelta()
+                        - repeatPenalty
+                        - matchPenalty,
                 0.0F,
                 1.0F
         );
@@ -102,7 +111,10 @@ public final class DishEvaluation {
                         + toolQuality
                         + heatQuality
                         + adjustment.quality()
-                        + freshnessPenalty,
+                        + freshnessPenalty
+                        - repeatPenalty
+                        - matchPenalty
+                        - microwaveQualityPenalty,
                 0.05F,
                 1.0F
         );
@@ -120,18 +132,37 @@ public final class DishEvaluation {
                 Mth.clamp(stats.aeration() + output.aerationDelta() + adjustment.aeration(), 0.0F, 1.0F),
                 stats.maxDepth() + 1,
                 Math.max(output.nourishment(), stats.nourishment()),
-                Math.max(output.enjoyment(), stats.enjoyment())
+                Math.max(0, Math.max(output.enjoyment(), stats.enjoyment()) - enjoymentPenalty)
         );
     }
 
-    public static IngredientStateData evaluatePlate(Level level, KitchenPlateRecipe recipe, List<ItemStack> inputs) {
+    public static IngredientStateData evaluatePlate(Level level, KitchenPlateRecipe recipe, List<ItemStack> inputs, float inputMatchScore) {
         AggregateStats stats = aggregate(level, inputs);
-        float plateAccuracy = Mth.clamp(stats.recipeAccuracy() * 0.65F + 0.24F + recipe.output().recipeAccuracyDelta(), 0.0F, 1.0F);
+        float normalizedInputScore = Mth.clamp(inputMatchScore, 0.0F, 1.0F);
+        float matchPenalty = (1.0F - normalizedInputScore) * 0.24F;
+        float plateAccuracy = Mth.clamp(
+                stats.recipeAccuracy() * 0.48F
+                        + normalizedInputScore * 0.34F
+                        + 0.14F
+                        + recipe.output().recipeAccuracyDelta()
+                        - matchPenalty,
+                0.0F,
+                1.0F
+        );
 
         return new IngredientStateData(
                 recipe.output().state(),
                 stats.createdTick(),
-                Mth.clamp(stats.quality() * 0.42F + stats.freshness() * 0.16F + plateAccuracy * 0.22F + recipe.output().qualityBonus() + 0.08F, 0.05F, 1.0F),
+                Mth.clamp(
+                        stats.quality() * 0.42F
+                                + stats.freshness() * 0.16F
+                                + plateAccuracy * 0.22F
+                                + recipe.output().qualityBonus()
+                                + 0.08F
+                                - matchPenalty,
+                        0.05F,
+                        1.0F
+                ),
                 plateAccuracy,
                 Mth.clamp(stats.flavor() + recipe.output().flavorDelta() + 0.03F, 0.0F, 1.0F),
                 Mth.clamp(stats.texture() + recipe.output().textureDelta() + 0.05F, 0.0F, 1.0F),
@@ -141,7 +172,7 @@ public final class DishEvaluation {
                 Mth.clamp(stats.aeration() + recipe.output().aerationDelta(), 0.0F, 1.0F),
                 stats.maxDepth() + 1,
                 Math.max(recipe.output().nourishment(), stats.nourishment()),
-                Math.max(recipe.output().enjoyment(), stats.enjoyment())
+                Math.max(0, Math.max(recipe.output().enjoyment(), stats.enjoyment()) - Math.max(0, Math.round(matchPenalty * 3.0F)))
         );
     }
 

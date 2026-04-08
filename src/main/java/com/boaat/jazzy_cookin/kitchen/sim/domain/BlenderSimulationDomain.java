@@ -99,7 +99,12 @@ public final class BlenderSimulationDomain implements StationSimulationDomain {
                 || analysis.has(JazzyItems.ingredient(IngredientId.SHELF_STABLE_CREAM).get());
         boolean hasJuiceBase = analysis.has(JazzyItems.MIXED_JUICE.get()) || analysis.has(JazzyItems.LEMON_JUICE.get());
         boolean hasFruitOrVeg = analysis.hasTrait(FoodTrait.FRUIT) || analysis.hasTrait(FoodTrait.VEGETABLE);
+        boolean incompatible = analysis.hasTrait(FoodTrait.PROTEIN)
+                || analysis.hasTrait(FoodTrait.BREAD);
 
+        if (incompatible) {
+            return null;
+        }
         if (hasFruitOrVeg && hasMilk) {
             return new BlendOutcome(JazzyItems.SMOOTHIE_BLEND.get());
         }

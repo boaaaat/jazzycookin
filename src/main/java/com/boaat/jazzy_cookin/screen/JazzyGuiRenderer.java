@@ -11,9 +11,9 @@ import net.minecraft.client.gui.GuiGraphics;
 
 final class JazzyGuiRenderer {
     static final int TITLE_TEXT = 0xF0F2F5;
-    static final int TEXT = 0xDCE0E8;
-    static final int TEXT_MUTED = 0x8C95A6;
-    static final int TEXT_SOFT = 0x606878;
+    static final int TEXT = 0xE7ECF4;
+    static final int TEXT_MUTED = 0xAFB8C8;
+    static final int TEXT_SOFT = 0x8B96A8;
     static final int READY_TEXT = 0x4ADE80;
     static final int BLOCKED_TEXT = 0xF87171;
     static final int ACCENT = 0x5CC8D0;

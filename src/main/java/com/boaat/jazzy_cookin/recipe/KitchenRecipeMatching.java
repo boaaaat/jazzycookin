@@ -58,11 +58,14 @@ final class KitchenRecipeMatching {
     ) {
         int[] matchedSlots = new int[requirements.size()];
         Arrays.fill(matchedSlots, -1);
+        float requiredScore = 0.0F;
         for (int requirementIndex = 0; requirementIndex < requirements.size(); requirementIndex++) {
-            if (requirements.get(requirementIndex).matchScore(inputStacks.get(requirementIndex), gameTime) <= 0.0F) {
+            float matchScore = requirements.get(requirementIndex).matchScore(inputStacks.get(requirementIndex), gameTime);
+            if (matchScore <= 0.0F) {
                 return null;
             }
             matchedSlots[requirementIndex] = requirementIndex;
+            requiredScore += matchScore;
         }
 
         int supportiveExtras = countSupportiveExtras(inputStacks, requirements, matchedSlots, gameTime);
@@ -73,7 +76,7 @@ final class KitchenRecipeMatching {
             return null;
         }
 
-        float score = Mth.clamp(1.0F - supportiveExtras * 0.08F, 0.0F, 1.0F);
+        float score = score(requiredScore / requirements.size(), supportiveExtras);
         return score >= minimumScore(guide, inputStacks, requirements, supportiveExtras)
                 ? new KitchenRecipeMatchPlan(matchedSlots, supportiveExtras, score)
                 : null;
@@ -100,6 +103,15 @@ final class KitchenRecipeMatching {
             SearchState searchState
     ) {
         if (requirementIndex >= requirements.size()) {
+            float requiredScore = 0.0F;
+            for (int index = 0; index < requirements.size(); index++) {
+                int matchedSlot = searchState.currentMatches[index];
+                if (matchedSlot < 0) {
+                    return;
+                }
+                requiredScore += requirements.get(index).matchScore(inputStacks.get(matchedSlot), gameTime);
+            }
+
             int supportiveExtras = countSupportiveExtras(inputStacks, requirements, searchState.currentMatches, gameTime);
             if (supportiveExtras < 0) {
                 return;
@@ -108,7 +120,7 @@ final class KitchenRecipeMatching {
                 return;
             }
 
-            float score = Mth.clamp(1.0F - supportiveExtras * 0.08F, 0.0F, 1.0F);
+            float score = score(requiredScore / requirements.size(), supportiveExtras);
             if (score < minimumScore(guide, inputStacks, requirements, supportiveExtras)) {
                 return;
             }
@@ -195,6 +207,10 @@ final class KitchenRecipeMatching {
 
         float expandedLayoutFloor = Mth.clamp(1.0F - extraCapacity * 0.08F, 0.48F, 1.0F);
         return Math.min(guide.minimumScore(), expandedLayoutFloor);
+    }
+
+    private static float score(float requiredScore, int supportiveExtras) {
+        return Mth.clamp(requiredScore - supportiveExtras * 0.08F, 0.0F, 1.0F);
     }
 
     private static final class SearchState {

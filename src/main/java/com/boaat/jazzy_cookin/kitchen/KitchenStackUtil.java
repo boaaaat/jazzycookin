@@ -106,16 +106,15 @@ public final class KitchenStackUtil {
     }
 
     public static boolean matchesState(ItemStack stack, IngredientState state, long gameTime) {
-        IngredientState actualState = effectiveState(stack, gameTime);
-        if (actualState == state) {
-            return true;
-        }
+        return stateMatchScore(stack, state, gameTime) >= 0.999F;
+    }
 
-        if (state == IngredientState.PANTRY_READY) {
-            return !actualState.isSpoiledState() && StorageRules.canStore(StorageType.PANTRY, stack);
-        }
+    public static float stateMatchScore(ItemStack stack, IngredientState state, long gameTime) {
+        return KitchenStateRules.stateMatchScore(stack, state, gameTime);
+    }
 
-        return false;
+    public static boolean isStateAllowed(ItemStack stack, IngredientState state, long gameTime) {
+        return KitchenStateRules.isStateAllowed(stack, state, gameTime);
     }
 
     public static float currentFreshnessScore(ItemStack stack, Level level) {
@@ -291,6 +290,7 @@ public final class KitchenStackUtil {
         }
 
         IngredientState summaryState = summaryStateFor(stack, fallback.state(), matter);
+        float repeatPenalty = Mth.clamp(Math.max(0, matter.processDepth() - 2) * 0.05F, 0.0F, 0.22F);
         float quality = Mth.clamp(
                 fallback.quality() * 0.42F
                         + 0.20F
@@ -307,13 +307,14 @@ public final class KitchenStackUtil {
                 quality
                         + matter.preservationLevel() * 0.05F
                         - matter.oxidation() * 0.12F
-                        - matter.microbialLoad() * 0.16F,
+                        - matter.microbialLoad() * 0.16F
+                        - repeatPenalty,
                 0.05F,
                 1.0F
         );
         float recipeAccuracy = matter.finalizedServing()
-                ? Mth.clamp(fallback.recipeAccuracy() * 0.45F + 0.40F + matter.proteinSet() * 0.18F - matter.charLevel() * 0.10F, 0.0F, 1.0F)
-                : Mth.clamp(fallback.recipeAccuracy() * 0.50F + 0.20F + matter.whiskWork() * 0.24F + matter.cohesiveness() * 0.08F, 0.0F, 1.0F);
+                ? Mth.clamp(fallback.recipeAccuracy() * 0.45F + 0.40F + matter.proteinSet() * 0.18F - matter.charLevel() * 0.10F - repeatPenalty, 0.0F, 1.0F)
+                : Mth.clamp(fallback.recipeAccuracy() * 0.50F + 0.20F + matter.whiskWork() * 0.24F + matter.cohesiveness() * 0.08F - repeatPenalty, 0.0F, 1.0F);
         float flavor = Mth.clamp(
                 fallback.flavor() * 0.45F
                         + 0.20F
@@ -354,7 +355,13 @@ public final class KitchenStackUtil {
         float purity = Mth.clamp(fallback.purity() * 0.55F + 0.24F + matter.whiskWork() * 0.10F - matter.onionLoad() * 0.05F, 0.0F, 1.0F);
         float aeration = Mth.clamp(matter.aeration(), 0.0F, 1.0F);
         int nourishment = Math.max(fallback.nourishment(), Math.max(1, Math.round(matter.protein() * 8.0F + matter.fat() * 4.0F)));
-        int enjoyment = Math.max(fallback.enjoyment(), Math.max(1, Math.round(3.0F + flavor * 3.0F + texture * 2.0F + matter.browning() - matter.charLevel() * 3.0F)));
+        int enjoyment = Math.max(
+                1,
+                Math.max(
+                        fallback.enjoyment(),
+                        Math.round(3.0F + flavor * 3.0F + texture * 2.0F + matter.browning() - matter.charLevel() * 3.0F) - Math.max(0, Math.round(repeatPenalty * 8.0F))
+                )
+        );
 
         return new IngredientStateData(
                 summaryState,

@@ -2,7 +2,9 @@ package com.boaat.jazzy_cookin.kitchen.sim.domain;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
+import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
@@ -69,7 +71,7 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         if (buttonId != 6 || access.simulationActive()) {
             return false;
         }
-        if (access.simulationStationType() == StationType.OVEN && access.simulationPreheatProgress() < 35) {
+        if (access.simulationStationType() == StationType.OVEN && access.simulationPreheatProgress() < 100) {
             return false;
         }
         ItemStack preview = previewOutput(access);
@@ -78,7 +80,7 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         }
         KitchenIngredientItem targeted = targetedOutput(SimulationIngredientAnalysis.analyzeInputs(access));
         int duration = switch (access.simulationStationType()) {
-            case MICROWAVE -> 35;
+            case MICROWAVE -> access.simulationMicrowaveDurationSeconds() * 20;
             case SMOKER -> 160;
             case STEAMER -> 120;
             default -> targeted == JazzyItems.GARLIC_BREAD_PREP.get() ? 110 : 140;
@@ -105,7 +107,7 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
 
     @Override
     public int environmentStatus(StationSimulationAccess access) {
-        if (access.simulationStationType() == StationType.OVEN && access.simulationPreheatProgress() < 35) {
+        if (access.simulationStationType() == StationType.OVEN && access.simulationPreheatProgress() < 100) {
             return 0;
         }
         return previewOutput(access).isEmpty() ? 2 : 1;
@@ -137,9 +139,11 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         }
         KitchenIngredientItem targeted = targetedOutput(analysis);
         if (targeted != null) {
-            return SimulationOutputFactory.createOutput(targeted, access.simulationLevel().getGameTime(), analysis, matter);
+            ItemStack output = SimulationOutputFactory.createOutput(targeted, access.simulationLevel().getGameTime(), analysis, matter);
+            return access.simulationStationType() == StationType.MICROWAVE ? applyMicrowavePenalty(output, access.simulationLevel().getGameTime()) : output;
         }
-        return CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
+        ItemStack output = CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
+        return access.simulationStationType() == StationType.MICROWAVE ? applyMicrowavePenalty(output, access.simulationLevel().getGameTime()) : output;
     }
 
     private static FoodMatterData previewMatter(StationSimulationAccess access) {
@@ -232,5 +236,31 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
             return JazzyItems.GARLIC_BREAD_PREP.get();
         }
         return null;
+    }
+
+    private static ItemStack applyMicrowavePenalty(ItemStack output, long gameTime) {
+        if (output.isEmpty()) {
+            return output;
+        }
+        IngredientStateData data = KitchenStackUtil.getOrCreateData(output, gameTime);
+        if (data == null) {
+            return output;
+        }
+        KitchenStackUtil.setData(output, new IngredientStateData(
+                data.state(),
+                data.createdTick(),
+                Math.max(0.05F, data.quality() - 0.12F),
+                Math.max(0.0F, data.recipeAccuracy() - 0.08F),
+                Math.max(0.0F, data.flavor() - 0.03F),
+                Math.max(0.0F, data.texture() - 0.04F),
+                data.structure(),
+                data.moisture(),
+                data.purity(),
+                data.aeration(),
+                data.processDepth(),
+                data.nourishment(),
+                Math.max(0, data.enjoyment() - 1)
+        ));
+        return output;
     }
 }

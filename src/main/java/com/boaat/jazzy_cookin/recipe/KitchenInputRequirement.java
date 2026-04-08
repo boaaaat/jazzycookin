@@ -37,6 +37,6 @@ public record KitchenInputRequirement(Ingredient ingredient, IngredientState req
         if (stack.getCount() < this.count || !this.ingredient.test(stack)) {
             return 0.0F;
         }
-        return KitchenStackUtil.matchesState(stack, this.requiredState, gameTime) ? 1.0F : 0.0F;
+        return KitchenStackUtil.stateMatchScore(stack, this.requiredState, gameTime);
     }
 }

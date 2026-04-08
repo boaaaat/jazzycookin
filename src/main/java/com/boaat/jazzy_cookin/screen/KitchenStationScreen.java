@@ -11,6 +11,7 @@ import com.boaat.jazzy_cookin.kitchen.StationUiProfile;
 import com.boaat.jazzy_cookin.kitchen.StationUiProfile.KitchenScreenLayout;
 import com.boaat.jazzy_cookin.kitchen.StationUiProfile.MetricWidgetSpec;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.SimulationDomainType;
+import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.recipebook.client.RecipeBookClientState;
 import com.boaat.jazzy_cookin.screen.layout.ActionWidgetSpec;
@@ -25,8 +26,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 
 public class KitchenStationScreen extends AbstractContainerScreen<KitchenStationMenu> {
-    private final StationUiProfile profile;
-    private final KitchenScreenLayout layout;
+    private final StationUiProfile baseProfile;
+    private StationUiProfile profile;
+    private KitchenScreenLayout layout;
     private Button startButton;
     private Button lowHeatButton;
     private Button mediumHeatButton;
@@ -37,7 +39,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private Button tertiaryActionButton;
     private Button recipeBookButton;
     private EditBox ovenTemperatureBox;
+    private EditBox microwaveDurationBox;
     private int pendingOvenTemperature = -1;
+    private int pendingMicrowaveDuration = -1;
     private Button heldActionButton;
     private int heldActionButtonId = -1;
     private double lastMouseX;
@@ -48,7 +52,8 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     public KitchenStationScreen(KitchenStationMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.profile = menu.uiProfile();
+        this.baseProfile = menu.uiProfile();
+        this.profile = this.baseProfile;
         this.layout = this.profile.layout();
         this.imageWidth = this.profile.width();
         this.imageHeight = this.profile.height();
@@ -57,17 +62,21 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     @Override
     protected void init() {
+        this.profile = this.baseProfile.resolve(this.width, this.height);
+        this.layout = this.profile.layout();
+        this.imageWidth = this.profile.width();
+        this.imageHeight = this.profile.height();
+        this.inventoryLabelY = this.profile.inventoryLabelY();
         super.init();
         this.leftPos = Math.max(0, this.leftPos);
         this.topPos = Math.max(0, this.topPos);
+        this.repositionSlots();
 
         LayoutRegion primary = this.layout.primaryAction().bounds();
         this.startButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.start"), button -> this.sendButton(this.primaryActionButtonId()))
                 .bounds(this.leftPos + primary.x(), this.topPos + primary.y(), primary.width(), primary.height())
                 .build());
         this.startButton.setAlpha(0.0F);
-        this.recipeBookButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.recipe_book_short"),
-                button -> RecipeBookClientState.openRecipeBook()).bounds(this.leftPos + this.imageWidth - 68, this.topPos + 8, 58, 18).build());
         LayoutRegion secondary = this.layout.secondaryAction().bounds();
         this.secondaryActionButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.stir"), button -> this.sendButton(7))
                 .bounds(this.leftPos + secondary.x(), this.topPos + secondary.y(), secondary.width(), secondary.height())
@@ -79,6 +88,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                 .build());
         this.tertiaryActionButton.setAlpha(0.0F);
 
+        int recipeButtonWidth = Math.max(66, this.font.width(Component.translatable("screen.jazzycookin.recipe_book_short")) + 14);
+        this.recipeBookButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.recipe_book_short"),
+                button -> RecipeBookClientState.openRecipeBook()).bounds(this.leftPos + this.imageWidth - recipeButtonWidth - 10, this.topPos + 8, recipeButtonWidth, 18).build());
         if (this.menu.stationType() == StationType.OVEN) {
             LayoutRegion field = this.layout.ovenFieldRegion();
             this.ovenTemperatureBox = new EditBox(this.font, this.leftPos + field.x(), this.topPos + field.y(), field.width(), 18,
@@ -90,6 +102,17 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.ovenTemperatureBox.setTextColorUneditable(JazzyGuiRenderer.TEXT);
             this.ovenTemperatureBox.setValue(Integer.toString(this.menu.ovenTemperature()));
             this.addRenderableWidget(this.ovenTemperatureBox);
+        } else if (this.menu.stationType() == StationType.MICROWAVE) {
+            LayoutRegion field = this.layout.ovenFieldRegion();
+            this.microwaveDurationBox = new EditBox(this.font, this.leftPos + field.x(), this.topPos + field.y(), field.width(), 18,
+                    Component.literal("Time"));
+            this.microwaveDurationBox.setMaxLength(3);
+            this.microwaveDurationBox.setFilter(value -> value.isEmpty() || value.chars().allMatch(Character::isDigit));
+            this.microwaveDurationBox.setBordered(false);
+            this.microwaveDurationBox.setTextColor(JazzyGuiRenderer.TEXT);
+            this.microwaveDurationBox.setTextColorUneditable(JazzyGuiRenderer.TEXT);
+            this.microwaveDurationBox.setValue(Integer.toString(this.menu.microwaveDurationSeconds()));
+            this.addRenderableWidget(this.microwaveDurationBox);
         } else if (this.menu.stationType().supportsHeat()) {
             LayoutRegion low = this.layout.lowHeatAction().bounds();
             LayoutRegion medium = this.layout.mediumHeatAction().bounds();
@@ -124,11 +147,44 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         this.updateButtonStates();
     }
 
+    private void repositionSlots() {
+        for (int inputIndex = 0; inputIndex < this.menu.activeInputCount(); inputIndex++) {
+            StationUiProfile.Point point = this.profile.inputPositions()[inputIndex];
+            Slot slot = this.menu.getSlot(inputIndex);
+            SlotPositioning.setPosition(slot, point.x(), point.y());
+        }
+
+        Slot toolSlot = this.menu.getSlot(this.menu.toolMenuSlotIndex());
+        SlotPositioning.setPosition(toolSlot, this.profile.toolPosition().x(), this.profile.toolPosition().y());
+
+        Slot outputSlot = this.menu.getSlot(this.menu.outputMenuSlotIndex());
+        SlotPositioning.setPosition(outputSlot, this.profile.outputPosition().x(), this.profile.outputPosition().y());
+
+        Slot byproductSlot = this.menu.getSlot(this.menu.byproductMenuSlotIndex());
+        SlotPositioning.setPosition(byproductSlot, this.profile.byproductPosition().x(), this.profile.byproductPosition().y());
+
+        int playerInventoryBase = this.menu.visibleStationSlotCount();
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                int slotIndex = playerInventoryBase + col + row * 9;
+                Slot slot = this.menu.getSlot(slotIndex);
+                SlotPositioning.setPosition(slot, this.profile.playerInventoryStartX() + col * 18, this.profile.playerInventoryStartY() + row * 18);
+            }
+        }
+
+        int hotbarBase = playerInventoryBase + 27;
+        for (int col = 0; col < 9; col++) {
+            Slot slot = this.menu.getSlot(hotbarBase + col);
+            SlotPositioning.setPosition(slot, this.profile.playerInventoryStartX() + col * 18, this.profile.hotbarY());
+        }
+    }
+
     @Override
     protected void containerTick() {
         super.containerTick();
         this.updateButtonStates();
         this.syncOvenTemperatureField();
+        this.syncMicrowaveDurationField();
         this.tickHeldAction();
     }
 
@@ -264,6 +320,51 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         this.sendButton(1000 + normalizedTemperature);
     }
 
+    private void syncMicrowaveDurationField() {
+        if (this.microwaveDurationBox == null || this.microwaveDurationBox.isFocused()) {
+            return;
+        }
+
+        int syncedDuration = this.menu.microwaveDurationSeconds();
+        if (this.pendingMicrowaveDuration == syncedDuration) {
+            this.pendingMicrowaveDuration = -1;
+        }
+
+        int displayDuration = this.pendingMicrowaveDuration > 0 ? this.pendingMicrowaveDuration : syncedDuration;
+        String displayText = Integer.toString(displayDuration);
+        if (!this.microwaveDurationBox.getValue().equals(displayText)) {
+            this.microwaveDurationBox.setValue(displayText);
+        }
+    }
+
+    private void commitMicrowaveDuration() {
+        if (this.microwaveDurationBox == null) {
+            return;
+        }
+        String value = this.microwaveDurationBox.getValue();
+        if (value.isBlank()) {
+            this.syncMicrowaveDurationField();
+            return;
+        }
+        int parsedSeconds;
+        try {
+            parsedSeconds = Integer.parseInt(value);
+        } catch (NumberFormatException exception) {
+            this.syncMicrowaveDurationField();
+            return;
+        }
+        this.applyMicrowaveDuration(parsedSeconds);
+    }
+
+    private void applyMicrowaveDuration(int seconds) {
+        int normalizedDuration = KitchenStationBlockEntity.normalizeMicrowaveDuration(seconds);
+        this.pendingMicrowaveDuration = normalizedDuration;
+        if (this.microwaveDurationBox != null) {
+            this.microwaveDurationBox.setValue(Integer.toString(normalizedDuration));
+        }
+        this.sendButton(2000 + normalizedDuration);
+    }
+
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         int left = this.leftPos;
@@ -278,17 +379,18 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         JazzyGuiRenderer.drawInventoryShelf(guiGraphics, left, top, this.layout.inventoryShelfRegion(), theme);
 
         Component methodLabel = this.menu.currentMethod().displayName();
-        LayoutRegion chip = this.layout.headerChipRegion();
-        int methodChipWidth = Math.min(chip.width(), Math.max(56, this.font.width(methodLabel) + 16));
-        JazzyGuiRenderer.drawChip(
-                guiGraphics,
-                left + chip.right() - methodChipWidth,
-                top + chip.y(),
-                methodChipWidth,
-                chip.height(),
-                this.menu.currentMethod().isCookMethod(),
-                theme
-        );
+        LayoutRegion chipBounds = this.headerChipBounds(methodLabel);
+        if (chipBounds != null) {
+            JazzyGuiRenderer.drawChip(
+                    guiGraphics,
+                    left + chipBounds.x(),
+                    top + chipBounds.y(),
+                    chipBounds.width(),
+                    chipBounds.height(),
+                    this.menu.currentMethod().isCookMethod(),
+                    theme
+            );
+        }
 
         if (!this.controlDisplayLabel().getString().isEmpty()) {
             JazzyGuiRenderer.drawChip(
@@ -400,18 +502,19 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         boolean hovered = button.isMouseOver(mouseX, mouseY);
         boolean pressed = this.heldActionButton == button;
         JazzyGuiRenderer.drawActionPlate(guiGraphics, left, top, spec, this.profile.theme(), active, hovered, pressed);
-        this.drawCenteredLabel(guiGraphics, label, left + spec.captionBounds().centerX(), top + spec.captionBounds().y(),
-                active ? 0xFFF8F7F2 : JazzyGuiRenderer.TEXT_SOFT, false);
+        this.drawCenteredTrimmedLabel(guiGraphics, label, left + spec.captionBounds().centerX(), top + spec.captionBounds().y(),
+                spec.captionBounds().width() - 8, active ? 0xFFF8F7F2 : JazzyGuiRenderer.TEXT_SOFT, false);
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         Component methodLabel = this.menu.currentMethod().displayName();
-        LayoutRegion chip = this.layout.headerChipRegion();
-        int methodChipWidth = Math.min(chip.width(), Math.max(56, this.font.width(methodLabel) + 16));
+        LayoutRegion chipBounds = this.headerChipBounds(methodLabel);
 
         guiGraphics.drawString(this.font, this.title, this.layout.titleRegion().x(), this.layout.titleRegion().y(), JazzyGuiRenderer.TITLE_TEXT, false);
-        this.drawCenteredLabel(guiGraphics, methodLabel, chip.right() - methodChipWidth / 2, chip.y() + 4, JazzyGuiRenderer.TEXT, false);
+        if (chipBounds != null) {
+            this.drawCenteredTrimmedLabel(guiGraphics, methodLabel, chipBounds.centerX(), chipBounds.y() + 4, chipBounds.width() - 10, JazzyGuiRenderer.TEXT, false);
+        }
 
         guiGraphics.drawString(this.font, this.workspaceLabel(), this.layout.workspaceRegion().x() + 8, this.layout.workspaceRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
         if (this.menu.stationType().usesTools()) {
@@ -438,6 +541,11 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.temperature_short"),
                     this.layout.controlStripRegion().x() + 8, this.layout.controlStripRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
             guiGraphics.drawString(this.font, Component.literal("F"), field.right() + 4, field.y() + 5, JazzyGuiRenderer.TEXT_MUTED, false);
+        } else if (this.menu.stationType() == StationType.MICROWAVE) {
+            LayoutRegion field = this.layout.ovenFieldRegion();
+            guiGraphics.drawString(this.font, Component.literal("Time"),
+                    this.layout.controlStripRegion().x() + 8, this.layout.controlStripRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
+            guiGraphics.drawString(this.font, Component.literal("s"), field.right() + 4, field.y() + 5, JazzyGuiRenderer.TEXT_MUTED, false);
         }
 
         Component helper = this.controlHelperText();
@@ -663,7 +771,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private Component controlDisplayLabel() {
-        if (this.menu.stationType() == StationType.OVEN) {
+        if (this.menu.stationType() == StationType.OVEN || this.menu.stationType() == StationType.MICROWAVE) {
             return Component.empty();
         }
         if (this.menu.stationType().supportsHeat()) {
@@ -695,6 +803,11 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                     ? Component.translatable("screen.jazzycookin.hot_short")
                     : Component.translatable("screen.jazzycookin.warm_short");
         }
+        if (this.menu.stationType() == StationType.MICROWAVE) {
+            return this.menu.maxProgress() > 0
+                    ? Component.translatable("screen.jazzycookin.working")
+                    : Component.literal(this.menu.microwaveDurationSeconds() + "s");
+        }
         if (this.menu.maxProgress() > 0) {
             return Component.translatable("screen.jazzycookin.working");
         }
@@ -724,6 +837,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         guiGraphics.drawString(this.font, label, centerX - this.font.width(label) / 2, y, color, shadow);
     }
 
+    private void drawCenteredTrimmedLabel(GuiGraphics guiGraphics, Component label, int centerX, int y, int maxWidth, int color, boolean shadow) {
+        String text = label.getString();
+        if (text.isEmpty()) {
+            return;
+        }
+        String trimmed = this.font.plainSubstrByWidth(text, Math.max(0, maxWidth));
+        guiGraphics.drawString(this.font, trimmed, centerX - this.font.width(trimmed) / 2, y, color, shadow);
+    }
+
     private void drawTrimmedLabel(GuiGraphics guiGraphics, Component label, int x, int y, int maxWidth, int color) {
         String text = label.getString();
         if (text.isEmpty()) {
@@ -738,6 +860,18 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             return;
         }
         guiGraphics.drawString(this.font, label, rightX - this.font.width(label), y, color, shadow);
+    }
+
+    private LayoutRegion headerChipBounds(Component label) {
+        LayoutRegion chipRegion = this.layout.headerChipRegion();
+        int maxRight = this.recipeBookButton == null ? chipRegion.right() : this.recipeBookButton.getX() - this.leftPos - 8;
+        int minLeft = Math.max(chipRegion.x(), this.layout.titleRegion().right() + 10);
+        int availableWidth = maxRight - minLeft;
+        if (availableWidth < 48) {
+            return null;
+        }
+        int desiredWidth = Math.min(availableWidth, Math.max(56, this.font.width(label) + 16));
+        return new LayoutRegion(maxRight - desiredWidth, chipRegion.y(), desiredWidth, chipRegion.height());
     }
 
     private Component previewHeadline() {
@@ -767,6 +901,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private Component controlHelperText() {
         if (this.menu.stationType() == StationType.OVEN) {
             return Component.translatable("screen.jazzycookin.helper_oven_scroll");
+        }
+        if (this.menu.stationType() == StationType.MICROWAVE) {
+            return Component.literal("Type or scroll in 10s steps.");
         }
         if (this.isPanSimulation()) {
             return this.menu.simulationBatchPresent()
@@ -925,6 +1062,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         this.lastMouseX = mouseX;
         this.lastMouseY = mouseY;
         boolean wasFocused = this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused();
+        boolean microwaveWasFocused = this.microwaveDurationBox != null && this.microwaveDurationBox.isFocused();
         boolean handled = super.mouseClicked(mouseX, mouseY, button);
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             if (handled && this.startButton != null && this.startButton.visible && this.startButton.active && this.startButton.isMouseOver(mouseX, mouseY)) {
@@ -941,6 +1079,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         }
         if (wasFocused && this.ovenTemperatureBox != null && !this.ovenTemperatureBox.isFocused()) {
             this.commitOvenTemperature();
+        }
+        if (microwaveWasFocused && this.microwaveDurationBox != null && !this.microwaveDurationBox.isFocused()) {
+            this.commitMicrowaveDuration();
         }
         return handled;
     }
@@ -963,6 +1104,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.applyOvenTemperature(nextTemperature);
             return true;
         }
+        if (this.microwaveDurationBox != null
+                && scrollY != 0.0D
+                && (this.microwaveDurationBox.isMouseOver(mouseX, mouseY) || this.microwaveDurationBox.isFocused())) {
+            int baseDuration = this.pendingMicrowaveDuration > 0 ? this.pendingMicrowaveDuration : this.menu.microwaveDurationSeconds();
+            int nextDuration = baseDuration + (scrollY > 0.0D ? 10 : -10);
+            this.applyMicrowaveDuration(nextDuration);
+            return true;
+        }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
@@ -978,12 +1127,25 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                 return true;
             }
         }
+        if (this.microwaveDurationBox != null && this.microwaveDurationBox.isFocused()) {
+            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                this.commitMicrowaveDuration();
+                this.microwaveDurationBox.setFocused(false);
+                return true;
+            }
+            if (this.microwaveDurationBox.keyPressed(keyCode, scanCode, modifiers)) {
+                return true;
+            }
+        }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
         if (this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused() && this.ovenTemperatureBox.charTyped(codePoint, modifiers)) {
+            return true;
+        }
+        if (this.microwaveDurationBox != null && this.microwaveDurationBox.isFocused() && this.microwaveDurationBox.charTyped(codePoint, modifiers)) {
             return true;
         }
         return super.charTyped(codePoint, modifiers);
@@ -994,6 +1156,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         this.clearHeldAction();
         if (this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused()) {
             this.commitOvenTemperature();
+        }
+        if (this.microwaveDurationBox != null && this.microwaveDurationBox.isFocused()) {
+            this.commitMicrowaveDuration();
         }
         super.removed();
     }
