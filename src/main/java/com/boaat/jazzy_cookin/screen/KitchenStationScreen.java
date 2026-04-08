@@ -423,7 +423,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private void renderSimulationMetrics(GuiGraphics guiGraphics, int left, int top) {
-        List<SimMetric> metrics = this.simulationMetrics();
+        List<SimMetric> metrics = this.visibleSimulationMetrics();
         if (metrics.isEmpty()) {
             return;
         }
@@ -434,26 +434,42 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.drawTrimmedLabel(guiGraphics, metric.shortLabel(), left + spec.labelBounds().x(), top + spec.labelBounds().y(),
                     spec.labelBounds().width(), JazzyGuiRenderer.TEXT_MUTED);
             this.drawRightAlignedLabel(guiGraphics, Component.literal(metric.valueText()), left + spec.valueBounds().right(),
-                    top + spec.valueBounds().y(), JazzyGuiRenderer.TEXT, false);
+                    top + spec.valueBounds().y(), spec.valueBounds().width(), JazzyGuiRenderer.TEXT, false);
         }
     }
 
     private void renderLegacyMetricPanel(GuiGraphics guiGraphics, int left, int top) {
-        List<SimMetric> legacyMetrics = List.of(
-                new SimMetric(Component.translatable("screen.jazzycookin.metric.work"), Component.empty(), this.primaryStatusText().getString(),
-                        this.menu.maxProgress() > 0 ? this.menu.progress() / (float) this.menu.maxProgress() : 0.0F, JazzyGuiRenderer.ACCENT),
-                new SimMetric(Component.translatable("screen.jazzycookin.metric.ready"), Component.empty(), this.secondaryStatusText().getString(),
-                        this.menu.stationType() == StationType.OVEN ? this.menu.preheatProgress() / 100.0F : (this.menu.environmentStatus() == 1 ? 1.0F : 0.0F),
-                        this.menu.stationType() == StationType.OVEN ? JazzyGuiRenderer.ACCENT_WARM : this.secondaryStatusColor())
-        );
-        for (int i = 0; i < legacyMetrics.size(); i++) {
-            SimMetric metric = legacyMetrics.get(i);
-            MetricWidgetSpec spec = this.layout.metricWidget(i, legacyMetrics.size());
-            JazzyGuiRenderer.drawMetricWidget(guiGraphics, left, top, spec, this.profile.theme(), metric.ratio(), metric.color());
-            this.drawTrimmedLabel(guiGraphics, metric.shortLabel(), left + spec.labelBounds().x(), top + spec.labelBounds().y(),
-                    spec.labelBounds().width(), JazzyGuiRenderer.TEXT_MUTED);
-            this.drawRightAlignedLabel(guiGraphics, Component.literal(metric.valueText()), left + spec.valueBounds().right(),
-                    top + spec.valueBounds().y(), this.secondaryStatusColor(), false);
+        LayoutRegion lane = this.layout.statusLaneRegion();
+        if (lane.width() <= 0 || lane.height() <= 0) {
+            return;
+        }
+
+        Component primary = this.primaryStatusText();
+        Component secondary = this.secondaryStatusText();
+        boolean showSecondary = !secondary.getString().isEmpty()
+                && !secondary.getString().equals(primary.getString())
+                && lane.width() >= 72;
+        boolean showBar = lane.height() >= 12;
+        int inset = 4;
+        int textY = top + lane.y() + (showBar ? 0 : Math.max(0, (lane.height() - 8) / 2));
+
+        if (showSecondary) {
+            int halfWidth = Math.max(18, (lane.width() - inset * 2 - 6) / 2);
+            this.drawTrimmedLabel(guiGraphics, primary, left + lane.x() + inset, textY, halfWidth, this.previewHeadlineColor());
+            this.drawRightAlignedLabel(guiGraphics, secondary, left + lane.right() - inset, textY, halfWidth, this.secondaryStatusColor(), false);
+        } else {
+            this.drawCenteredTrimmedLabel(guiGraphics, primary, left + lane.centerX(), textY, lane.width() - inset * 2, this.previewHeadlineColor(), false);
+        }
+
+        if (showBar) {
+            int barX = left + lane.x() + inset;
+            int barY = top + lane.bottom() - 3;
+            int barWidth = Math.max(14, lane.width() - inset * 2);
+            guiGraphics.fill(barX, barY, barX + barWidth, barY + 2, 0xFF1A1F27);
+            int fillWidth = Math.round(barWidth * this.legacyStatusRatio());
+            if (fillWidth > 0) {
+                guiGraphics.fill(barX, barY, barX + fillWidth, barY + 2, this.legacyStatusFillColor());
+            }
         }
     }
 
@@ -510,69 +526,56 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         Component methodLabel = this.menu.currentMethod().displayName();
         LayoutRegion chipBounds = this.headerChipBounds(methodLabel);
+        LayoutRegion previewStatus = this.layout.previewStatusRegion();
+        Component previewHeadline = this.previewHeadline();
+        Component previewSubline = this.previewSubline();
+        Component controlLabel = this.controlDisplayLabel();
 
         guiGraphics.drawString(this.font, this.title, this.layout.titleRegion().x(), this.layout.titleRegion().y(), JazzyGuiRenderer.TITLE_TEXT, false);
         if (chipBounds != null) {
             this.drawCenteredTrimmedLabel(guiGraphics, methodLabel, chipBounds.centerX(), chipBounds.y() + 4, chipBounds.width() - 10, JazzyGuiRenderer.TEXT, false);
         }
 
-        guiGraphics.drawString(this.font, this.workspaceLabel(), this.layout.workspaceRegion().x() + 8, this.layout.workspaceRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
+        this.drawTrimmedLabel(guiGraphics, this.workspaceLabel(), this.layout.workspaceRegion().x() + 8, this.layout.workspaceRegion().y() + 8,
+                this.layout.workspaceRegion().width() - 16, JazzyGuiRenderer.TEXT_MUTED);
         if (this.menu.stationType().usesTools()) {
-            this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.tool_short"),
-                    this.layout.toolRegion().centerX(), this.layout.toolRegion().bottom() + 4, JazzyGuiRenderer.TEXT_SOFT, false);
+            int toolLabelY = this.layout.toolRegion().bottom() + 4;
+            if (toolLabelY + 8 >= this.layout.controlStripRegion().y()) {
+                toolLabelY = Math.max(this.layout.workspaceRegion().y() + 18, this.layout.toolRegion().y() - 10);
+            }
+            this.drawCenteredTrimmedLabel(guiGraphics, Component.translatable("screen.jazzycookin.tool_short"),
+                    this.layout.toolRegion().centerX(), toolLabelY, this.layout.toolRegion().width() + 18, JazzyGuiRenderer.TEXT_SOFT, false);
         }
-        this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.preview_short"),
-                this.layout.previewRegion().centerX(), this.layout.previewRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
-        this.drawCenteredLabel(guiGraphics, this.menu.simulationMode() ? this.simulationDomainLabel() : Component.translatable("screen.jazzycookin.status_short"),
-                this.layout.metricClusterRegion().centerX(), this.layout.metricClusterRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
 
-        this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.output"),
-                this.layout.outputRegion().centerX(), this.layout.outputRegion().y() - 10, JazzyGuiRenderer.TEXT_SOFT, false);
-        this.drawCenteredLabel(guiGraphics, Component.translatable("screen.jazzycookin.byproduct_short"),
-                this.layout.byproductRegion().centerX(), this.layout.byproductRegion().y() - 10, JazzyGuiRenderer.TEXT_SOFT, false);
-
-        this.drawTrimmedLabel(guiGraphics, this.previewHeadline(), this.layout.previewRegion().x() + 10, this.layout.previewRegion().y() + 26,
-                this.layout.previewRegion().width() - 56, this.previewHeadlineColor());
-        this.drawTrimmedLabel(guiGraphics, this.previewSubline(), this.layout.previewRegion().x() + 10, this.layout.previewRegion().y() + 40,
-                this.layout.previewRegion().width() - 56, JazzyGuiRenderer.TEXT_SOFT);
+        boolean showPreviewSubline = previewStatus.height() >= 20
+                && previewStatus.width() >= 72
+                && !previewSubline.getString().isEmpty()
+                && !previewSubline.getString().equals(previewHeadline.getString());
+        int previewHeadlineY = showPreviewSubline
+                ? previewStatus.y()
+                : previewStatus.y() + Math.max(0, (previewStatus.height() - 8) / 2);
+        this.drawCenteredTrimmedLabel(guiGraphics, previewHeadline, previewStatus.centerX(), previewHeadlineY,
+                previewStatus.width(), this.previewHeadlineColor(), false);
+        if (showPreviewSubline) {
+            this.drawCenteredTrimmedLabel(guiGraphics, previewSubline, previewStatus.centerX(), previewHeadlineY + 10,
+                    previewStatus.width(), JazzyGuiRenderer.TEXT_SOFT, false);
+        }
 
         if (this.menu.stationType() == StationType.OVEN) {
             LayoutRegion field = this.layout.ovenFieldRegion();
-            guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.temperature_short"),
-                    this.layout.controlStripRegion().x() + 8, this.layout.controlStripRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
+            this.drawTrimmedLabel(guiGraphics, Component.translatable("screen.jazzycookin.temperature_short"),
+                    this.layout.controlStripRegion().x() + 8, this.layout.controlStripRegion().y() + 8, 20, JazzyGuiRenderer.TEXT_MUTED);
             guiGraphics.drawString(this.font, Component.literal("F"), field.right() + 4, field.y() + 5, JazzyGuiRenderer.TEXT_MUTED, false);
         } else if (this.menu.stationType() == StationType.MICROWAVE) {
             LayoutRegion field = this.layout.ovenFieldRegion();
-            guiGraphics.drawString(this.font, Component.literal("Time"),
-                    this.layout.controlStripRegion().x() + 8, this.layout.controlStripRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
+            this.drawTrimmedLabel(guiGraphics, Component.literal("Time"),
+                    this.layout.controlStripRegion().x() + 8, this.layout.controlStripRegion().y() + 8, 20, JazzyGuiRenderer.TEXT_MUTED);
             guiGraphics.drawString(this.font, Component.literal("s"), field.right() + 4, field.y() + 5, JazzyGuiRenderer.TEXT_MUTED, false);
         }
 
-        Component helper = this.controlHelperText();
-        if (!helper.getString().isEmpty()) {
-            int helperX;
-            if (this.raiseControlButton != null && this.raiseControlButton.visible) {
-                helperX = this.layout.raiseControlAction().bounds().right() + 4;
-            } else {
-                helperX = this.layout.helperTextRegion().x();
-            }
-            int helperY = this.layout.helperTextRegion().y();
-            int helperMaxRight;
-            if (this.tertiaryActionButton != null && this.tertiaryActionButton.visible) {
-                helperMaxRight = this.layout.tertiaryAction().bounds().x() - 4;
-            } else if (this.secondaryActionButton != null && this.secondaryActionButton.visible) {
-                helperMaxRight = this.layout.secondaryAction().bounds().x() - 4;
-            } else {
-                helperMaxRight = this.layout.primaryAction().bounds().x() - 4;
-            }
-            int helperWidth = Math.max(0, helperMaxRight - helperX);
-            this.drawTrimmedLabel(guiGraphics, helper, helperX, helperY, helperWidth, JazzyGuiRenderer.TEXT_MUTED);
-        }
-
-        Component controlLabel = this.controlDisplayLabel();
         if (!controlLabel.getString().isEmpty() && this.layout.controlChipRegion() != null) {
-            this.drawCenteredLabel(guiGraphics, controlLabel, this.layout.controlChipRegion().centerX(), this.layout.controlChipRegion().y() + 3,
-                    JazzyGuiRenderer.TEXT_MUTED, false);
+            this.drawCenteredTrimmedLabel(guiGraphics, controlLabel, this.layout.controlChipRegion().centerX(), this.layout.controlChipRegion().y() + 5,
+                    this.layout.controlChipRegion().width() - 8, JazzyGuiRenderer.TEXT_MUTED, false);
         }
 
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.layout.inventoryLabelRegion().x(), this.layout.inventoryLabelRegion().y(),
@@ -686,6 +689,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             return Component.translatable("screen.jazzycookin.sim_preview", this.menu.simulationPreviewName());
         }
         return this.simulationHint();
+    }
+
+    private List<SimMetric> visibleSimulationMetrics() {
+        List<SimMetric> metrics = this.simulationMetrics();
+        int maxVisible = this.layout.metricClusterRegion().height() < 22 || this.layout.metricClusterRegion().width() < 86 ? 1 : 2;
+        if (metrics.size() <= maxVisible) {
+            return metrics;
+        }
+        return metrics.subList(0, maxVisible);
     }
 
     private Component simulationHint() {
@@ -842,7 +854,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (text.isEmpty()) {
             return;
         }
-        String trimmed = this.font.plainSubstrByWidth(text, Math.max(0, maxWidth));
+        String trimmed = this.fitText(text, maxWidth);
         guiGraphics.drawString(this.font, trimmed, centerX - this.font.width(trimmed) / 2, y, color, shadow);
     }
 
@@ -851,18 +863,23 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (text.isEmpty()) {
             return;
         }
-        String trimmed = this.font.plainSubstrByWidth(text, Math.max(0, maxWidth));
+        String trimmed = this.fitText(text, maxWidth);
         guiGraphics.drawString(this.font, trimmed, x, y, color, false);
     }
 
-    private void drawRightAlignedLabel(GuiGraphics guiGraphics, Component label, int rightX, int y, int color, boolean shadow) {
-        if (label.getString().isEmpty()) {
+    private void drawRightAlignedLabel(GuiGraphics guiGraphics, Component label, int rightX, int y, int maxWidth, int color, boolean shadow) {
+        String text = label.getString();
+        if (text.isEmpty()) {
             return;
         }
-        guiGraphics.drawString(this.font, label, rightX - this.font.width(label), y, color, shadow);
+        String trimmed = this.fitText(text, maxWidth);
+        guiGraphics.drawString(this.font, trimmed, rightX - this.font.width(trimmed), y, color, shadow);
     }
 
     private LayoutRegion headerChipBounds(Component label) {
+        if (this.menu.currentMethod() == KitchenMethod.NONE || label.getString().isBlank()) {
+            return null;
+        }
         LayoutRegion chipRegion = this.layout.headerChipRegion();
         int maxRight = this.recipeBookButton == null ? chipRegion.right() : this.recipeBookButton.getX() - this.leftPos - 8;
         int minLeft = Math.max(chipRegion.x(), this.layout.titleRegion().right() + 10);
@@ -875,42 +892,91 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private Component previewHeadline() {
+        Component helper = this.visibleHelperText();
+        if (!this.hasPreviewContent() && !helper.getString().isEmpty()) {
+            return helper;
+        }
         if (this.menu.simulationMode()) {
             if (this.menu.simRecognizerId() > 0) {
                 return this.menu.simulationPreviewName();
             }
-            return this.simulationDomainLabel();
+            return this.primaryStatusText();
         }
         return this.primaryStatusText();
     }
 
     private Component previewSubline() {
-        if (this.menu.simulationMode()) {
-            return this.simulationHint();
+        if (!this.hasPreviewContent()) {
+            return Component.empty();
         }
-        return this.secondaryStatusText().getString().isEmpty() ? Component.translatable("screen.jazzycookin.waiting_short") : this.secondaryStatusText();
+        if (this.menu.simulationMode()) {
+            if (this.menu.simRecognizerId() > 0) {
+                return this.menu.currentMethod().displayName();
+            }
+            Component helper = this.visibleHelperText();
+            if (!helper.getString().isEmpty()) {
+                return helper;
+            }
+            return this.menu.currentMethod().displayName();
+        }
+        Component secondary = this.secondaryStatusText();
+        if (!secondary.getString().isEmpty() && !secondary.getString().equals(this.primaryStatusText().getString())) {
+            return secondary;
+        }
+        return this.visibleHelperText();
     }
 
     private int previewHeadlineColor() {
+        Component helper = this.visibleHelperText();
+        if (!helper.getString().isEmpty() && this.previewHeadline().getString().equals(helper.getString())) {
+            return JazzyGuiRenderer.TEXT_SOFT;
+        }
         if (this.menu.simulationMode()) {
             return this.menu.simRecognizerId() > 0 ? JazzyGuiRenderer.READY_TEXT : JazzyGuiRenderer.TEXT;
         }
         return this.secondaryStatusColor();
     }
 
+    private Component visibleHelperText() {
+        if (this.menu.stationType() == StationType.OVEN || this.menu.stationType() == StationType.MICROWAVE) {
+            return Component.empty();
+        }
+        if (!this.hasInputItems() && !this.menu.simulationWorking()) {
+            return Component.literal("Add items");
+        }
+        return Component.empty();
+    }
+
     private Component controlHelperText() {
-        if (this.menu.stationType() == StationType.OVEN) {
-            return Component.translatable("screen.jazzycookin.helper_oven_scroll");
-        }
-        if (this.menu.stationType() == StationType.MICROWAVE) {
-            return Component.literal("Type or scroll in 10s steps.");
-        }
         if (this.isPanSimulation()) {
             return this.menu.simulationBatchPresent()
                     ? Component.translatable("screen.jazzycookin.helper_pan_actions")
                     : this.primaryActionTooltip();
         }
         return this.menu.simulationMode() ? this.primaryActionTooltip() : Component.translatable("screen.jazzycookin.helper_action_ready");
+    }
+
+    private boolean hasPreviewContent() {
+        return this.menu.getSlot(this.menu.outputMenuSlotIndex()).hasItem()
+                || this.menu.getSlot(this.menu.byproductMenuSlotIndex()).hasItem()
+                || this.menu.simRecognizerId() > 0;
+    }
+
+    private float legacyStatusRatio() {
+        if (this.menu.maxProgress() > 0) {
+            return Math.max(0.0F, Math.min(1.0F, this.menu.progress() / (float) this.menu.maxProgress()));
+        }
+        if (this.menu.stationType() == StationType.OVEN) {
+            return Math.max(0.0F, Math.min(1.0F, this.menu.preheatProgress() / 100.0F));
+        }
+        return this.menu.environmentStatus() == 1 ? 1.0F : 0.0F;
+    }
+
+    private int legacyStatusFillColor() {
+        if (this.menu.maxProgress() > 0) {
+            return JazzyGuiRenderer.ACCENT;
+        }
+        return this.secondaryStatusColor();
     }
 
     private Component primaryActionLabel() {
@@ -986,6 +1052,25 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     private float simPanTempRatio() {
         return Math.max(0.0F, Math.min(1.0F, (this.menu.simPanTempF() - 72.0F) / 340.0F));
+    }
+
+    private String fitText(String text, int maxWidth) {
+        if (text.isEmpty() || maxWidth <= 0) {
+            return "";
+        }
+        if (this.font.width(text) <= maxWidth) {
+            return text;
+        }
+        String ellipsis = "...";
+        int ellipsisWidth = this.font.width(ellipsis);
+        if (ellipsisWidth >= maxWidth) {
+            return this.font.plainSubstrByWidth(text, maxWidth);
+        }
+        String trimmed = this.font.plainSubstrByWidth(text, maxWidth - ellipsisWidth);
+        while (!trimmed.isEmpty() && this.font.width(trimmed + ellipsis) > maxWidth) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed.isEmpty() ? this.font.plainSubstrByWidth(text, maxWidth) : trimmed + ellipsis;
     }
 
     private Component workspaceLabel() {
