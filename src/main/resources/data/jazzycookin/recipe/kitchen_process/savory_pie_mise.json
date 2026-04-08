@@ -1,0 +1,52 @@
+{
+    "type": "jazzycookin:kitchen_process",
+    "station": "prep_table",
+    "inputs": [
+        {
+            "ingredient": {
+                "item": "jazzycookin:carrots"
+            },
+            "required_state": "carrots"
+        }
+    ],
+    "preferred_tool": "chef_knife",
+    "allowed_tools": [
+        "chef_knife",
+        "paring_knife",
+        "cleaver"
+    ],
+    "tool_required": true,
+    "duration": 50,
+    "outcomes": [
+        {
+            "band": "under",
+            "output": {
+                "result": {
+                    "id": "jazzycookin:chopped_produce_blend",
+                    "count": 1
+                },
+                "state": "rough_cut"
+            }
+        },
+        {
+            "band": "over",
+            "output": {
+                "result": {
+                    "id": "jazzycookin:chopped_produce_blend",
+                    "count": 1
+                },
+                "state": "diced"
+            }
+        }
+    ],
+    "output": {
+        "result": {
+            "id": "jazzycookin:chopped_produce_blend",
+            "count": 1
+        },
+        "state": "chopped"
+    },
+    "recipe_book": {
+        "chain_key": "savory_pie"
+    }
+}

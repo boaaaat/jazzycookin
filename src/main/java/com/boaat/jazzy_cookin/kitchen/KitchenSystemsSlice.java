@@ -28,21 +28,30 @@ public final class KitchenSystemsSlice {
             "jarred_lemon_juice",
             "pie_dough",
             "assembled_tray_pie",
-            "smoked_meat"
+            "smoked_meat",
+            "savory_pie_filling",
+            "assembled_savory_pie",
+            "pan_seared_chicken_prep",
+            "glazed_chicken_prep"
     );
 
     private static final Set<String> KEPT_MEALS = Set.of(
             "fruit_juice",
             "sliceable_pie",
-            "meat_platter"
+            "meat_platter",
+            "savory_pie",
+            "pan_seared_chicken",
+            "glazed_chicken"
     );
 
     private static final Set<String> KEPT_TOOLS = Set.of(
             "glass_cup",
             "glass_jar",
+            "ceramic_plate",
             "wooden_board",
             "serving_tray",
             "table_knife",
+            "fork",
             "paring_knife",
             "chef_knife",
             "cleaver",

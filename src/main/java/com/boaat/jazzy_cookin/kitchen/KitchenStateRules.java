@@ -32,6 +32,15 @@ public final class KitchenStateRules {
             IngredientState.RESTED,
             IngredientState.PLATED_ROAST_MEAL
     );
+    private static final Set<IngredientState> PAN_SEARED_CHICKEN_STATES = EnumSet.of(
+            IngredientState.PAN_FRIED
+    );
+    private static final Set<IngredientState> GLAZED_CHICKEN_STATES = EnumSet.of(
+            IngredientState.GLAZED
+    );
+    private static final Set<IngredientState> SAVORY_PIE_FILLING_STATES = EnumSet.of(
+            IngredientState.SIMMERED_FILLING
+    );
     private static final Set<IngredientState> JUICE_STATES = EnumSet.of(
             IngredientState.FRESH_JUICE,
             IngredientState.BITTER_JUICE
@@ -109,11 +118,20 @@ public final class KitchenStateRules {
         if ("pie_dough".equals(itemPath)) {
             return DOUGH_STATES.contains(targetState);
         }
-        if ("assembled_tray_pie".equals(itemPath)) {
+        if ("assembled_tray_pie".equals(itemPath) || "assembled_savory_pie".equals(itemPath)) {
             return PIE_STATES.contains(targetState);
         }
         if ("smoked_meat".equals(itemPath)) {
             return SMOKED_MEAT_STATES.contains(targetState);
+        }
+        if ("pan_seared_chicken_prep".equals(itemPath)) {
+            return PAN_SEARED_CHICKEN_STATES.contains(targetState);
+        }
+        if ("glazed_chicken_prep".equals(itemPath)) {
+            return GLAZED_CHICKEN_STATES.contains(targetState);
+        }
+        if ("savory_pie_filling".equals(itemPath)) {
+            return SAVORY_PIE_FILLING_STATES.contains(targetState);
         }
         if ("lemon_juice".equals(itemPath) || "jarred_lemon_juice".equals(itemPath) || "mixed_juice".equals(itemPath)) {
             return JUICE_STATES.contains(targetState);
@@ -138,6 +156,8 @@ public final class KitchenStateRules {
                     SMOOTH,
                     CREAMY,
                     SMOKED,
+                    PAN_FRIED,
+                    GLAZED,
                     BAKED_BREAD,
                     BAKED_PIE,
                     ROASTED_PROTEIN,

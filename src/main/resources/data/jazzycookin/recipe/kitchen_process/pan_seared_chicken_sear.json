@@ -1,0 +1,38 @@
+{
+    "type": "jazzycookin:kitchen_process",
+    "station": "stove",
+    "inputs": [
+        {
+            "ingredient": {
+                "item": "jazzycookin:chicken"
+            },
+            "required_state": "chicken"
+        },
+        {
+            "ingredient": {
+                "item": "jazzycookin:butter"
+            },
+            "required_state": "butter"
+        },
+        {
+            "ingredient": {
+                "tag": "jazzycookin:salts"
+            },
+            "required_state": "pantry_ready"
+        }
+    ],
+    "duration": 100,
+    "preferred_heat": "medium",
+    "minimum_heat": "low",
+    "maximum_heat": "high",
+    "output": {
+        "result": {
+            "id": "jazzycookin:pan_seared_chicken_prep",
+            "count": 1
+        },
+        "state": "pan_fried"
+    },
+    "recipe_book": {
+        "chain_key": "pan_seared_chicken"
+    }
+}

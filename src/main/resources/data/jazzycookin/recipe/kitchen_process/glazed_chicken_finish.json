@@ -1,0 +1,51 @@
+{
+    "type": "jazzycookin:kitchen_process",
+    "station": "stove",
+    "inputs": [
+        {
+            "ingredient": {
+                "item": "jazzycookin:chicken"
+            },
+            "required_state": "chicken"
+        },
+        {
+            "ingredient": {
+                "item": "jazzycookin:lemon_juice"
+            },
+            "required_state": "fresh_juice"
+        },
+        {
+            "ingredient": {
+                "item": "jazzycookin:butter"
+            },
+            "required_state": "butter"
+        },
+        {
+            "ingredient": {
+                "item": "jazzycookin:white_sugar"
+            },
+            "required_state": "white_sugar"
+        },
+        {
+            "ingredient": {
+                "tag": "jazzycookin:salts"
+            },
+            "required_state": "pantry_ready"
+        }
+    ],
+    "method": "simmer",
+    "duration": 140,
+    "preferred_heat": "medium",
+    "minimum_heat": "low",
+    "maximum_heat": "medium",
+    "output": {
+        "result": {
+            "id": "jazzycookin:glazed_chicken_prep",
+            "count": 1
+        },
+        "state": "glazed"
+    },
+    "recipe_book": {
+        "chain_key": "glazed_chicken"
+    }
+}

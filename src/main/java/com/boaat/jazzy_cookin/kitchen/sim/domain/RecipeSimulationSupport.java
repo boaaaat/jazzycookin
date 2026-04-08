@@ -14,6 +14,7 @@ import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
 import com.boaat.jazzy_cookin.recipebook.network.RecipeBookNetworking;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
@@ -158,7 +159,7 @@ final class RecipeSimulationSupport {
                 access.simulationPreheatProgress() >= 100,
                 matchPlan.score()
         );
-        return createOutputStack(resolvedOutput.result(), outputData, level.getGameTime());
+        return createOutputStack(resolvedOutput.result(), outputData, level.getGameTime(), consumedInputs);
     }
 
     static ItemStack previewPlateStack(StationSimulationAccess access, KitchenPlateRecipe recipe) {
@@ -174,7 +175,7 @@ final class RecipeSimulationSupport {
 
         List<ItemStack> consumedInputs = matchedInputs(access, matchPlan, recipe.inputs());
         IngredientStateData outputData = DishEvaluation.evaluatePlate(level, recipe, consumedInputs, matchPlan.score());
-        return createOutputStack(recipe.output().result(), outputData, level.getGameTime());
+        return createOutputStack(recipe.output().result(), outputData, level.getGameTime(), consumedInputs);
     }
 
     static int previewRecognizerId(ItemStack stack, long gameTime) {
@@ -242,10 +243,10 @@ final class RecipeSimulationSupport {
             }
         }
 
-        ItemStack outputStack = createOutputStack(resolvedOutput.result(), outputData, level.getGameTime());
+        ItemStack outputStack = createOutputStack(resolvedOutput.result(), outputData, level.getGameTime(), consumedInputs);
         access.simulationMergeIntoSlot(access.outputSlot(), outputStack);
         if (!resolvedOutput.byproduct().isEmpty()) {
-            access.simulationMergeIntoSlot(access.byproductSlot(), createOutputStack(resolvedOutput.byproduct(), null, level.getGameTime()));
+            access.simulationMergeIntoSlot(access.byproductSlot(), createOutputStack(resolvedOutput.byproduct(), null, level.getGameTime(), List.of()));
         }
         damageTool(access, recipe);
         if (guidePlayer(access) instanceof ServerPlayer player
@@ -279,10 +280,10 @@ final class RecipeSimulationSupport {
             }
         }
 
-        ItemStack outputStack = createOutputStack(recipe.output().result(), outputData, level.getGameTime());
+        ItemStack outputStack = createOutputStack(recipe.output().result(), outputData, level.getGameTime(), consumedInputs);
         access.simulationMergeIntoSlot(access.outputSlot(), outputStack);
         if (!recipe.output().byproduct().isEmpty()) {
-            access.simulationMergeIntoSlot(access.byproductSlot(), createOutputStack(recipe.output().byproduct(), null, level.getGameTime()));
+            access.simulationMergeIntoSlot(access.byproductSlot(), createOutputStack(recipe.output().byproduct(), null, level.getGameTime(), List.of()));
         }
         if (guidePlayer(access) instanceof ServerPlayer player
                 && RecipeBookProgress.recordKitchenOutput(player, outputStack, recipe.recipeBook().normalizedChainKey())) {
@@ -292,12 +293,21 @@ final class RecipeSimulationSupport {
         access.simulationMarkChanged();
     }
 
-    private static ItemStack createOutputStack(ItemStack template, IngredientStateData outputData, long gameTime) {
+    private static ItemStack createOutputStack(ItemStack template, IngredientStateData outputData, long gameTime, List<ItemStack> sourceInputs) {
         ItemStack output = template.copy();
         if (output.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            return outputData != null
-                    ? ingredientItem.createStack(output.getCount(), gameTime, outputData)
-                    : ingredientItem.createStack(output.getCount(), gameTime);
+            if (outputData == null) {
+                return ingredientItem.createStack(output.getCount(), gameTime);
+            }
+
+            SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeStacks(sourceInputs, gameTime);
+            FoodMatterData targetMatter = FoodMaterialProfiles.createMatter(output, outputData, output.getItem() instanceof com.boaat.jazzy_cookin.item.KitchenMealItem);
+            if (targetMatter != null) {
+                ItemStack carried = SimulationOutputFactory.createOutput(ingredientItem, gameTime, analysis, targetMatter);
+                carried.setCount(output.getCount());
+                return carried;
+            }
+            return ingredientItem.createStack(output.getCount(), gameTime, outputData);
         }
         return output;
     }
