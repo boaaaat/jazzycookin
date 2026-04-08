@@ -442,8 +442,23 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
         Component helper = this.controlHelperText();
         if (!helper.getString().isEmpty()) {
-            this.drawTrimmedLabel(guiGraphics, helper, this.layout.helperTextRegion().x(), this.layout.helperTextRegion().y(),
-                    this.layout.helperTextRegion().width(), JazzyGuiRenderer.TEXT_MUTED);
+            int helperX;
+            if (this.raiseControlButton != null && this.raiseControlButton.visible) {
+                helperX = this.layout.raiseControlAction().bounds().right() + 4;
+            } else {
+                helperX = this.layout.helperTextRegion().x();
+            }
+            int helperY = this.layout.helperTextRegion().y();
+            int helperMaxRight;
+            if (this.tertiaryActionButton != null && this.tertiaryActionButton.visible) {
+                helperMaxRight = this.layout.tertiaryAction().bounds().x() - 4;
+            } else if (this.secondaryActionButton != null && this.secondaryActionButton.visible) {
+                helperMaxRight = this.layout.secondaryAction().bounds().x() - 4;
+            } else {
+                helperMaxRight = this.layout.primaryAction().bounds().x() - 4;
+            }
+            int helperWidth = Math.max(0, helperMaxRight - helperX);
+            this.drawTrimmedLabel(guiGraphics, helper, helperX, helperY, helperWidth, JazzyGuiRenderer.TEXT_MUTED);
         }
 
         Component controlLabel = this.controlDisplayLabel();

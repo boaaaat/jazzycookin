@@ -118,16 +118,6 @@ public class JazzyRecipeBookScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (this.isPinnedSelection()) {
-            String focusedStepId = RecipeBookClientState.focusedStepId();
-            if (focusedStepId != null && !focusedStepId.equals(this.selectedStepId)) {
-                this.selectedStepId = focusedStepId;
-                this.currentPlan().ifPresent(plan -> {
-                    this.ensureExpandedPath(plan, focusedStepId);
-                    this.ensureSelectedStepVisible();
-                });
-            }
-        }
         this.refreshButtons();
     }
 
@@ -543,19 +533,21 @@ public class JazzyRecipeBookScreen extends Screen {
         }
 
         VisibleStep visibleStep = visibleSteps.get(index);
-        int cardTop = this.panelTop + STEP_LIST_TOP + 6 + row * STEP_ROW_HEIGHT;
-        int expandLeft = this.expandButtonLeft(visibleStep);
-        if (visibleStep.expandable()
-                && mouseX >= expandLeft
-                && mouseX < expandLeft + STEP_EXPAND_SIZE
-                && mouseY >= cardTop + 6
-                && mouseY < cardTop + 6 + STEP_EXPAND_SIZE) {
-            boolean expanded = !visibleStep.expanded();
-            this.expandedSteps.put(visibleStep.step().id(), expanded);
-            if (!expanded && this.currentPlan().filter(plan -> this.isDescendantStep(plan, visibleStep.step().id(), this.selectedStepId)).isPresent()) {
-                this.selectStep(visibleStep.step().id());
+        if (visibleStep.expandable()) {
+            int indent = visibleStep.depth() * STEP_INDENT;
+            int numX = this.stepCardLeft() + 6 + indent;
+            int numWidth = this.font.width((index + 1) + ".") + 4;
+            int arrowLeft = numX + numWidth;
+            int arrowRight = arrowLeft + 10;
+            int cardTop = this.panelTop + STEP_LIST_TOP + 4 + row * STEP_ROW_HEIGHT;
+            if (mouseX >= arrowLeft && mouseX < arrowRight && mouseY >= cardTop && mouseY < cardTop + STEP_ROW_HEIGHT - 2) {
+                boolean expanded = !visibleStep.expanded();
+                this.expandedSteps.put(visibleStep.step().id(), expanded);
+                if (!expanded && this.currentPlan().filter(plan -> this.isDescendantStep(plan, visibleStep.step().id(), this.selectedStepId)).isPresent()) {
+                    this.selectStep(visibleStep.step().id());
+                }
+                return true;
             }
-            return true;
         }
 
         this.selectStep(visibleStep.step().id());
@@ -683,7 +675,7 @@ public class JazzyRecipeBookScreen extends Screen {
         Set<String> completed = this.currentCompletedStepIds();
         List<VisibleStep> visibleSteps = this.currentVisibleSteps();
         int visibleRows = this.visibleStepRows();
-        int rowY = this.panelTop + STEP_LIST_TOP + 6;
+        int rowY = this.panelTop + STEP_LIST_TOP + 4;
         for (int row = 0; row < visibleRows; row++) {
             int index = this.stepScroll + row;
             if (index >= visibleSteps.size()) {
@@ -696,25 +688,31 @@ public class JazzyRecipeBookScreen extends Screen {
             boolean selected = step.id().equals(this.selectedStepId);
             int cardTop = rowY + row * STEP_ROW_HEIGHT;
             guiGraphics.fill(this.stepCardLeft(), cardTop, this.stepCardRight(), cardTop + STEP_ROW_HEIGHT - 2, this.stepBackgroundColor(complete, selected));
-
-            for (int depth = 0; depth < visibleStep.depth(); depth++) {
-                int guideX = this.stepCardLeft() + 30 + depth * STEP_INDENT;
-                guiGraphics.fill(guideX, cardTop + 3, guideX + 1, cardTop + STEP_ROW_HEIGHT - 5, 0x442A3442);
+            if (selected) {
+                guiGraphics.fill(this.stepCardLeft(), cardTop, this.stepCardLeft() + 2, cardTop + STEP_ROW_HEIGHT - 2, complete ? 0xFF4ADE80 : 0xFF5AAAB1);
             }
 
-            guiGraphics.drawString(this.font, Component.literal((plan.indexOfStep(step.id()) + 1) + "."), this.stepCardLeft() + 8, cardTop + 6,
+            int indent = visibleStep.depth() * STEP_INDENT;
+            for (int depth = 0; depth < visibleStep.depth(); depth++) {
+                int guideX = this.stepCardLeft() + 8 + depth * STEP_INDENT;
+                guiGraphics.fill(guideX, cardTop + 2, guideX + 1, cardTop + STEP_ROW_HEIGHT - 4, 0x332A3442);
+            }
+
+            int numX = this.stepCardLeft() + 6 + indent;
+            guiGraphics.drawString(this.font, Component.literal((index + 1) + "."), numX, cardTop + 4,
                     complete ? 0xFF4ADE80 : 0xFFF0B429, false);
 
+            int afterNum = numX + this.font.width((index + 1) + ".") + 4;
             if (visibleStep.expandable()) {
-                int expandLeft = this.expandButtonLeft(visibleStep);
-                guiGraphics.fill(expandLeft, cardTop + 6, expandLeft + STEP_EXPAND_SIZE, cardTop + 6 + STEP_EXPAND_SIZE, 0xFF2A3442);
-                guiGraphics.drawString(this.font, Component.literal(visibleStep.expanded() ? "-" : "+"), expandLeft + 3, cardTop + 7, 0xFFDCE0E8, false);
+                String arrow = visibleStep.expanded() ? "\u25BC" : "\u25B6";
+                guiGraphics.drawString(this.font, Component.literal(arrow), afterNum, cardTop + 4, 0xFF8C95A6, false);
+                afterNum += 10;
             }
 
-            int iconX = this.stepIconLeft(visibleStep);
+            int iconX = afterNum + 2;
             guiGraphics.renderItem(step.outputStack(), iconX, cardTop + 4);
-            int textX = iconX + 20;
-            int textWidth = this.stepCardRight() - textX - 6;
+            int textX = iconX + 18;
+            int textWidth = Math.max(10, this.stepCardRight() - textX - 4);
             guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(step.outputStack().getHoverName().getString(), textWidth), textX, cardTop + 3, 0xFFDCE0E8, false);
             guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.stepDetail(step, visibleStep), textWidth), textX, cardTop + 13, 0xFF8C95A6, false);
         }
@@ -726,15 +724,6 @@ public class JazzyRecipeBookScreen extends Screen {
 
     private int stepCardRight() {
         return this.panelLeft + this.panelW - 14;
-    }
-
-    private int expandButtonLeft(VisibleStep visibleStep) {
-        return this.stepCardLeft() + 26 + visibleStep.depth() * STEP_INDENT;
-    }
-
-    private int stepIconLeft(VisibleStep visibleStep) {
-        int baseLeft = this.stepCardLeft() + 40 + visibleStep.depth() * STEP_INDENT;
-        return visibleStep.expandable() ? baseLeft : baseLeft - 10;
     }
 
     private int stepBackgroundColor(boolean complete, boolean selected) {
@@ -789,6 +778,6 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private int clickedStepRow(double mouseY) {
-        return ((int) mouseY - (this.panelTop + STEP_LIST_TOP + 6)) / STEP_ROW_HEIGHT;
+        return ((int) mouseY - (this.panelTop + STEP_LIST_TOP + 4)) / STEP_ROW_HEIGHT;
     }
 }

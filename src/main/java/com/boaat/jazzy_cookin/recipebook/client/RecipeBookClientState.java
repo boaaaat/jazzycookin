@@ -95,35 +95,36 @@ public final class RecipeBookClientState {
         GuiGraphics guiGraphics = event.getGuiGraphics();
         int x = 8;
         int y = minecraft.getWindow().getGuiScaledHeight() - OVERLAY_HEIGHT - 48;
-        guiGraphics.fill(x, y, x + OVERLAY_WIDTH, y + OVERLAY_HEIGHT, 0xCC111418);
-        guiGraphics.fill(x, y, x + OVERLAY_WIDTH, y + 12, 0xFF7A5C32);
-        guiGraphics.drawString(minecraft.font, Component.translatable("screen.jazzycookin.recipe_book.overlay"), x + 6, y + 2, 0xFFF4E9DA, false);
+        guiGraphics.fill(x, y, x + OVERLAY_WIDTH, y + OVERLAY_HEIGHT, 0xCC101318);
+        guiGraphics.fill(x, y, x + OVERLAY_WIDTH, y + 12, 0xFF1A2530);
+        guiGraphics.fill(x, y + 12, x + OVERLAY_WIDTH, y + 13, 0xFF5CC8D0);
+        guiGraphics.drawString(minecraft.font, Component.translatable("screen.jazzycookin.recipe_book.overlay"), x + 6, y + 2, 0xFFF0F2F5, false);
 
         ItemStack targetStack = plan.targetStack();
         guiGraphics.renderItem(targetStack, x + 6, y + 18);
-        guiGraphics.drawString(minecraft.font, trim(minecraft, targetStack.getHoverName().getString(), OVERLAY_WIDTH - 30), x + 26, y + 20, 0xFFF5F5F0, false);
+        guiGraphics.drawString(minecraft.font, trim(minecraft, targetStack.getHoverName().getString(), OVERLAY_WIDTH - 30), x + 26, y + 20, 0xFFDCE0E8, false);
         guiGraphics.drawString(
                 minecraft.font,
                 Component.literal((currentIndex + 1) + "/" + plan.steps().size()),
                 x + OVERLAY_WIDTH - 20,
                 y + 20,
-                0xFFD7C2A6,
+                0xFF8C95A6,
                 false
         );
 
         ItemStack stepStack = currentStep.outputStack();
         guiGraphics.renderItem(stepStack, x + 6, y + 38);
-        guiGraphics.drawString(minecraft.font, trim(minecraft, stepStack.getHoverName().getString(), OVERLAY_WIDTH - 30), x + 26, y + 40, 0xFFE2D9C9, false);
+        guiGraphics.drawString(minecraft.font, trim(minecraft, stepStack.getHoverName().getString(), OVERLAY_WIDTH - 30), x + 26, y + 40, 0xFFDCE0E8, false);
 
         JazzyRecipeBookPlanner.StepOption option = currentStep.options().get(0);
         int lineY = y + 54;
         if (!option.requirements().isEmpty()) {
-            guiGraphics.drawString(minecraft.font, trim(minecraft, firstRequirementLine(option), OVERLAY_WIDTH - 12), x + 6, lineY, 0xFFBAC0C8, false);
+            guiGraphics.drawString(minecraft.font, trim(minecraft, firstRequirementLine(option), OVERLAY_WIDTH - 12), x + 6, lineY, 0xFF8C95A6, false);
             lineY += 10;
         }
         String note = firstNoteLine(option);
         if (!note.isEmpty()) {
-            guiGraphics.drawString(minecraft.font, trim(minecraft, note, OVERLAY_WIDTH - 12), x + 6, lineY, 0xFF9BC7A6, false);
+            guiGraphics.drawString(minecraft.font, trim(minecraft, note, OVERLAY_WIDTH - 12), x + 6, lineY, 0xFF4ADE80, false);
             lineY += 10;
         }
         if (currentStep.options().size() > 1) {
@@ -132,11 +133,11 @@ public final class RecipeBookClientState {
                     Component.translatable("screen.jazzycookin.recipe_book.alternatives", currentStep.options().size()),
                     x + 6,
                     lineY,
-                    0xFFE0B56A,
+                    0xFFF0B429,
                     false
             );
         } else if (plan.isComplete(completed)) {
-            guiGraphics.drawString(minecraft.font, Component.translatable("screen.jazzycookin.recipe_book.complete"), x + 6, lineY, 0xFF8ED19B, false);
+            guiGraphics.drawString(minecraft.font, Component.translatable("screen.jazzycookin.recipe_book.complete"), x + 6, lineY, 0xFF4ADE80, false);
         }
     }
 

@@ -141,7 +141,8 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
         if (this.menu.isPantry()) {
             this.drawTrimmedLabel(guiGraphics, Component.translatable("screen.jazzycookin.sort_tabs"),
-                    this.profile.supportRegion().x() + 10, this.profile.supportRegion().y() + 8, 128, JazzyGuiRenderer.TEXT_MUTED);
+                    this.profile.supportRegion().x() + 10, this.profile.supportRegion().y() + 8,
+                    this.profile.supportRegion().width() / 2 - 12, JazzyGuiRenderer.TEXT_MUTED);
             this.drawRightAlignedLabel(guiGraphics,
                     Component.translatable("screen.jazzycookin.page_short", this.menu.currentPage() + 1, this.menu.pageCount()),
                     this.profile.supportRegion().right() - 8, this.profile.supportRegion().y() + 8, JazzyGuiRenderer.TEXT_SOFT, false);
@@ -163,7 +164,7 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         }
         JazzyGuiRenderer.drawPageButton(guiGraphics, this.leftPos + bounds.x(), this.topPos + bounds.y(), bounds.width(), bounds.height(),
                 this.menu.storageType(), button.active, button.isMouseOver(mouseX, mouseY));
-        this.drawCenteredLabel(guiGraphics, Component.literal(label), this.leftPos + bounds.centerX(), this.topPos + bounds.y() + 2,
+        this.drawCenteredLabel(guiGraphics, Component.literal(label), this.leftPos + bounds.centerX(), this.topPos + bounds.y() + (bounds.height() - 9) / 2,
                 button.active ? 0xFFF8F7F2 : JazzyGuiRenderer.TEXT_SOFT, false);
     }
 
