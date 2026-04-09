@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
+import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
@@ -183,8 +184,15 @@ final class RecipeSimulationSupport {
         if (stack.isEmpty()) {
             return 0;
         }
-        FoodMatterData matter = com.boaat.jazzy_cookin.kitchen.KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime);
-        DishRecognitionResult recognition = DishSchema.preview(matter);
+        DishRecognitionResult recognition = stack.getItem() instanceof KitchenMealItem
+                ? DishSchema.previewMeal(stack, gameTime)
+                : stack.getItem() instanceof KitchenIngredientItem
+                ? DishSchema.previewPrepared(stack, gameTime)
+                : null;
+        if (recognition == null) {
+            FoodMatterData matter = com.boaat.jazzy_cookin.kitchen.KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime);
+            recognition = DishSchema.preview(matter);
+        }
         return recognition != null ? recognition.previewId() : 0;
     }
 

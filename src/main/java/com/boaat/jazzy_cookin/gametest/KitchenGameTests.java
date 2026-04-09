@@ -590,6 +590,40 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void glazedChickenRecipePreviewAndOutputStayTargeted(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity stove = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.STOVE.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        stove.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, level.getGameTime()));
+        stove.setItem(1, JazzyItems.LEMON_JUICE.get().createStack(1, level.getGameTime()));
+        stove.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, level.getGameTime()));
+        stove.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.WHITE_SUGAR).get().createStack(1, level.getGameTime()));
+        stove.setItem(4, JazzyItems.ingredient(JazzyItems.IngredientId.TABLE_SALT).get().createStack(1, level.getGameTime()));
+        stove.handleButton(3104, fakePlayer);
+
+        java.util.List<ItemStack> inputs = java.util.stream.IntStream.rangeClosed(stove.inputStart(), stove.inputEnd())
+                .mapToObj(stove::getItem)
+                .filter(stack -> !stack.isEmpty())
+                .toList();
+        require(JazzyRecipes.findProcessRecipeCandidate(level, StationType.STOVE, inputs, ItemStack.EMPTY)
+                        .map(recipe -> recipe.output().result().is(JazzyItems.GLAZED_CHICKEN_PREP.get()))
+                        .orElse(false),
+                "Chicken, lemon juice, butter, sugar, and salt should resolve the glazed chicken stove recipe");
+
+        DishRecognitionResult preview = DishSchema.descriptor(stove.dataAccess().get(19));
+        require(preview != null, "Expected a stove preview recognizer for glazed chicken inputs");
+        require("glazed_chicken_prep".equals(preview.key()),
+                "Expected glazed chicken preview, got " + preview.key());
+
+        require(stove.handleButton(0, fakePlayer), "Glazed chicken stove recipe should start once the burner is set");
+        tickStation(level, stove, 150);
+        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.GLAZED_CHICKEN_PREP.get()),
+                "Glazed chicken inputs should produce glazed chicken prep");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void ovenSimulationRequiresPreheatAndBakesGarlicBread(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         KitchenStationBlockEntity oven = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.OVEN.get());
@@ -1251,8 +1285,7 @@ public final class KitchenGameTests {
     }
 
     private static void requireRecognizer(ItemStack stack, ServerLevel level, String expectedKey) {
-        FoodMatterData matter = KitchenStackUtil.getOrCreateFoodMatter(stack, level.getGameTime());
-        DishRecognitionResult recognition = DishSchema.preview(matter);
+        DishRecognitionResult recognition = DishSchema.preview(stack, level.getGameTime());
         require(recognition != null, "Expected recognizer result for " + stack.getItemHolder().unwrapKey().map(key -> key.location().getPath()).orElse("unknown_stack"));
         require(expectedKey.equals(recognition.key()), "Expected recognizer key " + expectedKey + " but got " + recognition.key());
     }

@@ -201,19 +201,14 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         if (this.stationType != StationType.STOVE) {
             return 0;
         }
-        int highestLevel = 0;
-        for (int burnerIndex = 0; burnerIndex < this.capacity.inputCount(); burnerIndex++) {
-            highestLevel = Math.max(highestLevel, this.stoveBurnerLevel(burnerIndex));
-        }
-        return highestLevel;
+        return KitchenStationBlockEntity.normalizeStoveBurnerLevel(this.data.get(21));
     }
 
     public int stoveBurnerLevel(int burnerIndex) {
         if (this.stationType != StationType.STOVE) {
             return 0;
         }
-        int clampedIndex = Math.max(0, Math.min(StationCapacityProfile.forStation(StationType.STOVE).inputCount() - 1, burnerIndex));
-        return KitchenStationBlockEntity.normalizeStoveBurnerLevel(this.data.get(21 + clampedIndex));
+        return this.stoveDialLevel();
     }
 
     public int environmentStatus() {
@@ -226,10 +221,6 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         }
         int syncedTemperature = this.data.get(7);
         return syncedTemperature > 0 ? syncedTemperature : HeatLevel.DEFAULT_OVEN_TEMPERATURE;
-    }
-
-    public int executionMode() {
-        return this.data.get(8);
     }
 
     public int microwaveDurationSeconds() {
@@ -263,14 +254,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         return this.stationType == StationType.OVEN && this.data.get(30) != 0;
     }
 
-    public boolean simulationMode() {
-        return this.executionMode() == 1;
-    }
-
     public SimulationDomainType activeDomain() {
-        if (!this.simulationMode()) {
-            return SimulationDomainType.NONE;
-        }
         return switch (this.stationType) {
             case STOVE -> switch (this.currentMethod()) {
                 case BOIL, SIMMER, STEAM -> SimulationDomainType.POT;
@@ -331,9 +315,6 @@ public class KitchenStationMenu extends AbstractContainerMenu {
     }
 
     public Component simulationPreviewName() {
-        if (!this.simulationMode()) {
-            return Component.empty();
-        }
         DishRecognitionResult descriptor = DishSchema.descriptor(this.simRecognizerId());
         if (descriptor == null) {
             return Component.translatable("screen.jazzycookin.preview_none");

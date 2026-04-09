@@ -66,12 +66,4 @@ public record KitchenRecipeGuideData(
             ByteBufCodecs.FLOAT.encode(buffer, value.minimumScore());
         }
     };
-
-    public String guideKeyOrDefault(String fallback) {
-        return this.guideKey.isBlank() ? fallback : this.guideKey;
-    }
-
-    public String recognizerKeyOrDefault(String fallback) {
-        return this.recognizerKey.isBlank() ? fallback : this.recognizerKey;
-    }
 }

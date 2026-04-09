@@ -206,7 +206,7 @@ public final class DishEvaluation {
             return evaluateSummaryStack(data, stack, level, freshness, effectiveState);
         }
 
-        DishRecognitionResult recognition = DishSchema.preview(foodMatter);
+        DishRecognitionResult recognition = DishSchema.preview(stack, level.getGameTime());
         DishFamily family = dishFamily(stack, effectiveState, recognition, foodMatter);
         FoodMaterialProfile expectedProfile = FoodMaterialProfiles.profileFor(stack).orElse(null);
         float recognitionScore = recognition != null ? recognition.score() : 0.38F;

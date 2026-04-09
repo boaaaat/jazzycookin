@@ -94,14 +94,14 @@ public record StationUiProfile(
                     LARGE_WIDTH,
                     APPLIANCE_HEIGHT,
                     new Point[] {
-                            new Point(48, 56),
-                            new Point(96, 52),
-                            new Point(144, 58),
-                            new Point(56, 102),
-                            new Point(104, 108),
-                            new Point(152, 100)
+                            new Point(60, 62),
+                            new Point(100, 46),
+                            new Point(140, 62),
+                            new Point(140, 102),
+                            new Point(100, 118),
+                            new Point(60, 102)
                     },
-                    new Point(176, 80),
+                    new Point(172, 82),
                     new Point(282, 62),
                     new Point(282, 102)
             );

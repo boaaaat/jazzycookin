@@ -91,7 +91,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 18 -> snapshot.fragmentation();
                 case 19 -> snapshot.recognizerId();
                 case 20 -> KitchenStationBlockEntity.this.microwaveDurationSeconds;
-                case 21, 22, 23, 24, 25, 26 -> KitchenStationBlockEntity.this.stoveBurnerLevel(index - STOVE_BURNER_DATA_START);
+                case 21, 22, 23, 24, 25, 26 -> KitchenStationBlockEntity.this.stoveDialLevel();
                 case 27 -> KitchenStationBlockEntity.this.fuelBurnTime;
                 case 28 -> KitchenStationBlockEntity.this.fuelBurnDuration;
                 case 29 -> KitchenStationBlockEntity.this.ovenCookTimeMinutes;
@@ -110,7 +110,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 case 5 -> KitchenStationBlockEntity.this.controlSetting = Math.max(0, Math.min(2, value));
                 case 7 -> KitchenStationBlockEntity.this.ovenTemperature = HeatLevel.normalizeOvenTemperature(value);
                 case 20 -> KitchenStationBlockEntity.this.microwaveDurationSeconds = normalizeMicrowaveDuration(value);
-                case 21, 22, 23, 24, 25, 26 -> KitchenStationBlockEntity.this.setStoveBurnerLevel(index - STOVE_BURNER_DATA_START, value);
+                case 21, 22, 23, 24, 25, 26 -> KitchenStationBlockEntity.this.setStoveDialLevel(value);
                 case 27 -> KitchenStationBlockEntity.this.fuelBurnTime = Math.max(0, value);
                 case 28 -> KitchenStationBlockEntity.this.fuelBurnDuration = Math.max(0, value);
                 case 29 -> KitchenStationBlockEntity.this.ovenCookTimeMinutes = normalizeOvenCookTimeMinutes(value);
@@ -133,7 +133,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     private int ovenCookTimeMinutes = DEFAULT_OVEN_COOK_TIME_MINUTES;
     private int microwaveDurationSeconds = DEFAULT_MICROWAVE_DURATION_SECONDS;
     private int controlSetting = 1;
-    private final int[] stoveBurnerLevels = new int[STOVE_BURNER_COUNT];
+    private int stoveDialLevel;
     private int fuelBurnTime;
     private int fuelBurnDuration;
     private float stoveFuelBurnRemainder;
@@ -202,14 +202,14 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         if (this.getStationType() != StationType.STOVE) {
             return 0;
         }
-        return this.highestStoveBurnerLevel();
+        return normalizeStoveBurnerLevel(this.stoveDialLevel);
     }
 
     public int stoveBurnerLevel(int burnerIndex) {
-        if (this.getStationType() != StationType.STOVE || burnerIndex < 0 || burnerIndex >= this.stoveBurnerLevels.length) {
+        if (this.getStationType() != StationType.STOVE || burnerIndex < 0 || burnerIndex >= STOVE_BURNER_COUNT) {
             return 0;
         }
-        return normalizeStoveBurnerLevel(this.stoveBurnerLevels[burnerIndex]);
+        return this.stoveDialLevel();
     }
 
     @Override
@@ -222,7 +222,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return HeatLevel.MEDIUM;
         }
         if (this.getStationType() == StationType.STOVE) {
-            return this.hasActiveFuel() ? heatLevelForStoveDial(this.highestStoveBurnerLevel()) : HeatLevel.OFF;
+            return this.hasActiveFuel() ? heatLevelForStoveDial(this.stoveDialLevel()) : HeatLevel.OFF;
         }
         return this.getStationType() == StationType.OVEN
                 ? (this.ovenHeatDegrees >= HeatLevel.MIN_OVEN_TEMPERATURE
@@ -274,15 +274,10 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return true;
         }
         if (this.getStationType() == StationType.STOVE && buttonId >= STOVE_BURNER_BUTTON_BASE) {
-            int encoded = buttonId - STOVE_BURNER_BUTTON_BASE;
-            int burnerIndex = encoded / 10;
-            int burnerLevel = encoded % 10;
-            if (burnerIndex >= 0 && burnerIndex < this.stoveBurnerLevels.length) {
-                this.setStoveBurnerLevel(burnerIndex, burnerLevel);
-                this.tryIgniteFuel();
-                this.setChanged();
-                return true;
-            }
+            this.setStoveDialLevel(buttonId - STOVE_BURNER_BUTTON_BASE);
+            this.tryIgniteFuel();
+            this.setChanged();
+            return true;
         }
 
         if (this.getStationType().supportsHeat() && this.getStationType() != StationType.MICROWAVE) {
@@ -459,11 +454,15 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.fuelBurnTime = 0;
         this.fuelBurnDuration = 0;
         this.stoveFuelBurnRemainder = 0.0F;
+        this.stoveDialLevel = 0;
         this.ovenPreheating = false;
         this.ovenHeatDegrees = 0.0F;
         this.preheatProgress = 0;
         this.stationPhysics = StationPhysicsState.idle();
         this.activeGuidePlayerId = null;
+        if (this.getStationType() == StationType.STOVE) {
+            this.syncStoveBurnerDerivedState();
+        }
         this.setChanged();
     }
 
@@ -493,7 +492,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         tag.putBoolean("OvenPreheating", this.ovenPreheating);
         tag.putFloat("OvenHeatDegrees", this.ovenHeatDegrees);
         if (this.getStationType() == StationType.STOVE) {
-            tag.putIntArray("StoveBurners", this.stoveBurnerLevels);
+            tag.putInt("StoveDialLevel", this.stoveDialLevel);
         }
         tag.putBoolean("Processing", this.processing);
         if (this.getStationType().supportsHeat() && this.getStationType() != StationType.STOVE && this.getStationType() != StationType.OVEN) {
@@ -530,10 +529,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.ovenPreheating = tag.getBoolean("OvenPreheating");
         this.ovenHeatDegrees = tag.contains("OvenHeatDegrees") ? Math.max(0.0F, tag.getFloat("OvenHeatDegrees")) : 0.0F;
         if (this.getStationType() == StationType.STOVE) {
-            int[] storedBurners = tag.getIntArray("StoveBurners");
-            for (int burnerIndex = 0; burnerIndex < this.stoveBurnerLevels.length; burnerIndex++) {
-                this.stoveBurnerLevels[burnerIndex] = normalizeStoveBurnerLevel(burnerIndex < storedBurners.length ? storedBurners[burnerIndex] : 0);
-            }
+            this.stoveDialLevel = tag.contains("StoveDialLevel")
+                    ? normalizeStoveBurnerLevel(tag.getInt("StoveDialLevel"))
+                    : 0;
             this.syncStoveBurnerDerivedState();
         } else {
             this.controlSetting = Math.max(0, Math.min(2, tag.getInt("StationControlSetting")));
@@ -563,18 +561,18 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return Math.max(MIN_STOVE_BURNER_LEVEL, Math.min(MAX_STOVE_BURNER_LEVEL, level));
     }
 
-    private void setStoveBurnerLevel(int burnerIndex, int level) {
-        if (this.getStationType() != StationType.STOVE || burnerIndex < 0 || burnerIndex >= this.stoveBurnerLevels.length) {
+    private void setStoveDialLevel(int level) {
+        if (this.getStationType() != StationType.STOVE) {
             return;
         }
-        this.stoveBurnerLevels[burnerIndex] = normalizeStoveBurnerLevel(level);
+        this.stoveDialLevel = normalizeStoveBurnerLevel(level);
         this.syncStoveBurnerDerivedState();
     }
 
     private void syncStoveBurnerDerivedState() {
-        int highestLevel = this.highestStoveBurnerLevel();
-        this.controlSetting = highestLevel;
-        this.heatLevel = heatLevelForStoveDial(highestLevel);
+        int dialLevel = this.stoveDialLevel();
+        this.controlSetting = dialLevel;
+        this.heatLevel = heatLevelForStoveDial(dialLevel);
     }
 
     private void serverTickFuelAndHeat() {
@@ -589,8 +587,8 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     private boolean serverTickStoveFuel() {
-        int totalBurnerLevel = this.totalStoveBurnerLevel();
-        if (totalBurnerLevel <= 0) {
+        int dialLevel = this.stoveDialLevel();
+        if (dialLevel <= 0) {
             if (this.fuelBurnTime != 0 || this.fuelBurnDuration != 0 || this.stoveFuelBurnRemainder > 0.0F) {
                 this.fuelBurnTime = 0;
                 this.fuelBurnDuration = 0;
@@ -599,7 +597,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             }
             return false;
         }
-        return this.consumeStoveFuelTicks(totalBurnerLevel / 6.0F);
+        return this.consumeStoveFuelTicks(STOVE_BURNER_COUNT * (dialLevel / 6.0F));
     }
 
     private boolean serverTickOvenHeat() {
@@ -732,13 +730,11 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     private boolean shutdownStoveForFuelLoss() {
-        boolean changed = this.totalStoveBurnerLevel() > 0
+        boolean changed = this.stoveDialLevel() > 0
                 || this.fuelBurnTime != 0
                 || this.fuelBurnDuration != 0
                 || this.stoveFuelBurnRemainder > 0.0F;
-        for (int burnerIndex = 0; burnerIndex < this.stoveBurnerLevels.length; burnerIndex++) {
-            this.stoveBurnerLevels[burnerIndex] = 0;
-        }
+        this.stoveDialLevel = 0;
         this.fuelBurnTime = 0;
         this.fuelBurnDuration = 0;
         this.stoveFuelBurnRemainder = 0.0F;
@@ -763,22 +759,6 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.simulationBatch = null;
         this.stationPhysics = StationPhysicsState.idle();
         return changed;
-    }
-
-    private int highestStoveBurnerLevel() {
-        int highest = 0;
-        for (int burnerLevel : this.stoveBurnerLevels) {
-            highest = Math.max(highest, normalizeStoveBurnerLevel(burnerLevel));
-        }
-        return highest;
-    }
-
-    private int totalStoveBurnerLevel() {
-        int total = 0;
-        for (int burnerLevel : this.stoveBurnerLevels) {
-            total += normalizeStoveBurnerLevel(burnerLevel);
-        }
-        return total;
     }
 
     private static HeatLevel heatLevelForStoveDial(int level) {
@@ -812,7 +792,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     @Override
     public int simulationControlSetting() {
-        return this.getStationType() == StationType.STOVE ? this.highestStoveBurnerLevel() : this.controlSetting;
+        return this.getStationType() == StationType.STOVE ? this.stoveDialLevel() : this.controlSetting;
     }
 
     @Override

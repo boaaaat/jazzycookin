@@ -25,6 +25,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public final class DishSchema {
+    private static final ThreadLocal<IngredientState> STATE_HINT = new ThreadLocal<>();
+
     private enum CatalogFamily {
         JUICE,
         BLEND,
@@ -421,6 +423,90 @@ public final class DishSchema {
             )
     );
 
+    private static final Schema PAN_SEARED_CHICKEN_PREP = schema(
+            "pan_seared_chicken_prep",
+            20,
+            JazzyItems.PAN_SEARED_CHICKEN_PREP,
+            0.58F,
+            0.62F,
+            0.88F,
+            matter -> average(
+                    stateFit(matter, IngredientState.PAN_FRIED),
+                    requiredTraits(matter, FoodTrait.CHICKEN, FoodTrait.PROTEIN),
+                    optionalTraits(matter, FoodTrait.DAIRY, FoodTrait.SALT, FoodTrait.PEPPER, FoodTrait.HERB),
+                    band(matter.water(), 0.18F, 0.64F, 0.18F),
+                    band(matter.fat(), 0.08F, 0.60F, 0.18F),
+                    band(matter.proteinSet(), 0.34F, 0.90F, 0.18F),
+                    band(matter.browning(), 0.06F, 0.42F, 0.14F),
+                    atMost(matter.charLevel(), 0.16F, 0.10F),
+                    band(matter.fragmentation(), 0.02F, 0.30F, 0.14F),
+                    band(matter.cohesiveness(), 0.24F, 0.76F, 0.18F)
+            )
+    );
+
+    private static final Schema GLAZED_CHICKEN_PREP = schema(
+            "glazed_chicken_prep",
+            21,
+            JazzyItems.GLAZED_CHICKEN_PREP,
+            0.58F,
+            0.62F,
+            0.92F,
+            matter -> average(
+                    stateFit(matter, IngredientState.GLAZED),
+                    requiredTraits(matter, FoodTrait.CHICKEN, FoodTrait.PROTEIN),
+                    anyTrait(matter, FoodTrait.SWEETENER, FoodTrait.ACIDIC),
+                    optionalTraits(matter, FoodTrait.DAIRY, FoodTrait.SALT, FoodTrait.PEPPER, FoodTrait.HERB, FoodTrait.CONDIMENT),
+                    band(matter.water(), 0.24F, 0.74F, 0.18F),
+                    band(matter.fat(), 0.08F, 0.58F, 0.18F),
+                    band(matter.proteinSet(), 0.28F, 0.82F, 0.18F),
+                    band(matter.browning(), 0.04F, 0.26F, 0.14F),
+                    atMost(matter.charLevel(), 0.12F, 0.10F),
+                    band(matter.fragmentation(), 0.02F, 0.24F, 0.14F),
+                    band(matter.cohesiveness(), 0.24F, 0.72F, 0.18F)
+            )
+    );
+
+    private static final Schema PAN_SEARED_CHICKEN = schema(
+            "pan_seared_chicken",
+            22,
+            JazzyItems.PAN_SEARED_CHICKEN,
+            0.56F,
+            0.60F,
+            0.90F,
+            matter -> average(
+                    stateFit(matter, IngredientState.PLATED),
+                    requiredTraits(matter, FoodTrait.CHICKEN, FoodTrait.PROTEIN),
+                    optionalTraits(matter, FoodTrait.DAIRY, FoodTrait.SALT, FoodTrait.PEPPER, FoodTrait.HERB),
+                    band(matter.water(), 0.18F, 0.66F, 0.18F),
+                    band(matter.fat(), 0.08F, 0.62F, 0.18F),
+                    band(matter.proteinSet(), 0.36F, 0.92F, 0.18F),
+                    band(matter.browning(), 0.06F, 0.42F, 0.14F),
+                    atMost(matter.charLevel(), 0.16F, 0.10F),
+                    band(matter.cohesiveness(), 0.24F, 0.80F, 0.18F)
+            )
+    );
+
+    private static final Schema GLAZED_CHICKEN = schema(
+            "glazed_chicken",
+            23,
+            JazzyItems.GLAZED_CHICKEN,
+            0.56F,
+            0.60F,
+            0.94F,
+            matter -> average(
+                    stateFit(matter, IngredientState.PLATED),
+                    requiredTraits(matter, FoodTrait.CHICKEN, FoodTrait.PROTEIN),
+                    anyTrait(matter, FoodTrait.SWEETENER, FoodTrait.ACIDIC),
+                    optionalTraits(matter, FoodTrait.DAIRY, FoodTrait.SALT, FoodTrait.PEPPER, FoodTrait.HERB, FoodTrait.CONDIMENT),
+                    band(matter.water(), 0.22F, 0.76F, 0.18F),
+                    band(matter.fat(), 0.08F, 0.60F, 0.18F),
+                    band(matter.proteinSet(), 0.30F, 0.86F, 0.18F),
+                    band(matter.browning(), 0.04F, 0.28F, 0.14F),
+                    atMost(matter.charLevel(), 0.12F, 0.10F),
+                    band(matter.cohesiveness(), 0.24F, 0.78F, 0.18F)
+            )
+    );
+
     private static final List<Schema> MANUAL_SCHEMAS = List.of(
             BURNT_EGGS,
             SOFT_SCRAMBLED_EGGS,
@@ -440,7 +526,11 @@ public final class DishSchema {
             FRUIT_JUICE_BLEND,
             SMOOTHIE_BLEND,
             PACKED_FREEZE_DRY_APPLES,
-            FREEZE_DRIED_MEAL
+            FREEZE_DRIED_MEAL,
+            PAN_SEARED_CHICKEN_PREP,
+            GLAZED_CHICKEN_PREP,
+            PAN_SEARED_CHICKEN,
+            GLAZED_CHICKEN
     );
     private static final List<Schema> EGG_DISH_SCHEMAS = List.of(BURNT_EGGS, SOFT_SCRAMBLED_EGGS, SCRAMBLED_EGGS, OMELET, BROWNED_OMELET);
     private static List<Schema> allSchemas;
@@ -463,12 +553,36 @@ public final class DishSchema {
         return preview(matter, item -> true);
     }
 
+    public static DishRecognitionResult preview(ItemStack stack, long gameTime) {
+        return withStateHint(
+                stack,
+                gameTime,
+                () -> preview(KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime))
+        );
+    }
+
     public static DishRecognitionResult previewPrepared(FoodMatterData matter) {
         return preview(matter, DishSchema::isPreparedFood);
     }
 
+    public static DishRecognitionResult previewPrepared(ItemStack stack, long gameTime) {
+        return withStateHint(
+                stack,
+                gameTime,
+                () -> preview(KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime), DishSchema::isPreparedFood)
+        );
+    }
+
     public static DishRecognitionResult previewMeal(FoodMatterData matter) {
         return preview(matter, DishSchema::isMeal);
+    }
+
+    public static DishRecognitionResult previewMeal(ItemStack stack, long gameTime) {
+        return withStateHint(
+                stack,
+                gameTime,
+                () -> preview(KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime), DishSchema::isMeal)
+        );
     }
 
     public static DishRecognitionResult preview(FoodMatterData matter, Predicate<Item> filter) {
@@ -503,12 +617,36 @@ public final class DishSchema {
         return finalizeResult(matter, item -> true);
     }
 
+    public static DishRecognitionResult finalizeResult(ItemStack stack, long gameTime) {
+        return withStateHint(
+                stack,
+                gameTime,
+                () -> finalizeResult(KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime))
+        );
+    }
+
     public static DishRecognitionResult finalizePrepared(FoodMatterData matter) {
         return finalizeResult(matter, DishSchema::isPreparedFood);
     }
 
+    public static DishRecognitionResult finalizePrepared(ItemStack stack, long gameTime) {
+        return withStateHint(
+                stack,
+                gameTime,
+                () -> finalizeResult(KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime), DishSchema::isPreparedFood)
+        );
+    }
+
     public static DishRecognitionResult finalizeMeal(FoodMatterData matter) {
         return finalizeResult(matter, DishSchema::isMeal);
+    }
+
+    public static DishRecognitionResult finalizeMeal(ItemStack stack, long gameTime) {
+        return withStateHint(
+                stack,
+                gameTime,
+                () -> finalizeResult(KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime), DishSchema::isMeal)
+        );
     }
 
     public static DishRecognitionResult finalizeResult(FoodMatterData matter, Predicate<Item> filter) {
@@ -1069,7 +1207,32 @@ public final class DishSchema {
     }
 
     private static IngredientState currentState(FoodMatterData matter) {
+        IngredientState hinted = STATE_HINT.get();
+        if (hinted != null && hinted != IngredientState.PANTRY_READY) {
+            return hinted;
+        }
         return KitchenStackUtil.inferStateFromMatter(matter);
+    }
+
+    private static DishRecognitionResult withStateHint(
+            ItemStack stack,
+            long gameTime,
+            java.util.function.Supplier<DishRecognitionResult> action
+    ) {
+        if (stack == null || stack.isEmpty()) {
+            return action.get();
+        }
+        IngredientState previous = STATE_HINT.get();
+        STATE_HINT.set(KitchenStackUtil.effectiveState(stack, gameTime));
+        try {
+            return action.get();
+        } finally {
+            if (previous == null) {
+                STATE_HINT.remove();
+            } else {
+                STATE_HINT.set(previous);
+            }
+        }
     }
 
     private static int derivedNourishment(FoodMatterData matter) {
