@@ -27,10 +27,6 @@ public record KitchenPlateRecipe(
         return Optional.ofNullable(KitchenRecipeMatching.findBestPlan(input.inputs(), this.inputs, this.guide, level.getGameTime()));
     }
 
-    public float matchScore(KitchenPlateInput input, Level level) {
-        return this.matchPlan(input, level).map(KitchenRecipeMatchPlan::score).orElse(0.0F);
-    }
-
     @Override
     public ItemStack assemble(KitchenPlateInput input, HolderLookup.Provider registries) {
         return this.output.result().copy();

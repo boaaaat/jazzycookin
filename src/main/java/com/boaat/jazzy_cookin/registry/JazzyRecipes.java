@@ -12,6 +12,7 @@ import com.boaat.jazzy_cookin.recipe.KitchenPlateSerializer;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessInput;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessSerializer;
+import com.boaat.jazzy_cookin.recipe.KitchenRecipeMatchPlan;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.ItemStack;
@@ -63,12 +64,12 @@ public final class JazzyRecipes {
     ) {
         KitchenProcessInput recipeInput = new KitchenProcessInput(inputs, tool, station, heat, preheated);
         KitchenProcessRecipe bestRecipe = null;
-        float bestScore = 0.0F;
+        KitchenRecipeMatchPlan bestPlan = null;
         for (RecipeHolder<KitchenProcessRecipe> holder : level.getRecipeManager().getAllRecipesFor(KITCHEN_PROCESS_TYPE.get())) {
-            float score = holder.value().matchScore(recipeInput, level);
-            if (score > bestScore) {
+            KitchenRecipeMatchPlan plan = holder.value().matchPlan(recipeInput, level).orElse(null);
+            if (plan != null && plan.betterThan(bestPlan)) {
                 bestRecipe = holder.value();
-                bestScore = score;
+                bestPlan = plan;
             }
         }
         return Optional.ofNullable(bestRecipe);
@@ -81,12 +82,12 @@ public final class JazzyRecipes {
             ItemStack tool
     ) {
         KitchenProcessRecipe bestRecipe = null;
-        float bestScore = 0.0F;
+        KitchenRecipeMatchPlan bestPlan = null;
         for (RecipeHolder<KitchenProcessRecipe> holder : level.getRecipeManager().getAllRecipesFor(KITCHEN_PROCESS_TYPE.get())) {
-            float score = holder.value().candidateScore(station, inputs, tool, level);
-            if (score > bestScore) {
+            KitchenRecipeMatchPlan plan = holder.value().candidatePlan(station, inputs, tool, level).orElse(null);
+            if (plan != null && plan.betterThan(bestPlan)) {
                 bestRecipe = holder.value();
-                bestScore = score;
+                bestPlan = plan;
             }
         }
         return Optional.ofNullable(bestRecipe);
@@ -95,12 +96,12 @@ public final class JazzyRecipes {
     public static Optional<KitchenPlateRecipe> findPlateRecipe(Level level, List<ItemStack> inputs) {
         KitchenPlateInput recipeInput = new KitchenPlateInput(inputs);
         KitchenPlateRecipe bestRecipe = null;
-        float bestScore = 0.0F;
+        KitchenRecipeMatchPlan bestPlan = null;
         for (RecipeHolder<KitchenPlateRecipe> holder : level.getRecipeManager().getAllRecipesFor(KITCHEN_PLATE_TYPE.get())) {
-            float score = holder.value().matchScore(recipeInput, level);
-            if (score > bestScore) {
+            KitchenRecipeMatchPlan plan = holder.value().matchPlan(recipeInput, level).orElse(null);
+            if (plan != null && plan.betterThan(bestPlan)) {
                 bestRecipe = holder.value();
-                bestScore = score;
+                bestPlan = plan;
             }
         }
         return Optional.ofNullable(bestRecipe);

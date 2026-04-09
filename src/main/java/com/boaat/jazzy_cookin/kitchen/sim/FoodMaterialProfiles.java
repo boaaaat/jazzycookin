@@ -14,6 +14,7 @@ import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.boaat.jazzy_cookin.registry.JazzyItems.IngredientId;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -55,6 +56,20 @@ public final class FoodMaterialProfiles {
         return summaryHint != null ? FoodMatterData.fromSummaryHint(summaryHint, finalizedServing) : null;
     }
 
+    public static FoodMatterData createCanonicalMatter(ItemStack stack, long gameTime, boolean finalizedServing) {
+        if (!(stack.getItem() instanceof KitchenIngredientItem ingredientItem)) {
+            return null;
+        }
+
+        FoodMaterialProfile profile = profileFor(stack).orElse(null);
+        IngredientStateData anchor = ingredientItem.defaultData(gameTime);
+        if (profile == null) {
+            return FoodMatterData.fromSummaryHint(anchor, finalizedServing);
+        }
+
+        return profile.create(canonicalSummary(stack, anchor, profile, finalizedServing), finalizedServing);
+    }
+
     public static long traitMaskFor(ItemStack stack) {
         return profileFor(stack).map(FoodMaterialProfile::traitMask).orElse(0L);
     }
@@ -81,6 +96,198 @@ public final class FoodMaterialProfiles {
     public static boolean isStoveFat(ItemStack stack) {
         FoodMaterialProfile profile = profileFor(stack).orElse(null);
         return profile != null && (profile.hasTrait(FoodTrait.FAT) || profile.hasTrait(FoodTrait.OIL));
+    }
+
+    private static IngredientStateData canonicalSummary(
+            ItemStack stack,
+            IngredientStateData anchor,
+            FoodMaterialProfile profile,
+            boolean finalizedServing
+    ) {
+        String id = itemId(stack.getItem());
+        IngredientState state = anchor.state();
+        float processBias = processBias(state, finalizedServing);
+        float quality = Mth.clamp(anchor.quality() * 0.68F + derivedQuality(profile, state, processBias) * 0.32F, 0.05F, 1.0F);
+        float recipeAccuracy = Mth.clamp(anchor.recipeAccuracy() * 0.62F + (0.60F + processBias * 0.24F) * 0.38F, 0.0F, 1.0F);
+        float flavor = Mth.clamp(anchor.flavor() * 0.46F + derivedFlavor(profile, state, id) * 0.54F, 0.0F, 1.0F);
+        float texture = Mth.clamp(anchor.texture() * 0.48F + derivedTexture(profile, state, processBias) * 0.52F, 0.0F, 1.0F);
+        float structure = Mth.clamp(anchor.structure() * 0.50F + derivedStructure(profile, state, processBias) * 0.50F, 0.0F, 1.0F);
+        float moisture = Mth.clamp(anchor.moisture() * 0.32F + derivedMoisture(profile, state, finalizedServing) * 0.68F, 0.0F, 1.0F);
+        float purity = Mth.clamp(anchor.purity() * 0.64F + derivedPurity(profile, state, finalizedServing) * 0.36F, 0.0F, 1.0F);
+        float aeration = Mth.clamp(anchor.aeration() * 0.36F + derivedAeration(profile, state) * 0.64F, 0.0F, 1.0F);
+        int processDepth = Math.max(anchor.processDepth(), canonicalProcessDepth(state, finalizedServing));
+        int nourishment = Math.max(anchor.nourishment(), Math.round(anchor.nourishment() * 0.70F + derivedNourishment(profile, processBias) * 0.30F));
+        int enjoyment = Math.max(anchor.enjoyment(), Math.round(anchor.enjoyment() * 0.62F + derivedEnjoyment(profile, state, id) * 0.38F));
+        return new IngredientStateData(
+                state,
+                anchor.createdTick(),
+                quality,
+                recipeAccuracy,
+                flavor,
+                texture,
+                structure,
+                moisture,
+                purity,
+                aeration,
+                processDepth,
+                nourishment,
+                enjoyment
+        );
+    }
+
+    private static float processBias(IngredientState state, boolean finalizedServing) {
+        if (finalizedServing || state.isPlatedState()) {
+            return 0.95F;
+        }
+        return switch (state) {
+            case ROUGH_CUT, CHOPPED, DICED, MINCED, SLICED, STRAINED, STUFFED, SHAPED_BASE -> 0.28F;
+            case FINE_POWDER, COARSE_POWDER -> 0.36F;
+            case DOUGH, BREAD_DOUGH, DUMPLING_DOUGH, SHAGGY_DOUGH, ROUGH_DOUGH, DEVELOPING_DOUGH, DEVELOPED_DOUGH, SMOOTH_DOUGH, ELASTIC_DOUGH -> 0.52F;
+            case BATTER, BATTERED, BATTERED_PROTEIN, SMOOTH_MIXTURE, LUMPY_MIXTURE, CREAMY, SMOOTH, PASTE, SMOOTH_PASTE -> 0.48F;
+            case SIMMERED, BOILED, SOUP_BASE, STRAINED_SOUP, SIMMERED_FILLING, MARINATED, MARINATED_PROTEIN, GLAZED -> 0.70F;
+            case PAN_FRIED, DEEP_FRIED -> 0.78F;
+            case BAKED, BAKED_BREAD, BAKED_PIE, RAW_ASSEMBLED_PIE, RAW_ASSEMBLED_PIZZA -> 0.72F;
+            case SMOKED, STEAMED, STEAMED_DUMPLINGS -> 0.68F;
+            case FERMENTED, FERMENTED_VEGETABLE, CULTURED_DAIRY, HOT_PRESERVE, CANNING_SYRUP, FREEZE_DRIED, DRIED_FRUIT -> 0.64F;
+            default -> 0.18F;
+        };
+    }
+
+    private static float derivedQuality(FoodMaterialProfile profile, IngredientState state, float processBias) {
+        float base = 0.60F
+                + profile.protein() * 0.12F
+                + profile.fat() * 0.10F
+                + profile.cheeseLoad() * 0.08F
+                + profile.herbLoad() * 0.04F
+                + processBias * 0.10F;
+        if (state == IngredientState.FRESH_JUICE || state == IngredientState.SMOOTH) {
+            base += profile.acidity() * 0.05F;
+        }
+        return Mth.clamp(base, 0.05F, 1.0F);
+    }
+
+    private static float derivedFlavor(FoodMaterialProfile profile, IngredientState state, String id) {
+        float flavor = 0.26F
+                + profile.sugar() * 0.18F
+                + profile.fat() * 0.12F
+                + profile.protein() * 0.10F
+                + profile.acidity() * 0.10F
+                + profile.seasoningLoad() * 0.22F
+                + profile.cheeseLoad() * 0.16F
+                + profile.onionLoad() * 0.10F
+                + profile.herbLoad() * 0.10F
+                + profile.pepperLoad() * 0.08F;
+        if (state.isPlatedState() || id.contains("plate") || id.contains("bowl")) {
+            flavor += 0.05F;
+        }
+        return Mth.clamp(flavor, 0.0F, 1.0F);
+    }
+
+    private static float derivedTexture(FoodMaterialProfile profile, IngredientState state, float processBias) {
+        float texture = 0.16F
+                + profile.fat() * 0.18F
+                + profile.protein() * 0.18F
+                + profile.starch() * 0.12F
+                + profile.fiber() * 0.08F
+                + processBias * 0.16F;
+        if (state == IngredientState.FRESH_JUICE || state == IngredientState.PULP) {
+            texture = 0.18F + profile.fiber() * 0.12F;
+        } else if (state == IngredientState.CREAMY || state == IngredientState.SMOOTH || state == IngredientState.SMOOTH_PASTE) {
+            texture += 0.10F;
+        }
+        return Mth.clamp(texture, 0.0F, 1.0F);
+    }
+
+    private static float derivedStructure(FoodMaterialProfile profile, IngredientState state, float processBias) {
+        float structure = 0.18F
+                + profile.protein() * 0.20F
+                + profile.starch() * 0.18F
+                + profile.fiber() * 0.12F
+                + profile.fat() * 0.06F
+                + processBias * 0.14F;
+        if (state == IngredientState.DOUGH || state == IngredientState.BREAD_DOUGH) {
+            structure += 0.14F;
+        } else if (state.isPlatedState()) {
+            structure += 0.08F;
+        }
+        return Mth.clamp(structure, 0.0F, 1.0F);
+    }
+
+    private static float derivedMoisture(FoodMaterialProfile profile, IngredientState state, boolean finalizedServing) {
+        float moisture = profile.water();
+        moisture = switch (state) {
+            case FRESH_JUICE -> Mth.clamp(Math.max(0.78F, moisture), 0.0F, 1.0F);
+            case PULP -> Mth.clamp(Math.max(0.56F, moisture), 0.0F, 1.0F);
+            case CREAMY, SMOOTH, SMOOTH_MIXTURE, LUMPY_MIXTURE -> Mth.clamp(moisture * 0.82F + 0.18F, 0.0F, 1.0F);
+            case PASTE, SMOOTH_PASTE -> Mth.clamp(moisture * 0.65F + 0.05F, 0.0F, 1.0F);
+            case DOUGH, BREAD_DOUGH, DUMPLING_DOUGH -> Mth.clamp(moisture * 0.55F + 0.05F, 0.0F, 1.0F);
+            case BATTER, BATTERED, BATTERED_PROTEIN -> Mth.clamp(moisture * 0.74F + 0.08F, 0.0F, 1.0F);
+            case SIMMERED, BOILED, SOUP_BASE, STRAINED_SOUP, SIMMERED_FILLING -> Mth.clamp(moisture * 0.84F + 0.08F, 0.0F, 1.0F);
+            case PAN_FRIED, DEEP_FRIED, BAKED, BAKED_BREAD, BAKED_PIE, ROASTED -> Mth.clamp(moisture * 0.62F, 0.0F, 1.0F);
+            case FREEZE_DRIED, DRIED_FRUIT -> Mth.clamp(moisture * 0.24F, 0.0F, 1.0F);
+            default -> Mth.clamp(moisture, 0.0F, 1.0F);
+        };
+        if (finalizedServing && state.isPlatedState()) {
+            moisture = Mth.clamp(moisture * 0.92F + 0.04F, 0.0F, 1.0F);
+        }
+        return moisture;
+    }
+
+    private static float derivedPurity(FoodMaterialProfile profile, IngredientState state, boolean finalizedServing) {
+        float purity = 0.64F
+                + profile.acidity() * 0.06F
+                + profile.herbLoad() * 0.04F
+                + profile.seasoningLoad() * 0.04F;
+        if (state.isPlatedState() || finalizedServing) {
+            purity += 0.06F;
+        }
+        return Mth.clamp(purity, 0.0F, 1.0F);
+    }
+
+    private static float derivedAeration(FoodMaterialProfile profile, IngredientState state) {
+        float aeration = Math.max(profile.aeration(), switch (state) {
+            case FRESH_JUICE -> 0.02F;
+            case SMOOTH, CREAMY, SMOOTH_MIXTURE -> 0.08F;
+            case BATTER -> 0.16F;
+            case DOUGH, BREAD_DOUGH -> 0.10F;
+            default -> 0.04F;
+        });
+        return Mth.clamp(aeration, 0.0F, 1.0F);
+    }
+
+    private static int canonicalProcessDepth(IngredientState state, boolean finalizedServing) {
+        if (finalizedServing || state.isPlatedState()) {
+            return 2;
+        }
+        return switch (state) {
+            case PANTRY_READY -> 0;
+            case ROUGH_CUT, CHOPPED, DICED, MINCED, SLICED, STRAINED, STUFFED, SHAPED_BASE -> 1;
+            default -> 1;
+        };
+    }
+
+    private static int derivedNourishment(FoodMaterialProfile profile, float processBias) {
+        return Math.max(1, Math.round(
+                profile.protein() * 8.0F
+                        + profile.fat() * 4.0F
+                        + profile.starch() * 4.0F
+                        + profile.sugar() * 2.0F
+                        + processBias * 1.5F
+        ));
+    }
+
+    private static int derivedEnjoyment(FoodMaterialProfile profile, IngredientState state, String id) {
+        float enjoyment = 1.0F
+                + profile.sugar() * 3.0F
+                + profile.seasoningLoad() * 3.0F
+                + profile.cheeseLoad() * 2.5F
+                + profile.herbLoad() * 2.0F
+                + profile.pepperLoad() * 1.5F
+                + profile.fat() * 2.0F;
+        if (state.isPlatedState() || id.contains("plate") || id.contains("bowl")) {
+            enjoyment += 1.0F;
+        }
+        return Math.max(1, Math.round(enjoyment));
     }
 
     private static synchronized void ensureInitialized() {

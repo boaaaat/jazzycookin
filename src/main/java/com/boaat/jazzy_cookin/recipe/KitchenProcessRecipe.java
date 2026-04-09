@@ -70,15 +70,11 @@ public record KitchenProcessRecipe(
         if (!this.matchesTool(tool)) {
             return Optional.empty();
         }
-        return Optional.ofNullable(KitchenRecipeMatching.findBestPlan(inputs, this.inputs, this.guide, level.getGameTime()));
-    }
-
-    public float matchScore(KitchenProcessInput input, Level level) {
-        return this.matchPlan(input, level).map(KitchenRecipeMatchPlan::score).orElse(0.0F);
-    }
-
-    public float candidateScore(StationType station, List<ItemStack> inputs, ItemStack tool, Level level) {
-        return this.candidatePlan(station, inputs, tool, level).map(KitchenRecipeMatchPlan::score).orElse(0.0F);
+        KitchenRecipeMatchPlan plan = KitchenRecipeMatching.findBestPlan(inputs, this.inputs, this.guide, level.getGameTime());
+        if (plan == null) {
+            return Optional.empty();
+        }
+        return plan.stateFit() >= 0.95F ? Optional.of(plan) : Optional.empty();
     }
 
     public boolean isEnvironmentReady(HeatLevel actualHeat, boolean preheated) {

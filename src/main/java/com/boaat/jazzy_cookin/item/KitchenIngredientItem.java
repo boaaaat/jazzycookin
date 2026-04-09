@@ -152,7 +152,9 @@ public class KitchenIngredientItem extends Item {
     }
 
     public ItemStack createStack(int count, long gameTime) {
-        return this.createStack(count, gameTime, this.defaultData(gameTime));
+        ItemStack stack = new ItemStack(this, count);
+        KitchenStackUtil.initializeCanonicalStack(stack, gameTime);
+        return stack;
     }
 
     public ItemStack createStack(int count, long gameTime, IngredientStateData data) {

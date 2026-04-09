@@ -88,6 +88,10 @@ public final class SimulationOutputFactory {
     private static ItemStack legalOutput(ItemStack output, long gameTime) {
         IngredientStateData data = KitchenStackUtil.getOrCreateData(output, gameTime);
         if (data != null && !KitchenStackUtil.isStateAllowed(output, data.state(), gameTime)) {
+            FoodMatterData matter = KitchenStackUtil.getFoodMatter(output);
+            if (matter != null && (matter.processDepth() > 0 || matter.finalizedServing())) {
+                return output;
+            }
             return ItemStack.EMPTY;
         }
         return output;

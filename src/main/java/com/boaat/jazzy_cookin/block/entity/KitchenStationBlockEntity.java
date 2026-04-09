@@ -178,12 +178,6 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         return StationCapacityProfile.forStation(this.getStationType());
     }
 
-    private List<ItemStack> activeInputStacks() {
-        return java.util.stream.IntStream.rangeClosed(this.inputStart(), this.inputEnd())
-                .mapToObj(this::getItem)
-                .toList();
-    }
-
     private void refreshSpoilageDisplays(long gameTime) {
         boolean changed = false;
         for (ItemStack stack : this.items) {
@@ -294,11 +288,6 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         }
         if (this.getStationType() == StationType.MICROWAVE && buttonId >= 2000) {
             this.microwaveDurationSeconds = normalizeMicrowaveDuration(buttonId - 2000);
-            this.setChanged();
-            return true;
-        }
-        if (this.getStationType() == StationType.STOVE && buttonId >= 3001 && buttonId <= 3006) {
-            this.applyStoveDialLevel(buttonId - 3000);
             this.setChanged();
             return true;
         }
@@ -658,6 +647,14 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         boolean heatingDemand = this.ovenPreheating || this.processing;
         if (heatingDemand) {
             changed |= this.consumeFuelTick();
+            if (!this.hasActiveFuel()) {
+                if (this.tryIgniteFuel()) {
+                    changed = true;
+                } else {
+                    changed |= this.shutdownOvenForFuelLoss();
+                    heatingDemand = false;
+                }
+            }
         } else if (this.fuelBurnTime != 0 || this.fuelBurnDuration != 0) {
             this.fuelBurnTime = 0;
             this.fuelBurnDuration = 0;
@@ -715,8 +712,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         boolean changed = false;
         if (this.fuelBurnTime <= 0) {
             if (!this.tryIgniteFuel()) {
-                this.stoveFuelBurnRemainder = 0.0F;
-                return false;
+                return this.shutdownStoveForFuelLoss();
             }
             changed = true;
         }
@@ -729,7 +725,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             if (this.fuelBurnTime <= 0) {
                 this.fuelBurnDuration = 0;
                 if (!this.tryIgniteFuel()) {
-                    this.stoveFuelBurnRemainder = 0.0F;
+                    changed |= this.shutdownStoveForFuelLoss();
                     break;
                 }
                 changed = true;
@@ -773,6 +769,40 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
     private boolean hasActiveFuel() {
         return this.fuelBurnTime > 0;
+    }
+
+    private boolean shutdownStoveForFuelLoss() {
+        boolean changed = this.totalStoveBurnerLevel() > 0
+                || this.fuelBurnTime != 0
+                || this.fuelBurnDuration != 0
+                || this.stoveFuelBurnRemainder > 0.0F;
+        for (int burnerIndex = 0; burnerIndex < this.stoveBurnerLevels.length; burnerIndex++) {
+            this.stoveBurnerLevels[burnerIndex] = 0;
+        }
+        this.fuelBurnTime = 0;
+        this.fuelBurnDuration = 0;
+        this.stoveFuelBurnRemainder = 0.0F;
+        this.syncStoveBurnerDerivedState();
+        return changed;
+    }
+
+    private boolean shutdownOvenForFuelLoss() {
+        boolean changed = this.ovenPreheating
+                || this.processing
+                || this.progress != 0
+                || this.maxProgress != 0
+                || this.fuelBurnTime != 0
+                || this.fuelBurnDuration != 0
+                || this.simulationBatch != null;
+        this.ovenPreheating = false;
+        this.processing = false;
+        this.progress = 0;
+        this.maxProgress = 0;
+        this.fuelBurnTime = 0;
+        this.fuelBurnDuration = 0;
+        this.simulationBatch = null;
+        this.stationPhysics = StationPhysicsState.idle();
+        return changed;
     }
 
     private int highestStoveBurnerLevel() {

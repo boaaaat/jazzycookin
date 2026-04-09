@@ -38,7 +38,11 @@ public final class KitchenStackUtil {
     public static void setCreatedTick(ItemStack stack, long newCreatedTick, long gameTime) {
         FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
         if (matter != null) {
+            boolean hadSpoilageDisplay = stack.get(JazzyDataComponents.SPOILAGE_DISPLAY.get()) != null;
             setFoodMatter(stack, matter.withCreatedTick(newCreatedTick), gameTime);
+            if (!hadSpoilageDisplay) {
+                stack.remove(JazzyDataComponents.SPOILAGE_DISPLAY.get());
+            }
         }
     }
 
@@ -56,11 +60,7 @@ public final class KitchenStackUtil {
             return null;
         }
 
-        FoodMatterData created = FoodMaterialProfiles.createMatter(
-                stack,
-                ingredientItem.defaultData(gameTime),
-                isFinalizedServing(stack)
-        );
+        FoodMatterData created = FoodMaterialProfiles.createCanonicalMatter(stack, gameTime, isFinalizedServing(stack));
         setFoodMatter(stack, created, gameTime);
         return created;
     }
@@ -87,8 +87,14 @@ public final class KitchenStackUtil {
         }
         if (canonical == null && summary != null) {
             canonical = FoodMaterialProfiles.createMatter(stack, summary, isFinalizedServing(stack));
+        } else if (canonical == null) {
+            canonical = FoodMaterialProfiles.createCanonicalMatter(stack, gameTime, isFinalizedServing(stack));
         }
         setFoodMatter(stack, canonical, gameTime);
+    }
+
+    public static void initializeCanonicalStack(ItemStack stack, long gameTime) {
+        setFoodMatter(stack, FoodMaterialProfiles.createCanonicalMatter(stack, gameTime, isFinalizedServing(stack)), gameTime);
     }
 
     public static boolean isWorkedFood(ItemStack stack) {

@@ -47,6 +47,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 
@@ -1117,6 +1118,116 @@ public final class KitchenGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void allPreparedAndMealStacksInitializeSimulationMatterAndRecognize(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long gameTime = level.getGameTime();
+
+        for (var prepared : JazzyItems.preparedItems()) {
+            ItemStack stack = prepared.get().createStack(1, gameTime);
+            FoodMatterData matter = KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime);
+            DishRecognitionResult recognition = DishSchema.preview(matter);
+            require(matter != null, "Prepared item should initialize FOOD_MATTER for " + itemId(prepared.get()).getPath());
+            require(KitchenStackUtil.getOrCreateData(stack, gameTime) != null, "Prepared item should derive summary data for " + itemId(prepared.get()).getPath());
+            require(recognition != null, "Prepared item should recognize from canonical simulation matter for " + itemId(prepared.get()).getPath());
+        }
+
+        for (var meal : JazzyItems.mealItems()) {
+            ItemStack stack = meal.get().createStack(1, gameTime);
+            FoodMatterData matter = KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime);
+            DishRecognitionResult recognition = DishSchema.preview(matter);
+            require(matter != null, "Meal item should initialize FOOD_MATTER for " + itemId(meal.get()).getPath());
+            require(matter.finalizedServing(), "Meal item should initialize as finalized serving for " + itemId(meal.get()).getPath());
+            require(KitchenStackUtil.getOrCreateData(stack, gameTime) != null, "Meal item should derive summary data for " + itemId(meal.get()).getPath());
+            require(recognition != null, "Meal item should recognize from canonical simulation matter for " + itemId(meal.get()).getPath());
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void allRecipeOutputsCarrySimulationMatterAndRecognizer(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long gameTime = level.getGameTime();
+
+        for (RecipeHolder<com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe> holder : level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PROCESS_TYPE.get())) {
+            requireRecipeOutputSimulation(holder.id().toString(), holder.value().output().result(), gameTime, level);
+            for (var outcome : holder.value().outcomes()) {
+                requireRecipeOutputSimulation(holder.id() + "#" + outcome.band().getSerializedName(), outcome.output().result(), gameTime, level);
+            }
+        }
+
+        for (RecipeHolder<com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe> holder : level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PLATE_TYPE.get())) {
+            requireRecipeOutputSimulation(holder.id().toString(), holder.value().output().result(), gameTime, level);
+        }
+
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeMatchingPrefersExactInputsAndRejectsUnrelatedExtras(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long gameTime = level.getGameTime();
+
+        java.util.List<ItemStack> cleanInputs = java.util.List.of(
+                JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, gameTime),
+                JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, gameTime),
+                JazzyItems.ingredient(JazzyItems.IngredientId.KOSHER_SALT).get().createStack(1, gameTime)
+        );
+        java.util.List<ItemStack> supportiveInputs = java.util.List.of(
+                JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, gameTime),
+                JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, gameTime),
+                JazzyItems.ingredient(JazzyItems.IngredientId.KOSHER_SALT).get().createStack(1, gameTime),
+                JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, gameTime)
+        );
+        java.util.List<ItemStack> unrelatedExtraInputs = java.util.List.of(
+                JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, gameTime),
+                JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, gameTime),
+                JazzyItems.ingredient(JazzyItems.IngredientId.KOSHER_SALT).get().createStack(1, gameTime),
+                JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, gameTime)
+        );
+
+        require(JazzyRecipes.findProcessRecipeCandidate(level, StationType.STOVE, cleanInputs, ItemStack.EMPTY)
+                        .map(recipe -> recipe.output().result().is(JazzyItems.PAN_SEARED_CHICKEN_PREP.get()))
+                        .orElse(false),
+                "Exact chicken sear inputs should resolve the pan-seared chicken recipe");
+        require(JazzyRecipes.findProcessRecipeCandidate(level, StationType.STOVE, supportiveInputs, ItemStack.EMPTY)
+                        .map(recipe -> recipe.output().result().is(JazzyItems.PAN_SEARED_CHICKEN_PREP.get()))
+                        .orElse(false),
+                "Supportive seasoning extras should not dislodge the intended chicken recipe");
+        require(JazzyRecipes.findProcessRecipeCandidate(level, StationType.STOVE, unrelatedExtraInputs, ItemStack.EMPTY).isEmpty(),
+                "Unrelated produce extras should block the chicken sear candidate instead of being treated as supportive");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void catalogGraderPrefersBalancedFoodAcrossFamilies(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long gameTime = level.getGameTime();
+
+        assertOutscores(level,
+                JazzyItems.PIE_DOUGH.get().createStack(1, gameTime),
+                degradedCopy(JazzyItems.PIE_DOUGH.get().createStack(1, gameTime), level, 0.72F, 0.02F, 0.72F, 0.05F, 0.0F, 0.0F, 0.82F, 0.18F, 0.12F),
+                "pie dough");
+        assertOutscores(level,
+                JazzyItems.GARLIC_BUTTER.get().createStack(1, gameTime),
+                degradedCopy(JazzyItems.GARLIC_BUTTER.get().createStack(1, gameTime), level, 0.74F, 0.04F, 0.44F, 0.08F, 0.22F, 0.34F, 0.18F, 0.36F, 0.16F),
+                "garlic butter");
+        assertOutscores(level,
+                JazzyItems.CHICKEN_CURRY.get().createStack(1, gameTime),
+                degradedCopy(JazzyItems.CHICKEN_CURRY.get().createStack(1, gameTime), level, 0.16F, 0.04F, 0.62F, 0.84F, 0.72F, 0.28F, 0.78F, 0.40F, 0.20F),
+                "chicken curry");
+        assertOutscores(level,
+                JazzyItems.CAKE.get().createStack(1, gameTime),
+                degradedCopy(JazzyItems.CAKE.get().createStack(1, gameTime), level, 0.06F, 0.02F, 0.58F, 0.18F, 0.82F, 0.42F, 0.84F, 0.30F, 0.12F),
+                "cake");
+        assertOutscores(level,
+                JazzyItems.SPAGHETTI_POMODORO.get().createStack(1, gameTime),
+                degradedCopy(JazzyItems.SPAGHETTI_POMODORO.get().createStack(1, gameTime), level, 0.12F, 0.02F, 0.70F, 0.76F, 0.64F, 0.22F, 0.86F, 0.34F, 0.22F),
+                "spaghetti pomodoro");
+        helper.succeed();
+    }
+
     private static KitchenStationBlockEntity placeStation(ServerLevel level, BlockPos pos, net.minecraft.world.level.block.Block block) {
         level.setBlockAndUpdate(pos, block.defaultBlockState());
         KitchenStationBlockEntity blockEntity = (KitchenStationBlockEntity) level.getBlockEntity(pos);
@@ -1152,6 +1263,66 @@ public final class KitchenGameTests {
         DishRecognitionResult recognition = DishSchema.preview(matter);
         require(recognition != null, "Expected recognizer result for " + stack.getItemHolder().unwrapKey().map(key -> key.location().getPath()).orElse("unknown_stack"));
         require(expectedKey.equals(recognition.key()), "Expected recognizer key " + expectedKey + " but got " + recognition.key());
+    }
+
+    private static void requireRecipeOutputSimulation(String key, ItemStack template, long gameTime, ServerLevel level) {
+        if (!(template.getItem() instanceof com.boaat.jazzy_cookin.item.KitchenIngredientItem ingredientItem)) {
+            return;
+        }
+        ItemStack stack = ingredientItem.createStack(Math.max(1, template.getCount()), gameTime);
+        FoodMatterData matter = KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime);
+        DishRecognitionResult recognition = DishSchema.preview(matter);
+        require(matter != null, "Recipe output should initialize FOOD_MATTER for " + key);
+        require(KitchenStackUtil.getOrCreateData(stack, gameTime) != null, "Recipe output should derive summary data for " + key);
+        require(recognition != null, "Recipe output should recognize from simulation matter for " + key);
+    }
+
+    private static ItemStack degradedCopy(
+            ItemStack source,
+            ServerLevel level,
+            float water,
+            float aeration,
+            float fragmentation,
+            float cohesiveness,
+            float proteinSet,
+            float browning,
+            float charLevel,
+            float oxidation,
+            float microbialLoad
+    ) {
+        ItemStack degraded = source.copy();
+        long gameTime = level.getGameTime();
+        FoodMatterData matter = KitchenStackUtil.getOrCreateFoodMatter(degraded, gameTime);
+        require(matter != null, "Expected degradable stack to initialize FOOD_MATTER");
+        FoodMatterData degradedMatter = matter.withWorkingState(
+                water,
+                aeration,
+                fragmentation,
+                cohesiveness,
+                proteinSet,
+                browning,
+                charLevel,
+                matter.whiskWork(),
+                matter.stirCount(),
+                matter.flipCount(),
+                Math.max(matter.timeInPan(), 120),
+                Math.max(2, matter.processDepth()),
+                matter.finalizedServing()
+        ).withPreservationState(
+                Math.max(0.0F, matter.preservationLevel() * 0.45F),
+                oxidation,
+                microbialLoad
+        );
+        KitchenStackUtil.setFoodMatter(degraded, degradedMatter, gameTime);
+        return degraded;
+    }
+
+    private static void assertOutscores(ServerLevel level, ItemStack good, ItemStack bad, String label) {
+        QualityBreakdown goodBreakdown = DishEvaluation.evaluateStack(good, level);
+        QualityBreakdown badBreakdown = DishEvaluation.evaluateStack(bad, level);
+        require(goodBreakdown.finalScore() > badBreakdown.finalScore(), "Balanced " + label + " should outscore a degraded version");
+        require(goodBreakdown.cookingScore() + goodBreakdown.combineScore() > badBreakdown.cookingScore() + badBreakdown.combineScore(),
+                "Balanced " + label + " should grade better in core preparation metrics");
     }
 
     private static JazzyRecipeBookPlanner.Plan requirePlan(JazzyRecipeBookPlanner planner, JazzyRecipeBookSelection selection) {

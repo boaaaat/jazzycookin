@@ -18,12 +18,13 @@ final class KitchenRecipeMatching {
             FoodTrait.SALT,
             FoodTrait.SPICE,
             FoodTrait.HERB,
+            FoodTrait.ALLIUM,
+            FoodTrait.AROMATIC,
             FoodTrait.FAT,
             FoodTrait.OIL,
             FoodTrait.CONDIMENT,
             FoodTrait.SAUCE,
             FoodTrait.PRESERVE,
-            FoodTrait.FERMENTED,
             FoodTrait.ACIDIC,
             FoodTrait.PEPPER,
             FoodTrait.CHOCOLATE
@@ -39,7 +40,7 @@ final class KitchenRecipeMatching {
             long gameTime
     ) {
         if (requirements.isEmpty()) {
-            return new KitchenRecipeMatchPlan(new int[0], 0, 1.0F);
+            return new KitchenRecipeMatchPlan(new int[0], 0, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F);
         }
         if (inputStacks.size() < requirements.size()) {
             return null;
@@ -58,14 +59,12 @@ final class KitchenRecipeMatching {
     ) {
         int[] matchedSlots = new int[requirements.size()];
         Arrays.fill(matchedSlots, -1);
-        float requiredScore = 0.0F;
         for (int requirementIndex = 0; requirementIndex < requirements.size(); requirementIndex++) {
             float matchScore = requirements.get(requirementIndex).matchScore(inputStacks.get(requirementIndex), gameTime);
             if (matchScore <= 0.0F) {
                 return null;
             }
             matchedSlots[requirementIndex] = requirementIndex;
-            requiredScore += matchScore;
         }
 
         int supportiveExtras = countSupportiveExtras(inputStacks, requirements, matchedSlots, gameTime);
@@ -76,10 +75,8 @@ final class KitchenRecipeMatching {
             return null;
         }
 
-        float score = score(requiredScore / requirements.size(), supportiveExtras);
-        return score >= minimumScore(guide, inputStacks, requirements, supportiveExtras)
-                ? new KitchenRecipeMatchPlan(matchedSlots, supportiveExtras, score)
-                : null;
+        KitchenRecipeMatchPlan plan = buildPlan(inputStacks, requirements, matchedSlots, supportiveExtras, gameTime);
+        return plan.score() >= minimumScore(guide, inputStacks, requirements, supportiveExtras) ? plan : null;
     }
 
     private static KitchenRecipeMatchPlan findFlexiblePlan(
@@ -103,13 +100,11 @@ final class KitchenRecipeMatching {
             SearchState searchState
     ) {
         if (requirementIndex >= requirements.size()) {
-            float requiredScore = 0.0F;
             for (int index = 0; index < requirements.size(); index++) {
                 int matchedSlot = searchState.currentMatches[index];
-                if (matchedSlot < 0) {
+                if (matchedSlot < 0 || requirements.get(index).matchScore(inputStacks.get(matchedSlot), gameTime) <= 0.0F) {
                     return;
                 }
-                requiredScore += requirements.get(index).matchScore(inputStacks.get(matchedSlot), gameTime);
             }
 
             int supportiveExtras = countSupportiveExtras(inputStacks, requirements, searchState.currentMatches, gameTime);
@@ -120,13 +115,19 @@ final class KitchenRecipeMatching {
                 return;
             }
 
-            float score = score(requiredScore / requirements.size(), supportiveExtras);
-            if (score < minimumScore(guide, inputStacks, requirements, supportiveExtras)) {
+            KitchenRecipeMatchPlan plan = buildPlan(
+                    inputStacks,
+                    requirements,
+                    Arrays.copyOf(searchState.currentMatches, searchState.currentMatches.length),
+                    supportiveExtras,
+                    gameTime
+            );
+            if (plan.score() < minimumScore(guide, inputStacks, requirements, supportiveExtras)) {
                 return;
             }
 
-            if (searchState.bestPlan == null || score > searchState.bestPlan.score()) {
-                searchState.bestPlan = new KitchenRecipeMatchPlan(Arrays.copyOf(searchState.currentMatches, searchState.currentMatches.length), supportiveExtras, score);
+            if (plan.betterThan(searchState.bestPlan)) {
+                searchState.bestPlan = plan;
             }
             return;
         }
@@ -175,12 +176,6 @@ final class KitchenRecipeMatching {
         if (stack.isEmpty()) {
             return true;
         }
-        for (KitchenInputRequirement requirement : requirements) {
-            if (requirement.ingredientMatches(stack) || requirement.matches(stack, gameTime)) {
-                return true;
-            }
-        }
-
         return FoodMaterialProfiles.profileFor(stack)
                 .map(profile -> {
                     Set<FoodTrait> traits = FoodTrait.unpack(profile.traitMask());
@@ -205,12 +200,65 @@ final class KitchenRecipeMatching {
             return guide.minimumScore();
         }
 
-        float expandedLayoutFloor = Mth.clamp(1.0F - extraCapacity * 0.08F, 0.48F, 1.0F);
+        float expandedLayoutFloor = Mth.clamp(1.0F - extraCapacity * 0.05F, 0.60F, 1.0F);
         return Math.min(guide.minimumScore(), expandedLayoutFloor);
     }
 
-    private static float score(float requiredScore, int supportiveExtras) {
-        return Mth.clamp(requiredScore - supportiveExtras * 0.08F, 0.0F, 1.0F);
+    private static KitchenRecipeMatchPlan buildPlan(
+            List<ItemStack> inputStacks,
+            List<KitchenInputRequirement> requirements,
+            int[] matchedSlots,
+            int supportiveExtras,
+            long gameTime
+    ) {
+        float requiredFit = 0.0F;
+        float ingredientFit = 0.0F;
+        float stateFit = 0.0F;
+        float specificity = 0.0F;
+        float exactMatchRatio = 0.0F;
+        int exactMatches = 0;
+
+        for (int index = 0; index < requirements.size(); index++) {
+            KitchenInputRequirement requirement = requirements.get(index);
+            ItemStack stack = inputStacks.get(matchedSlots[index]);
+            requiredFit += requirement.matchScore(stack, gameTime);
+            ingredientFit += requirement.ingredientFitScore(stack);
+            stateFit += requirement.stateScore(stack, gameTime);
+            specificity += requirement.specificityScore();
+            if (requirement.exactItemMatch(stack)) {
+                exactMatches++;
+            }
+        }
+
+        int requirementCount = Math.max(1, requirements.size());
+        requiredFit /= requirementCount;
+        ingredientFit /= requirementCount;
+        stateFit /= requirementCount;
+        specificity /= requirementCount;
+        exactMatchRatio = exactMatches / (float) requirementCount;
+        float extraPenalty = supportiveExtras * 0.04F;
+        float score = Mth.clamp(
+                requiredFit * 0.44F
+                        + stateFit * 0.20F
+                        + ingredientFit * 0.14F
+                        + specificity * 0.10F
+                        + exactMatchRatio * 0.12F
+                        - extraPenalty,
+                0.0F,
+                1.0F
+        );
+
+        return new KitchenRecipeMatchPlan(
+                matchedSlots,
+                supportiveExtras,
+                score,
+                requiredFit,
+                ingredientFit,
+                stateFit,
+                specificity,
+                exactMatchRatio,
+                extraPenalty
+        );
     }
 
     private static final class SearchState {

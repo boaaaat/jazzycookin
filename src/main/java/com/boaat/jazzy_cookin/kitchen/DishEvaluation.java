@@ -3,7 +3,10 @@ package com.boaat.jazzy_cookin.kitchen;
 import java.util.List;
 
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfile;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
 import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
@@ -15,6 +18,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 public final class DishEvaluation {
+    private enum DishFamily {
+        EGG,
+        JUICE,
+        BLEND,
+        DOUGH,
+        SAUCE,
+        SOUP,
+        FRIED,
+        BAKED,
+        GRAIN,
+        PLATED,
+        GENERIC
+    }
+
     private record AggregateStats(
             long createdTick,
             float quality,
@@ -190,67 +207,90 @@ public final class DishEvaluation {
         }
 
         DishRecognitionResult recognition = DishSchema.preview(foodMatter);
+        DishFamily family = dishFamily(stack, effectiveState, recognition, foodMatter);
+        FoodMaterialProfile expectedProfile = FoodMaterialProfiles.profileFor(stack).orElse(null);
         float recognitionScore = recognition != null ? recognition.score() : 0.38F;
         float recognitionQuality = recognition != null ? recognition.score() * recognition.desirability() : 0.32F;
-        float structureFit = structureFit(foodMatter, effectiveState, recognition);
-        float seasoningBalance = seasoningBalance(foodMatter, effectiveState);
-        float moistureFit = moistureFit(foodMatter, effectiveState, recognition);
-        float donenessFit = donenessFit(foodMatter, effectiveState, recognition);
-        float browningFit = browningFit(foodMatter, effectiveState, recognition);
+        float compositionFit = compositionFit(foodMatter, expectedProfile, family);
+        float integrity = Mth.clamp(
+                1.0F
+                        - foodMatter.oxidation() * 0.30F
+                        - foodMatter.microbialLoad() * 0.42F
+                        - foodMatter.charLevel() * 0.22F,
+                0.0F,
+                1.0F
+        );
+        float structureFit = structureFit(foodMatter, effectiveState, recognition, family);
+        float seasoningBalance = seasoningBalance(foodMatter, family);
+        float moistureFit = moistureFit(foodMatter, effectiveState, recognition, family);
+        float donenessFit = donenessFit(foodMatter, effectiveState, recognition, family);
+        float browningFit = browningFit(foodMatter, effectiveState, recognition, family);
         float prep = Mth.clamp(
-                data.purity() * 0.30F
-                        + structureFit * 0.30F
-                        + Mth.clamp(foodMatter.processDepth() / 4.0F, 0.0F, 1.0F) * 0.16F
-                        + foodMatter.aeration() * 0.10F
-                        + recognitionScore * 0.14F,
+                data.purity() * 0.18F
+                        + structureFit * 0.22F
+                        + compositionFit * 0.18F
+                        + Mth.clamp(foodMatter.processDepth() / 4.0F, 0.0F, 1.0F) * 0.12F
+                        + foodMatter.aeration() * 0.08F
+                        + recognitionScore * 0.10F
+                        + integrity * 0.12F,
                 0.0F,
                 1.0F
         );
         float combine = Mth.clamp(
-                structureFit * 0.34F
-                        + seasoningBalance * 0.26F
-                        + moistureFit * 0.14F
-                        + recognitionScore * 0.26F,
+                structureFit * 0.24F
+                        + seasoningBalance * 0.20F
+                        + moistureFit * 0.12F
+                        + compositionFit * 0.22F
+                        + recognitionScore * 0.10F
+                        + integrity * 0.12F,
                 0.0F,
                 1.0F
         );
         float cooking = Mth.clamp(
-                donenessFit * 0.36F
-                        + moistureFit * 0.28F
-                        + browningFit * 0.20F
-                        + (1.0F - foodMatter.charLevel()) * 0.16F,
+                donenessFit * 0.26F
+                        + moistureFit * 0.18F
+                        + browningFit * 0.18F
+                        + compositionFit * 0.14F
+                        + integrity * 0.16F
+                        + (1.0F - foodMatter.charLevel()) * 0.08F,
                 0.0F,
                 1.0F
         );
         boolean finalizedServing = foodMatter.finalizedServing();
         float finishing = Mth.clamp(
-                recognitionQuality * 0.42F
-                        + servingFit(foodMatter, effectiveState) * 0.32F
-                        + Mth.clamp(foodMatter.processDepth() / 5.0F, 0.0F, 1.0F) * 0.12F
-                        + (finalizedServing ? 0.14F : 0.0F),
+                recognitionQuality * 0.28F
+                        + servingFit(foodMatter, effectiveState) * 0.18F
+                        + compositionFit * 0.16F
+                        + integrity * 0.14F
+                        + Mth.clamp(foodMatter.processDepth() / 5.0F, 0.0F, 1.0F) * 0.10F
+                        + (finalizedServing ? 0.14F : family == DishFamily.PLATED ? 0.08F : 0.0F),
                 0.0F,
                 1.0F
         );
         float plating = finalizedServing || effectiveState.isPlatedState()
                 ? 1.0F
+                : family == DishFamily.PLATED
+                ? 0.70F
                 : isFinishedState(effectiveState)
                 ? 0.82F
                 : recognition != null && recognition.desirability() >= 0.80F
                 ? 0.58F
                 : 0.42F;
         float total = Mth.clamp(
-                data.quality() * 0.10F
+                data.quality() * 0.06F
                         + freshness * 0.14F
-                        + data.recipeAccuracy() * 0.10F
-                        + recognitionQuality * 0.16F
+                        + data.recipeAccuracy() * 0.08F
+                        + recognitionQuality * 0.18F
+                        + compositionFit * 0.12F
                         + prep * 0.12F
                         + combine * 0.12F
-                        + cooking * 0.16F
-                        + finishing * 0.06F
-                        + plating * 0.04F,
+                        + cooking * 0.12F
+                        + finishing * 0.04F
+                        + plating * 0.02F,
                 0.0F,
                 1.0F
         );
+        total = Mth.clamp(total * 0.82F + integrity * 0.18F, 0.0F, 1.0F);
         FreshnessBand band = KitchenStackUtil.freshnessBand(stack, level);
         if (band == FreshnessBand.SPOILED) {
             total *= 0.55F;
@@ -497,24 +537,27 @@ public final class DishEvaluation {
         return matter.processDepth() >= 2 ? 0.56F : 0.34F;
     }
 
-    private static float seasoningBalance(FoodMatterData matter, IngredientState state) {
+    private static float seasoningBalance(FoodMatterData matter, DishFamily family) {
         float totalSeasoning = matter.seasoningLoad() * 0.45F
                 + matter.cheeseLoad() * 0.24F
                 + matter.onionLoad() * 0.14F
                 + matter.herbLoad() * 0.09F
                 + matter.pepperLoad() * 0.08F;
-        float target = switch (state) {
-            case FRESH_JUICE, FREEZE_DRIED -> 0.05F;
-            case SMOOTH, CREAMY -> 0.12F;
-            case DOUGH, BREAD_DOUGH -> 0.10F;
-            case PASTE, SMOOTH_PASTE -> 0.18F;
-            case PAN_FRIED -> 0.22F;
+        float target = switch (family) {
+            case JUICE -> 0.04F;
+            case BLEND -> 0.10F;
+            case DOUGH -> 0.08F;
+            case SAUCE -> 0.18F;
+            case SOUP -> 0.22F;
+            case FRIED, BAKED, PLATED -> 0.20F;
+            case GRAIN -> 0.18F;
+            case EGG -> 0.20F;
             default -> matter.protein() > 0.16F ? 0.20F : 0.14F;
         };
         return around(totalSeasoning, target, 0.18F);
     }
 
-    private static float moistureFit(FoodMatterData matter, IngredientState state, DishRecognitionResult recognition) {
+    private static float moistureFit(FoodMatterData matter, IngredientState state, DishRecognitionResult recognition, DishFamily family) {
         float target = switch (recognitionKey(recognition)) {
             case "soft_scrambled_eggs" -> 0.60F;
             case "scrambled_eggs" -> 0.40F;
@@ -527,47 +570,69 @@ public final class DishEvaluation {
             case "cheese_sauce" -> 0.58F;
             case "pie_dough", "focaccia_dough" -> 0.34F;
             case "packed_freeze_dry_apples", "freeze_dried_meal" -> 0.08F;
-            default -> switch (state) {
-                case FRESH_JUICE -> 0.82F;
-                case SMOOTH, CREAMY -> 0.64F;
-                case DOUGH, BREAD_DOUGH -> 0.34F;
-                case PASTE, SMOOTH_PASTE -> 0.26F;
-                case COARSE_POWDER, FREEZE_DRIED -> 0.10F;
-                case PAN_FRIED -> 0.40F;
-                default -> 0.50F;
+            default -> switch (family) {
+                case JUICE -> 0.82F;
+                case BLEND -> 0.64F;
+                case DOUGH -> 0.34F;
+                case SAUCE -> 0.30F;
+                case SOUP -> 0.72F;
+                case BAKED -> 0.28F;
+                case FRIED -> 0.34F;
+                case GRAIN -> 0.44F;
+                case PLATED -> 0.52F;
+                case EGG -> 0.44F;
+                default -> switch (state) {
+                    case COARSE_POWDER, FREEZE_DRIED -> 0.10F;
+                    case PAN_FRIED -> 0.40F;
+                    default -> 0.50F;
+                };
             };
         };
         return around(matter.water(), target, 0.24F);
     }
 
-    private static float donenessFit(FoodMatterData matter, IngredientState state, DishRecognitionResult recognition) {
+    private static float donenessFit(FoodMatterData matter, IngredientState state, DishRecognitionResult recognition, DishFamily family) {
         if (matter.protein() <= 0.08F && matter.timeInPan() <= 0 && matter.proteinSet() <= 0.05F) {
-            return 0.72F;
+            return family == DishFamily.BAKED || family == DishFamily.FRIED ? 0.58F : 0.72F;
         }
         float target = switch (recognitionKey(recognition)) {
             case "soft_scrambled_eggs" -> 0.55F;
             case "scrambled_eggs" -> 0.72F;
             case "omelet", "browned_omelet" -> 0.68F;
             case "burnt_eggs" -> 0.78F;
-            default -> state == IngredientState.PAN_FRIED ? 0.68F : 0.64F;
+            default -> switch (family) {
+                case EGG -> 0.66F;
+                case FRIED -> 0.72F;
+                case BAKED -> 0.70F;
+                case SOUP -> 0.62F;
+                case PLATED -> 0.66F;
+                default -> state == IngredientState.PAN_FRIED ? 0.68F : 0.60F;
+            };
         };
         return around(matter.proteinSet(), target, 0.28F);
     }
 
-    private static float browningFit(FoodMatterData matter, IngredientState state, DishRecognitionResult recognition) {
+    private static float browningFit(FoodMatterData matter, IngredientState state, DishRecognitionResult recognition, DishFamily family) {
         if (state != IngredientState.PAN_FRIED && matter.timeInPan() <= 0 && matter.browning() <= 0.01F) {
-            return 0.78F;
+            return family == DishFamily.BAKED || family == DishFamily.FRIED ? 0.44F : 0.78F;
         }
         float target = switch (recognitionKey(recognition)) {
             case "soft_scrambled_eggs", "scrambled_eggs", "omelet" -> 0.10F;
             case "browned_omelet" -> 0.32F;
             case "burnt_eggs" -> 0.15F;
-            default -> state == IngredientState.PAN_FRIED ? 0.16F : 0.08F;
+            default -> switch (family) {
+                case FRIED -> 0.20F;
+                case BAKED -> 0.22F;
+                case SOUP -> 0.10F;
+                case GRAIN -> 0.12F;
+                case PLATED -> 0.16F;
+                default -> state == IngredientState.PAN_FRIED ? 0.16F : 0.08F;
+            };
         };
         return around(matter.browning(), target, 0.22F) * (1.0F - matter.charLevel() * 0.75F);
     }
 
-    private static float structureFit(FoodMatterData matter, IngredientState state, DishRecognitionResult recognition) {
+    private static float structureFit(FoodMatterData matter, IngredientState state, DishRecognitionResult recognition, DishFamily family) {
         float targetFragmentation = switch (recognitionKey(recognition)) {
             case "soft_scrambled_eggs" -> 0.70F;
             case "scrambled_eggs" -> 0.62F;
@@ -581,15 +646,22 @@ public final class DishEvaluation {
             case "pie_dough", "focaccia_dough" -> 0.10F;
             case "packed_freeze_dry_apples", "freeze_dried_meal" -> 0.32F;
             case "chopped_produce_blend" -> 0.36F;
-            default -> switch (state) {
-                case FRESH_JUICE -> 0.08F;
-                case SMOOTH, CREAMY -> 0.18F;
-                case PASTE, SMOOTH_PASTE -> 0.28F;
-                case DOUGH, BREAD_DOUGH -> 0.10F;
-                case COARSE_POWDER, FREEZE_DRIED -> 0.36F;
-                case ROUGH_CUT -> 0.36F;
-                case PAN_FRIED -> 0.45F;
-                default -> 0.28F;
+            default -> switch (family) {
+                case JUICE -> 0.08F;
+                case BLEND -> 0.18F;
+                case SAUCE -> 0.22F;
+                case DOUGH -> 0.10F;
+                case SOUP -> 0.28F;
+                case FRIED -> 0.40F;
+                case BAKED -> 0.20F;
+                case GRAIN -> 0.32F;
+                case PLATED -> 0.30F;
+                default -> switch (state) {
+                    case COARSE_POWDER, FREEZE_DRIED -> 0.36F;
+                    case ROUGH_CUT -> 0.36F;
+                    case PAN_FRIED -> 0.45F;
+                    default -> 0.28F;
+                };
             };
         };
         float targetCohesiveness = switch (recognitionKey(recognition)) {
@@ -606,15 +678,22 @@ public final class DishEvaluation {
             case "focaccia_dough" -> 0.76F;
             case "packed_freeze_dry_apples", "freeze_dried_meal" -> 0.28F;
             case "chopped_produce_blend" -> 0.30F;
-            default -> switch (state) {
-                case FRESH_JUICE -> 0.12F;
-                case SMOOTH, CREAMY -> 0.44F;
-                case PASTE, SMOOTH_PASTE -> 0.32F;
-                case DOUGH, BREAD_DOUGH -> 0.72F;
-                case COARSE_POWDER, FREEZE_DRIED -> 0.20F;
-                case ROUGH_CUT -> 0.30F;
-                case PAN_FRIED -> 0.42F;
-                default -> 0.36F;
+            default -> switch (family) {
+                case JUICE -> 0.12F;
+                case BLEND -> 0.44F;
+                case SAUCE -> 0.42F;
+                case DOUGH -> 0.72F;
+                case SOUP -> 0.24F;
+                case FRIED -> 0.46F;
+                case BAKED -> 0.56F;
+                case GRAIN -> 0.42F;
+                case PLATED -> 0.44F;
+                default -> switch (state) {
+                    case COARSE_POWDER, FREEZE_DRIED -> 0.20F;
+                    case ROUGH_CUT -> 0.30F;
+                    case PAN_FRIED -> 0.42F;
+                    default -> 0.36F;
+                };
             };
         };
         return Mth.clamp(
@@ -623,6 +702,121 @@ public final class DishEvaluation {
                 0.0F,
                 1.0F
         );
+    }
+
+    private static float compositionFit(FoodMatterData matter, FoodMaterialProfile expectedProfile, DishFamily family) {
+        if (expectedProfile == null) {
+            return switch (family) {
+                case JUICE -> average(around(matter.water(), 0.82F, 0.22F), around(matter.protein(), 0.04F, 0.12F));
+                case DOUGH -> average(around(matter.water(), 0.34F, 0.18F), around(matter.protein(), 0.12F, 0.16F));
+                case SAUCE -> average(around(matter.water(), 0.34F, 0.24F), around(matter.fat(), 0.18F, 0.18F));
+                case SOUP -> average(around(matter.water(), 0.72F, 0.18F), around(matter.protein(), 0.18F, 0.16F));
+                case FRIED -> average(around(matter.fat(), 0.18F, 0.18F), around(matter.protein(), 0.22F, 0.18F));
+                case BAKED -> average(around(matter.fat(), 0.16F, 0.18F), around(matter.protein(), 0.16F, 0.18F));
+                case GRAIN -> average(around(matter.water(), 0.46F, 0.18F), around(matter.protein(), 0.14F, 0.14F));
+                default -> 0.62F;
+            };
+        }
+        return Mth.clamp(
+                average(
+                        closeness(matter.water(), expectedProfile.water()),
+                        closeness(matter.fat(), expectedProfile.fat()),
+                        closeness(matter.protein(), expectedProfile.protein()),
+                        closeness(matter.seasoningLoad(), expectedProfile.seasoningLoad()),
+                        closeness(matter.cheeseLoad(), expectedProfile.cheeseLoad()),
+                        closeness(matter.onionLoad(), expectedProfile.onionLoad()),
+                        closeness(matter.herbLoad(), expectedProfile.herbLoad()),
+                        closeness(matter.pepperLoad(), expectedProfile.pepperLoad()),
+                        traitCoverage(matter, expectedProfile)
+                ),
+                0.0F,
+                1.0F
+        );
+    }
+
+    private static float traitCoverage(FoodMatterData matter, FoodMaterialProfile expectedProfile) {
+        if (expectedProfile == null || expectedProfile.traitMask() == 0L) {
+            return 0.60F;
+        }
+        int total = 0;
+        int matched = 0;
+        for (FoodTrait trait : FoodTrait.unpack(expectedProfile.traitMask())) {
+            total++;
+            if (matter.hasTrait(trait)) {
+                matched++;
+            }
+        }
+        return total > 0 ? matched / (float) total : 0.60F;
+    }
+
+    private static float closeness(float actual, float expected) {
+        return Mth.clamp(1.0F - Math.abs(actual - expected), 0.0F, 1.0F);
+    }
+
+    private static float average(float... values) {
+        if (values.length == 0) {
+            return 0.0F;
+        }
+        float total = 0.0F;
+        for (float value : values) {
+            total += value;
+        }
+        return total / values.length;
+    }
+
+    private static DishFamily dishFamily(
+            ItemStack stack,
+            IngredientState state,
+            DishRecognitionResult recognition,
+            FoodMatterData matter
+    ) {
+        String key = recognitionKey(recognition);
+        if ((state == IngredientState.PAN_FRIED || matter.timeInPan() > 0)
+                && matter.hasTrait(FoodTrait.EGG)
+                && ("soft_scrambled_eggs".equals(key)
+                || "scrambled_eggs".equals(key)
+                || "omelet".equals(key)
+                || "browned_omelet".equals(key)
+                || "burnt_eggs".equals(key)
+                || key.isBlank())) {
+            return DishFamily.EGG;
+        }
+        String path = stack.getItemHolder().unwrapKey().map(reference -> reference.location().getPath()).orElse("");
+        if (key.contains("juice") || path.contains("juice")) {
+            return DishFamily.JUICE;
+        }
+        if (key.contains("smoothie") || path.contains("smoothie") || state == IngredientState.SMOOTH || state == IngredientState.CREAMY) {
+            return DishFamily.BLEND;
+        }
+        if (path.contains("dough") || path.contains("batter") || state == IngredientState.DOUGH || state == IngredientState.BREAD_DOUGH) {
+            return DishFamily.DOUGH;
+        }
+        if (path.contains("sauce") || path.contains("butter") || path.contains("hummus") || path.contains("spread")
+                || state == IngredientState.SMOOTH_PASTE || state == IngredientState.PASTE || state == IngredientState.CREAMY) {
+            return DishFamily.SAUCE;
+        }
+        if (path.contains("soup") || path.contains("stew") || path.contains("curry") || path.contains("masala")
+                || path.contains("tadka") || path.contains("sabzi") || path.contains("shakshuka")
+                || state == IngredientState.SIMMERED || state == IngredientState.SIMMERED_FILLING) {
+            return DishFamily.SOUP;
+        }
+        if (state == IngredientState.PAN_FRIED || state == IngredientState.DEEP_FRIED || path.contains("fried") || path.contains("skillet")) {
+            return DishFamily.FRIED;
+        }
+        if (path.contains("cake") || path.contains("brownie") || path.contains("pie") || path.contains("bread")
+                || path.contains("pizza") || path.contains("gratin") || state == IngredientState.BAKED
+                || state == IngredientState.BAKED_BREAD || state == IngredientState.BAKED_PIE) {
+            return DishFamily.BAKED;
+        }
+        if (path.contains("rice") || path.contains("pasta") || path.contains("noodle") || path.contains("spaghetti")
+                || path.contains("ramen") || path.contains("couscous") || path.contains("biryani")
+                || path.contains("pulao") || path.contains("chawal") || path.contains("pomodoro")) {
+            return DishFamily.GRAIN;
+        }
+        if (state.isPlatedState() || matter.finalizedServing()) {
+            return DishFamily.PLATED;
+        }
+        return DishFamily.GENERIC;
     }
 
     private static float around(float value, float target, float tolerance) {

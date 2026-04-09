@@ -25,6 +25,19 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public final class DishSchema {
+    private enum CatalogFamily {
+        JUICE,
+        BLEND,
+        DOUGH,
+        SAUCE,
+        SOUP,
+        FRIED,
+        BAKED,
+        GRAIN,
+        PLATED,
+        GENERIC
+    }
+
     @FunctionalInterface
     private interface RecognitionScorer {
         float score(FoodMatterData matter);
@@ -630,6 +643,7 @@ public final class DishSchema {
             boolean meal,
             Item item
     ) {
+        CatalogFamily family = generatedFamily(item, expectedState, meal);
         float stateScore = generatedStateFit(matter, expectedState, item);
         float traitCoverage = generatedTraitCoverage(matter.traitMask(), profile.traitMask());
         float compositionScore = average(
@@ -642,6 +656,7 @@ public final class DishSchema {
                 closeness(matter.herbLoad(), profile.herbLoad()),
                 closeness(matter.pepperLoad(), profile.pepperLoad())
         );
+        float familyFit = generatedFamilyFit(matter, family);
         float processScore = meal
                 ? average(matter.finalizedServing() ? 1.0F : 0.48F, Mth.clamp(matter.processDepth() / 4.0F, 0.0F, 1.0F))
                 : average(!matter.finalizedServing() ? 1.0F : 0.62F, Mth.clamp(matter.processDepth() / 3.0F, 0.0F, 1.0F));
@@ -650,7 +665,7 @@ public final class DishSchema {
                 1.0F - Mth.clamp(matter.microbialLoad(), 0.0F, 1.0F),
                 Mth.clamp(0.45F + matter.preservationLevel() * 0.30F, 0.0F, 1.0F)
         );
-        float score = average(stateScore, traitCoverage, compositionScore, processScore, conditionScore);
+        float score = average(stateScore, traitCoverage, compositionScore, familyFit, processScore, conditionScore);
         if (!meal && expectedState.isPlatedState() != (matter.summaryHint() != null && matter.summaryHint().state().isPlatedState())) {
             score *= 0.35F;
         }
@@ -664,6 +679,100 @@ public final class DishSchema {
             score *= 0.88F;
         }
         return Mth.clamp(score, 0.0F, 1.0F);
+    }
+
+    private static CatalogFamily generatedFamily(Item item, IngredientState expectedState, boolean meal) {
+        String id = BuiltInRegistries.ITEM.getKey(item).getPath();
+        if (id.contains("juice") || expectedState == IngredientState.FRESH_JUICE) {
+            return CatalogFamily.JUICE;
+        }
+        if (id.contains("smoothie") || expectedState == IngredientState.SMOOTH || expectedState == IngredientState.CREAMY) {
+            return CatalogFamily.BLEND;
+        }
+        if (id.contains("dough") || id.contains("batter") || expectedState == IngredientState.DOUGH || expectedState == IngredientState.BREAD_DOUGH) {
+            return CatalogFamily.DOUGH;
+        }
+        if (id.contains("sauce") || id.contains("butter") || id.contains("hummus") || expectedState == IngredientState.SMOOTH_PASTE
+                || expectedState == IngredientState.PASTE || expectedState == IngredientState.CREAMY) {
+            return CatalogFamily.SAUCE;
+        }
+        if (id.contains("soup") || id.contains("stew") || id.contains("curry") || id.contains("masala")
+                || id.contains("tadka") || id.contains("sabzi") || id.contains("shakshuka")
+                || expectedState == IngredientState.SIMMERED || expectedState == IngredientState.SIMMERED_FILLING) {
+            return CatalogFamily.SOUP;
+        }
+        if (id.contains("fried") || id.contains("skillet") || expectedState == IngredientState.PAN_FRIED || expectedState == IngredientState.DEEP_FRIED) {
+            return CatalogFamily.FRIED;
+        }
+        if (id.contains("cake") || id.contains("brownie") || id.contains("pie") || id.contains("bread")
+                || id.contains("pizza") || id.contains("gratin")
+                || expectedState == IngredientState.BAKED || expectedState == IngredientState.BAKED_BREAD || expectedState == IngredientState.BAKED_PIE) {
+            return CatalogFamily.BAKED;
+        }
+        if (id.contains("rice") || id.contains("pasta") || id.contains("noodle") || id.contains("spaghetti")
+                || id.contains("ramen") || id.contains("couscous") || id.contains("biryani")
+                || id.contains("pulao") || id.contains("chawal") || id.contains("pomodoro")) {
+            return CatalogFamily.GRAIN;
+        }
+        if (meal || expectedState.isPlatedState()) {
+            return CatalogFamily.PLATED;
+        }
+        return CatalogFamily.GENERIC;
+    }
+
+    private static float generatedFamilyFit(FoodMatterData matter, CatalogFamily family) {
+        return switch (family) {
+            case JUICE -> average(
+                    band(matter.water(), 0.76F, 1.0F, 0.18F),
+                    atMost(matter.proteinSet(), 0.10F, 0.10F),
+                    atMost(matter.fragmentation(), 0.18F, 0.12F),
+                    band(matter.cohesiveness(), 0.05F, 0.22F, 0.12F)
+            );
+            case BLEND -> average(
+                    band(matter.water(), 0.46F, 0.86F, 0.18F),
+                    band(matter.fragmentation(), 0.08F, 0.26F, 0.14F),
+                    band(matter.cohesiveness(), 0.30F, 0.62F, 0.16F)
+            );
+            case DOUGH -> average(
+                    band(matter.water(), 0.18F, 0.46F, 0.16F),
+                    atMost(matter.proteinSet(), 0.22F, 0.12F),
+                    atMost(matter.fragmentation(), 0.20F, 0.12F),
+                    band(matter.cohesiveness(), 0.54F, 0.88F, 0.18F)
+            );
+            case SAUCE -> average(
+                    band(matter.water(), 0.20F, 0.68F, 0.22F),
+                    atMost(matter.fragmentation(), 0.30F, 0.16F),
+                    band(matter.cohesiveness(), 0.24F, 0.58F, 0.18F)
+            );
+            case SOUP -> average(
+                    band(matter.water(), 0.48F, 0.90F, 0.18F),
+                    atMost(matter.browning(), 0.26F, 0.16F),
+                    band(matter.cohesiveness(), 0.12F, 0.42F, 0.18F)
+            );
+            case FRIED -> average(
+                    band(matter.water(), 0.18F, 0.54F, 0.18F),
+                    band(matter.proteinSet(), 0.46F, 0.84F, 0.18F),
+                    band(matter.browning(), 0.08F, 0.34F, 0.14F)
+            );
+            case BAKED -> average(
+                    band(matter.water(), 0.12F, 0.48F, 0.18F),
+                    band(matter.cohesiveness(), 0.36F, 0.84F, 0.18F),
+                    band(matter.browning(), 0.08F, 0.30F, 0.14F)
+            );
+            case GRAIN -> average(
+                    band(matter.water(), 0.28F, 0.60F, 0.18F),
+                    band(matter.fragmentation(), 0.16F, 0.46F, 0.16F),
+                    band(matter.cohesiveness(), 0.24F, 0.56F, 0.18F)
+            );
+            case PLATED -> average(
+                    matter.finalizedServing() ? 1.0F : 0.56F,
+                    band(matter.cohesiveness(), 0.22F, 0.62F, 0.20F)
+            );
+            case GENERIC -> average(
+                    band(matter.water(), 0.20F, 0.70F, 0.24F),
+                    band(matter.cohesiveness(), 0.18F, 0.62F, 0.22F)
+            );
+        };
     }
 
     private static float generatedStateFit(FoodMatterData matter, IngredientState expectedState, Item item) {
