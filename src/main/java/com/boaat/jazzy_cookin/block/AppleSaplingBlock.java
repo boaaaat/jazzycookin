@@ -1,7 +1,7 @@
 package com.boaat.jazzy_cookin.block;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
-import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
 import com.boaat.jazzy_cookin.recipebook.SourceGuideRegistry;
 import com.boaat.jazzy_cookin.recipebook.network.RecipeBookNetworking;
@@ -91,23 +91,28 @@ public class AppleSaplingBlock extends BushBlock implements BonemealableBlock {
         if (!level.isClientSide) {
             KitchenIngredientItem appleItem = (KitchenIngredientItem) SourceGuideRegistry.appleHarvestItem();
             float quality = this.harvestQuality(level, pos, age);
-            IngredientStateData baseData = appleItem.defaultData(level.getGameTime());
-            IngredientStateData harvestData = baseData.withMetrics(
-                    baseData.state(),
-                    level.getGameTime(),
-                    quality,
-                    Math.min(1.0F, baseData.recipeAccuracy() + 0.06F),
-                    Math.min(1.0F, baseData.flavor() + 0.05F),
-                    baseData.texture(),
-                    baseData.structure(),
-                    baseData.moisture(),
-                    baseData.purity(),
-                    baseData.aeration(),
-                    1,
-                    baseData.nourishment(),
-                    baseData.enjoyment()
-            );
-            net.minecraft.world.item.ItemStack harvestStack = appleItem.createStack(1, level.getGameTime(), harvestData);
+            net.minecraft.world.item.ItemStack harvestStack = appleItem.createStack(1, level.getGameTime());
+            KitchenStackUtil.mutateFoodMatter(harvestStack, level.getGameTime(), matter -> matter
+                    .withPreservationState(
+                            Math.max(matter.preservationLevel(), quality * 0.20F),
+                            Math.max(0.0F, (1.0F - quality) * 0.08F),
+                            Math.max(0.0F, (1.0F - quality) * 0.06F)
+                    )
+                    .withWorkingState(
+                            matter.water(),
+                            matter.aeration(),
+                            matter.fragmentation(),
+                            matter.cohesiveness(),
+                            matter.proteinSet(),
+                            matter.browning(),
+                            matter.charLevel(),
+                            matter.whiskWork(),
+                            matter.stirCount(),
+                            matter.flipCount(),
+                            matter.timeInPan(),
+                            Math.max(matter.processDepth(), 1),
+                            matter.finalizedServing()
+                    ));
             Containers.dropItemStack(level, pos.getX(), pos.getY() + 0.75D, pos.getZ(), harvestStack);
             level.setBlock(pos, state.setValue(AGE, 4), 2);
             if (player instanceof ServerPlayer serverPlayer && RecipeBookProgress.recordSourceHarvest(serverPlayer, harvestStack, "apple_sapling")) {

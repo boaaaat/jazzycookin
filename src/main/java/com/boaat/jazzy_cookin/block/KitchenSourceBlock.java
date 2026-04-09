@@ -1,7 +1,7 @@
 package com.boaat.jazzy_cookin.block;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
-import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.KitchenSourceProfile;
 import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
 import com.boaat.jazzy_cookin.recipebook.SourceGuideRegistry;
@@ -119,24 +119,30 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
 
     private ItemStack createHarvestStack(Level level, BlockState state, BlockPos pos) {
         KitchenIngredientItem ingredientItem = (KitchenIngredientItem) SourceGuideRegistry.selectHarvestItem(this.profile, level.random);
-
         float quality = harvestQuality(level, state, pos);
-        IngredientStateData baseData = ingredientItem.defaultData(level.getGameTime());
-        IngredientStateData harvestData = baseData.withMetrics(
-                baseData.state(),
-                level.getGameTime(),
-                quality,
-                Math.min(1.0F, baseData.flavor() + 0.05F),
-                baseData.texture(),
-                baseData.structure(),
-                baseData.moisture(),
-                baseData.purity(),
-                baseData.aeration(),
-                1,
-                baseData.nourishment(),
-                baseData.enjoyment()
-        );
-        return ingredientItem.createStack(1, level.getGameTime(), harvestData);
+        ItemStack harvestStack = ingredientItem.createStack(1, level.getGameTime());
+        KitchenStackUtil.mutateFoodMatter(harvestStack, level.getGameTime(), matter -> matter
+                .withPreservationState(
+                        Math.max(matter.preservationLevel(), quality * 0.18F),
+                        Math.max(0.0F, (1.0F - quality) * 0.10F),
+                        Math.max(0.0F, (1.0F - quality) * 0.08F)
+                )
+                .withWorkingState(
+                        matter.water(),
+                        matter.aeration(),
+                        matter.fragmentation(),
+                        matter.cohesiveness(),
+                        matter.proteinSet(),
+                        matter.browning(),
+                        matter.charLevel(),
+                        matter.whiskWork(),
+                        matter.stirCount(),
+                        matter.flipCount(),
+                        matter.timeInPan(),
+                        Math.max(matter.processDepth(), 1),
+                        matter.finalizedServing()
+                ));
+        return harvestStack;
     }
 
     private float harvestQuality(Level level, BlockState state, BlockPos pos) {

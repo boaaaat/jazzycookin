@@ -1,7 +1,5 @@
 package com.boaat.jazzy_cookin.kitchen.sim;
 
-import com.boaat.jazzy_cookin.kitchen.IngredientState;
-import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -9,7 +7,6 @@ import net.minecraft.util.Mth;
 
 public record FoodMatterData(
         long createdTick,
-        IngredientStateData summaryHint,
         long traitMask,
         float surfaceTempC,
         float coreTempC,
@@ -38,23 +35,6 @@ public record FoodMatterData(
         boolean finalizedServing
 ) {
     public static final float UNSET_ENVIRONMENT = -1.0F;
-
-    private static final IngredientStateData DEFAULT_SUMMARY_HINT = new IngredientStateData(
-            IngredientState.PANTRY_READY,
-            0L,
-            0.70F,
-            0.72F,
-            0.42F,
-            0.40F,
-            0.36F,
-            0.45F,
-            0.68F,
-            0.10F,
-            0,
-            1,
-            1
-    );
-    private static final EnvironmentFields DEFAULT_ENVIRONMENT = new EnvironmentFields(UNSET_ENVIRONMENT, UNSET_ENVIRONMENT, UNSET_ENVIRONMENT);
 
     private record ThermalFields(float surfaceTempC, float coreTempC) {
     }
@@ -89,6 +69,8 @@ public record FoodMatterData(
             boolean finalizedServing
     ) {
     }
+
+    private static final EnvironmentFields DEFAULT_ENVIRONMENT = new EnvironmentFields(UNSET_ENVIRONMENT, UNSET_ENVIRONMENT, UNSET_ENVIRONMENT);
 
     private static final Codec<ThermalFields> THERMAL_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.FLOAT.fieldOf("surface_temp_c").forGetter(ThermalFields::surfaceTempC),
@@ -129,7 +111,6 @@ public record FoodMatterData(
 
     public static final Codec<FoodMatterData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.LONG.fieldOf("created_tick").forGetter(FoodMatterData::createdTick),
-            IngredientStateData.CODEC.optionalFieldOf("summary_hint", DEFAULT_SUMMARY_HINT).forGetter(FoodMatterData::summaryHint),
             Codec.LONG.optionalFieldOf("trait_mask", 0L).forGetter(FoodMatterData::traitMask),
             THERMAL_CODEC.fieldOf("thermal").forGetter(data -> new ThermalFields(data.surfaceTempC, data.coreTempC)),
             COMPOSITION_CODEC.fieldOf("composition").forGetter(data -> new CompositionFields(
@@ -161,9 +142,8 @@ public record FoodMatterData(
                     data.processDepth,
                     data.finalizedServing
             ))
-    ).apply(instance, (createdTick, summaryHint, traitMask, thermal, composition, environment, process) -> new FoodMatterData(
+    ).apply(instance, (createdTick, traitMask, thermal, composition, environment, process) -> new FoodMatterData(
             createdTick,
-            summaryHint,
             traitMask,
             thermal.surfaceTempC(),
             thermal.coreTempC(),
@@ -192,41 +172,14 @@ public record FoodMatterData(
             process.finalizedServing()
     )));
 
-    public static FoodMatterData fromSummaryHint(IngredientStateData summaryHint, boolean finalizedServing) {
-        return new FoodMatterData(
-                summaryHint.createdTick(),
-                summaryHint,
-                0L,
-                22.0F,
-                22.0F,
-                summaryHint.moisture(),
-                0.10F,
-                0.18F,
-                summaryHint.aeration(),
-                summaryHint.processDepth() > 0 ? 0.32F : 0.08F,
-                summaryHint.structure(),
-                summaryHint.state().isPlatedState() ? 0.78F : 0.0F,
-                0.0F,
-                0.0F,
-                0.0F,
-                0.0F,
-                0.0F,
-                0.0F,
-                0.0F,
-                UNSET_ENVIRONMENT,
-                UNSET_ENVIRONMENT,
-                UNSET_ENVIRONMENT,
-                summaryHint.processDepth() > 0 ? 0.35F : 0.0F,
-                0,
-                0,
-                0,
-                summaryHint.processDepth(),
-                finalizedServing
-        );
-    }
-
-    public static float derivePreservationLevel(IngredientStateData summaryHint, long traitMask, boolean finalizedServing) {
-        IngredientState state = summaryHint != null ? summaryHint.state() : IngredientState.PANTRY_READY;
+    public static float derivePreservationLevel(
+            long traitMask,
+            float water,
+            float protein,
+            float fragmentation,
+            int processDepth,
+            boolean finalizedServing
+    ) {
         float preservation = 0.0F;
         if (FoodTrait.has(traitMask, FoodTrait.PRESERVE)) {
             preservation = Math.max(preservation, 0.45F);
@@ -237,15 +190,19 @@ public record FoodMatterData(
         if (FoodTrait.has(traitMask, FoodTrait.ACIDIC)) {
             preservation = Math.max(preservation, 0.10F);
         }
-
-        preservation = switch (state) {
-            case FREEZE_DRIED -> Math.max(preservation, 0.95F);
-            case FERMENTED, FERMENTED_VEGETABLE, HOT_PRESERVE, APPLE_PRESERVE, CANNED_TOMATO, CANNING_SYRUP -> Math.max(preservation, 0.78F);
-            case DRIED_FRUIT, COARSE_POWDER, FINE_POWDER -> Math.max(preservation, 0.62F);
-            case FRESH_JUICE -> Math.max(preservation, 0.08F);
-            default -> preservation;
-        };
-
+        if (water <= 0.10F) {
+            preservation = Math.max(preservation, 0.95F);
+        } else if (water <= 0.22F) {
+            preservation = Math.max(preservation, 0.68F);
+        } else if (water <= 0.34F && fragmentation >= 0.18F) {
+            preservation = Math.max(preservation, 0.42F);
+        }
+        if (protein <= 0.05F && water <= 0.22F) {
+            preservation = Math.max(preservation, 0.74F);
+        }
+        if (processDepth >= 2 && water <= 0.35F) {
+            preservation = Math.max(preservation, 0.22F);
+        }
         if (finalizedServing && preservation < 0.20F) {
             preservation = 0.12F;
         }
@@ -253,39 +210,37 @@ public record FoodMatterData(
     }
 
     public static float deriveOxidation(
-            IngredientStateData summaryHint,
             long traitMask,
             float fat,
             float browning,
             float charLevel,
             float preservationLevel
     ) {
-        IngredientState state = summaryHint != null ? summaryHint.state() : IngredientState.PANTRY_READY;
         float oxidation = 0.03F + fat * 0.18F + browning * 0.06F + charLevel * 0.06F - preservationLevel * 0.10F;
         if (FoodTrait.has(traitMask, FoodTrait.ACIDIC)) {
             oxidation *= 0.85F;
         }
-        if (state == IngredientState.FREEZE_DRIED) {
-            oxidation *= 0.45F;
+        if (waterLowStable(preservationLevel, fat)) {
+            oxidation *= 0.55F;
         }
         return Mth.clamp(oxidation, 0.0F, 1.0F);
     }
 
     public static float deriveMicrobialLoad(
-            IngredientStateData summaryHint,
             long traitMask,
             float water,
             float protein,
             float preservationLevel,
             boolean finalizedServing
     ) {
-        IngredientState state = summaryHint != null ? summaryHint.state() : IngredientState.PANTRY_READY;
         float microbial = 0.02F + water * 0.14F + protein * 0.10F - preservationLevel * 0.16F;
         if (FoodTrait.has(traitMask, FoodTrait.ACIDIC)) {
             microbial -= 0.03F;
         }
-        if (state == IngredientState.FREEZE_DRIED || state == IngredientState.COARSE_POWDER || state == IngredientState.FINE_POWDER) {
+        if (water <= 0.18F) {
             microbial *= 0.25F;
+        } else if (water <= 0.30F) {
+            microbial *= 0.55F;
         }
         if (finalizedServing) {
             microbial += 0.01F;
@@ -293,20 +248,23 @@ public record FoodMatterData(
         return Mth.clamp(microbial, 0.0F, 1.0F);
     }
 
+    private static boolean waterLowStable(float preservationLevel, float fat) {
+        return preservationLevel >= 0.65F || (preservationLevel >= 0.40F && fat <= 0.18F);
+    }
+
     public FoodMatterData clamp() {
         float normalizedPreservation = this.preservationLevel >= 0.0F
                 ? this.preservationLevel
-                : derivePreservationLevel(this.summaryHint, this.traitMask, this.finalizedServing);
+                : derivePreservationLevel(this.traitMask, this.water, this.protein, this.fragmentation, this.processDepth, this.finalizedServing);
         float normalizedOxidation = this.oxidation >= 0.0F
                 ? this.oxidation
-                : deriveOxidation(this.summaryHint, this.traitMask, this.fat, this.browning, this.charLevel, normalizedPreservation);
+                : deriveOxidation(this.traitMask, this.fat, this.browning, this.charLevel, normalizedPreservation);
         float normalizedMicrobialLoad = this.microbialLoad >= 0.0F
                 ? this.microbialLoad
-                : deriveMicrobialLoad(this.summaryHint, this.traitMask, this.water, this.protein, normalizedPreservation, this.finalizedServing);
+                : deriveMicrobialLoad(this.traitMask, this.water, this.protein, normalizedPreservation, this.finalizedServing);
 
         return new FoodMatterData(
                 this.createdTick,
-                this.summaryHint,
                 this.traitMask,
                 this.surfaceTempC,
                 this.coreTempC,
@@ -339,7 +297,6 @@ public record FoodMatterData(
     public FoodMatterData withTemps(float newSurfaceTempC, float newCoreTempC) {
         return new FoodMatterData(
                 this.createdTick,
-                this.summaryHint,
                 this.traitMask,
                 newSurfaceTempC,
                 newCoreTempC,
@@ -386,7 +343,6 @@ public record FoodMatterData(
     ) {
         return new FoodMatterData(
                 this.createdTick,
-                this.summaryHint,
                 this.traitMask,
                 this.surfaceTempC,
                 this.coreTempC,
@@ -426,7 +382,6 @@ public record FoodMatterData(
     ) {
         return new FoodMatterData(
                 this.createdTick,
-                this.summaryHint,
                 this.traitMask,
                 this.surfaceTempC,
                 this.coreTempC,
@@ -459,7 +414,6 @@ public record FoodMatterData(
     public FoodMatterData withPreservationState(float newPreservationLevel, float newOxidation, float newMicrobialLoad) {
         return new FoodMatterData(
                 this.createdTick,
-                this.summaryHint,
                 this.traitMask,
                 this.surfaceTempC,
                 this.coreTempC,
@@ -492,7 +446,6 @@ public record FoodMatterData(
     public FoodMatterData withCreatedTick(long newCreatedTick) {
         return new FoodMatterData(
                 newCreatedTick,
-                this.summaryHint.withCreatedTick(newCreatedTick),
                 this.traitMask,
                 this.surfaceTempC,
                 this.coreTempC,
@@ -525,7 +478,6 @@ public record FoodMatterData(
     public FoodMatterData withAddedTraits(long addedTraitMask) {
         return new FoodMatterData(
                 this.createdTick,
-                this.summaryHint,
                 this.traitMask | addedTraitMask,
                 this.surfaceTempC,
                 this.coreTempC,

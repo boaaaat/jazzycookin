@@ -666,7 +666,7 @@ public final class DishSchema {
                 Mth.clamp(0.45F + matter.preservationLevel() * 0.30F, 0.0F, 1.0F)
         );
         float score = average(stateScore, traitCoverage, compositionScore, familyFit, processScore, conditionScore);
-        if (!meal && expectedState.isPlatedState() != (matter.summaryHint() != null && matter.summaryHint().state().isPlatedState())) {
+        if (!meal && expectedState.isPlatedState() != currentState(matter).isPlatedState()) {
             score *= 0.35F;
         }
         if (item instanceof KitchenIngredientItem && !(item instanceof KitchenMealItem) && isCookedMatter(matter) && isPantryLikeState(expectedState)) {
@@ -776,7 +776,7 @@ public final class DishSchema {
     }
 
     private static float generatedStateFit(FoodMatterData matter, IngredientState expectedState, Item item) {
-        IngredientState current = matter.summaryHint() != null ? matter.summaryHint().state() : IngredientState.PANTRY_READY;
+        IngredientState current = currentState(matter);
         if (current == expectedState) {
             return 1.0F;
         }
@@ -871,7 +871,7 @@ public final class DishSchema {
 
     private static IngredientState expectedState(Item item) {
         if (item instanceof KitchenIngredientItem ingredientItem) {
-            return ingredientItem.defaultData(0L).state();
+            return ingredientItem.defaultState();
         }
         return IngredientState.PANTRY_READY;
     }
@@ -899,10 +899,7 @@ public final class DishSchema {
     }
 
     private static boolean isFinishedServingState(FoodMatterData matter) {
-        if (matter.summaryHint() == null) {
-            return false;
-        }
-        IngredientState state = matter.summaryHint().state();
+        IngredientState state = currentState(matter);
         return state.isPlatedState() || state == IngredientState.PAN_FRIED;
     }
 
@@ -913,7 +910,7 @@ public final class DishSchema {
                 || matter.charLevel() > 0.0F
                 || matter.timeInPan() > 0
                 || matter.processDepth() > 1
-                || (matter.summaryHint() != null && !isPantryLikeState(matter.summaryHint().state()));
+                || !isPantryLikeState(currentState(matter));
     }
 
     private static boolean isEggDishMatter(FoodMatterData matter) {
@@ -985,10 +982,10 @@ public final class DishSchema {
     }
 
     private static float stateFit(FoodMatterData matter, IngredientState... states) {
-        if (matter.summaryHint() == null || states.length == 0) {
+        if (states.length == 0) {
             return 1.0F;
         }
-        IngredientState currentState = matter.summaryHint().state();
+        IngredientState currentState = currentState(matter);
         for (IngredientState state : states) {
             if (currentState == state) {
                 return 1.0F;
@@ -998,7 +995,7 @@ public final class DishSchema {
     }
 
     private static float nourishmentAtLeast(FoodMatterData matter, int minimum, int softness) {
-        int nourishment = matter.summaryHint() != null ? matter.summaryHint().nourishment() : 0;
+        int nourishment = derivedNourishment(matter);
         if (nourishment >= minimum) {
             return 1.0F;
         }
@@ -1069,5 +1066,19 @@ public final class DishSchema {
             best = Math.max(best, Mth.clamp(value, 0.0F, 1.0F));
         }
         return best;
+    }
+
+    private static IngredientState currentState(FoodMatterData matter) {
+        return KitchenStackUtil.inferStateFromMatter(matter);
+    }
+
+    private static int derivedNourishment(FoodMatterData matter) {
+        return Math.max(0, Math.round(
+                matter.protein() * 8.0F
+                        + matter.fat() * 4.0F
+                        + matter.water() * 2.0F
+                        + matter.seasoningLoad() * 2.0F
+                        + matter.cheeseLoad() * 2.0F
+        ));
     }
 }

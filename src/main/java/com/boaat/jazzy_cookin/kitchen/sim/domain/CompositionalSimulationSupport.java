@@ -6,7 +6,6 @@ import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
-import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
@@ -218,40 +217,24 @@ final class CompositionalSimulationSupport {
                                 + completion * (access.simulationHeatLevel() == HeatLevel.OFF ? 3.0F : 10.0F + access.simulationHeatLevel().ordinal() * 4.0F)
                 )
         );
-        IngredientStateData summary = new IngredientStateData(
-                state,
-                createdTick,
-                Mth.clamp(0.68F + completion * 0.16F + actualProteinSet * 0.10F - actualCharLevel * 0.12F - analysis.avgOxidation() * 0.06F, 0.05F, 1.0F),
-                Mth.clamp(0.64F + completion * 0.18F - actualCharLevel * 0.10F - analysis.avgMicrobialLoad() * 0.05F, 0.0F, 1.0F),
-                flavor,
-                texture,
-                structure,
-                water,
-                purity,
-                actualAeration,
-                processDepth,
-                nourishment,
-                enjoyment
-        );
         float preservationLevel = Mth.lerp(
                 0.30F + carryFactor * 0.30F,
-                FoodMatterData.derivePreservationLevel(summary, analysis.traitMask(), finalizedServing),
+                FoodMatterData.derivePreservationLevel(analysis.traitMask(), water, analysis.avgProtein(), actualFragmentation, processDepth, finalizedServing),
                 analysis.avgPreservation()
         );
         float oxidationLevel = Mth.lerp(
                 0.24F + carryFactor * 0.24F,
-                FoodMatterData.deriveOxidation(summary, analysis.traitMask(), analysis.avgFat(), actualBrowning, actualCharLevel, preservationLevel),
+                FoodMatterData.deriveOxidation(analysis.traitMask(), analysis.avgFat(), actualBrowning, actualCharLevel, preservationLevel),
                 analysis.avgOxidation()
         );
         float microbialLevel = Mth.lerp(
                 0.24F + carryFactor * 0.24F,
-                FoodMatterData.deriveMicrobialLoad(summary, analysis.traitMask(), water, analysis.avgProtein(), preservationLevel, finalizedServing),
+                FoodMatterData.deriveMicrobialLoad(analysis.traitMask(), water, analysis.avgProtein(), preservationLevel, finalizedServing),
                 analysis.avgMicrobialLoad()
         );
 
         return new FoodMatterData(
                 createdTick,
-                summary,
                 analysis.traitMask(),
                 surfaceTempC,
                 coreTempC,

@@ -48,9 +48,8 @@ public final class RecipeBookDisplayUtil {
             copy.setCount(Math.max(1, count));
         }
 
-        IngredientStateData data = KitchenStackUtil.getOrCreateData(copy, 0L);
-        if (data != null) {
-            KitchenStackUtil.setData(copy, data.withState(state));
+        if (copy.getItem() instanceof KitchenIngredientItem) {
+            KitchenStackUtil.setFoodState(copy, state);
         }
         return copy;
     }

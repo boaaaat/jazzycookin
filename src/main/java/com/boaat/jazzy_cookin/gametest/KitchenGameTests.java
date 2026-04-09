@@ -471,11 +471,7 @@ public final class KitchenGameTests {
         KitchenStationBlockEntity platingStation = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PLATING_STATION.get());
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
 
-        ItemStack restedCurryPrep = JazzyItems.CHICKEN_CURRY_PREP.get().createStack(
-                1,
-                level.getGameTime(),
-                JazzyItems.CHICKEN_CURRY_PREP.get().defaultData(level.getGameTime()).withState(IngredientState.RESTED)
-        );
+        ItemStack restedCurryPrep = stackWithState(JazzyItems.CHICKEN_CURRY_PREP.get(), IngredientState.RESTED);
         platingStation.setItem(0, new ItemStack(JazzyItems.CERAMIC_BOWL.get()));
         platingStation.setItem(2, restedCurryPrep);
         platingStation.setItem(5, new ItemStack(JazzyItems.SPOON.get()));
@@ -503,11 +499,7 @@ public final class KitchenGameTests {
         require(prepTable.handleButton(0, fakePlayer), "Simulation-backed prep recipes should still start");
 
         KitchenStationBlockEntity platingStation = placeStation(level, helper.absolutePos(new BlockPos(2, 1, 0)), JazzyBlocks.PLATING_STATION.get());
-        ItemStack restedCurryPrep = JazzyItems.CHICKEN_CURRY_PREP.get().createStack(
-                1,
-                level.getGameTime(),
-                JazzyItems.CHICKEN_CURRY_PREP.get().defaultData(level.getGameTime()).withState(IngredientState.RESTED)
-        );
+        ItemStack restedCurryPrep = stackWithState(JazzyItems.CHICKEN_CURRY_PREP.get(), IngredientState.RESTED);
         platingStation.setItem(0, restedCurryPrep);
         platingStation.setItem(3, new ItemStack(JazzyItems.CERAMIC_BOWL.get()));
         platingStation.setItem(6, new ItemStack(JazzyItems.SPOON.get()));

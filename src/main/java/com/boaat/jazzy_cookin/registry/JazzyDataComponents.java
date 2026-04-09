@@ -1,7 +1,7 @@
 package com.boaat.jazzy_cookin.registry;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
-import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
+import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.SpoilageDisplayData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 
@@ -13,10 +13,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class JazzyDataComponents {
     public static final DeferredRegister.DataComponents DATA_COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, JazzyCookin.MODID);
 
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<IngredientStateData>> INGREDIENT_STATE =
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<IngredientState>> FOOD_STATE =
             DATA_COMPONENTS.registerComponentType(
-                    "ingredient_state",
-                    builder -> builder.persistent(IngredientStateData.CODEC)
+                    "food_state",
+                    builder -> builder.persistent(IngredientState.CODEC)
             );
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<FoodMatterData>> FOOD_MATTER =

@@ -1,9 +1,12 @@
 package com.boaat.jazzy_cookin.kitchen;
 
+import java.util.function.UnaryOperator;
+
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
@@ -23,16 +26,31 @@ public final class KitchenStackUtil {
         if (matter == null) {
             matter = getOrCreateFoodMatter(stack, 0L);
         }
-        return matter != null ? deriveIngredientState(stack, matter, matter.createdTick()) : null;
+        return matter != null ? deriveIngredientState(stack, matter, matter.createdTick()) : defaultDerivedData(stack, 0L);
     }
 
     public static IngredientStateData getOrCreateData(ItemStack stack, long gameTime) {
         FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
-        return matter != null ? deriveIngredientState(stack, matter, gameTime) : null;
+        return matter != null ? deriveIngredientState(stack, matter, gameTime) : defaultDerivedData(stack, gameTime);
     }
 
-    public static void setData(ItemStack stack, IngredientStateData data) {
-        setFoodMatter(stack, FoodMaterialProfiles.createMatter(stack, data, isFinalizedServing(stack)), data.createdTick());
+    public static IngredientState getFoodState(ItemStack stack) {
+        IngredientState stored = stack.get(JazzyDataComponents.FOOD_STATE.get());
+        if (stored != null) {
+            return stored;
+        }
+        if (stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
+            return ingredientItem.defaultState();
+        }
+        return IngredientState.PANTRY_READY;
+    }
+
+    public static void setFoodState(ItemStack stack, IngredientState state) {
+        if (state == null || !(stack.getItem() instanceof KitchenIngredientItem)) {
+            stack.remove(JazzyDataComponents.FOOD_STATE.get());
+            return;
+        }
+        stack.set(JazzyDataComponents.FOOD_STATE.get(), state);
     }
 
     public static void setCreatedTick(ItemStack stack, long newCreatedTick, long gameTime) {
@@ -53,6 +71,7 @@ public final class KitchenStackUtil {
     public static FoodMatterData getOrCreateFoodMatter(ItemStack stack, long gameTime) {
         FoodMatterData existing = getFoodMatter(stack);
         if (existing != null) {
+            ensureFoodStatePresent(stack);
             return existing;
         }
 
@@ -60,40 +79,58 @@ public final class KitchenStackUtil {
             return null;
         }
 
-        FoodMatterData created = FoodMaterialProfiles.createCanonicalMatter(stack, gameTime, isFinalizedServing(stack));
+        IngredientState state = getFoodState(stack);
+        FoodMatterData created = FoodMaterialProfiles.createMatter(
+                stack,
+                state != null ? state : ingredientItem.defaultState(),
+                gameTime,
+                0,
+                isFinalizedServing(stack)
+        );
         setFoodMatter(stack, created, gameTime);
         return created;
+    }
+
+    public static void mutateFoodMatter(ItemStack stack, long gameTime, UnaryOperator<FoodMatterData> mutator) {
+        FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
+        if (matter == null || mutator == null) {
+            return;
+        }
+        setFoodMatter(stack, mutator.apply(matter), gameTime);
     }
 
     public static void setFoodMatter(ItemStack stack, FoodMatterData matter, long gameTime) {
         if (matter == null) {
             stack.remove(JazzyDataComponents.FOOD_MATTER.get());
+            stack.remove(JazzyDataComponents.FOOD_STATE.get());
             stack.remove(JazzyDataComponents.SPOILAGE_DISPLAY.get());
             stack.remove(DataComponents.MAX_STACK_SIZE);
             return;
         }
 
+        ensureFoodStatePresent(stack);
         FoodMatterData clamped = matter.clamp();
         stack.set(JazzyDataComponents.FOOD_MATTER.get(), clamped);
         applyStackBehavior(stack, clamped);
         refreshSpoilageDisplay(stack, gameTime);
     }
 
-    public static void initializeStack(ItemStack stack, IngredientStateData data, FoodMatterData matter, long gameTime) {
-        FoodMatterData canonical = matter;
-        IngredientStateData summary = data;
-        if (summary == null && stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            summary = ingredientItem.defaultData(gameTime);
+    public static void initializeStack(ItemStack stack, IngredientState state, FoodMatterData matter, long gameTime) {
+        IngredientState resolvedState = state != null ? state : getFoodState(stack);
+        if (resolvedState != null) {
+            setFoodState(stack, resolvedState);
         }
-        if (canonical == null && summary != null) {
-            canonical = FoodMaterialProfiles.createMatter(stack, summary, isFinalizedServing(stack));
-        } else if (canonical == null) {
-            canonical = FoodMaterialProfiles.createCanonicalMatter(stack, gameTime, isFinalizedServing(stack));
-        }
+        FoodMatterData canonical = matter != null
+                ? matter
+                : FoodMaterialProfiles.createMatter(stack, resolvedState, gameTime, 0, isFinalizedServing(stack));
         setFoodMatter(stack, canonical, gameTime);
     }
 
     public static void initializeCanonicalStack(ItemStack stack, long gameTime) {
+        IngredientState state = getFoodState(stack);
+        if (state != null) {
+            setFoodState(stack, state);
+        }
         setFoodMatter(stack, FoodMaterialProfiles.createCanonicalMatter(stack, gameTime, isFinalizedServing(stack)), gameTime);
     }
 
@@ -231,11 +268,6 @@ public final class KitchenStackUtil {
 
         FoodMatterData matter = getOrCreateFoodMatter(stack, gameTime);
         if (matter == null) {
-            IngredientStateData data = getOrCreateData(stack, gameTime);
-            if (data != null) {
-                long ageReduction = Math.round(storedTicks * (1.0F - storageType.decayMultiplier()));
-                setCreatedTick(stack, data.createdTick() + ageReduction, gameTime);
-            }
             return;
         }
 
@@ -262,40 +294,83 @@ public final class KitchenStackUtil {
         setFoodMatter(stack, adjusted, gameTime);
     }
 
-    private static IngredientStateData deriveIngredientState(ItemStack stack, FoodMatterData matter, long gameTime) {
-        IngredientStateData fallback = matter.summaryHint();
-        if (fallback == null && stack.getItem() instanceof KitchenIngredientItem ingredientItem) {
-            fallback = ingredientItem.defaultData(gameTime);
+    public static IngredientState inferStateFromMatter(FoodMatterData matter) {
+        if (matter == null) {
+            return IngredientState.PANTRY_READY;
         }
+        if (matter.finalizedServing()) {
+            if (matter.hasTrait(FoodTrait.EGG) && (matter.timeInPan() > 0 || matter.proteinSet() >= 0.24F)) {
+                return IngredientState.PAN_FRIED;
+            }
+            return IngredientState.PLATED;
+        }
+        if (matter.hasTrait(FoodTrait.EGG) && matter.whiskWork() >= 0.18F && matter.proteinSet() < 0.15F) {
+            return IngredientState.SMOOTH_MIXTURE;
+        }
+        if (matter.hasTrait(FoodTrait.EGG) && (matter.timeInPan() > 0 || matter.proteinSet() >= 0.24F)) {
+            return IngredientState.PAN_FRIED;
+        }
+        if (matter.water() <= 0.14F && matter.preservationLevel() >= 0.60F) {
+            return IngredientState.FREEZE_DRIED;
+        }
+        if (matter.fragmentation() >= 0.28F && matter.water() <= 0.22F && matter.cohesiveness() <= 0.36F) {
+            return IngredientState.COARSE_POWDER;
+        }
+        if ((matter.hasTrait(FoodTrait.FLOUR) || matter.hasTrait(FoodTrait.STARCH))
+                && matter.water() >= 0.16F
+                && matter.water() <= 0.52F
+                && matter.cohesiveness() >= 0.52F) {
+            return matter.hasTrait(FoodTrait.LEAVENER) ? IngredientState.BREAD_DOUGH : IngredientState.DOUGH;
+        }
+        if (matter.proteinSet() >= 0.28F || matter.timeInPan() > 0 || matter.browning() >= 0.08F || matter.charLevel() > 0.0F) {
+            if (matter.hasTrait(FoodTrait.BREAD) || matter.hasTrait(FoodTrait.FLOUR)) {
+                return IngredientState.BAKED;
+            }
+            if (matter.water() >= 0.46F && matter.cohesiveness() <= 0.44F) {
+                return IngredientState.SIMMERED;
+            }
+            return IngredientState.PAN_FRIED;
+        }
+        if (matter.water() >= 0.74F && matter.fragmentation() <= 0.18F && matter.cohesiveness() <= 0.24F) {
+            return IngredientState.FRESH_JUICE;
+        }
+        if (matter.water() >= 0.30F && matter.cohesiveness() >= 0.36F && matter.aeration() >= 0.08F) {
+            return IngredientState.SMOOTH;
+        }
+        if (matter.fragmentation() >= 0.18F && matter.cohesiveness() <= 0.46F && matter.processDepth() > 0) {
+            return IngredientState.ROUGH_CUT;
+        }
+        return IngredientState.PANTRY_READY;
+    }
 
-        if (fallback == null) {
-            fallback = new IngredientStateData(
-                    IngredientState.PANTRY_READY,
-                    gameTime,
-                    0.70F,
-                    0.72F,
-                    0.50F,
-                    0.40F,
-                    0.36F,
-                    0.42F,
-                    0.72F,
-                    0.12F,
-                    0,
-                    0,
-                    0
-            );
+    private static IngredientStateData defaultDerivedData(ItemStack stack, long gameTime) {
+        if (stack.getItem() instanceof KitchenIngredientItem) {
+            return FoodMaterialProfiles.canonicalSummary(stack, getFoodState(stack), gameTime, isFinalizedServing(stack));
         }
+        return null;
+    }
+
+    private static IngredientStateData deriveIngredientState(ItemStack stack, FoodMatterData matter, long gameTime) {
+        IngredientState explicitState = getFoodState(stack);
+        IngredientStateData fallback = FoodMaterialProfiles.canonicalSummary(
+                stack,
+                explicitState,
+                matter.createdTick(),
+                isFinalizedServing(stack)
+        );
 
         if (!matter.finalizedServing()
                 && matter.processDepth() == 0
                 && matter.timeInPan() == 0
                 && matter.stirCount() == 0
                 && matter.flipCount() == 0
-                && matter.whiskWork() <= 0.0F) {
-            return fallback.withCreatedTick(matter.createdTick());
+                && matter.whiskWork() <= 0.0F
+                && Float.compare(matter.browning(), 0.0F) == 0
+                && Float.compare(matter.proteinSet(), 0.0F) == 0) {
+            return fallback;
         }
 
-        IngredientState summaryState = summaryStateFor(stack, fallback.state(), matter);
+        IngredientState summaryState = summaryStateFor(stack, explicitState, matter);
         float repeatPenalty = Mth.clamp(Math.max(0, matter.processDepth() - 2) * 0.05F, 0.0F, 0.22F);
         float quality = Mth.clamp(
                 fallback.quality() * 0.42F
@@ -386,7 +461,7 @@ public final class KitchenStackUtil {
         );
     }
 
-    private static IngredientState summaryStateFor(ItemStack stack, IngredientState fallbackState, FoodMatterData matter) {
+    private static IngredientState summaryStateFor(ItemStack stack, IngredientState explicitState, FoodMatterData matter) {
         if (stack.is(JazzyItems.EGG_MIXTURE.get())) {
             return IngredientState.SMOOTH_MIXTURE;
         }
@@ -397,10 +472,22 @@ public final class KitchenStackUtil {
                 || stack.is(JazzyItems.BURNT_EGGS.get())) {
             return IngredientState.PAN_FRIED;
         }
-        if (matter.finalizedServing() && stack.getItem() instanceof KitchenMealItem) {
-            return IngredientState.PLATED;
+        if (explicitState != null && explicitState != IngredientState.PANTRY_READY) {
+            return explicitState;
         }
-        return fallbackState;
+        if (matter.finalizedServing() && stack.getItem() instanceof KitchenMealItem) {
+            return explicitState != null && explicitState.isPlatedState() ? explicitState : IngredientState.PLATED;
+        }
+        if (matter.processDepth() > 0 || matter.timeInPan() > 0 || matter.proteinSet() > 0.0F || matter.browning() > 0.0F) {
+            return inferStateFromMatter(matter);
+        }
+        return explicitState != null ? explicitState : IngredientState.PANTRY_READY;
+    }
+
+    private static void ensureFoodStatePresent(ItemStack stack) {
+        if (stack.getItem() instanceof KitchenIngredientItem ingredientItem && stack.get(JazzyDataComponents.FOOD_STATE.get()) == null) {
+            stack.set(JazzyDataComponents.FOOD_STATE.get(), ingredientItem.defaultState());
+        }
     }
 
     private static void applyStackBehavior(ItemStack stack, FoodMatterData matter) {

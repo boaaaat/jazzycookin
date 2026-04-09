@@ -78,6 +78,16 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private record SimMetric(Component shortLabel, Component tooltipLabel, String valueText, float ratio, int color) {
     }
 
+    private record SimulationStatusView(
+            Component primary,
+            Component secondary,
+            float barRatio,
+            int primaryColor,
+            int secondaryColor,
+            int barColor
+    ) {
+    }
+
     public KitchenStationScreen(KitchenStationMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.baseProfile = menu.uiProfile();
@@ -460,6 +470,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private void updateButtonStates() {
+        SimulationStatusView statusView = this.simulationStatusView();
         if (this.startButton != null) {
             this.startButton.setMessage(this.primaryActionLabel());
             this.startButton.active = this.primaryActionActive();
@@ -508,14 +519,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.appliancePreviewHeadlineLabel.setColor(this.previewHeadlineColor());
         }
         if (this.applianceStatusPrimaryLabel != null) {
-            this.applianceStatusPrimaryLabel.setText(this.primaryStatusText());
-            this.applianceStatusPrimaryLabel.setColor(this.previewHeadlineColor());
+            this.applianceStatusPrimaryLabel.setText(statusView.primary());
+            this.applianceStatusPrimaryLabel.setColor(statusView.primaryColor());
         }
         if (this.applianceStatusSecondaryLabel != null) {
-            Component secondary = this.secondaryStatusText();
+            Component secondary = statusView.secondary();
             this.applianceStatusSecondaryLabel.setVisible(!secondary.getString().isEmpty());
             this.applianceStatusSecondaryLabel.setText(secondary);
-            this.applianceStatusSecondaryLabel.setColor(this.secondaryStatusColor());
+            this.applianceStatusSecondaryLabel.setColor(statusView.secondaryColor());
         }
         if (this.applianceFuelLabel != null && this.menu.usesFuelSlot()) {
             this.applianceFuelLabel.setText(this.applianceFuelText());
@@ -795,7 +806,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (this.menu.simulationMode()) {
             this.renderSimulationMetrics(guiGraphics, left, top);
         } else {
-            this.renderLegacyMetricPanel(guiGraphics, left, top);
+            this.renderStatusLane(guiGraphics, left, top);
         }
 
         this.renderActionButtons(guiGraphics, left, top, mouseX, mouseY);
@@ -914,14 +925,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         }
     }
 
-    private void renderLegacyMetricPanel(GuiGraphics guiGraphics, int left, int top) {
+    private void renderStatusLane(GuiGraphics guiGraphics, int left, int top) {
         LayoutRegion lane = this.layout.statusLaneRegion();
         if (lane.width() <= 0 || lane.height() <= 0) {
             return;
         }
 
-        Component primary = this.primaryStatusText();
-        Component secondary = this.secondaryStatusText();
+        SimulationStatusView statusView = this.simulationStatusView();
+        Component primary = statusView.primary();
+        Component secondary = statusView.secondary();
         boolean showSecondary = !secondary.getString().isEmpty()
                 && !secondary.getString().equals(primary.getString())
                 && lane.width() >= 72;
@@ -931,10 +943,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
         if (showSecondary) {
             int halfWidth = Math.max(18, (lane.width() - inset * 2 - 6) / 2);
-            this.drawTrimmedLabel(guiGraphics, primary, left + lane.x() + inset, textY, halfWidth, this.previewHeadlineColor());
-            this.drawRightAlignedLabel(guiGraphics, secondary, left + lane.right() - inset, textY, halfWidth, this.secondaryStatusColor(), false);
+            this.drawTrimmedLabel(guiGraphics, primary, left + lane.x() + inset, textY, halfWidth, statusView.primaryColor());
+            this.drawRightAlignedLabel(guiGraphics, secondary, left + lane.right() - inset, textY, halfWidth, statusView.secondaryColor(), false);
         } else {
-            this.drawCenteredTrimmedLabel(guiGraphics, primary, left + lane.centerX(), textY, lane.width() - inset * 2, this.previewHeadlineColor(), false);
+            this.drawCenteredTrimmedLabel(guiGraphics, primary, left + lane.centerX(), textY, lane.width() - inset * 2, statusView.primaryColor(), false);
         }
 
         if (showBar) {
@@ -942,9 +954,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             int barY = top + lane.bottom() - 3;
             int barWidth = Math.max(14, lane.width() - inset * 2);
             guiGraphics.fill(barX, barY, barX + barWidth, barY + 2, 0xFF1A1F27);
-            int fillWidth = Math.round(barWidth * this.legacyStatusRatio());
+            int fillWidth = Math.round(barWidth * statusView.barRatio());
             if (fillWidth > 0) {
-                guiGraphics.fill(barX, barY, barX + fillWidth, barY + 2, this.legacyStatusFillColor());
+                guiGraphics.fill(barX, barY, barX + fillWidth, barY + 2, statusView.barColor());
             }
         }
     }
@@ -1275,72 +1287,105 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         return Component.empty();
     }
 
-    private Component primaryStatusText() {
+    private SimulationStatusView simulationStatusView() {
         if (this.menu.maxProgress() > 0) {
             int percent = Math.round((this.menu.progress() / (float) this.menu.maxProgress()) * 100.0F);
-            return Component.literal(percent + "%");
+            return new SimulationStatusView(
+                    Component.literal(percent + "%"),
+                    this.menu.stationType() == StationType.OVEN ? Component.literal("▶ Cooking") : Component.translatable("screen.jazzycookin.working"),
+                    Math.max(0.0F, Math.min(1.0F, this.menu.progress() / (float) this.menu.maxProgress())),
+                    JazzyGuiRenderer.TEXT,
+                    JazzyGuiRenderer.TEXT_MUTED,
+                    JazzyGuiRenderer.ACCENT
+            );
         }
-        if (this.menu.environmentStatus() == 0) {
-            return Component.translatable("screen.jazzycookin.blocked_short");
-        }
-        if (this.menu.environmentStatus() == 1) {
-            return Component.translatable("screen.jazzycookin.ready_short");
-        }
-        return Component.translatable("screen.jazzycookin.idle_short");
-    }
-
-    private Component secondaryStatusText() {
         if (this.menu.stationType() == StationType.OVEN) {
-            if (this.menu.maxProgress() > 0) {
-                return Component.literal("▶ Cooking");
-            }
-            if (this.menu.preheatProgress() >= 100) {
-                return Component.literal("🔥 Ready");
-            }
             if (this.ovenWaitingForFuel()) {
-                return Component.literal("⛽ Load Fuel");
+                return new SimulationStatusView(
+                        Component.translatable("screen.jazzycookin.blocked_short"),
+                        Component.literal("⛽ Load Fuel"),
+                        0.0F,
+                        JazzyGuiRenderer.BLOCKED_TEXT,
+                        JazzyGuiRenderer.BLOCKED_TEXT,
+                        JazzyGuiRenderer.BLOCKED_TEXT
+                );
             }
             if (this.menu.ovenPreheating()) {
-                return Component.literal("🔥 Preheating");
+                if (this.menu.preheatProgress() >= 100) {
+                    return new SimulationStatusView(
+                            Component.translatable("screen.jazzycookin.ready_short"),
+                            Component.literal("🔥 Ready"),
+                            1.0F,
+                            JazzyGuiRenderer.READY_TEXT,
+                            JazzyGuiRenderer.READY_TEXT,
+                            JazzyGuiRenderer.ACCENT_WARM
+                    );
+                }
+                return new SimulationStatusView(
+                        Component.literal(this.menu.preheatProgress() + "%"),
+                        Component.literal("🔥 Preheating"),
+                        Math.max(0.0F, Math.min(1.0F, this.menu.preheatProgress() / 100.0F)),
+                        JazzyGuiRenderer.ACCENT_WARM,
+                        JazzyGuiRenderer.TEXT,
+                        JazzyGuiRenderer.ACCENT_WARM
+                );
             }
-            return this.menu.preheatProgress() > 0 ? Component.literal("❄ Cooling") : Component.literal("Idle");
-        }
-        if (this.menu.stationType() == StationType.MICROWAVE) {
-            return this.menu.maxProgress() > 0
-                    ? Component.translatable("screen.jazzycookin.working")
-                    : Component.literal(this.menu.microwaveDurationSeconds() + "s");
-        }
-        if (this.menu.maxProgress() > 0) {
-            return Component.translatable("screen.jazzycookin.working");
-        }
-        return Component.empty();
-    }
-
-    private int secondaryStatusColor() {
-        if (this.menu.stationType() == StationType.OVEN) {
-            if (this.menu.maxProgress() > 0) {
-                return JazzyGuiRenderer.TEXT;
+            if (this.menu.preheatProgress() > 0) {
+                float ratio = Math.max(0.0F, Math.min(1.0F, this.menu.preheatProgress() / 100.0F));
+                return new SimulationStatusView(
+                        Component.literal(this.menu.preheatProgress() + "%"),
+                        Component.literal("❄ Cooling"),
+                        ratio,
+                        JazzyGuiRenderer.TEXT_SOFT,
+                        JazzyGuiRenderer.TEXT_SOFT,
+                        JazzyGuiRenderer.TEXT_SOFT
+                );
             }
-            if (this.menu.preheatProgress() >= 100) {
-                return JazzyGuiRenderer.READY_TEXT;
-            }
-            if (this.ovenWaitingForFuel()) {
-                return JazzyGuiRenderer.BLOCKED_TEXT;
-            }
-            return this.menu.ovenPreheating() || this.menu.preheatProgress() > 0
-                    ? JazzyGuiRenderer.ACCENT_WARM
-                    : JazzyGuiRenderer.TEXT_SOFT;
-        }
-        if (this.menu.maxProgress() > 0) {
-            return JazzyGuiRenderer.TEXT_MUTED;
         }
         if (this.menu.environmentStatus() == 0) {
-            return JazzyGuiRenderer.BLOCKED_TEXT;
+            return new SimulationStatusView(
+                    Component.translatable("screen.jazzycookin.blocked_short"),
+                    this.menu.usesFuelSlot() && !this.menu.getSlot(this.menu.fuelMenuSlotIndex()).hasItem()
+                            ? Component.literal("⛽ Fuel")
+                            : Component.empty(),
+                    0.0F,
+                    JazzyGuiRenderer.BLOCKED_TEXT,
+                    JazzyGuiRenderer.BLOCKED_TEXT,
+                    JazzyGuiRenderer.BLOCKED_TEXT
+            );
+        }
+        if (this.menu.simulationMode() && this.menu.simRecognizerId() > 0) {
+            return new SimulationStatusView(
+                    this.menu.simulationPreviewName(),
+                    Component.translatable("screen.jazzycookin.ready_short"),
+                    1.0F,
+                    JazzyGuiRenderer.READY_TEXT,
+                    JazzyGuiRenderer.READY_TEXT,
+                    JazzyGuiRenderer.READY_TEXT
+            );
         }
         if (this.menu.environmentStatus() == 1) {
-            return JazzyGuiRenderer.READY_TEXT;
+            Component secondary = this.controlDisplayLabel();
+            if (secondary.getString().isEmpty() && this.menu.stationType() == StationType.MICROWAVE) {
+                secondary = Component.literal(this.menu.microwaveDurationSeconds() + "s");
+            }
+            return new SimulationStatusView(
+                    Component.translatable("screen.jazzycookin.ready_short"),
+                    secondary,
+                    1.0F,
+                    JazzyGuiRenderer.READY_TEXT,
+                    JazzyGuiRenderer.TEXT_SOFT,
+                    JazzyGuiRenderer.READY_TEXT
+            );
         }
-        return JazzyGuiRenderer.TEXT_SOFT;
+        return new SimulationStatusView(
+                Component.translatable("screen.jazzycookin.idle_short"),
+                this.visibleHelperText(),
+                0.0F,
+                JazzyGuiRenderer.TEXT_SOFT,
+                JazzyGuiRenderer.TEXT_SOFT,
+                JazzyGuiRenderer.TEXT_SOFT
+        );
     }
 
     private Component applianceFuelText() {
@@ -1468,6 +1513,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private Component previewHeadline() {
+        SimulationStatusView statusView = this.simulationStatusView();
         Component helper = this.visibleHelperText();
         if (!this.hasPreviewContent() && !helper.getString().isEmpty()) {
             return helper;
@@ -1476,12 +1522,13 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             if (this.menu.simRecognizerId() > 0) {
                 return this.menu.simulationPreviewName();
             }
-            return this.primaryStatusText();
+            return statusView.primary();
         }
-        return this.primaryStatusText();
+        return statusView.primary();
     }
 
     private Component previewSubline() {
+        SimulationStatusView statusView = this.simulationStatusView();
         if (!this.hasPreviewContent()) {
             return Component.empty();
         }
@@ -1495,22 +1542,23 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             }
             return this.menu.currentMethod().displayName();
         }
-        Component secondary = this.secondaryStatusText();
-        if (!secondary.getString().isEmpty() && !secondary.getString().equals(this.primaryStatusText().getString())) {
+        Component secondary = statusView.secondary();
+        if (!secondary.getString().isEmpty() && !secondary.getString().equals(statusView.primary().getString())) {
             return secondary;
         }
         return this.visibleHelperText();
     }
 
     private int previewHeadlineColor() {
+        SimulationStatusView statusView = this.simulationStatusView();
         Component helper = this.visibleHelperText();
         if (!helper.getString().isEmpty() && this.previewHeadline().getString().equals(helper.getString())) {
             return JazzyGuiRenderer.TEXT_SOFT;
         }
         if (this.menu.simulationMode()) {
-            return this.menu.simRecognizerId() > 0 ? JazzyGuiRenderer.READY_TEXT : JazzyGuiRenderer.TEXT;
+            return this.menu.simRecognizerId() > 0 ? JazzyGuiRenderer.READY_TEXT : statusView.primaryColor();
         }
-        return this.secondaryStatusColor();
+        return statusView.primaryColor();
     }
 
     private Component visibleHelperText() {
@@ -1536,23 +1584,6 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         return this.menu.getSlot(this.menu.outputMenuSlotIndex()).hasItem()
                 || this.menu.getSlot(this.menu.byproductMenuSlotIndex()).hasItem()
                 || this.menu.simRecognizerId() > 0;
-    }
-
-    private float legacyStatusRatio() {
-        if (this.menu.maxProgress() > 0) {
-            return Math.max(0.0F, Math.min(1.0F, this.menu.progress() / (float) this.menu.maxProgress()));
-        }
-        if (this.menu.stationType() == StationType.OVEN) {
-            return Math.max(0.0F, Math.min(1.0F, this.menu.preheatProgress() / 100.0F));
-        }
-        return this.menu.environmentStatus() == 1 ? 1.0F : 0.0F;
-    }
-
-    private int legacyStatusFillColor() {
-        if (this.menu.maxProgress() > 0) {
-            return JazzyGuiRenderer.ACCENT;
-        }
-        return this.secondaryStatusColor();
     }
 
     private Component primaryActionLabel() {

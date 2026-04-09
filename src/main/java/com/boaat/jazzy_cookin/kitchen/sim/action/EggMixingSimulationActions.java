@@ -2,7 +2,7 @@ package com.boaat.jazzy_cookin.kitchen.sim.action;
 
 import java.util.Optional;
 
-import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
+import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
@@ -42,7 +42,7 @@ public final class EggMixingSimulationActions {
             }
             consumeMixingInputs(access, true);
             output = new ItemStack(JazzyItems.EGG_MIXTURE.get());
-            KitchenStackUtil.initializeStack(output, null, matter, gameTime);
+            KitchenStackUtil.initializeStack(output, IngredientState.SMOOTH_MIXTURE, matter, gameTime);
             access.simulationSetItem(access.outputSlot(), output);
         }
 
@@ -138,10 +138,8 @@ public final class EggMixingSimulationActions {
             return null;
         }
 
-        IngredientStateData summaryHint = JazzyItems.EGG_MIXTURE.get().defaultData(createdTick);
         return new FoodMatterData(
                 createdTick,
-                summaryHint,
                 traitMask,
                 EggPanReactionSolver.ROOM_TEMP_C,
                 EggPanReactionSolver.ROOM_TEMP_C,

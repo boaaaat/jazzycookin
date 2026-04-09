@@ -48,12 +48,18 @@ public final class FoodMaterialProfiles {
         return Optional.ofNullable(ITEM_PROFILES.get(stack.getItem()));
     }
 
-    public static FoodMatterData createMatter(ItemStack stack, IngredientStateData summaryHint, boolean finalizedServing) {
+    public static FoodMatterData createMatter(
+            ItemStack stack,
+            IngredientState state,
+            long createdTick,
+            int processDepth,
+            boolean finalizedServing
+    ) {
         FoodMaterialProfile profile = profileFor(stack).orElse(null);
         if (profile != null) {
-            return profile.create(summaryHint, finalizedServing);
+            return profile.create(state, createdTick, processDepth, finalizedServing);
         }
-        return summaryHint != null ? FoodMatterData.fromSummaryHint(summaryHint, finalizedServing) : null;
+        return null;
     }
 
     public static FoodMatterData createCanonicalMatter(ItemStack stack, long gameTime, boolean finalizedServing) {
@@ -61,13 +67,13 @@ public final class FoodMaterialProfiles {
             return null;
         }
 
+        IngredientState state = ingredientItem.defaultState();
         FoodMaterialProfile profile = profileFor(stack).orElse(null);
-        IngredientStateData anchor = ingredientItem.defaultData(gameTime);
         if (profile == null) {
-            return FoodMatterData.fromSummaryHint(anchor, finalizedServing);
+            return null;
         }
 
-        return profile.create(canonicalSummary(stack, anchor, profile, finalizedServing), finalizedServing);
+        return profile.create(state, gameTime, canonicalProcessDepth(state, finalizedServing), finalizedServing);
     }
 
     public static long traitMaskFor(ItemStack stack) {
@@ -98,14 +104,76 @@ public final class FoodMaterialProfiles {
         return profile != null && (profile.hasTrait(FoodTrait.FAT) || profile.hasTrait(FoodTrait.OIL));
     }
 
+    public static IngredientStateData canonicalSummary(ItemStack stack, IngredientState state, long createdTick, boolean finalizedServing) {
+        if (!(stack.getItem() instanceof KitchenIngredientItem ingredientItem)) {
+            return new IngredientStateData(
+                    state,
+                    createdTick,
+                    0.70F,
+                    0.72F,
+                    0.50F,
+                    0.40F,
+                    0.36F,
+                    0.42F,
+                    0.72F,
+                    0.12F,
+                    canonicalProcessDepth(state, finalizedServing),
+                    0,
+                    0
+            );
+        }
+        FoodMaterialProfile profile = profileFor(stack).orElse(null);
+        return canonicalSummary(stack, state, createdTick, profile, ingredientItem, finalizedServing);
+    }
+
+    public static IngredientStateData canonicalSummary(ItemStack stack, long createdTick, boolean finalizedServing) {
+        IngredientState state = stack.getItem() instanceof KitchenIngredientItem ingredientItem
+                ? ingredientItem.defaultState()
+                : IngredientState.PANTRY_READY;
+        return canonicalSummary(stack, state, createdTick, finalizedServing);
+    }
+
     private static IngredientStateData canonicalSummary(
             ItemStack stack,
-            IngredientStateData anchor,
+            IngredientState state,
+            long createdTick,
             FoodMaterialProfile profile,
+            KitchenIngredientItem ingredientItem,
             boolean finalizedServing
     ) {
         String id = itemId(stack.getItem());
-        IngredientState state = anchor.state();
+        IngredientStateData anchor = new IngredientStateData(
+                state,
+                createdTick,
+                ingredientItem.baseQuality(),
+                0.72F,
+                ingredientItem.baseFlavor(),
+                ingredientItem.baseTexture(),
+                ingredientItem.baseStructure(),
+                ingredientItem.baseMoisture(),
+                ingredientItem.basePurity(),
+                ingredientItem.baseAeration(),
+                0,
+                ingredientItem.nourishment(),
+                ingredientItem.enjoyment()
+        );
+        if (profile == null) {
+            return anchor.withMetrics(
+                    state,
+                    createdTick,
+                    anchor.quality(),
+                    anchor.recipeAccuracy(),
+                    anchor.flavor(),
+                    anchor.texture(),
+                    anchor.structure(),
+                    anchor.moisture(),
+                    anchor.purity(),
+                    anchor.aeration(),
+                    canonicalProcessDepth(state, finalizedServing),
+                    anchor.nourishment(),
+                    anchor.enjoyment()
+            );
+        }
         float processBias = processBias(state, finalizedServing);
         float quality = Mth.clamp(anchor.quality() * 0.68F + derivedQuality(profile, state, processBias) * 0.32F, 0.05F, 1.0F);
         float recipeAccuracy = Mth.clamp(anchor.recipeAccuracy() * 0.62F + (0.60F + processBias * 0.24F) * 0.38F, 0.0F, 1.0F);
@@ -644,7 +712,7 @@ public final class FoodMaterialProfiles {
     }
 
     private static FoodMaterialProfile inferCatalogProfile(KitchenIngredientItem item, boolean meal) {
-        IngredientState state = item.defaultData(0L).state();
+        IngredientState state = item.defaultState();
         ProfileBuilder builder = new ProfileBuilder();
         applyStateBaseline(builder, state, meal);
         applyNameHeuristics(builder, itemId(item), state, meal);

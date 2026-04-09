@@ -201,8 +201,11 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         if (this.stationType != StationType.STOVE) {
             return 0;
         }
-        int syncedLevel = this.data.get(5);
-        return syncedLevel <= 0 ? 0 : KitchenStationBlockEntity.normalizeStoveDialLevel(syncedLevel);
+        int highestLevel = 0;
+        for (int burnerIndex = 0; burnerIndex < this.capacity.inputCount(); burnerIndex++) {
+            highestLevel = Math.max(highestLevel, this.stoveBurnerLevel(burnerIndex));
+        }
+        return highestLevel;
     }
 
     public int stoveBurnerLevel(int burnerIndex) {

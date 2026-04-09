@@ -9,6 +9,7 @@ import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.KitchenOutcomeBand;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
@@ -297,13 +298,22 @@ final class RecipeSimulationSupport {
             }
 
             SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeStacks(sourceInputs, gameTime);
-            FoodMatterData targetMatter = FoodMaterialProfiles.createMatter(output, outputData, output.getItem() instanceof com.boaat.jazzy_cookin.item.KitchenMealItem);
+            FoodMatterData targetMatter = FoodMaterialProfiles.createMatter(
+                    output,
+                    outputData.state(),
+                    outputData.createdTick(),
+                    outputData.processDepth(),
+                    output.getItem() instanceof com.boaat.jazzy_cookin.item.KitchenMealItem
+            );
             if (targetMatter != null) {
                 ItemStack carried = SimulationOutputFactory.createOutput(ingredientItem, gameTime, analysis, targetMatter);
+                KitchenStackUtil.setFoodState(carried, outputData.state());
                 carried.setCount(output.getCount());
                 return carried;
             }
-            return ingredientItem.createStack(output.getCount(), gameTime, outputData);
+            ItemStack seeded = ingredientItem.createStack(output.getCount(), gameTime);
+            KitchenStackUtil.setFoodState(seeded, outputData.state());
+            return seeded;
         }
         return output;
     }

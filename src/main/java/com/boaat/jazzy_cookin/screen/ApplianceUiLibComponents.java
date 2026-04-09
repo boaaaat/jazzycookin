@@ -264,12 +264,12 @@ final class ApplianceUiLibComponents {
         }
 
         void setDialValue(int value) {
-            this.dialValue = KitchenStationBlockEntity.normalizeStoveDialLevel(value);
+            this.dialValue = KitchenStationBlockEntity.normalizeStoveBurnerLevel(value);
             this.setMessage(Component.literal(Integer.toString(this.dialValue)));
         }
 
         private void applyValue(int value) {
-            int normalized = KitchenStationBlockEntity.normalizeStoveDialLevel(value);
+            int normalized = KitchenStationBlockEntity.normalizeStoveBurnerLevel(value);
             if (normalized == this.dialValue) {
                 return;
             }

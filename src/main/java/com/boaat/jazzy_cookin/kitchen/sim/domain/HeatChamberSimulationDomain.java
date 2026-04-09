@@ -2,7 +2,6 @@ package com.boaat.jazzy_cookin.kitchen.sim.domain;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
-import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationType;
@@ -247,24 +246,24 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         if (output.isEmpty()) {
             return output;
         }
-        IngredientStateData data = KitchenStackUtil.getOrCreateData(output, gameTime);
-        if (data == null) {
-            return output;
-        }
-        KitchenStackUtil.setData(output, new IngredientStateData(
-                data.state(),
-                data.createdTick(),
-                Math.max(0.05F, data.quality() - 0.12F),
-                Math.max(0.0F, data.recipeAccuracy() - 0.08F),
-                Math.max(0.0F, data.flavor() - 0.03F),
-                Math.max(0.0F, data.texture() - 0.04F),
-                data.structure(),
-                data.moisture(),
-                data.purity(),
-                data.aeration(),
-                data.processDepth(),
-                data.nourishment(),
-                Math.max(0, data.enjoyment() - 1)
+        KitchenStackUtil.mutateFoodMatter(output, gameTime, matter -> matter.withPreservationState(
+                matter.preservationLevel(),
+                Mth.clamp(matter.oxidation() + 0.08F, 0.0F, 1.0F),
+                Mth.clamp(matter.microbialLoad() + 0.05F, 0.0F, 1.0F)
+        ).withWorkingState(
+                Mth.clamp(matter.water() - 0.04F, 0.0F, 1.0F),
+                matter.aeration(),
+                matter.fragmentation(),
+                matter.cohesiveness(),
+                matter.proteinSet(),
+                matter.browning(),
+                matter.charLevel(),
+                matter.whiskWork(),
+                matter.stirCount(),
+                matter.flipCount(),
+                matter.timeInPan(),
+                matter.processDepth(),
+                matter.finalizedServing()
         ));
         return output;
     }

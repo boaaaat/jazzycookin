@@ -10,6 +10,7 @@ import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.KitchenStateRules;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 
 import net.minecraft.ChatFormatting;
@@ -115,40 +116,40 @@ public class KitchenIngredientItem extends Item {
         return this.cookTimeTicks;
     }
 
-    public IngredientStateData defaultData(long gameTime) {
-        return new IngredientStateData(
-                this.defaultState,
-                gameTime,
-                this.baseQuality,
-                0.72F,
-                this.baseFlavor,
-                this.baseTexture,
-                this.baseStructure,
-                this.baseMoisture,
-                this.basePurity,
-                this.baseAeration,
-                0,
-                this.nourishment,
-                this.enjoyment
-        );
+    public float baseQuality() {
+        return this.baseQuality;
     }
 
-    public IngredientStateData maxData() {
-        return new IngredientStateData(
-                this.defaultState,
-                CREATIVE_CREATED_TICK,
-                1.0F,
-                1.0F,
-                1.0F,
-                1.0F,
-                1.0F,
-                1.0F,
-                1.0F,
-                1.0F,
-                0,
-                this.nourishment,
-                this.enjoyment
-        );
+    public float baseFlavor() {
+        return this.baseFlavor;
+    }
+
+    public float baseTexture() {
+        return this.baseTexture;
+    }
+
+    public float baseStructure() {
+        return this.baseStructure;
+    }
+
+    public float baseMoisture() {
+        return this.baseMoisture;
+    }
+
+    public float basePurity() {
+        return this.basePurity;
+    }
+
+    public float baseAeration() {
+        return this.baseAeration;
+    }
+
+    public int nourishment() {
+        return this.nourishment;
+    }
+
+    public int enjoyment() {
+        return this.enjoyment;
     }
 
     public ItemStack createStack(int count, long gameTime) {
@@ -157,14 +158,9 @@ public class KitchenIngredientItem extends Item {
         return stack;
     }
 
-    public ItemStack createStack(int count, long gameTime, IngredientStateData data) {
-        ItemStack stack = new ItemStack(this, count);
-        KitchenStackUtil.initializeStack(stack, data, null, gameTime);
-        return stack;
-    }
-
     public ItemStack createCreativeStack(int count) {
-        ItemStack stack = this.createStack(count, CREATIVE_CREATED_TICK, this.maxData());
+        ItemStack stack = this.createStack(count, CREATIVE_CREATED_TICK);
+        KitchenStackUtil.setCreatedTick(stack, CREATIVE_CREATED_TICK, CREATIVE_CREATED_TICK);
         stack.remove(JazzyDataComponents.SPOILAGE_DISPLAY.get());
         return stack;
     }
@@ -205,7 +201,7 @@ public class KitchenIngredientItem extends Item {
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         IngredientStateData data = KitchenStackUtil.getData(stack);
         if (data == null) {
-            data = this.defaultData(0L);
+            data = FoodMaterialProfiles.canonicalSummary(stack, this.defaultState, 0L, this instanceof KitchenMealItem);
         }
 
         Level level = context.level();

@@ -34,42 +34,6 @@ public record IngredientStateData(
             Codec.INT.fieldOf("enjoyment").forGetter(IngredientStateData::enjoyment)
     ).apply(instance, IngredientStateData::new));
 
-    public IngredientStateData withState(IngredientState newState) {
-        return new IngredientStateData(
-                newState,
-                this.createdTick,
-                this.quality,
-                this.recipeAccuracy,
-                this.flavor,
-                this.texture,
-                this.structure,
-                this.moisture,
-                this.purity,
-                this.aeration,
-                this.processDepth,
-                this.nourishment,
-                this.enjoyment
-        );
-    }
-
-    public IngredientStateData withCreatedTick(long newCreatedTick) {
-        return new IngredientStateData(
-                this.state,
-                newCreatedTick,
-                this.quality,
-                this.recipeAccuracy,
-                this.flavor,
-                this.texture,
-                this.structure,
-                this.moisture,
-                this.purity,
-                this.aeration,
-                this.processDepth,
-                this.nourishment,
-                this.enjoyment
-        );
-    }
-
     public IngredientStateData withMetrics(
             IngredientState newState,
             long newCreatedTick,

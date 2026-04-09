@@ -52,7 +52,6 @@ public final class SimulationOutputFactory {
             float processWeight = Mth.clamp(carryWeight + 0.10F, 0.68F, 0.96F);
             FoodMatterData blended = new FoodMatterData(
                     Math.min(seeded.createdTick(), targetMatter.createdTick()),
-                    targetMatter.summaryHint(),
                     seeded.traitMask() | targetMatter.traitMask() | analysis.traitMask(),
                     Mth.lerp(thermalWeight, seeded.surfaceTempC(), targetMatter.surfaceTempC()),
                     Mth.lerp(thermalWeight, seeded.coreTempC(), targetMatter.coreTempC()),
