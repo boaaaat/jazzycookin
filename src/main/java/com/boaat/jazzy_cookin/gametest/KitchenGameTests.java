@@ -24,6 +24,8 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.kitchen.sim.station.SimulationExecutionMode;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
@@ -1254,6 +1256,47 @@ public final class KitchenGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void flexibleSchemaScoresSeasonedEggVariants(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        FoodMatterData plain = schemaEggMatter(level.getGameTime(), 0.02F, 0.0F, 0.0F, 0.0F);
+        FoodMatterData seasoned = schemaEggMatter(level.getGameTime(), 0.14F, 0.12F, 0.10F, 0.0F);
+
+        DishSchemaScore plainScore = DishSchemaScorer.bestScore(plain, item -> item == JazzyItems.OMELET.get());
+        DishSchemaScore seasonedScore = DishSchemaScorer.bestScore(seasoned, item -> item == JazzyItems.OMELET.get());
+        require(plainScore != null && seasonedScore != null, "Egg schemas should score omelet-like food matter");
+        require(seasonedScore.score() >= 0.62F, "Seasoned omelet variant should be good enough to finalize");
+        require(seasonedScore.score() >= plainScore.score(), "Supportive seasoning and herbs should not penalize the flexible schema score");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void flexibleSchemaRejectsMissingRequiredRole(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        FoodMatterData oilOnly = FoodMaterialProfiles.VEGETABLE_OIL.create(IngredientState.PAN_FRIED, level.getGameTime(), 2, true)
+                .withWorkingState(0.20F, 0.02F, 0.18F, 0.44F, 0.55F, 0.10F, 0.0F, 0.0F, 0, 1, 8, 2, true);
+
+        DishSchemaScore score = DishSchemaScorer.bestScore(oilOnly, item -> item == JazzyItems.OMELET.get());
+        require(score == null || score.score() < 0.55F, "Omelet schema should not accept food matter with no egg/protein role");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void flexibleSchemaPenalizesWrongTechnique(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        FoodMatterData panCooked = schemaEggMatter(level.getGameTime(), 0.12F, 0.08F, 0.06F, 0.0F);
+        FoodMatterData rawMixed = FoodMaterialProfiles.EGGS.create(IngredientState.WHISKED, level.getGameTime(), 1, false)
+                .withAddedTraits(FoodTrait.maskOf(FoodTrait.EGG, FoodTrait.SALT))
+                .withFlavorLoads(0.20F, 0.12F, 0.0F, 0.0F, 0.0F, 0.0F)
+                .withWorkingState(0.68F, 0.20F, 0.34F, 0.34F, 0.12F, 0.0F, 0.0F, 0.32F, 1, 0, 0, 1, false);
+
+        DishSchemaScore cookedScore = DishSchemaScorer.bestScore(panCooked, item -> item == JazzyItems.OMELET.get());
+        DishSchemaScore rawScore = DishSchemaScorer.bestScore(rawMixed, item -> item == JazzyItems.OMELET.get());
+        require(cookedScore != null && rawScore != null, "Omelet schema should score both cooked and unfinished egg attempts");
+        require(cookedScore.score() > rawScore.score(), "Correct pan-fry technique should outscore raw mixed eggs");
+        helper.succeed();
+    }
+
     private static KitchenStationBlockEntity placeStation(ServerLevel level, BlockPos pos, net.minecraft.world.level.block.Block block) {
         level.setBlockAndUpdate(pos, block.defaultBlockState());
         KitchenStationBlockEntity blockEntity = (KitchenStationBlockEntity) level.getBlockEntity(pos);
@@ -1348,6 +1391,20 @@ public final class KitchenGameTests {
         require(goodBreakdown.finalScore() > badBreakdown.finalScore(), "Balanced " + label + " should outscore a degraded version");
         require(goodBreakdown.cookingScore() + goodBreakdown.combineScore() > badBreakdown.cookingScore() + badBreakdown.combineScore(),
                 "Balanced " + label + " should grade better in core preparation metrics");
+    }
+
+    private static FoodMatterData schemaEggMatter(long gameTime, float seasoning, float herb, float pepper, float charLevel) {
+        long traits = FoodTrait.maskOf(FoodTrait.EGG, FoodTrait.PROTEIN, FoodTrait.ANIMAL_PROTEIN, FoodTrait.SALT);
+        if (herb > 0.0F) {
+            traits |= FoodTrait.HERB.mask();
+        }
+        if (pepper > 0.0F) {
+            traits |= FoodTrait.PEPPER.mask() | FoodTrait.SPICE.mask();
+        }
+        return FoodMaterialProfiles.EGGS.create(IngredientState.PAN_FRIED, gameTime, 2, true)
+                .withAddedTraits(traits)
+                .withFlavorLoads(0.24F, seasoning, 0.0F, 0.0F, herb, pepper)
+                .withWorkingState(0.42F, 0.12F, 0.18F, 0.72F, 0.68F, 0.12F, charLevel, 0.34F, 1, 1, 10, 2, true);
     }
 
     private static JazzyRecipeBookPlanner.Plan requirePlan(JazzyRecipeBookPlanner planner, JazzyRecipeBookSelection selection) {

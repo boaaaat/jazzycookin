@@ -1,0 +1,98 @@
+{
+  "key": "lentil_soup_prep",
+  "preview_id": 1030,
+  "result": "jazzycookin:lentil_soup_prep",
+  "category": "soup",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.86,
+  "required_roles": [
+    {
+      "role": "protein",
+      "any_traits": [
+        "legume",
+        "plant_protein"
+      ],
+      "weight": 0.75
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "sauce",
+        "tomato",
+        "vegetable"
+      ],
+      "weight": 0.65
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "aromatic",
+      "any_traits": [
+        "allium",
+        "aromatic"
+      ],
+      "weight": 0.25
+    },
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.2
+    },
+    {
+      "role": "spice",
+      "any_traits": [
+        "spice",
+        "pepper"
+      ],
+      "weight": 0.22
+    }
+  ],
+  "required_techniques": [
+    "simmered"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.44,
+      "max": 0.88,
+      "softness": 0.18
+    },
+    "protein": {
+      "min": 0.06,
+      "max": 0.72,
+      "softness": 0.2
+    },
+    "seasoning": {
+      "min": 0.08,
+      "max": 0.36,
+      "softness": 0.16
+    },
+    "protein_set": {
+      "min": 0.34,
+      "max": 0.82,
+      "softness": 0.2
+    },
+    "browning": {
+      "min": 0.0,
+      "max": 0.24,
+      "softness": 0.16
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.1,
+      "softness": 0.08
+    },
+    "fragmentation": {
+      "min": 0.14,
+      "max": 0.46,
+      "softness": 0.16
+    },
+    "cohesiveness": {
+      "min": 0.16,
+      "max": 0.58,
+      "softness": 0.18
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "key": "omelet",
+  "preview_id": 1003,
+  "result": "jazzycookin:omelet",
+  "category": "egg",
+  "meal": true,
+  "preview_threshold": 0.58,
+  "finalize_threshold": 0.62,
+  "desirability": 0.96,
+  "required_roles": [
+    {
+      "role": "protein",
+      "any_traits": [
+        "egg"
+      ],
+      "weight": 1.0
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "dairy",
+      "any_traits": [
+        "dairy"
+      ],
+      "weight": 0.22
+    },
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.22
+    },
+    {
+      "role": "herb",
+      "any_traits": [
+        "herb"
+      ],
+      "weight": 0.18
+    }
+  ],
+  "required_techniques": [
+    "mixed",
+    "pan_fried"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.3,
+      "max": 0.6,
+      "softness": 0.18
+    },
+    "seasoning": {
+      "min": 0.04,
+      "max": 0.32,
+      "softness": 0.14
+    },
+    "protein_set": {
+      "min": 0.58,
+      "max": 0.82,
+      "softness": 0.16
+    },
+    "browning": {
+      "min": 0.02,
+      "max": 0.24,
+      "softness": 0.1
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.12,
+      "softness": 0.08
+    },
+    "fragmentation": {
+      "min": 0.02,
+      "max": 0.35,
+      "softness": 0.14
+    },
+    "cohesiveness": {
+      "min": 0.45,
+      "max": 0.95,
+      "softness": 0.2
+    }
+  },
+  "weights": {
+    "roles": 0.24,
+    "composition": 0.14,
+    "seasoning": 0.16,
+    "cooking": 0.18,
+    "texture": 0.12,
+    "technique": 0.12,
+    "presentation": 0.04
+  }
+}

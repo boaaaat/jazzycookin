@@ -9,6 +9,8 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessOutput;
 import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
@@ -209,8 +211,16 @@ public final class DishEvaluation {
         DishRecognitionResult recognition = DishSchema.preview(stack, level.getGameTime());
         DishFamily family = dishFamily(stack, effectiveState, recognition, foodMatter);
         FoodMaterialProfile expectedProfile = FoodMaterialProfiles.profileFor(stack).orElse(null);
+        DishSchemaScore schemaScore = DishSchemaScorer.bestScore(foodMatter, item -> item == stack.getItem());
+        if (schemaScore == null) {
+            schemaScore = DishSchemaScorer.bestScore(foodMatter, item -> true);
+        }
         float recognitionScore = recognition != null ? recognition.score() : 0.38F;
         float recognitionQuality = recognition != null ? recognition.score() * recognition.desirability() : 0.32F;
+        if (schemaScore != null) {
+            recognitionScore = Math.max(recognitionScore, schemaScore.score());
+            recognitionQuality = Math.max(recognitionQuality, schemaScore.score() * schemaScore.schema().desirability());
+        }
         float compositionFit = compositionFit(foodMatter, expectedProfile, family);
         float integrity = Mth.clamp(
                 1.0F
@@ -276,6 +286,13 @@ public final class DishEvaluation {
                 : recognition != null && recognition.desirability() >= 0.80F
                 ? 0.58F
                 : 0.42F;
+        if (schemaScore != null) {
+            prep = Mth.clamp(prep * 0.74F + average(schemaScore.techniqueScore(), schemaScore.textureScore()) * 0.26F, 0.0F, 1.0F);
+            combine = Mth.clamp(combine * 0.70F + average(schemaScore.roleScore(), schemaScore.compositionScore(), schemaScore.seasoningScore()) * 0.30F, 0.0F, 1.0F);
+            cooking = Mth.clamp(cooking * 0.70F + schemaScore.cookingScore() * 0.30F, 0.0F, 1.0F);
+            finishing = Mth.clamp(finishing * 0.72F + average(schemaScore.score(), schemaScore.presentationScore()) * 0.28F, 0.0F, 1.0F);
+            plating = Mth.clamp(plating * 0.68F + schemaScore.presentationScore() * 0.32F, 0.0F, 1.0F);
+        }
         float total = Mth.clamp(
                 data.quality() * 0.06F
                         + freshness * 0.14F

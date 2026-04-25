@@ -17,6 +17,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -591,6 +592,10 @@ public final class DishSchema {
         }
         ensureSchemas();
         DishRecognitionResult best = null;
+        DishRecognitionResult schemaResult = DishSchemaScorer.bestRecognition(matter, filter, false);
+        if (isBetterMatch(best, schemaResult)) {
+            best = schemaResult;
+        }
         for (Schema schema : allSchemas) {
             if (!filter.test(schema.resultItem().get())) {
                 continue;
@@ -655,6 +660,10 @@ public final class DishSchema {
         }
         ensureSchemas();
         DishRecognitionResult best = null;
+        DishRecognitionResult schemaResult = DishSchemaScorer.bestRecognition(matter, filter, true);
+        if (isBetterMatch(best, schemaResult)) {
+            best = schemaResult;
+        }
         for (Schema schema : allSchemas) {
             if (!filter.test(schema.resultItem().get())) {
                 continue;
@@ -673,7 +682,10 @@ public final class DishSchema {
     public static DishRecognitionResult descriptor(int previewId) {
         ensureSchemas();
         Schema schema = byPreviewId.get(previewId);
-        return schema != null ? schema.descriptor() : null;
+        if (schema != null) {
+            return schema.descriptor();
+        }
+        return DishSchemaScorer.descriptor(previewId);
     }
 
     public static boolean hasRecognizerFor(Item item) {
@@ -683,7 +695,7 @@ public final class DishSchema {
                 return true;
             }
         }
-        return false;
+        return DishSchemaScorer.hasRecognizerFor(item);
     }
 
     private static Schema schema(

@@ -589,15 +589,13 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     private boolean serverTickStoveFuel() {
         int dialLevel = this.stoveDialLevel();
         if (dialLevel <= 0) {
-            if (this.fuelBurnTime != 0 || this.fuelBurnDuration != 0 || this.stoveFuelBurnRemainder > 0.0F) {
-                this.fuelBurnTime = 0;
-                this.fuelBurnDuration = 0;
+            if (this.stoveFuelBurnRemainder > 0.0F) {
                 this.stoveFuelBurnRemainder = 0.0F;
                 return true;
             }
             return false;
         }
-        return this.consumeStoveFuelTicks(STOVE_BURNER_COUNT * (dialLevel / 6.0F));
+        return this.consumeStoveFuelTicks(dialLevel / 2.0F);
     }
 
     private boolean serverTickOvenHeat() {

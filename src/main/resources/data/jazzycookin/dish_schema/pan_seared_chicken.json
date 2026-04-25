@@ -1,0 +1,96 @@
+{
+  "key": "pan_seared_chicken_prep",
+  "preview_id": 1010,
+  "result": "jazzycookin:pan_seared_chicken_prep",
+  "category": "pan_dish",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.88,
+  "required_roles": [
+    {
+      "role": "protein",
+      "all_traits": [
+        "chicken",
+        "protein"
+      ],
+      "weight": 1.0
+    },
+    {
+      "role": "fat",
+      "any_traits": [
+        "fat",
+        "oil"
+      ],
+      "weight": 0.45
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.25
+    },
+    {
+      "role": "herb",
+      "any_traits": [
+        "herb"
+      ],
+      "weight": 0.2
+    },
+    {
+      "role": "spice",
+      "any_traits": [
+        "spice",
+        "pepper"
+      ],
+      "weight": 0.2
+    }
+  ],
+  "required_techniques": [
+    "pan_fried"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.18,
+      "max": 0.66,
+      "softness": 0.18
+    },
+    "fat": {
+      "min": 0.08,
+      "max": 0.62,
+      "softness": 0.18
+    },
+    "protein": {
+      "min": 0.24,
+      "max": 0.92,
+      "softness": 0.18
+    },
+    "seasoning": {
+      "min": 0.06,
+      "max": 0.34,
+      "softness": 0.16
+    },
+    "protein_set": {
+      "min": 0.42,
+      "max": 0.92,
+      "softness": 0.2
+    },
+    "browning": {
+      "min": 0.06,
+      "max": 0.42,
+      "softness": 0.14
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.16,
+      "softness": 0.1
+    },
+    "cohesiveness": {
+      "min": 0.24,
+      "max": 0.78,
+      "softness": 0.18
+    }
+  }
+}
