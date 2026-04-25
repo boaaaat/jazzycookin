@@ -24,7 +24,7 @@ public final class DishSchemaScorer {
     }
 
     public static List<DishSchemaDefinition> schemas() {
-        return BUILTIN_SCHEMAS;
+        return DishSchemaManager.combinedSchemas(BUILTIN_SCHEMAS);
     }
 
     public static DishRecognitionResult bestRecognition(FoodMatterData matter, Predicate<Item> filter, boolean finalize) {
@@ -46,7 +46,7 @@ public final class DishSchemaScorer {
     }
 
     public static DishRecognitionResult descriptor(int previewId) {
-        for (DishSchemaDefinition schema : BUILTIN_SCHEMAS) {
+        for (DishSchemaDefinition schema : schemas()) {
             if (schema.previewId() == previewId) {
                 Item item = itemFor(schema);
                 if (item != Items.AIR) {
@@ -58,7 +58,7 @@ public final class DishSchemaScorer {
     }
 
     public static boolean hasRecognizerFor(Item item) {
-        return BUILTIN_SCHEMAS.stream().anyMatch(schema -> itemFor(schema) == item);
+        return schemas().stream().anyMatch(schema -> itemFor(schema) == item);
     }
 
     public static DishSchemaScore bestScore(FoodMatterData matter, Predicate<Item> filter) {
@@ -66,7 +66,7 @@ public final class DishSchemaScorer {
             return null;
         }
         DishAttemptContext context = DishAttemptContext.fromMatter(matter);
-        return BUILTIN_SCHEMAS.stream()
+        return schemas().stream()
                 .map(schema -> score(schema, context))
                 .filter(Optional::isPresent)
                 .map(Optional::get)

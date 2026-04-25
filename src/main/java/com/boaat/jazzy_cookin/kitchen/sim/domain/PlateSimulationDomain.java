@@ -5,6 +5,7 @@ import java.util.Optional;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
 
@@ -19,25 +20,27 @@ public final class PlateSimulationDomain implements StationSimulationDomain {
     @Override
     public boolean supports(StationSimulationAccess access) {
         return access.simulationStationType() == StationType.PLATING_STATION
-                && (access.simulationActive() || RecipeSimulationSupport.currentPlateRecipe(access).isPresent());
+                && (access.simulationActive() || RecipeSimulationSupport.hasPlateCandidate(access));
     }
 
     @Override
     public KitchenMethod method(StationSimulationAccess access) {
-        return RecipeSimulationSupport.currentPlateRecipe(access).isPresent() ? KitchenMethod.PLATE : KitchenMethod.NONE;
+        return RecipeSimulationSupport.hasPlateCandidate(access) ? KitchenMethod.PLATE : KitchenMethod.NONE;
     }
 
     @Override
     public SimulationSnapshot snapshot(StationSimulationAccess access, int executionMode) {
         Optional<KitchenPlateRecipe> recipe = RecipeSimulationSupport.currentPlateRecipe(access);
-        if (recipe.isEmpty() && !access.simulationActive()) {
+        Optional<DishSchemaScore> schema = recipe.isEmpty() ? RecipeSimulationSupport.currentPlateSchema(access) : Optional.empty();
+        if (recipe.isEmpty() && schema.isEmpty() && !access.simulationActive()) {
             return SimulationSnapshot.inactive(executionMode);
         }
 
         int progressPercent = access.simulationMaxProgress() > 0
                 ? Math.round((access.simulationProgress() / (float) access.simulationMaxProgress()) * 100.0F)
                 : 0;
-        ItemStack previewStack = recipe.map(value -> RecipeSimulationSupport.previewPlateStack(access, value)).orElse(ItemStack.EMPTY);
+        ItemStack previewStack = recipe.map(value -> RecipeSimulationSupport.previewPlateStack(access, value))
+                .orElseGet(() -> schema.map(value -> RecipeSimulationSupport.previewPlateSchemaStack(access, value)).orElse(ItemStack.EMPTY));
         int recognizerId = access.simulationLevel() != null
                 ? RecipeSimulationSupport.previewRecognizerId(previewStack, access.simulationLevel().getGameTime())
                 : 0;
@@ -48,7 +51,7 @@ public final class PlateSimulationDomain implements StationSimulationDomain {
                 72,
                 72,
                 progressPercent,
-                recipe.isPresent() ? 100 : 0,
+                recipe.isPresent() || schema.isPresent() ? 100 : 0,
                 0,
                 0,
                 0,

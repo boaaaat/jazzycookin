@@ -24,4 +24,16 @@ public record QualityBreakdown(
                 Math.round(this.finalScore * 100.0F)
         );
     }
+
+    public float seasoningScore() {
+        return this.combineScore;
+    }
+
+    public float textureScore() {
+        return this.finishingScore;
+    }
+
+    public float presentationScore() {
+        return this.platingScore;
+    }
 }

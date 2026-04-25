@@ -63,6 +63,20 @@ public final class DishEvaluation {
     ) {
     }
 
+    private record FoodMatterGradeScores(
+            float finalScore,
+            float ingredientQuality,
+            float recipeAccuracy,
+            float seasoning,
+            float cooking,
+            float texture,
+            float freshness,
+            float presentation,
+            int nourishment,
+            int enjoyment
+    ) {
+    }
+
     private DishEvaluation() {
     }
 
@@ -208,6 +222,32 @@ public final class DishEvaluation {
             return evaluateSummaryStack(data, stack, level, freshness, effectiveState);
         }
 
+        FoodMatterGradeScores scores = gradeFoodMatter(data, stack, level, freshness, effectiveState, foodMatter);
+
+        return new QualityBreakdown(
+                DishGrade.fromScore(scores.finalScore()),
+                scores.finalScore(),
+                scores.ingredientQuality(),
+                scores.freshness(),
+                scores.recipeAccuracy(),
+                scores.seasoning(),
+                scores.cooking(),
+                scores.texture(),
+                scores.presentation(),
+                scores.recipeAccuracy(),
+                scores.nourishment(),
+                scores.enjoyment()
+        );
+    }
+
+    private static FoodMatterGradeScores gradeFoodMatter(
+            IngredientStateData data,
+            ItemStack stack,
+            Level level,
+            float freshness,
+            IngredientState effectiveState,
+            FoodMatterData foodMatter
+    ) {
         DishRecognitionResult recognition = DishSchema.preview(stack, level.getGameTime());
         DishFamily family = dishFamily(stack, effectiveState, recognition, foodMatter);
         FoodMaterialProfile expectedProfile = FoodMaterialProfiles.profileFor(stack).orElse(null);
@@ -215,100 +255,99 @@ public final class DishEvaluation {
         if (schemaScore == null) {
             schemaScore = DishSchemaScorer.bestScore(foodMatter, item -> true);
         }
+
         float recognitionScore = recognition != null ? recognition.score() : 0.38F;
         float recognitionQuality = recognition != null ? recognition.score() * recognition.desirability() : 0.32F;
         if (schemaScore != null) {
             recognitionScore = Math.max(recognitionScore, schemaScore.score());
             recognitionQuality = Math.max(recognitionQuality, schemaScore.score() * schemaScore.schema().desirability());
         }
+
         float compositionFit = compositionFit(foodMatter, expectedProfile, family);
-        float integrity = Mth.clamp(
-                1.0F
-                        - foodMatter.oxidation() * 0.30F
-                        - foodMatter.microbialLoad() * 0.42F
-                        - foodMatter.charLevel() * 0.22F,
-                0.0F,
-                1.0F
-        );
+        float integrity = foodSafetyIntegrity(foodMatter);
         float structureFit = structureFit(foodMatter, effectiveState, recognition, family);
         float seasoningBalance = seasoningBalance(foodMatter, family);
         float moistureFit = moistureFit(foodMatter, effectiveState, recognition, family);
         float donenessFit = donenessFit(foodMatter, effectiveState, recognition, family);
         float browningFit = browningFit(foodMatter, effectiveState, recognition, family);
-        float prep = Mth.clamp(
-                data.purity() * 0.18F
-                        + structureFit * 0.22F
-                        + compositionFit * 0.18F
-                        + Mth.clamp(foodMatter.processDepth() / 4.0F, 0.0F, 1.0F) * 0.12F
-                        + foodMatter.aeration() * 0.08F
-                        + recognitionScore * 0.10F
-                        + integrity * 0.12F,
+        float processFit = Mth.clamp(foodMatter.processDepth() / 4.0F, 0.0F, 1.0F);
+
+        float schemaRecipeFit = schemaScore != null
+                ? average(schemaScore.roleScore(), schemaScore.compositionScore(), schemaScore.techniqueScore(), schemaScore.score())
+                : recognitionScore;
+        float recipeAccuracy = Mth.clamp(
+                schemaRecipeFit * 0.50F
+                        + recognitionScore * 0.18F
+                        + compositionFit * 0.14F
+                        + processFit * 0.10F
+                        + data.recipeAccuracy() * 0.08F,
                 0.0F,
                 1.0F
         );
-        float combine = Mth.clamp(
-                structureFit * 0.24F
-                        + seasoningBalance * 0.20F
-                        + moistureFit * 0.12F
-                        + compositionFit * 0.22F
-                        + recognitionScore * 0.10F
-                        + integrity * 0.12F,
+        float seasoning = Mth.clamp(
+                seasoningBalance * 0.68F
+                        + (schemaScore != null ? schemaScore.seasoningScore() : seasoningBalance) * 0.24F
+                        + compositionFit * 0.08F,
                 0.0F,
                 1.0F
         );
         float cooking = Mth.clamp(
-                donenessFit * 0.26F
-                        + moistureFit * 0.18F
-                        + browningFit * 0.18F
-                        + compositionFit * 0.14F
-                        + integrity * 0.16F
-                        + (1.0F - foodMatter.charLevel()) * 0.08F,
+                donenessFit * 0.30F
+                        + browningFit * 0.22F
+                        + moistureFit * 0.14F
+                        + (1.0F - foodMatter.charLevel()) * 0.14F
+                        + integrity * 0.12F
+                        + (schemaScore != null ? schemaScore.cookingScore() : donenessFit) * 0.08F,
                 0.0F,
                 1.0F
         );
-        boolean finalizedServing = foodMatter.finalizedServing();
-        float finishing = Mth.clamp(
-                recognitionQuality * 0.28F
-                        + servingFit(foodMatter, effectiveState) * 0.18F
-                        + compositionFit * 0.16F
-                        + integrity * 0.14F
-                        + Mth.clamp(foodMatter.processDepth() / 5.0F, 0.0F, 1.0F) * 0.10F
-                        + (finalizedServing ? 0.14F : family == DishFamily.PLATED ? 0.08F : 0.0F),
+        float texture = Mth.clamp(
+                structureFit * 0.36F
+                        + moistureFit * 0.20F
+                        + around(foodMatter.aeration(), targetAeration(family), 0.26F) * 0.12F
+                        + (schemaScore != null ? schemaScore.textureScore() : structureFit) * 0.20F
+                        + integrity * 0.12F,
                 0.0F,
                 1.0F
         );
-        float plating = finalizedServing || effectiveState.isPlatedState()
-                ? 1.0F
-                : family == DishFamily.PLATED
-                ? 0.70F
-                : isFinishedState(effectiveState)
-                ? 0.82F
-                : recognition != null && recognition.desirability() >= 0.80F
-                ? 0.58F
-                : 0.42F;
-        if (schemaScore != null) {
-            prep = Mth.clamp(prep * 0.74F + average(schemaScore.techniqueScore(), schemaScore.textureScore()) * 0.26F, 0.0F, 1.0F);
-            combine = Mth.clamp(combine * 0.70F + average(schemaScore.roleScore(), schemaScore.compositionScore(), schemaScore.seasoningScore()) * 0.30F, 0.0F, 1.0F);
-            cooking = Mth.clamp(cooking * 0.70F + schemaScore.cookingScore() * 0.30F, 0.0F, 1.0F);
-            finishing = Mth.clamp(finishing * 0.72F + average(schemaScore.score(), schemaScore.presentationScore()) * 0.28F, 0.0F, 1.0F);
-            plating = Mth.clamp(plating * 0.68F + schemaScore.presentationScore() * 0.32F, 0.0F, 1.0F);
-        }
-        float total = Mth.clamp(
-                data.quality() * 0.06F
-                        + freshness * 0.14F
-                        + data.recipeAccuracy() * 0.08F
-                        + recognitionQuality * 0.18F
-                        + compositionFit * 0.12F
-                        + prep * 0.12F
-                        + combine * 0.12F
-                        + cooking * 0.12F
-                        + finishing * 0.04F
-                        + plating * 0.02F,
+        float presentation = Mth.clamp(
+                servingFit(foodMatter, effectiveState) * 0.46F
+                        + (schemaScore != null ? schemaScore.presentationScore() : foodMatter.finalizedServing() ? 1.0F : 0.42F) * 0.24F
+                        + recognitionQuality * 0.16F
+                        + processFit * 0.08F
+                        + integrity * 0.06F,
                 0.0F,
                 1.0F
         );
-        total = Mth.clamp(total * 0.82F + integrity * 0.18F, 0.0F, 1.0F);
+        float freshnessScore = Mth.clamp(freshness * 0.70F + integrity * 0.30F, 0.0F, 1.0F);
+        float ingredientQuality = Mth.clamp(
+                compositionFit * 0.28F
+                        + recognitionQuality * 0.22F
+                        + integrity * 0.22F
+                        + data.quality() * 0.14F
+                        + average(seasoning, texture) * 0.14F,
+                0.0F,
+                1.0F
+        );
+
         FreshnessBand band = KitchenStackUtil.freshnessBand(stack, level);
+        if (band == FreshnessBand.SPOILED) {
+            freshnessScore = Math.min(freshnessScore, 0.36F);
+        } else if (band == FreshnessBand.MOLDY) {
+            freshnessScore = Math.min(freshnessScore, 0.16F);
+        }
+
+        float total = Mth.clamp(
+                recipeAccuracy * 0.24F
+                        + seasoning * 0.15F
+                        + cooking * 0.20F
+                        + texture * 0.14F
+                        + freshnessScore * 0.15F
+                        + presentation * 0.08F
+                        + ingredientQuality * 0.04F,
+                0.0F,
+                1.0F
+        );
         if (band == FreshnessBand.SPOILED) {
             total *= 0.55F;
         } else if (band == FreshnessBand.MOLDY) {
@@ -316,19 +355,18 @@ public final class DishEvaluation {
         }
         total = Mth.clamp(total, 0.0F, 1.0F);
 
-        return new QualityBreakdown(
-                DishGrade.fromScore(total),
+        int enjoymentPenalty = Math.max(0, Math.round((1.0F - average(seasoning, cooking, texture, freshnessScore)) * 3.0F));
+        return new FoodMatterGradeScores(
                 total,
-                data.quality(),
-                freshness,
-                prep,
-                combine,
+                ingredientQuality,
+                recipeAccuracy,
+                seasoning,
                 cooking,
-                finishing,
-                plating,
-                data.recipeAccuracy(),
+                texture,
+                freshnessScore,
+                presentation,
                 data.nourishment(),
-                data.enjoyment()
+                Math.max(0, data.enjoyment() - enjoymentPenalty)
         );
     }
 
@@ -552,6 +590,28 @@ public final class DishEvaluation {
             return 0.22F;
         }
         return matter.processDepth() >= 2 ? 0.56F : 0.34F;
+    }
+
+    private static float foodSafetyIntegrity(FoodMatterData matter) {
+        return Mth.clamp(
+                1.0F
+                        - matter.oxidation() * 0.30F
+                        - matter.microbialLoad() * 0.42F
+                        - matter.charLevel() * 0.22F,
+                0.0F,
+                1.0F
+        );
+    }
+
+    private static float targetAeration(DishFamily family) {
+        return switch (family) {
+            case BLEND -> 0.22F;
+            case DOUGH -> 0.12F;
+            case BAKED -> 0.18F;
+            case EGG -> 0.12F;
+            case SAUCE, SOUP -> 0.08F;
+            default -> 0.10F;
+        };
     }
 
     private static float seasoningBalance(FoodMatterData matter, DishFamily family) {

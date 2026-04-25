@@ -9,6 +9,7 @@ import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.boaat.jazzy_cookin.registry.JazzyMenus;
 import com.boaat.jazzy_cookin.registry.JazzyRecipes;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaManager;
 import com.boaat.jazzy_cookin.recipebook.network.RecipeBookNetworking;
 import com.mojang.logging.LogUtils;
 
@@ -32,6 +33,7 @@ public class JazzyCookin {
         JazzyCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         modEventBus.addListener(RecipeBookNetworking::register);
+        NeoForge.EVENT_BUS.addListener(DishSchemaManager::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onPlayerCloned);
         NeoForge.EVENT_BUS.addListener(RecipeBookNetworking::onItemCrafted);

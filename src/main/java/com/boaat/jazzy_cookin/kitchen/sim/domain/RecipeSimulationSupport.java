@@ -19,6 +19,8 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.recipe.KitchenEnvironmentRequirements;
 import com.boaat.jazzy_cookin.recipe.KitchenInputRequirement;
@@ -32,6 +34,7 @@ import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.ItemStack;
@@ -62,9 +65,28 @@ final class RecipeSimulationSupport {
         return JazzyRecipes.findPlateRecipe(access.simulationLevel(), inputStacks(access));
     }
 
+    static Optional<DishSchemaScore> currentPlateSchema(StationSimulationAccess access) {
+        Level level = access.simulationLevel();
+        if (level == null) {
+            return Optional.empty();
+        }
+        FoodMatterData matter = plateAttemptMatter(access, level.getGameTime());
+        if (matter == null) {
+            return Optional.empty();
+        }
+        DishSchemaScore score = DishSchemaScorer.bestScore(matter, item -> item instanceof KitchenIngredientItem);
+        return score != null && score.schema().meal() && score.score() >= score.schema().finalizeThreshold()
+                ? Optional.of(score)
+                : Optional.empty();
+    }
+
+    static boolean hasPlateCandidate(StationSimulationAccess access) {
+        return currentPlateRecipe(access).isPresent() || currentPlateSchema(access).isPresent();
+    }
+
     static int environmentStatus(StationSimulationAccess access) {
         if (access.simulationStationType() == com.boaat.jazzy_cookin.kitchen.StationType.PLATING_STATION) {
-            return currentPlateRecipe(access).isPresent() ? 1 : 2;
+            return hasPlateCandidate(access) ? 1 : 2;
         }
         Optional<KitchenProcessRecipe> recipe = currentProcessRecipe(access);
         if (recipe.isEmpty()) {
@@ -85,8 +107,18 @@ final class RecipeSimulationSupport {
 
     static boolean startPlate(StationSimulationAccess access) {
         Optional<KitchenPlateRecipe> recipe = currentPlateRecipe(access);
-        if (recipe.isEmpty() || access.simulationActive() || !canAcceptOutputs(access, recipe.get())) {
+        if (access.simulationActive()) {
             return false;
+        }
+        if (recipe.isPresent()) {
+            if (!canAcceptOutputs(access, recipe.get())) {
+                return false;
+            }
+        } else {
+            Optional<DishSchemaScore> schema = currentPlateSchema(access);
+            if (schema.isEmpty() || !canAcceptOutputs(access, schema.get())) {
+                return false;
+            }
         }
         access.simulationSetProgress(0, PLATE_DURATION_TICKS, true);
         access.simulationMarkChanged();
@@ -118,14 +150,23 @@ final class RecipeSimulationSupport {
             return;
         }
         Optional<KitchenPlateRecipe> recipe = currentPlateRecipe(access);
-        if (recipe.isEmpty() || !canAcceptOutputs(access, recipe.get())) {
+        Optional<DishSchemaScore> schema = recipe.isEmpty() ? currentPlateSchema(access) : Optional.empty();
+        if (recipe.isPresent() && !canAcceptOutputs(access, recipe.get())) {
+            stop(access);
+            return;
+        }
+        if (recipe.isEmpty() && (schema.isEmpty() || !canAcceptOutputs(access, schema.get()))) {
             stop(access);
             return;
         }
 
         int nextProgress = access.simulationProgress() + 1;
         if (nextProgress >= access.simulationMaxProgress()) {
-            finishPlate(access, recipe.get());
+            if (recipe.isPresent()) {
+                finishPlate(access, recipe.get());
+            } else {
+                finishPlateSchema(access, schema.get());
+            }
             return;
         }
 
@@ -178,6 +219,23 @@ final class RecipeSimulationSupport {
         List<ItemStack> consumedInputs = matchedInputs(access, matchPlan, recipe.inputs());
         IngredientStateData outputData = DishEvaluation.evaluatePlate(level, recipe, consumedInputs, matchPlan.score());
         return createOutputStack(recipe.output().result(), outputData, level.getGameTime(), consumedInputs);
+    }
+
+    static ItemStack previewPlateSchemaStack(StationSimulationAccess access, DishSchemaScore score) {
+        Level level = access.simulationLevel();
+        if (level == null || !(score.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
+            return ItemStack.EMPTY;
+        }
+        FoodMatterData matter = plateAttemptMatter(access, level.getGameTime());
+        if (matter == null) {
+            return ItemStack.EMPTY;
+        }
+        return SimulationOutputFactory.createOutput(
+                ingredientItem,
+                level.getGameTime(),
+                SimulationIngredientAnalysis.analyzeStacks(foodInputStacks(access), level.getGameTime()),
+                matter
+        );
     }
 
     static int previewRecognizerId(ItemStack stack, long gameTime) {
@@ -298,6 +356,42 @@ final class RecipeSimulationSupport {
         access.simulationMarkChanged();
     }
 
+    private static void finishPlateSchema(StationSimulationAccess access, DishSchemaScore score) {
+        Level level = access.simulationLevel();
+        if (level == null || !(score.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
+            stop(access);
+            return;
+        }
+
+        List<ItemStack> consumedInputs = inputStacks(access).stream()
+                .filter(stack -> !stack.isEmpty())
+                .map(ItemStack::copy)
+                .toList();
+        FoodMatterData matter = plateAttemptMatter(access, level.getGameTime());
+        if (matter == null) {
+            stop(access);
+            return;
+        }
+
+        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
+            if (!access.simulationItem(slot).isEmpty()) {
+                access.simulationRemoveItem(slot, access.simulationItem(slot).getCount());
+            }
+        }
+
+        ItemStack outputStack = SimulationOutputFactory.createOutput(
+                ingredientItem,
+                level.getGameTime(),
+                SimulationIngredientAnalysis.analyzeStacks(consumedInputs.stream()
+                        .filter(stack -> stack.getItem() instanceof KitchenIngredientItem)
+                        .toList(), level.getGameTime()),
+                matter
+        );
+        access.simulationMergeIntoSlot(access.outputSlot(), outputStack);
+        stop(access);
+        access.simulationMarkChanged();
+    }
+
     private static ItemStack createOutputStack(ItemStack template, IngredientStateData outputData, long gameTime, List<ItemStack> sourceInputs) {
         ItemStack output = template.copy();
         if (output.getItem() instanceof KitchenIngredientItem ingredientItem) {
@@ -411,6 +505,55 @@ final class RecipeSimulationSupport {
             return false;
         }
         return recipe.output().byproduct().isEmpty() || access.simulationCanAcceptStack(access.byproductSlot(), recipe.output().byproduct());
+    }
+
+    private static boolean canAcceptOutputs(StationSimulationAccess access, DishSchemaScore score) {
+        if (!(score.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
+            return false;
+        }
+        return access.simulationCanAcceptStack(access.outputSlot(), new ItemStack(ingredientItem));
+    }
+
+    private static FoodMatterData plateAttemptMatter(StationSimulationAccess access, long gameTime) {
+        SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeStacks(foodInputStacks(access), gameTime);
+        if (analysis.isEmpty()) {
+            return null;
+        }
+        return new FoodMatterData(
+                analysis.createdTick() > 0L ? analysis.createdTick() : gameTime,
+                analysis.traitMask(),
+                analysis.avgSurfaceTempC(),
+                analysis.avgCoreTempC(),
+                analysis.avgWater(),
+                analysis.avgFat(),
+                analysis.avgProtein(),
+                analysis.avgAerationCarry(),
+                analysis.avgFragmentationCarry(),
+                Mth.clamp(analysis.avgCohesivenessCarry() + 0.10F, 0.0F, 1.0F),
+                analysis.avgProteinSetCarry(),
+                analysis.avgBrowningCarry(),
+                analysis.avgCharLevelCarry(),
+                analysis.avgSeasoning(),
+                analysis.avgCheese(),
+                analysis.avgOnion(),
+                analysis.avgHerb(),
+                analysis.avgPepper(),
+                analysis.avgPreservation(),
+                analysis.avgOxidation(),
+                analysis.avgMicrobialLoad(),
+                analysis.avgWhiskWork(),
+                Math.max(0, Math.round(analysis.avgStirCount())),
+                Math.max(0, Math.round(analysis.avgFlipCount())),
+                Math.max(0, Math.round(analysis.avgTimeInPan())),
+                Math.max(1, Math.round(analysis.avgProcessDepth()) + 1),
+                true
+        ).clamp();
+    }
+
+    private static List<ItemStack> foodInputStacks(StationSimulationAccess access) {
+        return inputStacks(access).stream()
+                .filter(stack -> !stack.isEmpty() && stack.getItem() instanceof KitchenIngredientItem)
+                .toList();
     }
 
     private static void damageTool(StationSimulationAccess access, KitchenProcessRecipe recipe) {

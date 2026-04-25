@@ -608,8 +608,7 @@ public record StationUiProfile(
         int hotbarY = height - 26;
         LayoutRegion inventoryShelf = new LayoutRegion(10, inventoryStartY - 17, width - 20, 91);
         int controlTop = inventoryShelf.y() - controlHeight - 8;
-        int contentBottom = Math.max(contentTop + 58, controlTop - 8);
-        int contentHeight = contentBottom - contentTop;
+        int contentHeight = Math.max(24, controlTop - contentTop - 8);
 
         int previewWidth = clamp(Math.round(width * 0.26F), 66, width >= LARGE_WIDTH ? 104 : 92);
         int metricWidth = clamp(Math.round(width * 0.18F), 48, width >= LARGE_WIDTH ? 70 : 60);
