@@ -1,0 +1,43 @@
+{
+  "key": "pan_seared_chicken",
+  "preview_id": 1011,
+  "result": "jazzycookin:pan_seared_chicken",
+  "category": "pan_dish",
+  "meal": true,
+  "preview_threshold": 0.54,
+  "finalize_threshold": 0.6,
+  "desirability": 0.84,
+  "required_roles": [
+    {
+      "role": "protein",
+      "all_traits": [
+        "chicken",
+        "protein"
+      ],
+      "weight": 0.9
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "garnish",
+      "any_traits": [
+        "herb",
+        "salt",
+        "spice"
+      ],
+      "weight": 0.25
+    }
+  ],
+  "required_techniques": [
+    "plated"
+  ],
+  "weights": {
+    "roles": 0.26,
+    "composition": 0.1,
+    "seasoning": 0.14,
+    "cooking": 0.18,
+    "texture": 0.12,
+    "technique": 0.08,
+    "presentation": 0.12
+  }
+}

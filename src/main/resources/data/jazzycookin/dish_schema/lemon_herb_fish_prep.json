@@ -1,0 +1,29 @@
+{
+  "key": "lemon_herb_fish_prep",
+  "preview_id": 1130,
+  "result": "jazzycookin:lemon_herb_fish_prep",
+  "category": "pan_dish",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.86,
+  "required_roles": [
+    { "role": "protein", "all_traits": [ "fish", "protein" ], "weight": 0.9 },
+    { "role": "acid", "any_traits": [ "acidic", "fruit" ], "weight": 0.35 },
+    { "role": "herb", "any_traits": [ "herb" ], "weight": 0.25 }
+  ],
+  "optional_roles": [
+    { "role": "fat", "any_traits": [ "fat", "oil" ], "weight": 0.25 },
+    { "role": "salt", "any_traits": [ "salt" ], "weight": 0.18 }
+  ],
+  "required_techniques": [ "pan_fried" ],
+  "targets": {
+    "water": { "min": 0.18, "max": 0.62, "softness": 0.18 },
+    "fat": { "min": 0.02, "max": 0.38, "softness": 0.16 },
+    "protein": { "min": 0.24, "max": 0.78, "softness": 0.18 },
+    "seasoning": { "min": 0.04, "max": 0.34, "softness": 0.14 },
+    "herb": { "min": 0.02, "max": 0.34, "softness": 0.14 },
+    "protein_set": { "min": 0.42, "max": 0.86, "softness": 0.2 },
+    "browning": { "min": 0.02, "max": 0.36, "softness": 0.16 },
+    "char_level": { "min": 0.0, "max": 0.10, "softness": 0.08 }
+  }
+}

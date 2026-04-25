@@ -1,0 +1,91 @@
+{
+  "key": "soft_scrambled_eggs",
+  "preview_id": 1001,
+  "result": "jazzycookin:soft_scrambled_eggs",
+  "category": "egg",
+  "meal": true,
+  "preview_threshold": 0.58,
+  "finalize_threshold": 0.62,
+  "desirability": 0.9,
+  "required_roles": [
+    {
+      "role": "protein",
+      "any_traits": [
+        "egg"
+      ],
+      "weight": 1.0
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "dairy",
+      "any_traits": [
+        "dairy"
+      ],
+      "weight": 0.22
+    },
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.22
+    },
+    {
+      "role": "herb",
+      "any_traits": [
+        "herb"
+      ],
+      "weight": 0.18
+    },
+    {
+      "role": "spice",
+      "any_traits": [
+        "pepper",
+        "spice"
+      ],
+      "weight": 0.18
+    }
+  ],
+  "required_techniques": [
+    "mixed",
+    "pan_fried"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.45,
+      "max": 0.75,
+      "softness": 0.18
+    },
+    "seasoning": {
+      "min": 0.04,
+      "max": 0.3,
+      "softness": 0.14
+    },
+    "protein_set": {
+      "min": 0.45,
+      "max": 0.66,
+      "softness": 0.16
+    },
+    "browning": {
+      "min": 0.0,
+      "max": 0.18,
+      "softness": 0.1
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.1,
+      "softness": 0.08
+    },
+    "fragmentation": {
+      "min": 0.55,
+      "max": 0.92,
+      "softness": 0.2
+    },
+    "cohesiveness": {
+      "min": 0.1,
+      "max": 0.6,
+      "softness": 0.22
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "key": "potato_curry_prep",
+  "preview_id": 1140,
+  "result": "jazzycookin:potato_curry_prep",
+  "category": "soup",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.82,
+  "required_roles": [
+    { "role": "vegetable", "any_traits": [ "starch", "vegetable" ], "weight": 0.85 },
+    { "role": "liquid", "any_traits": [ "sauce", "tomato", "vegetable" ], "weight": 0.55 }
+  ],
+  "optional_roles": [
+    { "role": "spice", "any_traits": [ "spice" ], "weight": 0.3 },
+    { "role": "aromatic", "any_traits": [ "allium", "aromatic" ], "weight": 0.22 },
+    { "role": "fat", "any_traits": [ "fat", "oil" ], "weight": 0.18 }
+  ],
+  "required_techniques": [ "simmered" ],
+  "targets": {
+    "water": { "min": 0.42, "max": 0.84, "softness": 0.18 },
+    "fat": { "min": 0.02, "max": 0.40, "softness": 0.18 },
+    "seasoning": { "min": 0.06, "max": 0.48, "softness": 0.14 },
+    "onion": { "min": 0.02, "max": 0.34, "softness": 0.14 },
+    "pepper": { "min": 0.0, "max": 0.32, "softness": 0.14 },
+    "protein_set": { "min": 0.24, "max": 0.74, "softness": 0.20 },
+    "char_level": { "min": 0.0, "max": 0.10, "softness": 0.08 },
+    "cohesiveness": { "min": 0.22, "max": 0.68, "softness": 0.18 }
+  }
+}

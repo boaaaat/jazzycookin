@@ -1,0 +1,31 @@
+{
+  "key": "chicken_fried_rice_prep",
+  "preview_id": 1100,
+  "result": "jazzycookin:chicken_fried_rice_prep",
+  "category": "pan_dish",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.86,
+  "required_roles": [
+    { "role": "grain", "any_traits": [ "rice", "grain" ], "weight": 0.75 },
+    { "role": "protein", "all_traits": [ "chicken", "protein" ], "weight": 0.75 },
+    { "role": "fat", "any_traits": [ "fat", "oil" ], "weight": 0.35 }
+  ],
+  "optional_roles": [
+    { "role": "vegetable", "any_traits": [ "vegetable", "allium" ], "weight": 0.25 },
+    { "role": "salt", "any_traits": [ "salt", "sauce" ], "weight": 0.2 },
+    { "role": "spice", "any_traits": [ "spice", "pepper" ], "weight": 0.18 }
+  ],
+  "required_techniques": [ "pan_fried" ],
+  "targets": {
+    "water": { "min": 0.12, "max": 0.58, "softness": 0.18 },
+    "fat": { "min": 0.04, "max": 0.42, "softness": 0.18 },
+    "protein": { "min": 0.18, "max": 0.72, "softness": 0.18 },
+    "seasoning": { "min": 0.06, "max": 0.42, "softness": 0.14 },
+    "protein_set": { "min": 0.44, "max": 0.92, "softness": 0.2 },
+    "browning": { "min": 0.05, "max": 0.48, "softness": 0.16 },
+    "char_level": { "min": 0.0, "max": 0.14, "softness": 0.08 },
+    "fragmentation": { "min": 0.18, "max": 0.62, "softness": 0.16 },
+    "cohesiveness": { "min": 0.16, "max": 0.64, "softness": 0.18 }
+  }
+}

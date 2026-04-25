@@ -1,0 +1,88 @@
+{
+  "key": "garlic_bread_prep",
+  "preview_id": 1051,
+  "result": "jazzycookin:garlic_bread_prep",
+  "category": "baked",
+  "preview_threshold": 0.54,
+  "finalize_threshold": 0.6,
+  "desirability": 0.84,
+  "required_roles": [
+    {
+      "role": "grain",
+      "any_traits": [
+        "bread",
+        "grain",
+        "wheat"
+      ],
+      "weight": 1.0
+    },
+    {
+      "role": "fat",
+      "any_traits": [
+        "fat",
+        "oil",
+        "dairy"
+      ],
+      "weight": 0.3
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "aromatic",
+      "any_traits": [
+        "allium",
+        "aromatic"
+      ],
+      "weight": 0.3
+    },
+    {
+      "role": "herb",
+      "any_traits": [
+        "herb"
+      ],
+      "weight": 0.22
+    },
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.2
+    }
+  ],
+  "required_techniques": [
+    "baked"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.12,
+      "max": 0.48,
+      "softness": 0.18
+    },
+    "fat": {
+      "min": 0.04,
+      "max": 0.46,
+      "softness": 0.2
+    },
+    "seasoning": {
+      "min": 0.04,
+      "max": 0.28,
+      "softness": 0.14
+    },
+    "browning": {
+      "min": 0.02,
+      "max": 0.34,
+      "softness": 0.16
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.12,
+      "softness": 0.08
+    },
+    "cohesiveness": {
+      "min": 0.42,
+      "max": 0.88,
+      "softness": 0.18
+    }
+  }
+}

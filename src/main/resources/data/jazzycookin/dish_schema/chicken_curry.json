@@ -1,0 +1,118 @@
+{
+  "key": "chicken_curry_prep",
+  "preview_id": 1020,
+  "result": "jazzycookin:chicken_curry_prep",
+  "category": "soup",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.9,
+  "required_roles": [
+    {
+      "role": "protein",
+      "all_traits": [
+        "chicken",
+        "protein"
+      ],
+      "weight": 0.85
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "sauce",
+        "tomato",
+        "vegetable",
+        "coconut"
+      ],
+      "weight": 0.65
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "spice",
+      "any_traits": [
+        "spice",
+        "pepper"
+      ],
+      "weight": 0.3
+    },
+    {
+      "role": "aromatic",
+      "any_traits": [
+        "allium",
+        "aromatic"
+      ],
+      "weight": 0.25
+    },
+    {
+      "role": "fat",
+      "any_traits": [
+        "fat",
+        "oil",
+        "dairy"
+      ],
+      "weight": 0.2
+    },
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.2
+    }
+  ],
+  "required_techniques": [
+    "simmered"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.44,
+      "max": 0.82,
+      "softness": 0.18
+    },
+    "fat": {
+      "min": 0.04,
+      "max": 0.38,
+      "softness": 0.18
+    },
+    "protein": {
+      "min": 0.16,
+      "max": 0.72,
+      "softness": 0.2
+    },
+    "seasoning": {
+      "min": 0.1,
+      "max": 0.38,
+      "softness": 0.16
+    },
+    "pepper": {
+      "min": 0.04,
+      "max": 0.34,
+      "softness": 0.16
+    },
+    "protein_set": {
+      "min": 0.42,
+      "max": 0.86,
+      "softness": 0.2
+    },
+    "browning": {
+      "min": 0.0,
+      "max": 0.24,
+      "softness": 0.16
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.12,
+      "softness": 0.08
+    },
+    "fragmentation": {
+      "min": 0.12,
+      "max": 0.48,
+      "softness": 0.16
+    },
+    "cohesiveness": {
+      "min": 0.18,
+      "max": 0.62,
+      "softness": 0.18
+    }
+  }
+}

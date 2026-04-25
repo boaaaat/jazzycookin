@@ -1,0 +1,18 @@
+{
+  "key": "lemon_herb_fish",
+  "preview_id": 1131,
+  "result": "jazzycookin:lemon_herb_fish",
+  "category": "pan_dish",
+  "meal": true,
+  "preview_threshold": 0.54,
+  "finalize_threshold": 0.6,
+  "desirability": 0.84,
+  "required_roles": [
+    { "role": "protein", "any_traits": [ "fish", "protein" ], "weight": 0.8 }
+  ],
+  "optional_roles": [
+    { "role": "garnish", "any_traits": [ "herb", "acidic", "salt" ], "weight": 0.25 }
+  ],
+  "required_techniques": [ "plated" ],
+  "weights": { "roles": 0.26, "composition": 0.1, "seasoning": 0.14, "cooking": 0.18, "texture": 0.12, "technique": 0.08, "presentation": 0.12 }
+}

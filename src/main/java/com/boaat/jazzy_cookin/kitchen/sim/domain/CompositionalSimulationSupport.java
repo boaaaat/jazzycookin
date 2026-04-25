@@ -12,6 +12,10 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptContext;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 
 import net.minecraft.util.Mth;
@@ -272,12 +276,46 @@ final class CompositionalSimulationSupport {
         return SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
     }
 
+    static ItemStack recognizedSchemaOutput(
+            StationSimulationAccess access,
+            SimulationIngredientAnalysis analysis,
+            FoodMatterData matter,
+            Predicate<DishSchemaDefinition> schemaFilter
+    ) {
+        DishSchemaScore score = bestSchemaScore(matter, schemaFilter, true);
+        if (score == null || !(score.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
+            return ItemStack.EMPTY;
+        }
+        return SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
+    }
+
+    static int schemaPreviewId(FoodMatterData matter, Predicate<DishSchemaDefinition> schemaFilter) {
+        DishSchemaScore score = bestSchemaScore(matter, schemaFilter, false);
+        return score != null ? score.schema().previewId() : 0;
+    }
+
     static ItemStack recognizedMealOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter, Predicate<Item> filter) {
         DishRecognitionResult result = DishSchema.finalizeResult(matter, item -> item instanceof KitchenMealItem && filter.test(item));
         if (result == null || !(result.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
             return ItemStack.EMPTY;
         }
         return SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
+    }
+
+    private static DishSchemaScore bestSchemaScore(FoodMatterData matter, Predicate<DishSchemaDefinition> schemaFilter, boolean finalize) {
+        if (matter == null) {
+            return null;
+        }
+        DishAttemptContext context = DishAttemptContext.fromMatter(matter);
+        return DishSchemaScorer.schemas().stream()
+                .filter(schemaFilter)
+                .map(schema -> DishSchemaScorer.score(schema, context))
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
+                .filter(score -> score.resultItem().get() instanceof KitchenIngredientItem)
+                .filter(score -> score.score() >= (finalize ? score.schema().finalizeThreshold() : score.schema().previewThreshold()))
+                .max(java.util.Comparator.comparing(DishSchemaScore::score).thenComparing(score -> score.schema().desirability()))
+                .orElse(null);
     }
 
     static void advanceTimedBatch(StationSimulationAccess access, IngredientState state, boolean finalizedServing, float waterBias, float aeration, float fragmentation, float cohesiveness, float proteinSet, float browning, float charLevel) {

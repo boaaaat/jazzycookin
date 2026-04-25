@@ -1,0 +1,28 @@
+{
+  "key": "golden_rice_prep",
+  "preview_id": 1120,
+  "result": "jazzycookin:golden_rice_prep",
+  "category": "soup",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.78,
+  "required_roles": [
+    { "role": "grain", "any_traits": [ "rice", "grain" ], "weight": 1.0 },
+    { "role": "liquid", "any_traits": [ "sauce", "vegetable" ], "weight": 0.55 }
+  ],
+  "optional_roles": [
+    { "role": "fat", "any_traits": [ "fat", "oil" ], "weight": 0.22 },
+    { "role": "spice", "any_traits": [ "spice" ], "weight": 0.24 },
+    { "role": "salt", "any_traits": [ "salt" ], "weight": 0.18 }
+  ],
+  "required_techniques": [ "simmered" ],
+  "targets": {
+    "water": { "min": 0.30, "max": 0.70, "softness": 0.18 },
+    "fat": { "min": 0.0, "max": 0.32, "softness": 0.16 },
+    "seasoning": { "min": 0.04, "max": 0.38, "softness": 0.14 },
+    "protein_set": { "min": 0.08, "max": 0.58, "softness": 0.2 },
+    "browning": { "min": 0.0, "max": 0.20, "softness": 0.14 },
+    "char_level": { "min": 0.0, "max": 0.08, "softness": 0.08 },
+    "cohesiveness": { "min": 0.22, "max": 0.72, "softness": 0.18 }
+  }
+}

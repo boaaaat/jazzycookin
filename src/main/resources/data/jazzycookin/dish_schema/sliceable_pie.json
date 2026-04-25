@@ -1,0 +1,52 @@
+{
+  "key": "sliceable_pie",
+  "preview_id": 1053,
+  "result": "jazzycookin:sliceable_pie",
+  "category": "baked",
+  "meal": true,
+  "preview_threshold": 0.54,
+  "finalize_threshold": 0.6,
+  "desirability": 0.84,
+  "required_roles": [
+    {
+      "role": "grain",
+      "any_traits": [
+        "flour",
+        "wheat",
+        "grain"
+      ],
+      "weight": 0.75
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "sweetener",
+      "any_traits": [
+        "sweetener",
+        "fruit"
+      ],
+      "weight": 0.3
+    },
+    {
+      "role": "garnish",
+      "any_traits": [
+        "salt",
+        "spice",
+        "herb"
+      ],
+      "weight": 0.2
+    }
+  ],
+  "required_techniques": [
+    "plated"
+  ],
+  "weights": {
+    "roles": 0.26,
+    "composition": 0.1,
+    "seasoning": 0.14,
+    "cooking": 0.18,
+    "texture": 0.12,
+    "technique": 0.08,
+    "presentation": 0.12
+  }
+}

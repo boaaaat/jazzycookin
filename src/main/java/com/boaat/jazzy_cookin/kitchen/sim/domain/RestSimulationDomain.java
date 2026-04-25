@@ -4,10 +4,13 @@ import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
@@ -42,6 +45,7 @@ public final class RestSimulationDomain implements StationSimulationDomain {
             return SimulationSnapshot.inactive(executionMode);
         }
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
+        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(matter, RestSimulationDomain::isRestSchema);
         return new SimulationSnapshot(
                 executionMode,
                 access.simulationActive() ? 1 : 0,
@@ -54,7 +58,7 @@ public final class RestSimulationDomain implements StationSimulationDomain {
                 0,
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                preview != null ? preview.previewId() : 0
+                schemaPreviewId != 0 ? schemaPreviewId : preview != null ? preview.previewId() : 0
         );
     }
 
@@ -67,6 +71,11 @@ public final class RestSimulationDomain implements StationSimulationDomain {
         if (preview.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), preview)) {
             return false;
         }
+        access.simulationSetBatch(new CookingBatchState(transformedMatter(
+                access,
+                SimulationIngredientAnalysis.analyzeInputs(access),
+                0.0F
+        )));
         access.simulationSetProgress(0, access.simulationStationType() == StationType.COOLING_RACK ? 40 : 28, true);
         access.simulationMarkChanged();
         return true;
@@ -79,6 +88,11 @@ public final class RestSimulationDomain implements StationSimulationDomain {
         }
         int next = access.simulationProgress() + 1;
         access.simulationSetProgress(next, access.simulationMaxProgress(), true);
+        access.simulationSetBatch(new CookingBatchState(transformedMatter(
+                access,
+                SimulationIngredientAnalysis.analyzeInputs(access),
+                access.simulationMaxProgress() > 0 ? Math.min(1.0F, next / (float) access.simulationMaxProgress()) : 1.0F
+        )));
         if (next >= access.simulationMaxProgress()) {
             finish(access);
             return;
@@ -108,12 +122,21 @@ public final class RestSimulationDomain implements StationSimulationDomain {
         }
         SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeInputs(access);
         FoodMatterData matter = previewMatter(access);
-        return matter != null ? SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter) : ItemStack.EMPTY;
+        if (matter == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, RestSimulationDomain::isRestSchema);
+        return schemaOutput.isEmpty()
+                ? SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter)
+                : schemaOutput;
     }
 
     private static FoodMatterData previewMatter(StationSimulationAccess access) {
         if (access.simulationLevel() == null) {
             return null;
+        }
+        if (access.simulationActive() && access.simulationBatch() != null) {
+            return access.simulationBatch().matter();
         }
         SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeInputs(access);
         if (analysis.isEmpty()) {
@@ -122,6 +145,10 @@ public final class RestSimulationDomain implements StationSimulationDomain {
         float completion = access.simulationActive() && access.simulationMaxProgress() > 0
                 ? (access.simulationProgress() + 1) / (float) access.simulationMaxProgress()
                 : 0.90F;
+        return transformedMatter(access, analysis, completion);
+    }
+
+    private static FoodMatterData transformedMatter(StationSimulationAccess access, SimulationIngredientAnalysis analysis, float completion) {
         ItemStack dominant = CompositionalSimulationSupport.dominantFoodInput(access);
         IngredientState state = access.simulationStationType() == StationType.COOLING_RACK
                 ? inferCoolingState(dominant)
@@ -141,6 +168,10 @@ public final class RestSimulationDomain implements StationSimulationDomain {
                 0.0F
         );
         return matter.withTemps(34.0F, 30.0F);
+    }
+
+    private static boolean isRestSchema(DishSchemaDefinition schema) {
+        return !schema.meal() && schema.requiredTechniques().contains(DishTechnique.RESTED);
     }
 
     private static boolean shouldSlice(StationSimulationAccess access) {

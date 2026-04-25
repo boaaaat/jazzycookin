@@ -1,0 +1,30 @@
+{
+  "key": "tofu_stir_fry_prep",
+  "preview_id": 1110,
+  "result": "jazzycookin:tofu_stir_fry_prep",
+  "category": "pan_dish",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.84,
+  "required_roles": [
+    { "role": "protein", "any_traits": [ "soy", "plant_protein" ], "weight": 0.85 },
+    { "role": "vegetable", "any_traits": [ "vegetable", "leafy_green", "allium" ], "weight": 0.55 },
+    { "role": "fat", "any_traits": [ "fat", "oil" ], "weight": 0.3 }
+  ],
+  "optional_roles": [
+    { "role": "salt", "any_traits": [ "salt", "sauce" ], "weight": 0.24 },
+    { "role": "aromatic", "any_traits": [ "allium", "aromatic" ], "weight": 0.22 },
+    { "role": "spice", "any_traits": [ "spice", "pepper" ], "weight": 0.18 }
+  ],
+  "required_techniques": [ "pan_fried" ],
+  "targets": {
+    "water": { "min": 0.18, "max": 0.64, "softness": 0.18 },
+    "fat": { "min": 0.04, "max": 0.44, "softness": 0.18 },
+    "seasoning": { "min": 0.06, "max": 0.46, "softness": 0.14 },
+    "onion": { "min": 0.02, "max": 0.34, "softness": 0.14 },
+    "browning": { "min": 0.04, "max": 0.42, "softness": 0.16 },
+    "char_level": { "min": 0.0, "max": 0.12, "softness": 0.08 },
+    "fragmentation": { "min": 0.18, "max": 0.68, "softness": 0.16 },
+    "cohesiveness": { "min": 0.12, "max": 0.58, "softness": 0.18 }
+  }
+}

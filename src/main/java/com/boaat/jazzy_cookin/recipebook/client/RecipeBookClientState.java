@@ -212,6 +212,9 @@ public final class RecipeBookClientState {
         if (chainKey == null || chainKey.isBlank()) {
             return Component.translatable("screen.jazzycookin.recipe_book.default_chain").getString();
         }
+        if (chainKey.startsWith("schema:")) {
+            return "Flexible " + chainLabel(chainKey.substring("schema:".length()));
+        }
         ResourceLocation itemId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, chainKey);
         Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(itemId);
         if (item != null && item != net.minecraft.world.item.Items.AIR) {

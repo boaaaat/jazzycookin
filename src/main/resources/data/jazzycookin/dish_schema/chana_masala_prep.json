@@ -1,0 +1,29 @@
+{
+  "key": "chana_masala_prep",
+  "preview_id": 1150,
+  "result": "jazzycookin:chana_masala_prep",
+  "category": "soup",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.86,
+  "required_roles": [
+    { "role": "protein", "any_traits": [ "legume", "plant_protein" ], "weight": 0.85 },
+    { "role": "liquid", "any_traits": [ "tomato", "sauce", "vegetable" ], "weight": 0.55 }
+  ],
+  "optional_roles": [
+    { "role": "spice", "any_traits": [ "spice", "pepper" ], "weight": 0.32 },
+    { "role": "aromatic", "any_traits": [ "allium", "aromatic" ], "weight": 0.24 },
+    { "role": "acid", "any_traits": [ "acidic", "fruit" ], "weight": 0.16 }
+  ],
+  "required_techniques": [ "simmered" ],
+  "targets": {
+    "water": { "min": 0.38, "max": 0.82, "softness": 0.18 },
+    "protein": { "min": 0.18, "max": 0.70, "softness": 0.18 },
+    "seasoning": { "min": 0.06, "max": 0.48, "softness": 0.14 },
+    "onion": { "min": 0.02, "max": 0.36, "softness": 0.14 },
+    "pepper": { "min": 0.0, "max": 0.36, "softness": 0.14 },
+    "protein_set": { "min": 0.32, "max": 0.82, "softness": 0.20 },
+    "char_level": { "min": 0.0, "max": 0.10, "softness": 0.08 },
+    "cohesiveness": { "min": 0.18, "max": 0.64, "softness": 0.18 }
+  }
+}

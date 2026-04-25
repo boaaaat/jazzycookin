@@ -1,0 +1,99 @@
+{
+  "key": "tomato_soup_base",
+  "preview_id": 1040,
+  "result": "jazzycookin:tomato_soup_base",
+  "category": "soup",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.82,
+  "required_roles": [
+    {
+      "role": "vegetable",
+      "any_traits": [
+        "tomato",
+        "vegetable"
+      ],
+      "weight": 1.0
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "sauce",
+        "tomato",
+        "vegetable"
+      ],
+      "weight": 0.65
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "dairy",
+      "any_traits": [
+        "dairy"
+      ],
+      "weight": 0.2
+    },
+    {
+      "role": "aromatic",
+      "any_traits": [
+        "allium",
+        "aromatic"
+      ],
+      "weight": 0.25
+    },
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.2
+    },
+    {
+      "role": "herb",
+      "any_traits": [
+        "herb"
+      ],
+      "weight": 0.18
+    }
+  ],
+  "required_techniques": [
+    "simmered"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.5,
+      "max": 0.88,
+      "softness": 0.18
+    },
+    "seasoning": {
+      "min": 0.06,
+      "max": 0.34,
+      "softness": 0.16
+    },
+    "protein_set": {
+      "min": 0.3,
+      "max": 0.78,
+      "softness": 0.2
+    },
+    "browning": {
+      "min": 0.0,
+      "max": 0.2,
+      "softness": 0.16
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.1,
+      "softness": 0.08
+    },
+    "fragmentation": {
+      "min": 0.12,
+      "max": 0.5,
+      "softness": 0.16
+    },
+    "cohesiveness": {
+      "min": 0.16,
+      "max": 0.58,
+      "softness": 0.18
+    }
+  }
+}

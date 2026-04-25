@@ -1,5 +1,6 @@
 package com.boaat.jazzy_cookin.gametest;
 
+import java.util.List;
 import java.util.Set;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
@@ -24,6 +25,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaManager;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.kitchen.sim.station.SimulationExecutionMode;
@@ -648,6 +650,47 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void flagshipSchemaStationsProduceCoreDishes(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        KitchenStationBlockEntity panStove = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.STOVE.get());
+        panStove.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, level.getGameTime()));
+        panStove.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.OLIVE_OIL).get().createStack(1, level.getGameTime()));
+        panStove.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.TABLE_SALT).get().createStack(1, level.getGameTime()));
+        panStove.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.ROSEMARY).get().createStack(1, level.getGameTime()));
+        panStove.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.FRYING_PAN.get()));
+        panStove.handleButton(3104, fakePlayer);
+        require(panStove.handleButton(0, fakePlayer), "Pan schema fallback should start a chicken batch");
+        tickStation(level, panStove, 160);
+        require(panStove.handleButton(0, fakePlayer), "Pan schema fallback should finish a chicken batch");
+        require(panStove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.PAN_SEARED_CHICKEN_PREP.get()),
+                "Chicken, oil, salt, and herbs should produce pan-seared chicken prep");
+
+        KitchenStationBlockEntity soupStove = placeStation(level, helper.absolutePos(new BlockPos(3, 1, 0)), JazzyBlocks.STOVE.get());
+        soupStove.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.LENTILS).get().createStack(1, level.getGameTime()));
+        soupStove.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.BROTH).get().createStack(1, level.getGameTime()));
+        soupStove.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get().createStack(1, level.getGameTime()));
+        soupStove.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.TABLE_SALT).get().createStack(1, level.getGameTime()));
+        soupStove.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.SAUCEPAN.get()));
+        soupStove.handleButton(3104, fakePlayer);
+        require(soupStove.handleButton(0, fakePlayer), "Pot schema fallback should start a lentil soup batch");
+        tickStation(level, soupStove, 240);
+        require(soupStove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.LENTIL_SOUP_PREP.get()),
+                "Lentils, broth, aromatics, and salt should produce lentil soup prep");
+
+        KitchenStationBlockEntity platingStation = placeStation(level, helper.absolutePos(new BlockPos(6, 1, 0)), JazzyBlocks.PLATING_STATION.get());
+        platingStation.setItem(0, soupStove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).copy());
+        platingStation.setItem(1, new ItemStack(JazzyItems.CERAMIC_BOWL.get()));
+        platingStation.setItem(2, new ItemStack(JazzyItems.SPOON.get()));
+        require(platingStation.handleButton(0, fakePlayer), "Schema plating should start for lentil soup prep");
+        tickStation(level, platingStation, 32);
+        require(platingStation.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.LENTIL_SOUP.get()),
+                "Schema plating should serve lentil soup");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void restingBoardSimulationAdvancesPassiveRestRecipes(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         KitchenStationBlockEntity restingBoard = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.RESTING_BOARD.get());
@@ -960,6 +1003,63 @@ public final class KitchenGameTests {
         JazzyRecipeBookPlanner.Plan stovePlan = requirePlan(planner, selection(JazzyBlocks.STOVE.get(), IngredientState.PANTRY_READY, ""));
         require(stovePlan.steps().size() == 1 && stovePlan.steps().get(0).kind() == JazzyRecipeBookPlanner.StepKind.CRAFT,
                 "Stove should resolve through a crafting step");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void recipeBookPlannerAddsFlexibleSchemaGuides(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
+        JazzyRecipeBookSelection selection = selection(JazzyItems.LENTIL_SOUP.get(), IngredientState.PLATED, "schema:lentil_soup");
+        JazzyRecipeBookPlanner.Plan plan = requirePlan(planner, selection);
+
+        require(planner.chainKeysFor(outputKey(JazzyItems.LENTIL_SOUP.get(), IngredientState.PLATED)).contains("schema:lentil_soup"),
+                "Lentil soup should expose a flexible schema guide path");
+        require(plan.steps().stream().anyMatch(step ->
+                        step.kind() == JazzyRecipeBookPlanner.StepKind.PROCESS
+                                && step.outputKey().equals(outputKey(JazzyItems.LENTIL_SOUP_PREP.get(), IngredientState.SIMMERED))),
+                "Flexible lentil soup guide should include the simmered prep schema step");
+        require(plan.steps().get(plan.steps().size() - 1).kind() == JazzyRecipeBookPlanner.StepKind.PLATE,
+                "Flexible lentil soup guide should finish with a plating step");
+        require(plan.steps().stream()
+                        .flatMap(step -> step.options().stream())
+                        .anyMatch(option -> option.notes().stream().anyMatch(note -> note.contains("Flexible schema guide"))),
+                "Schema guides should explain that examples are flexible substitutions");
+
+        JazzyRecipeBookPlanner.Plan butterChickenPlan = requirePlan(
+                planner,
+                selection(JazzyItems.BUTTER_CHICKEN.get(), IngredientState.PLATED, "schema:butter_chicken")
+        );
+        require(butterChickenPlan.steps().stream().anyMatch(step ->
+                        step.kind() == JazzyRecipeBookPlanner.StepKind.PROCESS
+                                && step.outputKey().equals(outputKey(JazzyItems.BUTTER_CHICKEN_PREP.get(), IngredientState.SIMMERED))),
+                "Expanded content schemas should infer same-name prep dependencies for plated meals");
+
+        JazzyRecipeBookPlanner.Plan hummusPlan = requirePlan(
+                planner,
+                selection(JazzyItems.HUMMUS_PLATE.get(), IngredientState.PLATED, "schema:hummus_plate")
+        );
+        require(hummusPlan.steps().stream().anyMatch(step ->
+                        step.outputKey().equals(outputKey(JazzyItems.HUMMUS_PREP.get(), IngredientState.SMOOTH_PASTE))),
+                "Expanded content schemas should support mapped plate-name prep dependencies");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void dishSchemasStayValidForRecipeBookAndRecognition(GameTestHelper helper) {
+        List<String> problems = DishSchemaManager.validationProblems(DishSchemaScorer.schemas());
+        require(problems.isEmpty(), "Dish schema validation problems: " + String.join("; ", problems));
+
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(helper.getLevel());
+        for (var schema : DishSchemaScorer.schemas()) {
+            ItemStack result = new ItemStack(BuiltInRegistries.ITEM.get(schema.result()));
+            require(!result.isEmpty(), "Schema result should resolve for " + schema.key());
+            IngredientState state = RecipeBookDisplayUtil.defaultStateForItem(result.getItem());
+            if (schema.meal() || schema.requiredTechniques().stream().anyMatch(technique -> "plated".equals(technique.getSerializedName()))) {
+                require(planner.hasPlan(outputKey(result.getItem(), state), "schema:" + schema.key()),
+                        "Meal schema should expose a recipe-book guide for " + schema.key());
+            }
+        }
         helper.succeed();
     }
 

@@ -1,0 +1,31 @@
+{
+  "key": "butter_chicken_prep",
+  "preview_id": 1160,
+  "result": "jazzycookin:butter_chicken_prep",
+  "category": "soup",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.9,
+  "required_roles": [
+    { "role": "protein", "all_traits": [ "chicken", "protein" ], "weight": 0.85 },
+    { "role": "fat", "any_traits": [ "dairy", "fat" ], "weight": 0.45 },
+    { "role": "liquid", "any_traits": [ "tomato", "sauce", "vegetable" ], "weight": 0.45 }
+  ],
+  "optional_roles": [
+    { "role": "spice", "any_traits": [ "spice" ], "weight": 0.3 },
+    { "role": "aromatic", "any_traits": [ "allium", "aromatic" ], "weight": 0.22 },
+    { "role": "salt", "any_traits": [ "salt" ], "weight": 0.18 }
+  ],
+  "required_techniques": [ "simmered" ],
+  "targets": {
+    "water": { "min": 0.36, "max": 0.78, "softness": 0.18 },
+    "fat": { "min": 0.08, "max": 0.52, "softness": 0.18 },
+    "protein": { "min": 0.20, "max": 0.76, "softness": 0.18 },
+    "seasoning": { "min": 0.06, "max": 0.48, "softness": 0.14 },
+    "cheese": { "min": 0.0, "max": 0.34, "softness": 0.14 },
+    "onion": { "min": 0.02, "max": 0.34, "softness": 0.14 },
+    "protein_set": { "min": 0.42, "max": 0.88, "softness": 0.2 },
+    "char_level": { "min": 0.0, "max": 0.10, "softness": 0.08 },
+    "cohesiveness": { "min": 0.20, "max": 0.66, "softness": 0.18 }
+  }
+}

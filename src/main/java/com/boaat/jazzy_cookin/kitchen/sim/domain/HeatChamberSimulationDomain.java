@@ -5,10 +5,13 @@ import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.boaat.jazzy_cookin.registry.JazzyItems.IngredientId;
@@ -48,6 +51,7 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
             return SimulationSnapshot.inactive(executionMode);
         }
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
+        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(matter, HeatChamberSimulationDomain::isHeatSchema);
         int chamberTempF = access.simulationStationType() == StationType.OVEN
                 ? Math.max(72, Math.round(Math.max(200, access.simulationTargetTemperatureF()) * (access.simulationPreheatProgress() / 100.0F)))
                 : Math.round(Mth.clamp(CompositionalSimulationSupport.targetTempC(access.simulationHeatLevel()) * 1.8F + 32.0F, 72.0F, 500.0F));
@@ -63,7 +67,7 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
                 Math.round(matter.charLevel() * 100.0F),
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                preview != null ? preview.previewId() : 0
+                schemaPreviewId != 0 ? schemaPreviewId : preview != null ? preview.previewId() : 0
         );
     }
 
@@ -89,6 +93,11 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
                     : (targeted == JazzyItems.GARLIC_BREAD_PREP.get() ? 110 : 140);
             default -> targeted == JazzyItems.GARLIC_BREAD_PREP.get() ? 110 : 140;
         };
+        access.simulationSetBatch(new CookingBatchState(transformedMatter(
+                access,
+                SimulationIngredientAnalysis.analyzeInputs(access),
+                0.0F
+        )));
         access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, duration), true);
         access.simulationMarkChanged();
         return true;
@@ -102,6 +111,11 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         int next = access.simulationProgress() + 1;
         access.simulationSetProgress(next, access.simulationMaxProgress(), true);
         access.simulationSetStationPhysics(new com.boaat.jazzy_cookin.kitchen.sim.StationPhysicsState(CompositionalSimulationSupport.targetTempC(access.simulationHeatLevel())));
+        access.simulationSetBatch(new CookingBatchState(transformedMatter(
+                access,
+                SimulationIngredientAnalysis.analyzeInputs(access),
+                access.simulationMaxProgress() > 0 ? Mth.clamp(next / (float) access.simulationMaxProgress(), 0.0F, 1.0F) : 1.0F
+        )));
         if (next >= access.simulationMaxProgress()) {
             finish(access);
             return;
@@ -141,6 +155,10 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         if (matter == null) {
             return ItemStack.EMPTY;
         }
+        ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, HeatChamberSimulationDomain::isHeatSchema);
+        if (!schemaOutput.isEmpty()) {
+            return access.simulationStationType() == StationType.MICROWAVE ? applyMicrowavePenalty(schemaOutput, access.simulationLevel().getGameTime()) : schemaOutput;
+        }
         KitchenIngredientItem targeted = targetedOutput(analysis);
         if (targeted != null) {
             ItemStack output = SimulationOutputFactory.createOutput(targeted, access.simulationLevel().getGameTime(), analysis, matter);
@@ -154,6 +172,9 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         if (access.simulationLevel() == null) {
             return null;
         }
+        if (access.simulationActive() && access.simulationBatch() != null) {
+            return access.simulationBatch().matter();
+        }
         SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeInputs(access);
         if (analysis.isEmpty()) {
             return null;
@@ -161,6 +182,10 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         float completion = access.simulationActive() && access.simulationMaxProgress() > 0
                 ? (access.simulationProgress() + 1) / (float) access.simulationMaxProgress()
                 : 0.88F;
+        return transformedMatter(access, analysis, completion);
+    }
+
+    private static FoodMatterData transformedMatter(StationSimulationAccess access, SimulationIngredientAnalysis analysis, float completion) {
         IngredientState state = inferState(access, analysis);
         float browning = switch (access.simulationStationType()) {
             case MICROWAVE -> 0.02F;
@@ -191,6 +216,10 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
                 browning,
                 charLevel
         );
+    }
+
+    private static boolean isHeatSchema(DishSchemaDefinition schema) {
+        return !schema.meal() && schema.requiredTechniques().contains(DishTechnique.BAKED);
     }
 
     private static KitchenMethod inferOvenMethod(StationSimulationAccess access) {

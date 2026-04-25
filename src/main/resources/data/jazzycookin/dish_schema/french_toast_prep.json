@@ -1,0 +1,29 @@
+{
+  "key": "french_toast_prep",
+  "preview_id": 1180,
+  "result": "jazzycookin:french_toast_prep",
+  "category": "pan_dish",
+  "preview_threshold": 0.56,
+  "finalize_threshold": 0.62,
+  "desirability": 0.8,
+  "required_roles": [
+    { "role": "grain", "any_traits": [ "bread", "grain", "wheat" ], "weight": 0.75 },
+    { "role": "binder", "any_traits": [ "egg", "protein" ], "weight": 0.55 },
+    { "role": "fat", "any_traits": [ "fat", "oil", "dairy" ], "weight": 0.28 }
+  ],
+  "optional_roles": [
+    { "role": "sweetener", "any_traits": [ "sweetener", "syrup" ], "weight": 0.22 },
+    { "role": "spice", "any_traits": [ "spice" ], "weight": 0.16 }
+  ],
+  "required_techniques": [ "pan_fried" ],
+  "targets": {
+    "water": { "min": 0.18, "max": 0.60, "softness": 0.18 },
+    "fat": { "min": 0.04, "max": 0.40, "softness": 0.18 },
+    "protein": { "min": 0.10, "max": 0.54, "softness": 0.18 },
+    "seasoning": { "min": 0.0, "max": 0.30, "softness": 0.14 },
+    "protein_set": { "min": 0.34, "max": 0.82, "softness": 0.20 },
+    "browning": { "min": 0.08, "max": 0.46, "softness": 0.16 },
+    "char_level": { "min": 0.0, "max": 0.12, "softness": 0.08 },
+    "cohesiveness": { "min": 0.28, "max": 0.76, "softness": 0.18 }
+  }
+}

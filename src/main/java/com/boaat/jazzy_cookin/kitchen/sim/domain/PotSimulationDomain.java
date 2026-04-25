@@ -5,10 +5,14 @@ import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishCategory;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.boaat.jazzy_cookin.registry.JazzyItems.IngredientId;
@@ -49,6 +53,7 @@ public final class PotSimulationDomain implements StationSimulationDomain {
             return SimulationSnapshot.inactive(executionMode);
         }
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
+        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(matter, PotSimulationDomain::isPotSchema);
         return new SimulationSnapshot(
                 executionMode,
                 access.simulationActive() ? 1 : 0,
@@ -61,7 +66,7 @@ public final class PotSimulationDomain implements StationSimulationDomain {
                 Math.round(matter.charLevel() * 100.0F),
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                preview != null ? preview.previewId() : 0
+                schemaPreviewId != 0 ? schemaPreviewId : preview != null ? preview.previewId() : 0
         );
     }
 
@@ -74,6 +79,11 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         if (preview.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), preview)) {
             return false;
         }
+        access.simulationSetBatch(new CookingBatchState(transformedMatter(
+                access,
+                SimulationIngredientAnalysis.analyzeInputs(access),
+                0.0F
+        )));
         access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, 180), true);
         access.simulationMarkChanged();
         return true;
@@ -87,6 +97,11 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         int next = access.simulationProgress() + 1;
         access.simulationSetProgress(next, access.simulationMaxProgress(), true);
         access.simulationSetStationPhysics(new com.boaat.jazzy_cookin.kitchen.sim.StationPhysicsState(CompositionalSimulationSupport.targetTempC(access.simulationHeatLevel())));
+        access.simulationSetBatch(new CookingBatchState(transformedMatter(
+                access,
+                SimulationIngredientAnalysis.analyzeInputs(access),
+                access.simulationMaxProgress() > 0 ? Mth.clamp(next / (float) access.simulationMaxProgress(), 0.0F, 1.0F) : 1.0F
+        )));
         if (next >= access.simulationMaxProgress()) {
             finish(access);
             return;
@@ -118,6 +133,10 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         if (matter == null) {
             return ItemStack.EMPTY;
         }
+        ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, PotSimulationDomain::isPotSchema);
+        if (!schemaOutput.isEmpty()) {
+            return schemaOutput;
+        }
         KitchenIngredientItem targeted = targetedOutput(analysis);
         if (targeted != null) {
             return SimulationOutputFactory.createOutput(targeted, access.simulationLevel().getGameTime(), analysis, matter);
@@ -129,6 +148,9 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         if (access.simulationLevel() == null) {
             return null;
         }
+        if (access.simulationActive() && access.simulationBatch() != null) {
+            return access.simulationBatch().matter();
+        }
         SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeInputs(access);
         if (analysis.isEmpty()) {
             return null;
@@ -136,6 +158,10 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         float completion = access.simulationActive() && access.simulationMaxProgress() > 0
                 ? (access.simulationProgress() + 1) / (float) access.simulationMaxProgress()
                 : 0.84F;
+        return transformedMatter(access, analysis, completion);
+    }
+
+    private static FoodMatterData transformedMatter(StationSimulationAccess access, SimulationIngredientAnalysis analysis, float completion) {
         IngredientState state = inferState(access, analysis);
         float proteinSet = hasFryingSignal(access) ? 0.72F : 0.48F + completion * 0.28F;
         float browning = hasFryingSignal(access) ? 0.26F + completion * 0.22F : completion * 0.12F;
@@ -154,6 +180,11 @@ public final class PotSimulationDomain implements StationSimulationDomain {
                 browning,
                 completion > 0.92F && access.simulationHeatLevel() == com.boaat.jazzy_cookin.kitchen.HeatLevel.HIGH ? 0.10F : 0.0F
         );
+    }
+
+    private static boolean isPotSchema(DishSchemaDefinition schema) {
+        return !schema.meal()
+                && (schema.category() == DishCategory.SOUP || schema.requiredTechniques().contains(DishTechnique.SIMMERED));
     }
 
     private static IngredientState inferState(StationSimulationAccess access, SimulationIngredientAnalysis analysis) {

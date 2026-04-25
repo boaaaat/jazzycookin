@@ -1,0 +1,27 @@
+{
+  "key": "hummus_prep",
+  "preview_id": 1170,
+  "result": "jazzycookin:hummus_prep",
+  "category": "sauce",
+  "preview_threshold": 0.54,
+  "finalize_threshold": 0.6,
+  "desirability": 0.78,
+  "required_roles": [
+    { "role": "protein", "any_traits": [ "legume", "plant_protein" ], "weight": 0.8 },
+    { "role": "fat", "any_traits": [ "fat", "oil" ], "weight": 0.35 }
+  ],
+  "optional_roles": [
+    { "role": "acid", "any_traits": [ "acidic", "fruit" ], "weight": 0.24 },
+    { "role": "aromatic", "any_traits": [ "allium", "aromatic" ], "weight": 0.22 },
+    { "role": "salt", "any_traits": [ "salt" ], "weight": 0.18 }
+  ],
+  "required_techniques": [ "mixed" ],
+  "targets": {
+    "water": { "min": 0.20, "max": 0.66, "softness": 0.18 },
+    "fat": { "min": 0.04, "max": 0.44, "softness": 0.18 },
+    "protein": { "min": 0.16, "max": 0.68, "softness": 0.18 },
+    "seasoning": { "min": 0.04, "max": 0.36, "softness": 0.14 },
+    "fragmentation": { "min": 0.28, "max": 0.86, "softness": 0.18 },
+    "cohesiveness": { "min": 0.46, "max": 0.92, "softness": 0.18 }
+  }
+}

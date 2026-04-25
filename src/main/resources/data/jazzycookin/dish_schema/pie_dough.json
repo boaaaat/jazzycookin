@@ -1,0 +1,77 @@
+{
+  "key": "pie_dough",
+  "preview_id": 1050,
+  "result": "jazzycookin:pie_dough",
+  "category": "baked",
+  "preview_threshold": 0.54,
+  "finalize_threshold": 0.6,
+  "desirability": 0.82,
+  "required_roles": [
+    {
+      "role": "grain",
+      "any_traits": [
+        "flour",
+        "wheat",
+        "grain"
+      ],
+      "weight": 1.0
+    },
+    {
+      "role": "fat",
+      "any_traits": [
+        "fat",
+        "oil"
+      ],
+      "weight": 0.35
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.2
+    }
+  ],
+  "required_techniques": [
+    "mixed"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.12,
+      "max": 0.48,
+      "softness": 0.18
+    },
+    "fat": {
+      "min": 0.04,
+      "max": 0.46,
+      "softness": 0.2
+    },
+    "protein_set": {
+      "min": 0.0,
+      "max": 0.36,
+      "softness": 0.16
+    },
+    "browning": {
+      "min": 0.0,
+      "max": 0.12,
+      "softness": 0.08
+    },
+    "aeration": {
+      "min": 0.02,
+      "max": 0.3,
+      "softness": 0.14
+    },
+    "fragmentation": {
+      "min": 0.02,
+      "max": 0.28,
+      "softness": 0.14
+    },
+    "cohesiveness": {
+      "min": 0.42,
+      "max": 0.88,
+      "softness": 0.18
+    }
+  }
+}
