@@ -22,6 +22,11 @@ public record StorageUiProfile(
 ) {
     private static final int BASE_WIDTH = 308;
     private static final int BASE_HEIGHT = 278;
+    private static final int MIN_WIDTH = 244;
+    private static final int MIN_HEIGHT = 256;
+    private static final int MAX_WIDTH = 356;
+    private static final int MAX_HEIGHT = 316;
+    private static final int SLOT_SIZE = 18;
     public static final int TAB_SIZE = 22;
     public static final int TAB_GAP_X = 6;
     public static final int TAB_GAP_Y = 4;
@@ -48,31 +53,42 @@ public record StorageUiProfile(
     }
 
     public static StorageUiProfile forType(StorageType storageType) {
-        int width = BASE_WIDTH;
-        int height = BASE_HEIGHT;
+        return buildProfile(storageType, BASE_WIDTH, storageType == StorageType.PANTRY ? 286 : BASE_HEIGHT);
+    }
+
+    private static StorageUiProfile buildProfile(StorageType storageType, int width, int height) {
         int inventoryStartX = (width - 162) / 2;
-        int inventoryStartY = 186;
-        int hotbarY = 244;
-        LayoutRegion storageRegion = new LayoutRegion(20, 44, 268, 68);
-        LayoutRegion supportRegion = new LayoutRegion(20, 118, 268, 44);
-        LayoutRegion inventoryShelf = new LayoutRegion(18, 172, 272, 96);
-        LayoutRegion titleRegion = new LayoutRegion(14, 10, 140, 14);
-        LayoutRegion chipRegion = new LayoutRegion(width - 98, 8, 84, 18);
+        int inventoryStartY = height - 92;
+        int hotbarY = height - 34;
+        int shelfY = inventoryStartY - 17;
+        int margin = width <= 270 ? 14 : 20;
+        boolean compact = height < 276;
+        int storageWidth = Math.min(width - margin * 2, Math.max(186, 162 + 36));
+        int storageX = (width - storageWidth) / 2;
+        LayoutRegion storageRegion = new LayoutRegion(storageX, compact ? 38 : 44, storageWidth, compact ? 48 : 54);
+        int supportHeight = storageType == StorageType.PANTRY ? (compact ? 46 : 68) : (compact ? 36 : 46);
+        LayoutRegion supportRegion = new LayoutRegion(margin, storageRegion.bottom() + (compact ? 6 : 8), width - margin * 2, supportHeight);
+        LayoutRegion inventoryShelf = new LayoutRegion(10, shelfY, width - 20, 91);
+        int chipWidth = Math.min(84, Math.max(62, width / 4));
+        LayoutRegion chipRegion = new LayoutRegion(width - chipWidth - 100, 8, chipWidth, 18);
+        LayoutRegion titleRegion = new LayoutRegion(14, 10, Math.max(64, chipRegion.x() - 28), 14);
         LayoutRegion inventoryLabel = new LayoutRegion(inventoryStartX, inventoryStartY - 13, 96, 10);
+        int storageStartX = storageRegion.x() + (storageRegion.width() - 9 * SLOT_SIZE) / 2;
+        int storageStartY = storageRegion.y() + Math.max(6, (storageRegion.height() - 2 * SLOT_SIZE) / 2);
         if (storageType == StorageType.PANTRY) {
             return new StorageUiProfile(
                     storageType,
                     width,
                     height,
-                    73,
-                    61,
+                    storageStartX,
+                    storageStartY,
                     inventoryStartX,
                     inventoryStartY,
                     hotbarY,
                     storageRegion,
                     supportRegion,
-                    new LayoutRegion(30, 124, 214, 32),
-                    new LayoutRegion(250, 124, 28, 32),
+                    new LayoutRegion(supportRegion.x() + 8, supportRegion.y() + (compact ? 4 : 15), Math.max(160, supportRegion.width() - 54), compact ? 40 : 48),
+                    new LayoutRegion(supportRegion.right() - 38, supportRegion.y() + (compact ? 6 : 18), 28, compact ? 36 : 42),
                     inventoryShelf,
                     titleRegion,
                     chipRegion,
@@ -83,8 +99,8 @@ public record StorageUiProfile(
                 storageType,
                 width,
                 height,
-                73,
-                61,
+                storageStartX,
+                storageStartY,
                 inventoryStartX,
                 inventoryStartY,
                 hotbarY,
@@ -106,6 +122,7 @@ public record StorageUiProfile(
         int tabSize = Math.max(18, Math.round(TAB_SIZE * this.layoutScale()));
         int gapX = Math.max(4, Math.round(TAB_GAP_X * this.layoutScale()));
         int gapY = Math.max(2, Math.round(TAB_GAP_Y * this.layoutScale()));
+        tabSize = Math.min(tabSize, Math.max(18, (this.tabRailRegion.height() - gapY) / 2));
         int[] rowCounts = new int[] { 6, 5 };
         int row = index < rowCounts[0] ? 0 : 1;
         int col = row == 0 ? index : index - rowCounts[0];
@@ -139,51 +156,34 @@ public record StorageUiProfile(
     }
 
     public StorageUiProfile resolve(int screenWidth, int screenHeight) {
-        float scale = resolveScale(screenWidth, screenHeight, this.width, this.height);
-        if (Math.abs(scale - 1.0F) < 0.01F) {
+        int resolvedWidth = resolveWidth(screenWidth, this.width);
+        int resolvedHeight = resolveHeight(screenHeight, this.height, this.storageType == StorageType.PANTRY);
+        if (resolvedWidth == this.width && resolvedHeight == this.height) {
             return this;
         }
-        return new StorageUiProfile(
-                this.storageType,
-                Math.round(this.width * scale),
-                Math.round(this.height * scale),
-                Math.round(this.storageStartX * scale),
-                Math.round(this.storageStartY * scale),
-                Math.round(this.playerInventoryStartX * scale),
-                Math.round(this.playerInventoryStartY * scale),
-                Math.round(this.hotbarY * scale),
-                scale(this.storageRegion, scale),
-                scale(this.supportRegion, scale),
-                scale(this.tabRailRegion, scale),
-                scale(this.pageRailRegion, scale),
-                scale(this.inventoryShelfRegion, scale),
-                scale(this.titleRegion, scale),
-                scale(this.headerChipRegion, scale),
-                scale(this.inventoryLabelRegion, scale)
-        );
+        return buildProfile(this.storageType, resolvedWidth, resolvedHeight);
     }
 
     private float layoutScale() {
         return this.width / (float) BASE_WIDTH;
     }
 
-    private static LayoutRegion scale(LayoutRegion region, float scale) {
-        if (region == null) {
-            return null;
-        }
-        return new LayoutRegion(
-                Math.round(region.x() * scale),
-                Math.round(region.y() * scale),
-                Math.round(region.width() * scale),
-                Math.round(region.height() * scale)
-        );
+    private static int resolveWidth(int screenWidth, int preferredWidth) {
+        int available = Math.max(MIN_WIDTH, screenWidth - 24);
+        int preferred = Math.max(preferredWidth, screenWidth >= 500 ? preferredWidth + 20 : preferredWidth);
+        return clamp(preferred, MIN_WIDTH, Math.min(MAX_WIDTH, available));
     }
 
-    private static float resolveScale(int screenWidth, int screenHeight, int baseWidth, int baseHeight) {
-        float widthScale = Math.max(0.84F, (screenWidth - 24.0F) / Math.max(1.0F, baseWidth));
-        float heightScale = Math.max(0.84F, (screenHeight - 24.0F) / Math.max(1.0F, baseHeight));
-        float aspect = screenHeight <= 0 ? 1.0F : screenWidth / (float) screenHeight;
-        float aspectModifier = aspect > 2.0F ? 1.06F : aspect < 1.18F ? 0.95F : 1.0F;
-        return Math.max(0.84F, Math.min(1.55F, Math.min(widthScale, heightScale) * aspectModifier));
+    private static int resolveHeight(int screenHeight, int preferredHeight, boolean pantry) {
+        int available = Math.max(MIN_HEIGHT, screenHeight - 24);
+        int preferred = Math.max(preferredHeight, pantry ? 286 : preferredHeight);
+        if (screenHeight >= 360) {
+            preferred += 10;
+        }
+        return clamp(preferred, MIN_HEIGHT, Math.min(MAX_HEIGHT, available));
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 }

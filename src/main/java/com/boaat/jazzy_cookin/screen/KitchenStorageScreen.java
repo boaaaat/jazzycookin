@@ -166,7 +166,8 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.profile.titleRegion().x(), this.profile.titleRegion().y(), JazzyGuiRenderer.TITLE_TEXT, false);
+        this.drawTrimmedLabel(guiGraphics, this.title, this.profile.titleRegion().x(), this.profile.titleRegion().y(),
+                this.profile.titleRegion().width(), JazzyGuiRenderer.TITLE_TEXT);
         LayoutRegion chipBounds = this.headerChipBounds();
         if (chipBounds != null) {
             this.drawCenteredTrimmedLabel(guiGraphics, this.menu.storageType().displayName(), chipBounds.centerX(), chipBounds.y() + 4,
@@ -179,12 +180,14 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
                 JazzyGuiRenderer.TEXT, false);
 
         if (this.menu.isPantry()) {
-            this.drawTrimmedLabel(guiGraphics, Component.translatable("screen.jazzycookin.sort_tabs"),
-                    this.profile.supportRegion().x() + 10, this.profile.supportRegion().y() + 8,
-                    this.profile.supportRegion().width() / 2 - 12, JazzyGuiRenderer.TEXT_MUTED);
-            this.drawRightAlignedLabel(guiGraphics,
-                    Component.translatable("screen.jazzycookin.page_short", this.menu.currentPage() + 1, this.menu.pageCount()),
-                    this.profile.supportRegion().right() - 8, this.profile.supportRegion().y() + 8, JazzyGuiRenderer.TEXT_SOFT, false);
+            if (this.profile.supportRegion().height() >= 60) {
+                this.drawTrimmedLabel(guiGraphics, Component.translatable("screen.jazzycookin.sort_tabs"),
+                        this.profile.supportRegion().x() + 10, this.profile.supportRegion().y() + 8,
+                        this.profile.supportRegion().width() / 2 - 12, JazzyGuiRenderer.TEXT_MUTED);
+                this.drawRightAlignedLabel(guiGraphics,
+                        Component.translatable("screen.jazzycookin.page_short", this.menu.currentPage() + 1, this.menu.pageCount()),
+                        this.profile.supportRegion().right() - 8, this.profile.supportRegion().y() + 8, JazzyGuiRenderer.TEXT_SOFT, false);
+            }
         } else {
             this.drawWrappedCenteredLabel(
                     guiGraphics,
