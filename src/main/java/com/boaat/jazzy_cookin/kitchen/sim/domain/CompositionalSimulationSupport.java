@@ -7,6 +7,8 @@ import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
@@ -237,7 +239,7 @@ final class CompositionalSimulationSupport {
                 analysis.avgMicrobialLoad()
         );
 
-        return new FoodMatterData(
+        FoodMatterData matter = new FoodMatterData(
                 createdTick,
                 analysis.traitMask(),
                 surfaceTempC,
@@ -266,6 +268,140 @@ final class CompositionalSimulationSupport {
                 processDepth,
                 finalizedServing
         ).clamp();
+        return applyStationRealism(access, analysis, state, completion, matter);
+    }
+
+    private static FoodMatterData applyStationRealism(
+            StationSimulationAccess access,
+            SimulationIngredientAnalysis analysis,
+            IngredientState state,
+            float completion,
+            FoodMatterData matter
+    ) {
+        float idealCompletion = switch (access.simulationStationType()) {
+            case FOOD_PROCESSOR, BLENDER, JUICER -> 0.78F;
+            case MIXING_BOWL -> 0.82F;
+            case PREP_TABLE, SPICE_GRINDER, STRAINER -> 0.88F;
+            case OVEN, MICROWAVE, FREEZE_DRYER -> 0.92F;
+            case STOVE -> 0.88F;
+            default -> 0.85F;
+        };
+        float underwork = Mth.clamp((idealCompletion - completion) / Math.max(0.10F, idealCompletion), 0.0F, 1.0F);
+        float overwork = Mth.clamp((completion - 1.0F) / 0.45F, 0.0F, 1.0F);
+        if (completion >= 0.98F && isAggressiveStation(access.simulationStationType())) {
+            overwork = Math.max(overwork, 0.10F);
+        }
+
+        float toolFit = toolFit(access, state);
+        float loadPenalty = Mth.clamp((analysis.totalItems() - stationComfortableLoad(access.simulationStationType())) * 0.055F, 0.0F, 0.28F);
+        float inputPenalty = Mth.clamp(
+                analysis.avgCharLevelCarry() * 0.34F
+                        + analysis.avgOxidation() * 0.20F
+                        + analysis.avgMicrobialLoad() * 0.24F,
+                0.0F,
+                0.55F
+        );
+        float moisturePenalty = moisturePenalty(access.simulationStationType(), matter);
+        float stationPenalty = Mth.clamp((1.0F - toolFit) * 0.22F + loadPenalty + inputPenalty + moisturePenalty, 0.0F, 0.75F);
+        if (stationPenalty <= 0.001F && underwork <= 0.001F && overwork <= 0.001F) {
+            return matter;
+        }
+
+        float penalty = Mth.clamp(stationPenalty + underwork * 0.18F + overwork * 0.24F, 0.0F, 0.85F);
+        float nextWater = Mth.clamp(matter.water() - overwork * 0.05F + underwork * 0.03F, 0.0F, 1.0F);
+        float nextAeration = Mth.clamp(matter.aeration() - stationPenalty * 0.10F - overwork * 0.18F, 0.0F, 1.0F);
+        float nextFragmentation = Mth.clamp(matter.fragmentation() + overwork * 0.24F + (1.0F - toolFit) * 0.08F, 0.0F, 1.0F);
+        float nextCohesiveness = Mth.clamp(matter.cohesiveness() - penalty * 0.20F + underwork * 0.08F, 0.0F, 1.0F);
+        float nextProteinSet = Mth.clamp(matter.proteinSet() - underwork * 0.06F, 0.0F, 1.0F);
+        float nextBrowning = Mth.clamp(matter.browning() + heatAggression(access) * overwork * 0.16F, 0.0F, 1.0F);
+        float nextChar = Mth.clamp(matter.charLevel() + heatAggression(access) * overwork * 0.20F + inputPenalty * 0.18F, 0.0F, 1.0F);
+
+        return matter.withWorkingState(
+                nextWater,
+                nextAeration,
+                nextFragmentation,
+                nextCohesiveness,
+                nextProteinSet,
+                nextBrowning,
+                nextChar,
+                matter.whiskWork(),
+                matter.stirCount(),
+                matter.flipCount(),
+                matter.timeInPan(),
+                matter.processDepth(),
+                matter.finalizedServing()
+        ).withPreservationState(
+                matter.preservationLevel(),
+                Mth.clamp(matter.oxidation() + penalty * 0.18F, 0.0F, 1.0F),
+                Mth.clamp(matter.microbialLoad() + inputPenalty * 0.08F, 0.0F, 1.0F)
+        );
+    }
+
+    private static boolean isAggressiveStation(StationType stationType) {
+        return stationType == StationType.FOOD_PROCESSOR
+                || stationType == StationType.BLENDER
+                || stationType == StationType.JUICER
+                || stationType == StationType.SPICE_GRINDER;
+    }
+
+    private static int stationComfortableLoad(StationType stationType) {
+        return switch (stationType) {
+            case FOOD_PROCESSOR, BLENDER -> 4;
+            case JUICER, SPICE_GRINDER, STRAINER -> 3;
+            case MIXING_BOWL, PREP_TABLE -> 5;
+            case STOVE, OVEN -> 4;
+            default -> 6;
+        };
+    }
+
+    private static float moisturePenalty(StationType stationType, FoodMatterData matter) {
+        return switch (stationType) {
+            case BLENDER -> matter.water() < 0.30F ? Mth.clamp((0.30F - matter.water()) / 0.30F, 0.0F, 1.0F) * 0.18F : 0.0F;
+            case JUICER -> matter.water() < 0.42F ? Mth.clamp((0.42F - matter.water()) / 0.42F, 0.0F, 1.0F) * 0.24F : 0.0F;
+            case MIXING_BOWL -> matter.water() < 0.10F ? 0.10F : 0.0F;
+            default -> 0.0F;
+        };
+    }
+
+    private static float heatAggression(StationSimulationAccess access) {
+        return switch (access.simulationHeatLevel()) {
+            case HIGH -> 1.0F;
+            case MEDIUM -> 0.45F;
+            case LOW -> 0.18F;
+            default -> 0.0F;
+        };
+    }
+
+    private static float toolFit(StationSimulationAccess access, IngredientState state) {
+        ToolProfile tool = ToolProfile.fromStack(access.simulationItem(access.toolSlot()));
+        return switch (access.simulationStationType()) {
+            case PREP_TABLE -> switch (tool) {
+                case CHEF_KNIFE, KNIFE, CLEAVER, PARING_KNIFE -> 1.0F;
+                case TABLE_KNIFE -> 0.58F;
+                case NONE -> 0.40F;
+                default -> 0.52F;
+            };
+            case STRAINER -> switch (tool) {
+                case FINE_STRAINER, COARSE_STRAINER, STRAINER -> 1.0F;
+                case NONE -> 0.74F;
+                default -> 0.62F;
+            };
+            case MIXING_BOWL -> switch (tool) {
+                case WHISK, HEAVY_WHISK -> state == IngredientState.WHISKED ? 1.0F : 0.82F;
+                case SPOON, FORK -> 0.76F;
+                case NONE -> 0.56F;
+                default -> 0.64F;
+            };
+            case STOVE -> switch (tool) {
+                case POT, STOCK_POT, SAUCEPAN, PAN, SKILLET, FRYING_SKILLET -> 1.0F;
+                default -> 0.72F;
+            };
+            case OVEN -> switch (tool) {
+                case BAKING_TRAY, PIE_TIN -> 1.0F;
+                default -> 0.78F;
+            };
+            default -> 1.0F;
+        };
     }
 
     static ItemStack recognizedPreparedOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter) {

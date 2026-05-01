@@ -3,6 +3,7 @@ package com.boaat.jazzy_cookin.kitchen.sim.domain;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
@@ -20,7 +21,8 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
 
     @Override
     public boolean supports(StationSimulationAccess access) {
-        return access.simulationStationType() == StationType.MIXING_BOWL && !previewOutput(access).isEmpty();
+        return access.simulationStationType() == StationType.MIXING_BOWL
+                && (access.simulationActive() || !previewOutput(access).isEmpty());
     }
 
     @Override
@@ -36,11 +38,11 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
         }
         return new SimulationSnapshot(
                 executionMode,
-                0,
+                access.simulationActive() ? 1 : 0,
                 72,
                 72,
                 72,
-                Math.round(matter.whiskWork() * 50.0F),
+                access.simulationMaxProgress() > 0 ? Math.round((access.simulationProgress() / (float) access.simulationMaxProgress()) * 100.0F) : Math.round(matter.whiskWork() * 50.0F),
                 Math.round(matter.water() * 100.0F),
                 Math.round(matter.browning() * 100.0F),
                 Math.round(matter.charLevel() * 100.0F),
@@ -52,23 +54,58 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
 
     @Override
     public boolean handleAction(StationSimulationAccess access, int buttonId) {
-        if (buttonId != 6 || access.simulationLevel() == null) {
+        if (buttonId != 6 || access.simulationLevel() == null || access.simulationActive()) {
             return false;
         }
         ItemStack output = previewOutput(access);
         if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
             return false;
         }
+        access.simulationSetBatch(new CookingBatchState(previewMatter(access)));
+        access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, 72), true);
+        access.simulationMarkChanged();
+        return true;
+    }
 
+    @Override
+    public void serverTick(StationSimulationAccess access) {
+        if (!access.simulationActive()) {
+            return;
+        }
+        FoodMatterData matter = previewMatter(access);
+        if (matter == null) {
+            access.simulationSetBatch(null);
+            access.simulationSetProgress(0, 0, false);
+            access.simulationMarkChanged();
+            return;
+        }
+        access.simulationSetBatch(new CookingBatchState(matter));
+        int nextProgress = access.simulationProgress() + 1;
+        if (nextProgress >= access.simulationMaxProgress()) {
+            finish(access);
+            return;
+        }
+        access.simulationSetProgress(nextProgress, access.simulationMaxProgress(), true);
+        access.simulationMarkChanged();
+    }
+
+    private static void finish(StationSimulationAccess access) {
+        ItemStack output = previewOutput(access);
+        if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
+            access.simulationSetBatch(null);
+            access.simulationSetProgress(0, 0, false);
+            access.simulationMarkChanged();
+            return;
+        }
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
             if (!access.simulationItem(slot).isEmpty()) {
                 access.simulationRemoveItem(slot, 1);
             }
         }
-
         access.simulationMergeIntoSlot(access.outputSlot(), output);
+        access.simulationSetBatch(null);
+        access.simulationSetProgress(0, 0, false);
         access.simulationMarkChanged();
-        return true;
     }
 
     private static ItemStack previewOutput(StationSimulationAccess access) {
@@ -103,7 +140,9 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
                 analysis,
                 stateFor(method),
                 false,
-                0.82F,
+                access.simulationActive() && access.simulationMaxProgress() > 0
+                        ? (access.simulationProgress() + 1) / (float) access.simulationMaxProgress()
+                        : 0.82F,
                 0.02F,
                 method == KitchenMethod.KNEAD ? 0.04F + controlFactor * 0.08F : 0.08F + controlFactor * 0.18F,
                 method == KitchenMethod.KNEAD ? 0.06F + (1.0F - controlFactor) * 0.06F : 0.10F + (1.0F - controlFactor) * 0.12F,

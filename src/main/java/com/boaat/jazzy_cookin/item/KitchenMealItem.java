@@ -1,7 +1,6 @@
 package com.boaat.jazzy_cookin.item;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
@@ -13,14 +12,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
 public class KitchenMealItem extends KitchenIngredientItem {
-    private final List<Supplier<? extends Item>> returnedItems;
-
     public KitchenMealItem(
             Properties properties,
             IngredientState defaultState,
@@ -33,8 +29,7 @@ public class KitchenMealItem extends KitchenIngredientItem {
             float baseAeration,
             long decayTicks,
             int nourishment,
-            int enjoyment,
-            List<Supplier<? extends Item>> returnedItems
+            int enjoyment
     ) {
         super(
                 properties.food(new FoodProperties.Builder().nutrition(nourishment).saturationModifier(Math.max(0.2F, nourishment / 10.0F)).alwaysEdible().build()),
@@ -54,7 +49,6 @@ public class KitchenMealItem extends KitchenIngredientItem {
                 true,
                 true
         );
-        this.returnedItems = List.copyOf(returnedItems);
     }
 
     @Override
@@ -75,24 +69,6 @@ public class KitchenMealItem extends KitchenIngredientItem {
                     MasteryProgress.totalServes(player),
                     MasteryProgress.forMeal(player, stack.getItemHolder().unwrapKey().map(reference -> reference.location().getPath()).orElse("unknown_meal"))
             ));
-        }
-
-        if (!this.returnedItems.isEmpty()) {
-            ItemStack primaryReturn = new ItemStack(this.returnedItems.get(0).get());
-            if (result.isEmpty()) {
-                result = primaryReturn;
-            } else if (livingEntity instanceof Player player && !player.getInventory().add(primaryReturn)) {
-                player.drop(primaryReturn, false);
-            }
-
-            if (livingEntity instanceof Player player) {
-                for (int i = 1; i < this.returnedItems.size(); i++) {
-                    ItemStack returnedStack = new ItemStack(this.returnedItems.get(i).get());
-                    if (!player.getInventory().add(returnedStack)) {
-                        player.drop(returnedStack, false);
-                    }
-                }
-            }
         }
 
         return result;

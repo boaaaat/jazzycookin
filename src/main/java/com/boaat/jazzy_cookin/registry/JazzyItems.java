@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
@@ -498,79 +497,79 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenToolItem> SPOON = tool("spoon", ToolProfile.SPOON, 0.01F, 1.00F, 96);
     public static final DeferredItem<KitchenToolItem> TABLE_KNIFE = tool("table_knife", ToolProfile.TABLE_KNIFE, 0.02F, 1.02F, 96);
 
-    public static final DeferredItem<KitchenMealItem> FRUIT_JUICE = meal("fruit_juice", IngredientState.PLATED, DAY * 2L, 4, 4, GLASS_CUP);
+    public static final DeferredItem<KitchenMealItem> FRUIT_JUICE = meal("fruit_juice", IngredientState.PLATED, DAY * 2L, 4, 4);
     public static final DeferredItem<KitchenMealItem> SOFT_SCRAMBLED_EGGS = meal("soft_scrambled_eggs", IngredientState.PAN_FRIED, DAY, 5, 5);
     public static final DeferredItem<KitchenMealItem> SCRAMBLED_EGGS = meal("scrambled_eggs", IngredientState.PAN_FRIED, DAY, 5, 5);
     public static final DeferredItem<KitchenMealItem> OMELET = meal("omelet", IngredientState.PAN_FRIED, DAY, 6, 6);
     public static final DeferredItem<KitchenMealItem> BROWNED_OMELET = meal("browned_omelet", IngredientState.PAN_FRIED, DAY, 6, 5);
     public static final DeferredItem<KitchenMealItem> BURNT_EGGS = meal("burnt_eggs", IngredientState.PAN_FRIED, DAY / 2L, 2, 0);
-    public static final DeferredItem<KitchenMealItem> CREAMY_TOMATO_SOUP = meal("creamy_tomato_soup", IngredientState.PLATED, DAY * 3L, 7, 4, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> PASTA_TRAY_BAKE = meal("pasta_tray_bake", IngredientState.PLATED, DAY * 4L, 9, 5, SERVING_TRAY, SERVING_SPOON);
-    public static final DeferredItem<KitchenMealItem> PAN_SEARED_CHICKEN = meal("pan_seared_chicken", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_PLATE, TABLE_KNIFE, FORK);
-    public static final DeferredItem<KitchenMealItem> HEARTY_STEW = meal("hearty_stew", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> SLICEABLE_PIE = meal("sliceable_pie", IngredientState.PLATED, DAY * 6L, 7, 6, SERVING_TRAY, TABLE_KNIFE);
-    public static final DeferredItem<KitchenMealItem> MEAT_PLATTER = meal("meat_platter", IngredientState.PLATED, DAY * 4L, 9, 5, WOODEN_BOARD, TABLE_KNIFE);
-    public static final DeferredItem<KitchenMealItem> DUMPLING_BASKET = meal("dumpling_basket", IngredientState.PLATED, DAY * 2L, 8, 5, BAMBOO_TRAY, CHOPSTICKS);
-    public static final DeferredItem<KitchenMealItem> SMOOTHIE = meal("smoothie", IngredientState.PLATED, DAY * 1L, 5, 5, GLASS_CUP, STRAW);
-    public static final DeferredItem<KitchenMealItem> FRIED_CHICKEN_BASKET = meal("fried_chicken_basket", IngredientState.PLATED, DAY * 2L, 9, 6, BASKET);
-    public static final DeferredItem<KitchenMealItem> FREEZE_DRIED_MEAL_PACK = meal("freeze_dried_meal_pack", IngredientState.FREEZE_DRIED, DAY * 240L, 7, 3, TUPPERWARE);
-    public static final DeferredItem<KitchenMealItem> JAM_TOAST = meal("jam_toast", IngredientState.PLATED, DAY * 1L, 4, 5, CERAMIC_PLATE, BUTTER_KNIFE);
-    public static final DeferredItem<KitchenMealItem> SAVORY_PIE = meal("savory_pie", IngredientState.PLATED, DAY * 4L, 8, 5, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> FRIED_FISH = meal("fried_fish", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> BRAISED_BEEF = meal("braised_beef", IngredientState.PLATED, DAY * 3L, 9, 5, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> PEANUT_NOODLES = meal("peanut_noodles", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_BOWL);
-    public static final DeferredItem<KitchenMealItem> BROWNIES = meal("brownies", IngredientState.PLATED, DAY * 4L, 5, 6, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> CAKE = meal("cake", IngredientState.PLATED, DAY * 4L, 5, 6, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> SANDWICH_PLATE = meal("sandwich_plate", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> CHICKEN_CURRY = meal("chicken_curry", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_BOWL);
-    public static final DeferredItem<KitchenMealItem> MAC_AND_CHEESE = meal("mac_and_cheese", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> GARLIC_BREAD = meal("garlic_bread", IngredientState.PLATED, DAY * 2L, 5, 5, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> GLAZED_CHICKEN = meal("glazed_chicken", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> PANCAKES = meal("pancakes", IngredientState.PLATED, DAY * 2L, 6, 6, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> FRIED_JALAPENO_BITES = meal("fried_jalapeno_bites", IngredientState.PLATED, DAY * 2L, 6, 6, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> GOLDEN_RICE = meal("golden_rice", IngredientState.PLATED, DAY * 2L, 6, 4, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> CONFETTI_RICE_WITH_FISH = meal("confetti_rice_with_fish", IngredientState.PLATED, DAY * 2L, 9, 6, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> FOCACCIA_PIZZA = meal("focaccia_pizza", IngredientState.PLATED, DAY * 3L, 8, 6, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> SPAGHETTI_POMODORO = meal("spaghetti_pomodoro", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_BOWL, FORK);
-    public static final DeferredItem<KitchenMealItem> PASTA_E_FAGIOLI = meal("pasta_e_fagioli", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> COCONUT_CURRY_NOODLES = meal("coconut_curry_noodles", IngredientState.PLATED, DAY * 2L, 9, 6, CERAMIC_BOWL, CHOPSTICKS);
-    public static final DeferredItem<KitchenMealItem> SOY_GINGER_CHICKEN = meal("soy_ginger_chicken", IngredientState.PLATED, DAY * 3L, 8, 6, CERAMIC_PLATE, FORK);
-    public static final DeferredItem<KitchenMealItem> TOMATO_EGG_SKILLET = meal("tomato_egg_skillet", IngredientState.PLATED, DAY * 1L, 7, 5, CERAMIC_PLATE, SPOON);
-    public static final DeferredItem<KitchenMealItem> ADOBO_PORK = meal("adobo_pork", IngredientState.PLATED, DAY * 3L, 9, 6, CERAMIC_PLATE, FORK);
-    public static final DeferredItem<KitchenMealItem> HUMMUS_PLATE = meal("hummus_plate", IngredientState.PLATED, DAY * 2L, 6, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> COUSCOUS_BOWL = meal("couscous_bowl", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> POTATO_CURRY = meal("potato_curry", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> LENTIL_SOUP = meal("lentil_soup", IngredientState.PLATED, DAY * 3L, 7, 4, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> BLACK_BEANS_AND_RICE = meal("black_beans_and_rice", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_PLATE, FORK);
-    public static final DeferredItem<KitchenMealItem> RICE_AND_BEANS = meal("rice_and_beans", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_PLATE, FORK);
-    public static final DeferredItem<KitchenMealItem> PATATAS_BRAVAS = meal("patatas_bravas", IngredientState.PLATED, DAY * 2L, 6, 6, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> RATATOUILLE = meal("ratatouille", IngredientState.PLATED, DAY * 2L, 6, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> POTATO_GRATIN = meal("potato_gratin", IngredientState.PLATED, DAY * 3L, 7, 6, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> LEMON_HERB_FISH = meal("lemon_herb_fish", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_PLATE, FORK);
-    public static final DeferredItem<KitchenMealItem> FRENCH_TOAST = meal("french_toast", IngredientState.PLATED, DAY * 1L, 6, 7, CERAMIC_PLATE, FORK);
-    public static final DeferredItem<KitchenMealItem> APPLE_OATMEAL = meal("apple_oatmeal", IngredientState.PLATED, DAY * 1L, 6, 6, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> SHAKSHUKA = meal("shakshuka", IngredientState.PLATED, DAY * 1L, 7, 6, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> PEANUT_TOFU_NOODLES = meal("peanut_tofu_noodles", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_BOWL, CHOPSTICKS);
-    public static final DeferredItem<KitchenMealItem> CHANA_MASALA = meal("chana_masala", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> DAL_TADKA = meal("dal_tadka", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> PALAK_PANEER = meal("palak_paneer", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> PANEER_BUTTER_MASALA = meal("paneer_butter_masala", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> MATAR_PANEER = meal("matar_paneer", IngredientState.PLATED, DAY * 2L, 8, 6, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> VEGETABLE_PULAO = meal("vegetable_pulao", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_PLATE, SPOON);
-    public static final DeferredItem<KitchenMealItem> JEERA_RICE = meal("jeera_rice", IngredientState.PLATED, DAY * 2L, 6, 5, CERAMIC_PLATE, SPOON);
-    public static final DeferredItem<KitchenMealItem> RAJMA_CHAWAL = meal("rajma_chawal", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> EGG_CURRY = meal("egg_curry", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> BUTTER_CHICKEN = meal("butter_chicken", IngredientState.PLATED, DAY * 3L, 9, 6, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> CHICKEN_BIRYANI = meal("chicken_biryani", IngredientState.PLATED, DAY * 2L, 9, 6, CERAMIC_PLATE, SPOON);
-    public static final DeferredItem<KitchenMealItem> ALOO_MATAR = meal("aloo_matar", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> SAAG_ALOO = meal("saag_aloo", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> CABBAGE_SABZI = meal("cabbage_sabzi", IngredientState.PLATED, DAY * 2L, 6, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> CHICKEN_FRIED_RICE = meal("chicken_fried_rice", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_PLATE, SPOON);
-    public static final DeferredItem<KitchenMealItem> FALAFEL_PLATE = meal("falafel_plate", IngredientState.PLATED, DAY * 2L, 7, 6, CERAMIC_PLATE);
-    public static final DeferredItem<KitchenMealItem> CABBAGE_ROLLS = meal("cabbage_rolls", IngredientState.PLATED, DAY * 3L, 8, 5, CERAMIC_PLATE, FORK);
-    public static final DeferredItem<KitchenMealItem> CHICKEN_NOODLE_SOUP = meal("chicken_noodle_soup", IngredientState.PLATED, DAY * 2L, 8, 5, CERAMIC_BOWL, SPOON);
-    public static final DeferredItem<KitchenMealItem> TOFU_STIR_FRY = meal("tofu_stir_fry", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, CHOPSTICKS);
-    public static final DeferredItem<KitchenMealItem> CHICKPEA_COUSCOUS = meal("chickpea_couscous", IngredientState.PLATED, DAY * 2L, 7, 5, CERAMIC_BOWL, SPOON);
+    public static final DeferredItem<KitchenMealItem> CREAMY_TOMATO_SOUP = meal("creamy_tomato_soup", IngredientState.PLATED, DAY * 3L, 7, 4);
+    public static final DeferredItem<KitchenMealItem> PASTA_TRAY_BAKE = meal("pasta_tray_bake", IngredientState.PLATED, DAY * 4L, 9, 5);
+    public static final DeferredItem<KitchenMealItem> PAN_SEARED_CHICKEN = meal("pan_seared_chicken", IngredientState.PLATED, DAY * 3L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> HEARTY_STEW = meal("hearty_stew", IngredientState.PLATED, DAY * 3L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> SLICEABLE_PIE = meal("sliceable_pie", IngredientState.PLATED, DAY * 6L, 7, 6);
+    public static final DeferredItem<KitchenMealItem> MEAT_PLATTER = meal("meat_platter", IngredientState.PLATED, DAY * 4L, 9, 5);
+    public static final DeferredItem<KitchenMealItem> DUMPLING_BASKET = meal("dumpling_basket", IngredientState.PLATED, DAY * 2L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> SMOOTHIE = meal("smoothie", IngredientState.PLATED, DAY * 1L, 5, 5);
+    public static final DeferredItem<KitchenMealItem> FRIED_CHICKEN_BASKET = meal("fried_chicken_basket", IngredientState.PLATED, DAY * 2L, 9, 6);
+    public static final DeferredItem<KitchenMealItem> FREEZE_DRIED_MEAL_PACK = meal("freeze_dried_meal_pack", IngredientState.FREEZE_DRIED, DAY * 240L, 7, 3);
+    public static final DeferredItem<KitchenMealItem> JAM_TOAST = meal("jam_toast", IngredientState.PLATED, DAY * 1L, 4, 5);
+    public static final DeferredItem<KitchenMealItem> SAVORY_PIE = meal("savory_pie", IngredientState.PLATED, DAY * 4L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> FRIED_FISH = meal("fried_fish", IngredientState.PLATED, DAY * 2L, 7, 5);
+    public static final DeferredItem<KitchenMealItem> BRAISED_BEEF = meal("braised_beef", IngredientState.PLATED, DAY * 3L, 9, 5);
+    public static final DeferredItem<KitchenMealItem> PEANUT_NOODLES = meal("peanut_noodles", IngredientState.PLATED, DAY * 2L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> BROWNIES = meal("brownies", IngredientState.PLATED, DAY * 4L, 5, 6);
+    public static final DeferredItem<KitchenMealItem> CAKE = meal("cake", IngredientState.PLATED, DAY * 4L, 5, 6);
+    public static final DeferredItem<KitchenMealItem> SANDWICH_PLATE = meal("sandwich_plate", IngredientState.PLATED, DAY * 2L, 7, 5);
+    public static final DeferredItem<KitchenMealItem> CHICKEN_CURRY = meal("chicken_curry", IngredientState.PLATED, DAY * 3L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> MAC_AND_CHEESE = meal("mac_and_cheese", IngredientState.PLATED, DAY * 2L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> GARLIC_BREAD = meal("garlic_bread", IngredientState.PLATED, DAY * 2L, 5, 5);
+    public static final DeferredItem<KitchenMealItem> GLAZED_CHICKEN = meal("glazed_chicken", IngredientState.PLATED, DAY * 3L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> PANCAKES = meal("pancakes", IngredientState.PLATED, DAY * 2L, 6, 6);
+    public static final DeferredItem<KitchenMealItem> FRIED_JALAPENO_BITES = meal("fried_jalapeno_bites", IngredientState.PLATED, DAY * 2L, 6, 6);
+    public static final DeferredItem<KitchenMealItem> GOLDEN_RICE = meal("golden_rice", IngredientState.PLATED, DAY * 2L, 6, 4);
+    public static final DeferredItem<KitchenMealItem> CONFETTI_RICE_WITH_FISH = meal("confetti_rice_with_fish", IngredientState.PLATED, DAY * 2L, 9, 6);
+    public static final DeferredItem<KitchenMealItem> FOCACCIA_PIZZA = meal("focaccia_pizza", IngredientState.PLATED, DAY * 3L, 8, 6);
+    public static final DeferredItem<KitchenMealItem> SPAGHETTI_POMODORO = meal("spaghetti_pomodoro", IngredientState.PLATED, DAY * 2L, 8, 6);
+    public static final DeferredItem<KitchenMealItem> PASTA_E_FAGIOLI = meal("pasta_e_fagioli", IngredientState.PLATED, DAY * 3L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> COCONUT_CURRY_NOODLES = meal("coconut_curry_noodles", IngredientState.PLATED, DAY * 2L, 9, 6);
+    public static final DeferredItem<KitchenMealItem> SOY_GINGER_CHICKEN = meal("soy_ginger_chicken", IngredientState.PLATED, DAY * 3L, 8, 6);
+    public static final DeferredItem<KitchenMealItem> TOMATO_EGG_SKILLET = meal("tomato_egg_skillet", IngredientState.PLATED, DAY * 1L, 7, 5);
+    public static final DeferredItem<KitchenMealItem> ADOBO_PORK = meal("adobo_pork", IngredientState.PLATED, DAY * 3L, 9, 6);
+    public static final DeferredItem<KitchenMealItem> HUMMUS_PLATE = meal("hummus_plate", IngredientState.PLATED, DAY * 2L, 6, 5);
+    public static final DeferredItem<KitchenMealItem> COUSCOUS_BOWL = meal("couscous_bowl", IngredientState.PLATED, DAY * 2L, 7, 5);
+    public static final DeferredItem<KitchenMealItem> POTATO_CURRY = meal("potato_curry", IngredientState.PLATED, DAY * 2L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> LENTIL_SOUP = meal("lentil_soup", IngredientState.PLATED, DAY * 3L, 7, 4);
+    public static final DeferredItem<KitchenMealItem> BLACK_BEANS_AND_RICE = meal("black_beans_and_rice", IngredientState.PLATED, DAY * 2L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> RICE_AND_BEANS = meal("rice_and_beans", IngredientState.PLATED, DAY * 2L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> PATATAS_BRAVAS = meal("patatas_bravas", IngredientState.PLATED, DAY * 2L, 6, 6);
+    public static final DeferredItem<KitchenMealItem> RATATOUILLE = meal("ratatouille", IngredientState.PLATED, DAY * 2L, 6, 5);
+    public static final DeferredItem<KitchenMealItem> POTATO_GRATIN = meal("potato_gratin", IngredientState.PLATED, DAY * 3L, 7, 6);
+    public static final DeferredItem<KitchenMealItem> LEMON_HERB_FISH = meal("lemon_herb_fish", IngredientState.PLATED, DAY * 2L, 8, 6);
+    public static final DeferredItem<KitchenMealItem> FRENCH_TOAST = meal("french_toast", IngredientState.PLATED, DAY * 1L, 6, 7);
+    public static final DeferredItem<KitchenMealItem> APPLE_OATMEAL = meal("apple_oatmeal", IngredientState.PLATED, DAY * 1L, 6, 6);
+    public static final DeferredItem<KitchenMealItem> SHAKSHUKA = meal("shakshuka", IngredientState.PLATED, DAY * 1L, 7, 6);
+    public static final DeferredItem<KitchenMealItem> PEANUT_TOFU_NOODLES = meal("peanut_tofu_noodles", IngredientState.PLATED, DAY * 2L, 8, 6);
+    public static final DeferredItem<KitchenMealItem> CHANA_MASALA = meal("chana_masala", IngredientState.PLATED, DAY * 3L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> DAL_TADKA = meal("dal_tadka", IngredientState.PLATED, DAY * 3L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> PALAK_PANEER = meal("palak_paneer", IngredientState.PLATED, DAY * 2L, 8, 6);
+    public static final DeferredItem<KitchenMealItem> PANEER_BUTTER_MASALA = meal("paneer_butter_masala", IngredientState.PLATED, DAY * 2L, 8, 6);
+    public static final DeferredItem<KitchenMealItem> MATAR_PANEER = meal("matar_paneer", IngredientState.PLATED, DAY * 2L, 8, 6);
+    public static final DeferredItem<KitchenMealItem> VEGETABLE_PULAO = meal("vegetable_pulao", IngredientState.PLATED, DAY * 2L, 7, 5);
+    public static final DeferredItem<KitchenMealItem> JEERA_RICE = meal("jeera_rice", IngredientState.PLATED, DAY * 2L, 6, 5);
+    public static final DeferredItem<KitchenMealItem> RAJMA_CHAWAL = meal("rajma_chawal", IngredientState.PLATED, DAY * 2L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> EGG_CURRY = meal("egg_curry", IngredientState.PLATED, DAY * 2L, 7, 5);
+    public static final DeferredItem<KitchenMealItem> BUTTER_CHICKEN = meal("butter_chicken", IngredientState.PLATED, DAY * 3L, 9, 6);
+    public static final DeferredItem<KitchenMealItem> CHICKEN_BIRYANI = meal("chicken_biryani", IngredientState.PLATED, DAY * 2L, 9, 6);
+    public static final DeferredItem<KitchenMealItem> ALOO_MATAR = meal("aloo_matar", IngredientState.PLATED, DAY * 2L, 7, 5);
+    public static final DeferredItem<KitchenMealItem> SAAG_ALOO = meal("saag_aloo", IngredientState.PLATED, DAY * 2L, 7, 5);
+    public static final DeferredItem<KitchenMealItem> CABBAGE_SABZI = meal("cabbage_sabzi", IngredientState.PLATED, DAY * 2L, 6, 5);
+    public static final DeferredItem<KitchenMealItem> CHICKEN_FRIED_RICE = meal("chicken_fried_rice", IngredientState.PLATED, DAY * 2L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> FALAFEL_PLATE = meal("falafel_plate", IngredientState.PLATED, DAY * 2L, 7, 6);
+    public static final DeferredItem<KitchenMealItem> CABBAGE_ROLLS = meal("cabbage_rolls", IngredientState.PLATED, DAY * 3L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> CHICKEN_NOODLE_SOUP = meal("chicken_noodle_soup", IngredientState.PLATED, DAY * 2L, 8, 5);
+    public static final DeferredItem<KitchenMealItem> TOFU_STIR_FRY = meal("tofu_stir_fry", IngredientState.PLATED, DAY * 2L, 7, 5);
+    public static final DeferredItem<KitchenMealItem> CHICKPEA_COUSCOUS = meal("chickpea_couscous", IngredientState.PLATED, DAY * 2L, 7, 5);
 
     private static final List<DeferredItem<KitchenMealItem>> MEAL_ITEM_LIST = List.of(
             FRUIT_JUICE,
@@ -878,14 +877,12 @@ public final class JazzyItems {
         ));
     }
 
-    @SafeVarargs
     private static DeferredItem<KitchenMealItem> meal(
             String name,
             IngredientState defaultState,
             long decayTicks,
             int nourishment,
-            int enjoyment,
-            Supplier<? extends Item>... returnedItems
+            int enjoyment
     ) {
         return ITEMS.register(name, () -> new KitchenMealItem(
                 new Item.Properties().stacksTo(16),
@@ -899,8 +896,7 @@ public final class JazzyItems {
                 0.06F,
                 decayTicks,
                 nourishment,
-                enjoyment,
-                List.of(returnedItems)
+                enjoyment
         ));
     }
 

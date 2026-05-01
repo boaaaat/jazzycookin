@@ -1232,8 +1232,8 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             case JUICE -> Component.translatable("screen.jazzycookin.action_hint.hold_juice");
             case FREEZE_DRY -> Component.translatable("screen.jazzycookin.action_hint.hold_dry");
             case PAN_FRY -> this.menu.simulationBatchPresent()
-                    ? Component.translatable("screen.jazzycookin.action_hint.tap_remove")
-                    : Component.translatable("screen.jazzycookin.action_hint.tap_pour");
+                    ? Component.literal(this.menu.simDoneness() >= 100 ? "Take finished pan" : "Cook all items first")
+                    : Component.literal("Add food to the pan");
             case CUT -> Component.translatable("screen.jazzycookin.action_hint.tap_cut");
             case GRIND -> Component.translatable("screen.jazzycookin.action_hint.tap_grind");
             case STRAIN -> Component.translatable("screen.jazzycookin.action_hint.tap_strain");
@@ -1342,6 +1342,28 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                     JazzyGuiRenderer.BLOCKED_TEXT,
                     JazzyGuiRenderer.BLOCKED_TEXT,
                     JazzyGuiRenderer.BLOCKED_TEXT
+            );
+        }
+        if (this.isPanSimulation() && this.menu.simulationBatchPresent()) {
+            int progress = Math.max(0, Math.min(100, this.menu.simDoneness()));
+            int progressColor = this.menu.simChar() > 8 ? JazzyGuiRenderer.BLOCKED_TEXT : JazzyGuiRenderer.ACCENT;
+            return new SimulationStatusView(
+                    Component.literal(progress + "%"),
+                    Component.literal("Pan " + this.menu.simPanTempF() + "F"),
+                    progress / 100.0F,
+                    progressColor,
+                    JazzyGuiRenderer.ACCENT_WARM,
+                    progressColor
+            );
+        }
+        if (this.isPanSimulation() && this.hasInputItems() && this.menu.simPanTempF() > 80) {
+            return new SimulationStatusView(
+                    Component.literal("Pan " + this.menu.simPanTempF() + "F"),
+                    Component.literal("Heating"),
+                    this.simPanTempRatio(),
+                    JazzyGuiRenderer.ACCENT_WARM,
+                    JazzyGuiRenderer.TEXT,
+                    JazzyGuiRenderer.ACCENT_WARM
             );
         }
         if (this.menu.simRecognizerId() > 0) {
@@ -1536,7 +1558,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (this.isPanSimulation()) {
             return this.menu.simulationBatchPresent()
                     ? Component.translatable("screen.jazzycookin.helper_pan_actions")
-                    : this.primaryActionTooltip();
+                    : Component.literal("Add food to the pan");
         }
         return this.primaryActionTooltip();
     }
@@ -1550,9 +1572,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private Component primaryActionLabel() {
         return switch (this.menu.currentMethod()) {
             case WHISK -> Component.translatable("screen.jazzycookin.whisk");
-            case PAN_FRY -> this.menu.simulationBatchPresent()
-                    ? Component.translatable("screen.jazzycookin.remove")
-                    : Component.translatable("screen.jazzycookin.pour");
+            case PAN_FRY -> Component.literal("Take");
             case CUT -> Component.literal("Cut");
             case GRIND -> Component.literal("Grind");
             case STRAIN -> Component.literal("Strain");
@@ -1592,7 +1612,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
     private boolean primaryActionActive() {
         if (this.isPanSimulation()) {
-            return this.menu.simulationBatchPresent() || this.hasInputItems();
+            return this.menu.simulationBatchPresent() && this.menu.simDoneness() >= 100 && this.menu.simRecognizerId() > 0;
         }
         if (this.menu.simulationWorking()) {
             return false;

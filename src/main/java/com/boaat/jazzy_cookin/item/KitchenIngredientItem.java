@@ -10,7 +10,9 @@ import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.KitchenStateRules;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
+import com.boaat.jazzy_cookin.kitchen.sim.reaction.EggPanReactionSolver;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 
 import net.minecraft.ChatFormatting;
@@ -175,7 +177,7 @@ public class KitchenIngredientItem extends Item {
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
-        return !stack.isEmpty() && stack.get(JazzyDataComponents.SPOILAGE_DISPLAY.get()) != null;
+        return !stack.isEmpty() && (cookingBarRatio(stack) >= 0.0F || stack.get(JazzyDataComponents.SPOILAGE_DISPLAY.get()) != null);
     }
 
     @Override
@@ -188,13 +190,60 @@ public class KitchenIngredientItem extends Item {
 
     @Override
     public int getBarWidth(ItemStack stack) {
+        float cookingRatio = cookingBarRatio(stack);
+        if (cookingRatio >= 0.0F) {
+            return Math.round(13.0F * cookingRatio);
+        }
         return Math.round(13.0F * KitchenStackUtil.spoilageDisplayFreshness(stack));
     }
 
     @Override
     public int getBarColor(ItemStack stack) {
+        FoodMatterData matter = KitchenStackUtil.getFoodMatter(stack);
+        if (matter != null && cookingBarRatio(stack) >= 0.0F) {
+            if (EggPanReactionSolver.isOvercooked(matter) || matter.charLevel() > 0.08F) {
+                return 0x6B1F12;
+            }
+            if (EggPanReactionSolver.isPanOil(matter)) {
+                float heat = Mth.clamp((Math.max(matter.surfaceTempC(), matter.coreTempC()) - 22.0F) / 190.0F, 0.0F, 1.0F);
+                return Mth.hsvToRgb(0.13F - heat * 0.07F, 0.92F, 0.96F);
+            }
+            if (matter.timeInPan() <= 0 && Math.max(matter.surfaceTempC(), matter.coreTempC()) <= 34.0F) {
+                float work = Mth.clamp(Math.max(matter.aeration(), Math.max(matter.fragmentation(), matter.whiskWork() * 0.5F)), 0.0F, 1.0F);
+                return Mth.hsvToRgb(0.56F - work * 0.18F, 0.62F, 0.95F);
+            }
+            float cook = Mth.clamp(Math.max(matter.proteinSet(), Math.max(matter.browning() * 0.85F, matter.timeInPan() / 220.0F)), 0.0F, 1.0F);
+            return Mth.hsvToRgb(0.30F - cook * 0.20F, 0.82F, 0.95F);
+        }
         float freshness = KitchenStackUtil.spoilageDisplayFreshness(stack);
         return Mth.hsvToRgb(Mth.clamp(freshness * 0.33F, 0.0F, 0.33F), 0.90F, 0.96F);
+    }
+
+    private static float cookingBarRatio(ItemStack stack) {
+        FoodMatterData matter = KitchenStackUtil.getFoodMatter(stack);
+        if (matter == null) {
+            return -1.0F;
+        }
+        float hottestTemp = Math.max(matter.surfaceTempC(), matter.coreTempC());
+        boolean heated = hottestTemp > 34.0F || matter.timeInPan() > 0;
+        if (!heated) {
+            if (!matter.isWorkedButUnfinished() && matter.whiskWork() <= 0.0F && matter.fragmentation() <= 0.0F && matter.aeration() <= 0.0F) {
+                return -1.0F;
+            }
+            float work = Math.max(
+                    Mth.clamp(matter.processDepth() / 4.0F, 0.0F, 1.0F),
+                    Math.max(matter.whiskWork() * 0.5F, Math.max(matter.fragmentation(), matter.aeration()))
+            );
+            return Mth.clamp(work - matter.oxidation() * 0.18F - matter.microbialLoad() * 0.12F, 0.0F, 1.0F);
+        }
+        if (EggPanReactionSolver.isOvercooked(matter)) {
+            return 0.0F;
+        }
+        if (EggPanReactionSolver.isPanOil(matter)) {
+            return Mth.clamp((hottestTemp - 22.0F) / 190.0F, 0.0F, 1.0F);
+        }
+        float cooked = EggPanReactionSolver.cookProgress(matter);
+        return Mth.clamp(cooked - matter.charLevel() * 0.45F, 0.0F, 1.0F);
     }
 
     @Override

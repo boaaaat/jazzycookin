@@ -4,9 +4,7 @@ import java.util.List;
 
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
-import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
-import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.BlenderSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.FoodProcessorSimulationDomain;
@@ -86,20 +84,6 @@ public final class StationSimulationResolver {
         return null;
     }
 
-    public static FoodMatterData previewInputMatter(StationSimulationAccess access) {
-        if (access.simulationLevel() == null) {
-            return null;
-        }
-        int mixtureSlot = firstInputSlotMatching(access, JazzyItems.EGG_MIXTURE.get());
-        if (mixtureSlot < 0) {
-            return null;
-        }
-        return com.boaat.jazzy_cookin.kitchen.KitchenStackUtil.getOrCreateFoodMatter(
-                access.simulationItem(mixtureSlot),
-                access.simulationLevel().getGameTime()
-        );
-    }
-
     public static boolean supportsEggMixing(StationSimulationAccess access) {
         if (access.simulationStationType() != StationType.MIXING_BOWL) {
             return false;
@@ -131,37 +115,6 @@ public final class StationSimulationResolver {
             }
         }
         return sawEgg && access.simulationItem(access.outputSlot()).isEmpty();
-    }
-
-    public static boolean supportsEggStove(StationSimulationAccess access) {
-        if (access.simulationStationType() != StationType.STOVE) {
-            return false;
-        }
-        if (access.simulationBatch() != null) {
-            return true;
-        }
-
-        ToolProfile toolProfile = ToolProfile.fromStack(access.simulationItem(access.toolSlot()));
-        if (toolProfile != ToolProfile.PAN && toolProfile != ToolProfile.FRYING_SKILLET) {
-            return false;
-        }
-
-        boolean sawMixture = false;
-        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
-            ItemStack stack = access.simulationItem(slot);
-            if (stack.is(JazzyItems.EGG_MIXTURE.get())) {
-                sawMixture = true;
-                continue;
-            }
-            if (!stack.isEmpty() && !FoodMaterialProfiles.isStoveFat(stack)) {
-                return false;
-            }
-        }
-        return sawMixture;
-    }
-
-    public static int firstStoveFatSlot(StationSimulationAccess access) {
-        return firstInputSlotMatching(access, FoodMaterialProfiles::isStoveFat);
     }
 
     public static int firstInputSlotMatching(StationSimulationAccess access, Item item) {
