@@ -171,8 +171,19 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         boolean changed = false;
         for (ItemStack stack : this.items) {
             if (!stack.isEmpty()) {
+                changed |= KitchenStackUtil.setCookingDisplay(stack, true);
                 changed |= KitchenStackUtil.refreshSpoilageDisplay(stack, gameTime);
             }
+        }
+        if (changed) {
+            this.setChanged();
+        }
+    }
+
+    public void clearCookingDisplays() {
+        boolean changed = false;
+        for (ItemStack stack : this.items) {
+            changed |= KitchenStackUtil.setCookingDisplay(stack, false);
         }
         if (changed) {
             this.setChanged();
@@ -393,6 +404,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     public ItemStack removeItem(int slot, int amount) {
         ItemStack removed = ContainerHelper.removeItem(this.items, slot, amount);
         if (!removed.isEmpty()) {
+            KitchenStackUtil.setCookingDisplay(removed, false);
             this.setChanged();
         }
         return removed;
@@ -402,12 +414,14 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     public ItemStack removeItemNoUpdate(int slot) {
         ItemStack removed = this.items.get(slot);
         this.items.set(slot, ItemStack.EMPTY);
+        KitchenStackUtil.setCookingDisplay(removed, false);
         return removed;
     }
 
     @Override
     public void setItem(int slot, ItemStack stack) {
         this.items.set(slot, stack);
+        KitchenStackUtil.setCookingDisplay(stack, true);
         if (stack.getCount() > this.getMaxStackSize()) {
             stack.setCount(this.getMaxStackSize());
         }

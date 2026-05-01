@@ -66,6 +66,7 @@ public class KitchenStationBlock extends BaseEntityBlock implements EntityBlock 
         if (!state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof KitchenStationBlockEntity stationBlockEntity) {
+                stationBlockEntity.clearCookingDisplays();
                 Containers.dropContents(level, pos, stationBlockEntity);
             }
         }

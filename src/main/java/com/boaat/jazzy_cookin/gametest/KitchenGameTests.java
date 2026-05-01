@@ -75,6 +75,41 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void cookingBarsOnlyDisplayInsideStations(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ItemStack workedApples = JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get().createCreativeStack(1);
+        FoodMatterData matter = KitchenStackUtil.getFoodMatter(workedApples);
+
+        require(matter != null, "Worked display test stack should initialize FOOD_MATTER");
+        KitchenStackUtil.setFoodMatter(workedApples, matter.withWorkingState(
+                matter.water(),
+                matter.aeration(),
+                0.55F,
+                matter.cohesiveness(),
+                matter.proteinSet(),
+                matter.browning(),
+                matter.charLevel(),
+                matter.whiskWork(),
+                matter.stirCount(),
+                matter.flipCount(),
+                matter.timeInPan(),
+                2,
+                matter.finalizedServing()
+        ), level.getGameTime());
+        workedApples.remove(JazzyDataComponents.SPOILAGE_DISPLAY.get());
+
+        require(!KitchenStackUtil.isCookingDisplayActive(workedApples), "Cooking display marker should start absent outside stations");
+        require(!workedApples.getItem().isBarVisible(workedApples), "Worked stacks outside stations should not show the cooking bar");
+
+        KitchenStackUtil.setCookingDisplay(workedApples, true);
+        require(workedApples.getItem().isBarVisible(workedApples), "Worked station stacks should show the cooking bar");
+
+        KitchenStackUtil.setCookingDisplay(workedApples, false);
+        require(!workedApples.getItem().isBarVisible(workedApples), "Removing the station marker should restore non-station bar behavior");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void mealStacksStartCanonicalAndFinalized(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ItemStack omelet = JazzyItems.OMELET.get().createStack(1, level.getGameTime());

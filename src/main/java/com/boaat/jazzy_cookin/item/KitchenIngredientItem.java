@@ -164,6 +164,7 @@ public class KitchenIngredientItem extends Item {
         ItemStack stack = this.createStack(count, CREATIVE_CREATED_TICK);
         KitchenStackUtil.setCreatedTick(stack, CREATIVE_CREATED_TICK, CREATIVE_CREATED_TICK);
         stack.remove(JazzyDataComponents.SPOILAGE_DISPLAY.get());
+        KitchenStackUtil.setCookingDisplay(stack, false);
         return stack;
     }
 
@@ -171,6 +172,7 @@ public class KitchenIngredientItem extends Item {
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
         if (!level.isClientSide) {
+            KitchenStackUtil.setCookingDisplay(stack, false);
             KitchenStackUtil.refreshSpoilageDisplay(stack, level.getGameTime());
         }
     }
@@ -182,8 +184,12 @@ public class KitchenIngredientItem extends Item {
 
     @Override
     public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entity) {
-        if (!entity.level().isClientSide && KitchenStackUtil.refreshSpoilageDisplay(stack, entity.level().getGameTime())) {
-            entity.setItem(stack.copy());
+        if (!entity.level().isClientSide) {
+            boolean changed = KitchenStackUtil.setCookingDisplay(stack, false);
+            changed |= KitchenStackUtil.refreshSpoilageDisplay(stack, entity.level().getGameTime());
+            if (changed) {
+                entity.setItem(stack.copy());
+            }
         }
         return false;
     }
@@ -220,6 +226,9 @@ public class KitchenIngredientItem extends Item {
     }
 
     private static float cookingBarRatio(ItemStack stack) {
+        if (!KitchenStackUtil.isCookingDisplayActive(stack)) {
+            return -1.0F;
+        }
         FoodMatterData matter = KitchenStackUtil.getFoodMatter(stack);
         if (matter == null) {
             return -1.0F;

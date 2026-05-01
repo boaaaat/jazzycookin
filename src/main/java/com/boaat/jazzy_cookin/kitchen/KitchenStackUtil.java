@@ -104,6 +104,7 @@ public final class KitchenStackUtil {
             stack.remove(JazzyDataComponents.FOOD_MATTER.get());
             stack.remove(JazzyDataComponents.FOOD_STATE.get());
             stack.remove(JazzyDataComponents.SPOILAGE_DISPLAY.get());
+            stack.remove(JazzyDataComponents.COOKING_DISPLAY.get());
             stack.remove(DataComponents.MAX_STACK_SIZE);
             return;
         }
@@ -113,6 +114,29 @@ public final class KitchenStackUtil {
         stack.set(JazzyDataComponents.FOOD_MATTER.get(), clamped);
         applyStackBehavior(stack, clamped);
         refreshSpoilageDisplay(stack, gameTime);
+    }
+
+    public static boolean isCookingDisplayActive(ItemStack stack) {
+        return Boolean.TRUE.equals(stack.get(JazzyDataComponents.COOKING_DISPLAY.get()));
+    }
+
+    public static boolean setCookingDisplay(ItemStack stack, boolean active) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+        boolean current = isCookingDisplayActive(stack);
+        if (active && stack.getItem() instanceof KitchenIngredientItem) {
+            if (!current) {
+                stack.set(JazzyDataComponents.COOKING_DISPLAY.get(), true);
+                return true;
+            }
+            return false;
+        }
+        if (current || stack.get(JazzyDataComponents.COOKING_DISPLAY.get()) != null) {
+            stack.remove(JazzyDataComponents.COOKING_DISPLAY.get());
+            return true;
+        }
+        return false;
     }
 
     public static void initializeStack(ItemStack stack, IngredientState state, FoodMatterData matter, long gameTime) {

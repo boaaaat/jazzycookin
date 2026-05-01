@@ -54,6 +54,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
                 changed = true;
             }
 
+            changed |= KitchenStackUtil.setCookingDisplay(stack, false);
             long storedTicks = Math.max(0L, level.getGameTime() - blockEntity.insertedAt[slot]);
             if (storedTicks >= KitchenStackUtil.SPOILAGE_BAR_UPDATE_TICKS) {
                 KitchenStackUtil.applyStorageExposure(stack, blockEntity.getStorageType(), storedTicks, level.getGameTime());
@@ -117,6 +118,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
         ItemStack removed = ContainerHelper.removeItem(this.items, slot, amount);
         if (!removed.isEmpty()) {
+            KitchenStackUtil.setCookingDisplay(removed, false);
             if (this.items.get(slot).isEmpty()) {
                 this.insertedAt[slot] = 0L;
             }
@@ -134,6 +136,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
         ItemStack removed = this.items.get(slot);
         this.items.set(slot, ItemStack.EMPTY);
         this.insertedAt[slot] = 0L;
+        KitchenStackUtil.setCookingDisplay(removed, false);
         return removed;
     }
 
@@ -154,6 +157,7 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
 
         ItemStack previous = this.items.get(slot);
         this.items.set(slot, stack);
+        KitchenStackUtil.setCookingDisplay(stack, false);
         if (stack.getCount() > this.getMaxStackSize()) {
             stack.setCount(this.getMaxStackSize());
         }

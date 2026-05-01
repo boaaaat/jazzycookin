@@ -4,6 +4,7 @@ import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationCapacityProfile;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.StationUiProfile;
@@ -337,9 +338,18 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         ItemStack slotStack = slot.getItem();
         ItemStack quickMoved = slotStack.copy();
         int stationSlotCount = this.visibleStationSlotCount();
-        if (index < stationSlotCount) {
+        boolean movingFromStation = index < stationSlotCount;
+        if (movingFromStation) {
+            KitchenStackUtil.setCookingDisplay(quickMoved, false);
+        }
+        if (movingFromStation) {
+            KitchenStackUtil.setCookingDisplay(slotStack, false);
             if (!this.moveItemStackTo(slotStack, stationSlotCount, this.slots.size(), true)) {
+                KitchenStackUtil.setCookingDisplay(slotStack, true);
                 return ItemStack.EMPTY;
+            }
+            if (!slotStack.isEmpty()) {
+                KitchenStackUtil.setCookingDisplay(slotStack, true);
             }
         } else if (slotStack.getItem() instanceof KitchenToolItem) {
             if (!this.stationType.usesTools()) {
