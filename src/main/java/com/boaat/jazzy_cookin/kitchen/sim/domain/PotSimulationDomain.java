@@ -137,10 +137,6 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         if (!schemaOutput.isEmpty()) {
             return schemaOutput;
         }
-        KitchenIngredientItem targeted = targetedOutput(analysis);
-        if (targeted != null) {
-            return SimulationOutputFactory.createOutput(targeted, access.simulationLevel().getGameTime(), analysis, matter);
-        }
         return CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
     }
 
@@ -226,31 +222,5 @@ public final class PotSimulationDomain implements StationSimulationDomain {
             }
         }
         return access.simulationHeatLevel() == com.boaat.jazzy_cookin.kitchen.HeatLevel.HIGH;
-    }
-
-    private static KitchenIngredientItem targetedOutput(SimulationIngredientAnalysis analysis) {
-        if (analysis.has(JazzyItems.ingredient(IngredientId.CHICKPEAS).get())
-                && analysis.has(JazzyItems.ingredient(IngredientId.CURRY_POWDER).get())
-                && analysis.has(JazzyItems.ingredient(IngredientId.ONIONS).get())
-                && analysis.has(JazzyItems.ingredient(IngredientId.GARLIC).get())
-                && (analysis.has(JazzyItems.ingredient(IngredientId.TOMATOES).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.CANNED_TOMATOES).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.TOMATO_PASTE).get()))) {
-            return JazzyItems.CHANA_MASALA_PREP.get();
-        }
-        if ((analysis.has(JazzyItems.ingredient(IngredientId.PASTA).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.SPAGHETTI).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.MACARONI).get()))
-                && (analysis.has(JazzyItems.ingredient(IngredientId.BLACK_BEANS).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.KIDNEY_BEANS).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.CHICKPEAS).get()))
-                && (analysis.has(JazzyItems.ingredient(IngredientId.CANNED_TOMATOES).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.TOMATOES).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.TOMATO_PASTE).get()))
-                && (analysis.has(JazzyItems.ingredient(IngredientId.BROTH).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.STOCK).get()))) {
-            return JazzyItems.PASTA_E_FAGIOLI_PREP.get();
-        }
-        return null;
     }
 }

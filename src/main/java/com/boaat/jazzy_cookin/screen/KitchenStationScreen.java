@@ -1,7 +1,6 @@
 package com.boaat.jazzy_cookin.screen;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -14,9 +13,7 @@ import com.boaat.jazzy_cookin.kitchen.StationUiProfile.KitchenScreenLayout;
 import com.boaat.jazzy_cookin.kitchen.StationUiProfile.MetricWidgetSpec;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.SimulationDomainType;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
-import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
 import com.boaat.jazzy_cookin.recipebook.client.RecipeBookClientState;
-import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 import com.boaat.jazzy_cookin.screen.layout.ActionWidgetSpec;
 import com.boaat.jazzy_cookin.screen.layout.LayoutRegion;
 
@@ -27,7 +24,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
 
 public class KitchenStationScreen extends AbstractContainerScreen<KitchenStationMenu> {
     private static final int STOVE_BURNER_COUNT = 6;
@@ -1432,22 +1428,6 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             return Component.literal("Time " + this.formatDurationTicks(remaining) + "/" + this.formatDurationTicks(this.menu.maxProgress()));
         }
         return Component.literal("Time " + this.ovenCookTimeMinutes() + "m");
-    }
-
-    private Optional<KitchenProcessRecipe> ovenCandidateRecipe() {
-        if (this.minecraft == null || this.minecraft.level == null || this.menu.stationType() != StationType.OVEN) {
-            return Optional.empty();
-        }
-        return JazzyRecipes.findProcessRecipeCandidate(this.minecraft.level, StationType.OVEN, this.activeInputStacks(),
-                this.menu.getSlot(this.menu.toolMenuSlotIndex()).getItem());
-    }
-
-    private List<ItemStack> activeInputStacks() {
-        java.util.ArrayList<ItemStack> stacks = new java.util.ArrayList<>();
-        for (int slot = 0; slot < this.menu.activeInputCount(); slot++) {
-            stacks.add(this.menu.getSlot(slot).getItem());
-        }
-        return stacks;
     }
 
     private String formatDurationTicks(int ticks) {

@@ -832,36 +832,29 @@ public final class DishSchema {
     }
 
     private static CatalogFamily generatedFamily(Item item, IngredientState expectedState, boolean meal) {
-        String id = BuiltInRegistries.ITEM.getKey(item).getPath();
-        if (id.contains("juice") || expectedState == IngredientState.FRESH_JUICE) {
+        if (expectedState == IngredientState.FRESH_JUICE) {
             return CatalogFamily.JUICE;
         }
-        if (id.contains("smoothie") || expectedState == IngredientState.SMOOTH || expectedState == IngredientState.CREAMY) {
+        if (expectedState == IngredientState.SMOOTH || expectedState == IngredientState.CREAMY) {
             return CatalogFamily.BLEND;
         }
-        if (id.contains("dough") || id.contains("batter") || expectedState == IngredientState.DOUGH || expectedState == IngredientState.BREAD_DOUGH) {
+        if (expectedState == IngredientState.DOUGH || expectedState == IngredientState.BREAD_DOUGH || expectedState == IngredientState.BATTER) {
             return CatalogFamily.DOUGH;
         }
-        if (id.contains("sauce") || id.contains("butter") || id.contains("hummus") || expectedState == IngredientState.SMOOTH_PASTE
+        if (expectedState == IngredientState.SMOOTH_PASTE
                 || expectedState == IngredientState.PASTE || expectedState == IngredientState.CREAMY) {
             return CatalogFamily.SAUCE;
         }
-        if (id.contains("soup") || id.contains("stew") || id.contains("curry") || id.contains("masala")
-                || id.contains("tadka") || id.contains("sabzi") || id.contains("shakshuka")
-                || expectedState == IngredientState.SIMMERED || expectedState == IngredientState.SIMMERED_FILLING) {
+        if (expectedState == IngredientState.SIMMERED || expectedState == IngredientState.SIMMERED_FILLING || expectedState == IngredientState.SOUP_BASE) {
             return CatalogFamily.SOUP;
         }
-        if (id.contains("fried") || id.contains("skillet") || expectedState == IngredientState.PAN_FRIED || expectedState == IngredientState.DEEP_FRIED) {
+        if (expectedState == IngredientState.PAN_FRIED || expectedState == IngredientState.DEEP_FRIED || expectedState == IngredientState.FRIED_PROTEIN) {
             return CatalogFamily.FRIED;
         }
-        if (id.contains("cake") || id.contains("brownie") || id.contains("pie") || id.contains("bread")
-                || id.contains("pizza") || id.contains("gratin")
-                || expectedState == IngredientState.BAKED || expectedState == IngredientState.BAKED_BREAD || expectedState == IngredientState.BAKED_PIE) {
+        if (expectedState == IngredientState.BAKED || expectedState == IngredientState.BAKED_BREAD || expectedState == IngredientState.BAKED_PIE) {
             return CatalogFamily.BAKED;
         }
-        if (id.contains("rice") || id.contains("pasta") || id.contains("noodle") || id.contains("spaghetti")
-                || id.contains("ramen") || id.contains("couscous") || id.contains("biryani")
-                || id.contains("pulao") || id.contains("chawal") || id.contains("pomodoro")) {
+        if (expectedState == IngredientState.BOILED || expectedState == IngredientState.MIXED) {
             return CatalogFamily.GRAIN;
         }
         if (meal || expectedState.isPlatedState()) {

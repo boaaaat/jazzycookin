@@ -21,6 +21,8 @@ public record DishSchemaDefinition(
         List<DishRoleRequirement> optionalRoles,
         List<FoodTrait> forbiddenTraits,
         List<DishTechnique> requiredTechniques,
+        List<String> prerequisiteSchemas,
+        List<ResourceLocation> servingItems,
         DishMatterTargets targets,
         DishScoreWeights weights
 ) {
@@ -37,6 +39,8 @@ public record DishSchemaDefinition(
             DishRoleRequirement.CODEC.listOf().optionalFieldOf("optional_roles", List.of()).forGetter(DishSchemaDefinition::optionalRoles),
             DishCodecs.FOOD_TRAIT.listOf().optionalFieldOf("forbidden_traits", List.of()).forGetter(DishSchemaDefinition::forbiddenTraits),
             DishTechnique.CODEC.listOf().optionalFieldOf("required_techniques", List.of()).forGetter(DishSchemaDefinition::requiredTechniques),
+            Codec.STRING.listOf().optionalFieldOf("prerequisite_schemas", List.of()).forGetter(DishSchemaDefinition::prerequisiteSchemas),
+            ResourceLocation.CODEC.listOf().optionalFieldOf("serving_items", List.of()).forGetter(DishSchemaDefinition::servingItems),
             DishMatterTargets.CODEC.optionalFieldOf("targets", DishMatterTargets.EMPTY).forGetter(DishSchemaDefinition::targets),
             DishScoreWeights.CODEC.optionalFieldOf("weights", DishScoreWeights.DEFAULT).forGetter(DishSchemaDefinition::weights)
     ).apply(instance, DishSchemaDefinition::new));

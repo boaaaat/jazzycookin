@@ -2,7 +2,6 @@ package com.boaat.jazzy_cookin.registry;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
-import com.boaat.jazzy_cookin.kitchen.KitchenSystemsSlice;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -24,15 +23,10 @@ public final class JazzyCreativeTabs {
                     .icon(() -> JazzyItems.creativeIngredientStack(JazzyItems.IngredientId.APPLES))
                     .displayItems((parameters, output) -> {
                         for (JazzyItems.IngredientId ingredientId : JazzyItems.IngredientId.values()) {
-                            if (!KitchenSystemsSlice.keepIngredient(ingredientId)) {
-                                continue;
-                            }
                             output.accept(JazzyItems.ingredient(ingredientId).get().createCreativeStack(1));
                         }
                         for (DeferredItem<KitchenIngredientItem> preparedItem : JazzyItems.preparedItems()) {
-                            if (KitchenSystemsSlice.keepPreparedItem(preparedItem.get())) {
-                                output.accept(preparedItem.get().createCreativeStack(1));
-                            }
+                            output.accept(preparedItem.get().createCreativeStack(1));
                         }
                     })
                     .build()
@@ -45,9 +39,7 @@ public final class JazzyCreativeTabs {
                     .icon(() -> JazzyItems.FRUIT_JUICE.get().createCreativeStack(1))
                     .displayItems((parameters, output) -> {
                         for (DeferredItem<? extends KitchenIngredientItem> meal : JazzyItems.mealItems()) {
-                            if (KitchenSystemsSlice.keepMealItem(meal.get())) {
-                                output.accept(meal.get().createCreativeStack(1));
-                            }
+                            output.accept(meal.get().createCreativeStack(1));
                         }
                     })
                     .build()
@@ -61,18 +53,32 @@ public final class JazzyCreativeTabs {
                     .displayItems((parameters, output) -> {
                         for (DeferredItem<? extends Item> item : java.util.List.of(
                                 JazzyItems.GLASS_CUP,
+                                JazzyItems.CERAMIC_PLATE,
+                                JazzyItems.CERAMIC_BOWL,
                                 JazzyItems.WOODEN_BOARD,
                                 JazzyItems.SERVING_TRAY,
+                                JazzyItems.SERVING_SPOON,
+                                JazzyItems.BUTTER_KNIFE,
+                                JazzyItems.FORK,
+                                JazzyItems.SPOON,
+                                JazzyItems.CHOPSTICKS,
                                 JazzyItems.GLASS_JAR,
                                 JazzyItems.PARING_KNIFE,
                                 JazzyItems.CHEF_KNIFE,
                                 JazzyItems.CLEAVER,
                                 JazzyItems.TABLE_KNIFE,
+                                JazzyItems.WHISK,
+                                JazzyItems.ROLLING_PIN,
+                                JazzyItems.MORTAR_PESTLE,
+                                JazzyItems.FRYING_PAN,
+                                JazzyItems.FRYING_SKILLET,
+                                JazzyItems.POT,
+                                JazzyItems.STOCK_POT,
+                                JazzyItems.SAUCEPAN,
+                                JazzyItems.PIE_TIN,
                                 JazzyItems.BAKING_TRAY
                         )) {
-                            if (KitchenSystemsSlice.keepToolItem(item.get())) {
-                                output.accept(item.get());
-                            }
+                            output.accept(item.get());
                         }
                     })
                     .build()
@@ -119,12 +125,17 @@ public final class JazzyCreativeTabs {
                     .displayItems((parameters, output) -> {
                         for (DeferredItem<? extends Item> item : java.util.List.of(
                                 JazzyItems.APPLE_SAPLING_ITEM,
+                                JazzyItems.TOMATO_VINE_ITEM,
+                                JazzyItems.HERB_BED_ITEM,
+                                JazzyItems.WHEAT_PATCH_ITEM,
+                                JazzyItems.ONION_PATCH_ITEM,
+                                JazzyItems.CABBAGE_PATCH_ITEM,
                                 JazzyItems.CHICKEN_COOP_ITEM,
-                                JazzyItems.DAIRY_STALL_ITEM
+                                JazzyItems.DAIRY_STALL_ITEM,
+                                JazzyItems.FISHING_TRAP_ITEM,
+                                JazzyItems.FORAGE_SHRUB_ITEM
                         )) {
-                            if (KitchenSystemsSlice.keepSourceItem(item.get())) {
-                                output.accept(item.get());
-                            }
+                            output.accept(item.get());
                         }
                     })
                     .build()

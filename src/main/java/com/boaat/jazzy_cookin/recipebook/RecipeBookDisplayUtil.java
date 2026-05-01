@@ -1,8 +1,5 @@
 package com.boaat.jazzy_cookin.recipebook;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
@@ -10,8 +7,6 @@ import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
-import com.boaat.jazzy_cookin.recipe.KitchenInputRequirement;
-import com.boaat.jazzy_cookin.recipe.KitchenProcessOutput;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -22,21 +17,6 @@ import net.minecraft.world.item.ItemStack;
 
 public final class RecipeBookDisplayUtil {
     private RecipeBookDisplayUtil() {
-    }
-
-    public static List<ItemStack> displayStacks(KitchenInputRequirement requirement) {
-        List<ItemStack> stacks = new ArrayList<>();
-        for (ItemStack matchingStack : requirement.ingredient().getItems()) {
-            ItemStack copy = displayStack(matchingStack, requirement.requiredState(), requirement.count());
-            if (!copy.isEmpty()) {
-                stacks.add(copy);
-            }
-        }
-        return stacks;
-    }
-
-    public static ItemStack displayOutput(KitchenProcessOutput output) {
-        return displayStack(output.result(), output.state(), output.result().getCount());
     }
 
     public static ItemStack displayStack(ItemStack template, IngredientState state, int count) {

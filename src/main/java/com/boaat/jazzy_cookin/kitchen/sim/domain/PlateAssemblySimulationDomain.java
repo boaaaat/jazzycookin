@@ -1,19 +1,14 @@
 package com.boaat.jazzy_cookin.kitchen.sim.domain;
 
-import java.util.function.Predicate;
-
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
-import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
-import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
-import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public final class PlateAssemblySimulationDomain implements StationSimulationDomain {
@@ -39,7 +34,8 @@ public final class PlateAssemblySimulationDomain implements StationSimulationDom
         if (matter == null) {
             return SimulationSnapshot.inactive(executionMode);
         }
-        DishRecognitionResult preview = DishSchema.previewMeal(matter);
+        int previewId = CompositionalSimulationSupport.schemaPreviewId(matter, schema ->
+                schema.meal() && schema.requiredTechniques().contains(DishTechnique.PLATED));
         return new SimulationSnapshot(
                 executionMode,
                 access.simulationActive() ? 1 : 0,
@@ -47,12 +43,12 @@ public final class PlateAssemblySimulationDomain implements StationSimulationDom
                 72,
                 72,
                 access.simulationMaxProgress() > 0 ? Math.round((access.simulationProgress() / (float) access.simulationMaxProgress()) * 100.0F) : 0,
-                preview != null ? 100 : 0,
+                previewId > 0 ? 100 : 0,
                 0,
                 0,
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                preview != null ? preview.previewId() : 0
+                previewId
         );
     }
 
@@ -112,20 +108,10 @@ public final class PlateAssemblySimulationDomain implements StationSimulationDom
         if (matter == null) {
             return ItemStack.EMPTY;
         }
-        Predicate<Item> filter = servingFilter(access);
-        String familyHint = platedMealFamilyHint(access);
-        if (familyHint != null) {
-            ItemStack hinted = CompositionalSimulationSupport.recognizedMealOutput(
-                    access,
-                    analysis,
-                    matter,
-                    filter.and(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains(familyHint))
-            );
-            if (!hinted.isEmpty()) {
-                return hinted;
-            }
-        }
-        return CompositionalSimulationSupport.recognizedMealOutput(access, analysis, matter, filter);
+        return CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, schema ->
+                schema.meal()
+                        && schema.requiredTechniques().contains(DishTechnique.PLATED)
+                        && hasServingItems(access, schema.servingItems()));
     }
 
     private static FoodMatterData previewMatter(StationSimulationAccess access) {
@@ -155,57 +141,24 @@ public final class PlateAssemblySimulationDomain implements StationSimulationDom
         );
     }
 
-    private static Predicate<Item> servingFilter(StationSimulationAccess access) {
-        boolean cup = contains(access, JazzyItems.GLASS_CUP.get());
-        boolean bowl = contains(access, JazzyItems.CERAMIC_BOWL.get());
-        boolean tray = contains(access, JazzyItems.SERVING_TRAY.get()) || contains(access, JazzyItems.BAMBOO_TRAY.get()) || contains(access, JazzyItems.BASKET.get());
-        if (cup) {
-            return item -> {
-                String id = BuiltInRegistries.ITEM.getKey(item).getPath();
-                return id.contains("juice") || id.contains("smoothie");
-            };
+    private static boolean hasServingItems(StationSimulationAccess access, java.util.List<net.minecraft.resources.ResourceLocation> servingItems) {
+        if (servingItems.isEmpty()) {
+            return true;
         }
-        if (bowl) {
-            return item -> {
-                String id = BuiltInRegistries.ITEM.getKey(item).getPath();
-                return id.contains("soup") || id.contains("stew") || id.contains("curry")
-                        || id.contains("noodle") || id.contains("bowl") || id.contains("oatmeal")
-                        || id.contains("shakshuka") || id.contains("masala") || id.contains("sabzi")
-                        || id.contains("rajma") || id.contains("dal") || id.contains("paneer");
-            };
+        for (net.minecraft.resources.ResourceLocation servingItemId : servingItems) {
+            if (!contains(access, BuiltInRegistries.ITEM.get(servingItemId))) {
+                return false;
+            }
         }
-        if (tray) {
-            return item -> {
-                String id = BuiltInRegistries.ITEM.getKey(item).getPath();
-                return id.contains("tray") || id.contains("basket") || id.contains("platter") || id.contains("dumpling");
-            };
-        }
-        return item -> true;
+        return true;
     }
 
-    private static boolean contains(StationSimulationAccess access, Item item) {
+    private static boolean contains(StationSimulationAccess access, net.minecraft.world.item.Item item) {
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
             if (access.simulationItem(slot).is(item)) {
                 return true;
             }
         }
         return false;
-    }
-
-    private static String platedMealFamilyHint(StationSimulationAccess access) {
-        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
-            ItemStack stack = access.simulationItem(slot);
-            if (!CompositionalSimulationSupport.isFood(stack)) {
-                continue;
-            }
-            String path = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
-            if (path.endsWith("_prep")) {
-                return path.substring(0, path.length() - "_prep".length());
-            }
-            if (path.endsWith("_base")) {
-                return path.substring(0, path.length() - "_base".length());
-            }
-        }
-        return null;
     }
 }

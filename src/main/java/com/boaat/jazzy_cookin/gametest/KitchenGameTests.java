@@ -51,7 +51,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 
@@ -251,33 +250,19 @@ public final class KitchenGameTests {
     public static void recipeDataLoads(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ResourceLocation stoveRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "stove");
-        ResourceLocation kitchenRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "kitchen_process/fresh_lemon_juice_cut");
-        ResourceLocation newMealRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "kitchen_process/spaghetti_pomodoro_simmer");
-        ResourceLocation expandedMealRecipeId = ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "kitchen_process/chana_masala_simmer");
         require(level.getRecipeManager().byKey(stoveRecipeId).isPresent(), "Expected vanilla crafting recipe jazzycookin:stove to be present");
-        require(level.getRecipeManager().byKey(kitchenRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:fresh_lemon_juice_cut to be present");
-        require(level.getRecipeManager().byKey(newMealRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:spaghetti_pomodoro_simmer to be present");
-        require(level.getRecipeManager().byKey(expandedMealRecipeId).isPresent(), "Expected kitchen process recipe jazzycookin:chana_masala_simmer to be present");
+        require(DishSchemaScorer.schemas().stream().anyMatch(schema -> schema.key().equals("chana_masala_prep")),
+                "Expected schema chana_masala_prep to be present");
         helper.succeed();
     }
 
     @GameTest(template = "empty")
     public static void recipeInputCountsRespectStationCapacities(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PROCESS_TYPE.get()).forEach(holder -> {
-            int capacity = StationCapacityProfile.forStation(holder.value().station()).inputCount();
-            require(
-                    holder.value().inputs().size() <= capacity,
-                    "Process recipe " + holder.id() + " exceeds " + holder.value().station().getSerializedName() + " capacity"
-            );
-        });
-        level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PLATE_TYPE.get()).forEach(holder -> {
-            int capacity = StationCapacityProfile.forStation(StationType.PLATING_STATION).inputCount();
-            require(
-                    holder.value().inputs().size() <= capacity,
-                    "Plate recipe " + holder.id() + " exceeds plating-station capacity"
-            );
-        });
+        require(level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PROCESS_TYPE.get()).isEmpty(),
+                "Kitchen process recipes should be removed; schemas now drive station outputs");
+        require(level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PLATE_TYPE.get()).isEmpty(),
+                "Kitchen plate recipes should be removed; schemas now drive plating outputs");
         helper.succeed();
     }
 
@@ -605,15 +590,6 @@ public final class KitchenGameTests {
         stove.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.WHITE_SUGAR).get().createStack(1, level.getGameTime()));
         stove.setItem(4, JazzyItems.ingredient(JazzyItems.IngredientId.TABLE_SALT).get().createStack(1, level.getGameTime()));
         stove.handleButton(3104, fakePlayer);
-
-        java.util.List<ItemStack> inputs = java.util.stream.IntStream.rangeClosed(stove.inputStart(), stove.inputEnd())
-                .mapToObj(stove::getItem)
-                .filter(stack -> !stack.isEmpty())
-                .toList();
-        require(JazzyRecipes.findProcessRecipeCandidate(level, StationType.STOVE, inputs, ItemStack.EMPTY)
-                        .map(recipe -> recipe.output().result().is(JazzyItems.GLAZED_CHICKEN_PREP.get()))
-                        .orElse(false),
-                "Chicken, lemon juice, butter, sugar, and salt should resolve the glazed chicken stove recipe");
 
         DishRecognitionResult preview = DishSchema.descriptor(stove.dataAccess().get(19));
         require(preview != null, "Expected a stove preview recognizer for glazed chicken inputs");
@@ -1278,53 +1254,20 @@ public final class KitchenGameTests {
         ServerLevel level = helper.getLevel();
         long gameTime = level.getGameTime();
 
-        for (RecipeHolder<com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe> holder : level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PROCESS_TYPE.get())) {
-            requireRecipeOutputSimulation(holder.id().toString(), holder.value().output().result(), gameTime, level);
-            for (var outcome : holder.value().outcomes()) {
-                requireRecipeOutputSimulation(holder.id() + "#" + outcome.band().getSerializedName(), outcome.output().result(), gameTime, level);
-            }
-        }
-
-        for (RecipeHolder<com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe> holder : level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PLATE_TYPE.get())) {
-            requireRecipeOutputSimulation(holder.id().toString(), holder.value().output().result(), gameTime, level);
+        for (var schema : DishSchemaScorer.schemas()) {
+            ItemStack result = new ItemStack(BuiltInRegistries.ITEM.get(schema.result()));
+            requireRecipeOutputSimulation("schema:" + schema.key(), result, gameTime, level);
         }
 
         helper.succeed();
     }
 
     @GameTest(template = "empty")
-    public static void recipeMatchingPrefersExactInputsAndRejectsUnrelatedExtras(GameTestHelper helper) {
-        ServerLevel level = helper.getLevel();
-        long gameTime = level.getGameTime();
-
-        java.util.List<ItemStack> cleanInputs = java.util.List.of(
-                JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, gameTime),
-                JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, gameTime),
-                JazzyItems.ingredient(JazzyItems.IngredientId.KOSHER_SALT).get().createStack(1, gameTime)
-        );
-        java.util.List<ItemStack> supportiveInputs = java.util.List.of(
-                JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, gameTime),
-                JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, gameTime),
-                JazzyItems.ingredient(JazzyItems.IngredientId.KOSHER_SALT).get().createStack(1, gameTime),
-                JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, gameTime)
-        );
-        java.util.List<ItemStack> unrelatedExtraInputs = java.util.List.of(
-                JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, gameTime),
-                JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, gameTime),
-                JazzyItems.ingredient(JazzyItems.IngredientId.KOSHER_SALT).get().createStack(1, gameTime),
-                JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, gameTime)
-        );
-
-        require(JazzyRecipes.findProcessRecipeCandidate(level, StationType.STOVE, cleanInputs, ItemStack.EMPTY)
-                        .map(recipe -> recipe.output().result().is(JazzyItems.PAN_SEARED_CHICKEN_PREP.get()))
-                        .orElse(false),
-                "Exact chicken sear inputs should resolve the pan-seared chicken recipe");
-        require(JazzyRecipes.findProcessRecipeCandidate(level, StationType.STOVE, supportiveInputs, ItemStack.EMPTY)
-                        .map(recipe -> recipe.output().result().is(JazzyItems.PAN_SEARED_CHICKEN_PREP.get()))
-                        .orElse(false),
-                "Supportive seasoning extras should not dislodge the intended chicken recipe");
-        require(JazzyRecipes.findProcessRecipeCandidate(level, StationType.STOVE, unrelatedExtraInputs, ItemStack.EMPTY).isEmpty(),
-                "Unrelated produce extras should block the chicken sear candidate instead of being treated as supportive");
+    public static void schemaCatalogReplacesFixedRecipeMatching(GameTestHelper helper) {
+        require(DishSchemaScorer.schemas().stream().anyMatch(schema -> schema.key().equals("pan_seared_chicken_prep")),
+                "Pan seared chicken should be represented by a dish schema");
+        require(DishSchemaScorer.schemas().stream().anyMatch(schema -> schema.key().equals("chana_masala_prep")),
+                "Chana masala should be represented by a dish schema");
         helper.succeed();
     }
 

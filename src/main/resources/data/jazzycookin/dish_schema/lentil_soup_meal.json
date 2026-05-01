@@ -31,6 +31,8 @@
   "required_techniques": [
     "plated"
   ],
+  "prerequisite_schemas": [ "lentil_soup_prep" ],
+  "serving_items": [ "jazzycookin:ceramic_bowl" ],
   "weights": {
     "roles": 0.26,
     "composition": 0.1,

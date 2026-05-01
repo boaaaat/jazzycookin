@@ -2,7 +2,6 @@ package com.boaat.jazzy_cookin.kitchen.sim.schema;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,15 +30,8 @@ public final class DishSchemaManager {
         event.addListener(new ReloadListener());
     }
 
-    public static List<DishSchemaDefinition> combinedSchemas(List<DishSchemaDefinition> fallbackSchemas) {
-        Map<String, DishSchemaDefinition> byKey = new LinkedHashMap<>();
-        for (DishSchemaDefinition schema : fallbackSchemas) {
-            byKey.put(schema.key(), schema);
-        }
-        for (DishSchemaDefinition schema : loadedSchemas) {
-            byKey.put(schema.key(), schema);
-        }
-        return List.copyOf(byKey.values());
+    public static List<DishSchemaDefinition> schemas() {
+        return loadedSchemas;
     }
 
     public static List<String> validationProblems(List<DishSchemaDefinition> schemas) {
@@ -70,6 +62,18 @@ public final class DishSchemaManager {
             }
             if (schema.requiredRoles().isEmpty() && schema.requiredTechniques().isEmpty()) {
                 problems.add("schema " + schema.key() + " has no required roles or techniques");
+            }
+        }
+        for (DishSchemaDefinition schema : schemas) {
+            for (String prerequisiteSchema : schema.prerequisiteSchemas()) {
+                if (!byKey.containsKey(prerequisiteSchema)) {
+                    problems.add("schema " + schema.key() + " depends on missing prerequisite schema " + prerequisiteSchema);
+                }
+            }
+            for (ResourceLocation servingItem : schema.servingItems()) {
+                if (BuiltInRegistries.ITEM.get(servingItem) == Items.AIR) {
+                    problems.add("schema " + schema.key() + " points at missing serving item " + servingItem);
+                }
             }
         }
         return List.copyOf(problems);

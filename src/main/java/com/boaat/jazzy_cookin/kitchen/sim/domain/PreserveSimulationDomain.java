@@ -121,9 +121,11 @@ public final class PreserveSimulationDomain implements StationSimulationDomain {
         if (matter == null) {
             return ItemStack.EMPTY;
         }
-        KitchenIngredientItem targeted = targetedOutput(access, analysis);
-        if (targeted != null) {
-            return SimulationOutputFactory.createOutput(targeted, access.simulationLevel().getGameTime(), analysis, matter);
+        ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, schema ->
+                !schema.meal() && (schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.PREPPED)
+                        || schema.requiredTechniques().isEmpty()));
+        if (!schemaOutput.isEmpty()) {
+            return schemaOutput;
         }
         return CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
     }
@@ -195,17 +197,5 @@ public final class PreserveSimulationDomain implements StationSimulationDomain {
                     : IngredientState.COARSE_POWDER;
             default -> IngredientState.FERMENTED;
         };
-    }
-
-    private static KitchenIngredientItem targetedOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis) {
-        if (access.simulationStationType() == StationType.CANNING_STATION
-                && (analysis.has(JazzyItems.SYRUP_MIXTURE.get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.JAM).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.JELLY).get())
-                || analysis.hasTrait(FoodTrait.SWEETENER)
-                || analysis.hasTrait(FoodTrait.SYRUP))) {
-            return JazzyItems.HOT_SYRUP_PRESERVE.get();
-        }
-        return null;
     }
 }

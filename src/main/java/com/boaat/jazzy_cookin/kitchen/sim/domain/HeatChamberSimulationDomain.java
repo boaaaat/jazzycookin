@@ -83,15 +83,14 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         if (preview.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), preview)) {
             return false;
         }
-        KitchenIngredientItem targeted = targetedOutput(SimulationIngredientAnalysis.analyzeInputs(access));
         int duration = switch (access.simulationStationType()) {
             case MICROWAVE -> access.simulationMicrowaveDurationSeconds() * 20;
             case SMOKER -> 160;
             case STEAMER -> 120;
             case OVEN -> access.simulationOvenCookTimeTicks() > 0
                     ? access.simulationOvenCookTimeTicks()
-                    : (targeted == JazzyItems.GARLIC_BREAD_PREP.get() ? 110 : 140);
-            default -> targeted == JazzyItems.GARLIC_BREAD_PREP.get() ? 110 : 140;
+                    : 140;
+            default -> 140;
         };
         access.simulationSetBatch(new CookingBatchState(transformedMatter(
                 access,
@@ -158,11 +157,6 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, HeatChamberSimulationDomain::isHeatSchema);
         if (!schemaOutput.isEmpty()) {
             return access.simulationStationType() == StationType.MICROWAVE ? applyMicrowavePenalty(schemaOutput, access.simulationLevel().getGameTime()) : schemaOutput;
-        }
-        KitchenIngredientItem targeted = targetedOutput(analysis);
-        if (targeted != null) {
-            ItemStack output = SimulationOutputFactory.createOutput(targeted, access.simulationLevel().getGameTime(), analysis, matter);
-            return access.simulationStationType() == StationType.MICROWAVE ? applyMicrowavePenalty(output, access.simulationLevel().getGameTime()) : output;
         }
         ItemStack output = CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
         return access.simulationStationType() == StationType.MICROWAVE ? applyMicrowavePenalty(output, access.simulationLevel().getGameTime()) : output;
@@ -259,18 +253,6 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
             default -> IngredientState.BAKED;
         };
     }
-
-    private static KitchenIngredientItem targetedOutput(SimulationIngredientAnalysis analysis) {
-        if ((analysis.has(JazzyItems.ingredient(IngredientId.BREAD).get())
-                || analysis.has(JazzyItems.GARLIC_BREAD_PREP.get()))
-                && (analysis.has(JazzyItems.GARLIC_BUTTER.get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.GARLIC).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.GARLIC_POWDER).get()))) {
-            return JazzyItems.GARLIC_BREAD_PREP.get();
-        }
-        return null;
-    }
-
     private static ItemStack applyMicrowavePenalty(ItemStack output, long gameTime) {
         if (output.isEmpty()) {
             return output;

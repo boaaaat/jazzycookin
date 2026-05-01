@@ -847,47 +847,32 @@ public final class DishEvaluation {
             DishRecognitionResult recognition,
             FoodMatterData matter
     ) {
-        String key = recognitionKey(recognition);
         if ((state == IngredientState.PAN_FRIED || matter.timeInPan() > 0)
-                && matter.hasTrait(FoodTrait.EGG)
-                && ("soft_scrambled_eggs".equals(key)
-                || "scrambled_eggs".equals(key)
-                || "omelet".equals(key)
-                || "browned_omelet".equals(key)
-                || "burnt_eggs".equals(key)
-                || key.isBlank())) {
+                && matter.hasTrait(FoodTrait.EGG)) {
             return DishFamily.EGG;
         }
-        String path = stack.getItemHolder().unwrapKey().map(reference -> reference.location().getPath()).orElse("");
-        if (key.contains("juice") || path.contains("juice")) {
+        if (state == IngredientState.FRESH_JUICE) {
             return DishFamily.JUICE;
         }
-        if (key.contains("smoothie") || path.contains("smoothie") || state == IngredientState.SMOOTH || state == IngredientState.CREAMY) {
+        if (state == IngredientState.SMOOTH || state == IngredientState.CREAMY) {
             return DishFamily.BLEND;
         }
-        if (path.contains("dough") || path.contains("batter") || state == IngredientState.DOUGH || state == IngredientState.BREAD_DOUGH) {
+        if (state == IngredientState.DOUGH || state == IngredientState.BREAD_DOUGH || state == IngredientState.BATTER) {
             return DishFamily.DOUGH;
         }
-        if (path.contains("sauce") || path.contains("butter") || path.contains("hummus") || path.contains("spread")
-                || state == IngredientState.SMOOTH_PASTE || state == IngredientState.PASTE || state == IngredientState.CREAMY) {
+        if (state == IngredientState.SMOOTH_PASTE || state == IngredientState.PASTE || state == IngredientState.CREAMY) {
             return DishFamily.SAUCE;
         }
-        if (path.contains("soup") || path.contains("stew") || path.contains("curry") || path.contains("masala")
-                || path.contains("tadka") || path.contains("sabzi") || path.contains("shakshuka")
-                || state == IngredientState.SIMMERED || state == IngredientState.SIMMERED_FILLING) {
+        if (state == IngredientState.SIMMERED || state == IngredientState.SIMMERED_FILLING || state == IngredientState.SOUP_BASE) {
             return DishFamily.SOUP;
         }
-        if (state == IngredientState.PAN_FRIED || state == IngredientState.DEEP_FRIED || path.contains("fried") || path.contains("skillet")) {
+        if (state == IngredientState.PAN_FRIED || state == IngredientState.DEEP_FRIED || state == IngredientState.FRIED_PROTEIN) {
             return DishFamily.FRIED;
         }
-        if (path.contains("cake") || path.contains("brownie") || path.contains("pie") || path.contains("bread")
-                || path.contains("pizza") || path.contains("gratin") || state == IngredientState.BAKED
-                || state == IngredientState.BAKED_BREAD || state == IngredientState.BAKED_PIE) {
+        if (state == IngredientState.BAKED || state == IngredientState.BAKED_BREAD || state == IngredientState.BAKED_PIE) {
             return DishFamily.BAKED;
         }
-        if (path.contains("rice") || path.contains("pasta") || path.contains("noodle") || path.contains("spaghetti")
-                || path.contains("ramen") || path.contains("couscous") || path.contains("biryani")
-                || path.contains("pulao") || path.contains("chawal") || path.contains("pomodoro")) {
+        if (state == IngredientState.BOILED || state == IngredientState.MIXED) {
             return DishFamily.GRAIN;
         }
         if (state.isPlatedState() || matter.finalizedServing()) {

@@ -144,9 +144,11 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             return ItemStack.EMPTY;
         }
 
-        KitchenIngredientItem targeted = targetedOutput(access, analysis);
-        if (targeted != null) {
-            return SimulationOutputFactory.createOutput(targeted, access.simulationLevel().getGameTime(), analysis, matter);
+        ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, schema ->
+                !schema.meal() && (schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.CUT)
+                        || schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.PREPPED)));
+        if (!schemaOutput.isEmpty()) {
+            return schemaOutput;
         }
 
         if (primarySlot >= 0 && access.simulationItem(primarySlot).getItem() instanceof KitchenIngredientItem ingredientItem) {
@@ -293,17 +295,5 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             }
         }
         return count;
-    }
-
-    private static KitchenIngredientItem targetedOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis) {
-        if (analysis.has(JazzyItems.ingredient(IngredientId.BEEF).get())
-                && analysis.has(JazzyItems.ingredient(IngredientId.ONIONS).get())
-                && analysis.has(JazzyItems.ingredient(IngredientId.TOMATO_PASTE).get())
-                && (analysis.has(JazzyItems.ingredient(IngredientId.GARLIC).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.GARLIC_POWDER).get())
-                || analysis.has(JazzyItems.ingredient(IngredientId.DRIED_GARLIC).get()))) {
-            return JazzyItems.BRAISED_BEEF_BASE.get();
-        }
-        return null;
     }
 }

@@ -31,6 +31,8 @@
   "required_techniques": [
     "plated"
   ],
+  "prerequisite_schemas": [ "pan_seared_chicken_prep" ],
+  "serving_items": [ "jazzycookin:ceramic_plate" ],
   "weights": {
     "roles": 0.26,
     "composition": 0.1,
