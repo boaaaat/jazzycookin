@@ -2,7 +2,6 @@ package com.boaat.jazzy_cookin.kitchen;
 
 import java.util.List;
 
-import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
@@ -11,9 +10,6 @@ import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
-import com.boaat.jazzy_cookin.recipe.KitchenPlateRecipe;
-import com.boaat.jazzy_cookin.recipe.KitchenProcessOutput;
-import com.boaat.jazzy_cookin.recipe.KitchenProcessRecipe;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
@@ -51,18 +47,6 @@ public final class DishEvaluation {
     ) {
     }
 
-    private record MethodAdjustment(
-            float quality,
-            float recipeAccuracy,
-            float flavor,
-            float texture,
-            float structure,
-            float moisture,
-            float purity,
-            float aeration
-    ) {
-    }
-
     private record FoodMatterGradeScores(
             float finalScore,
             float ingredientQuality,
@@ -78,135 +62,6 @@ public final class DishEvaluation {
     }
 
     private DishEvaluation() {
-    }
-
-    public static IngredientStateData evaluateProcess(
-            Level level,
-            KitchenProcessRecipe recipe,
-            KitchenProcessOutput output,
-            List<ItemStack> inputs,
-            ItemStack toolStack,
-            HeatLevel actualHeat,
-            boolean preheated,
-            float inputMatchScore
-    ) {
-        AggregateStats stats = aggregate(level, inputs);
-        ToolProfile actualProfile = ToolProfile.fromStack(toolStack);
-        List<ToolProfile> allowedTools = recipe.allowedToolsOrPreferred();
-        float normalizedInputScore = Mth.clamp(inputMatchScore, 0.0F, 1.0F);
-        float matchPenalty = (1.0F - normalizedInputScore) * 0.28F;
-        float repeatPenalty = Mth.clamp(Math.max(0, stats.maxDepth() - 1) * 0.05F, 0.0F, 0.22F);
-        float microwaveQualityPenalty = recipe.method() == KitchenMethod.MICROWAVE ? 0.10F : 0.0F;
-        int enjoymentPenalty = (recipe.method() == KitchenMethod.MICROWAVE ? 1 : 0) + Math.min(2, Math.max(0, stats.maxDepth() - 2));
-
-        float toolAccuracy = 0.0F;
-        float toolQuality = 0.0F;
-        if (!allowedTools.isEmpty()) {
-            if (recipe.preferredTool().isPresent() && actualProfile == recipe.preferredTool().get() && toolStack.getItem() instanceof KitchenToolItem toolItem) {
-                toolAccuracy = 0.12F;
-                toolQuality = toolItem.qualityBonus();
-            } else if (actualProfile != ToolProfile.NONE && recipe.allowsTool(actualProfile) && toolStack.getItem() instanceof KitchenToolItem toolItem) {
-                toolAccuracy = -0.04F;
-                toolQuality = toolItem.qualityBonus() * 0.35F;
-            } else if (actualProfile == ToolProfile.NONE) {
-                toolAccuracy = recipe.toolRequired() ? -0.22F : -0.10F;
-                toolQuality = recipe.toolRequired() ? -0.14F : -0.06F;
-            } else {
-                toolAccuracy = recipe.toolRequired() ? -0.16F : -0.06F;
-                toolQuality = -0.04F;
-            }
-        }
-
-        float heatAccuracy = evaluateHeatAccuracy(recipe, actualHeat);
-        float heatQuality = evaluateHeatQuality(recipe, actualHeat);
-        float preheatAccuracy = recipe.requiresPreheat() ? (preheated ? 0.10F : -0.14F) : 0.02F;
-        MethodAdjustment adjustment = methodAdjustment(recipe.method(), heatAccuracy, toolAccuracy, recipe.mode());
-        float recipeAccuracy = Mth.clamp(
-                stats.recipeAccuracy() * 0.36F
-                        + normalizedInputScore * 0.28F
-                        + 0.18F
-                        + toolAccuracy
-                        + heatAccuracy
-                        + preheatAccuracy
-                        + adjustment.recipeAccuracy()
-                        + output.recipeAccuracyDelta()
-                        - repeatPenalty
-                        - matchPenalty,
-                0.0F,
-                1.0F
-        );
-        float freshnessPenalty = stats.freshness() < 0.2F ? -0.12F : stats.freshness() < 0.45F ? -0.05F : 0.0F;
-        float finalQuality = Mth.clamp(
-                stats.quality() * 0.34F
-                        + stats.freshness() * 0.15F
-                        + recipeAccuracy * 0.18F
-                        + output.qualityBonus()
-                        + toolQuality
-                        + heatQuality
-                        + adjustment.quality()
-                        + freshnessPenalty
-                        - repeatPenalty
-                        - matchPenalty
-                        - microwaveQualityPenalty,
-                0.05F,
-                1.0F
-        );
-
-        return new IngredientStateData(
-                output.state(),
-                stats.createdTick(),
-                finalQuality,
-                recipeAccuracy,
-                Mth.clamp(stats.flavor() + output.flavorDelta() + adjustment.flavor() + heatQuality * 0.3F, 0.0F, 1.0F),
-                Mth.clamp(stats.texture() + output.textureDelta() + adjustment.texture() + toolQuality * 0.2F, 0.0F, 1.0F),
-                Mth.clamp(stats.structure() + output.structureDelta() + adjustment.structure(), 0.0F, 1.0F),
-                Mth.clamp(stats.moisture() + output.moistureDelta() + adjustment.moisture(), 0.0F, 1.0F),
-                Mth.clamp(stats.purity() + output.purityDelta() + adjustment.purity(), 0.0F, 1.0F),
-                Mth.clamp(stats.aeration() + output.aerationDelta() + adjustment.aeration(), 0.0F, 1.0F),
-                stats.maxDepth() + 1,
-                Math.max(output.nourishment(), stats.nourishment()),
-                Math.max(0, Math.max(output.enjoyment(), stats.enjoyment()) - enjoymentPenalty)
-        );
-    }
-
-    public static IngredientStateData evaluatePlate(Level level, KitchenPlateRecipe recipe, List<ItemStack> inputs, float inputMatchScore) {
-        AggregateStats stats = aggregate(level, inputs);
-        float normalizedInputScore = Mth.clamp(inputMatchScore, 0.0F, 1.0F);
-        float matchPenalty = (1.0F - normalizedInputScore) * 0.24F;
-        float plateAccuracy = Mth.clamp(
-                stats.recipeAccuracy() * 0.48F
-                        + normalizedInputScore * 0.34F
-                        + 0.14F
-                        + recipe.output().recipeAccuracyDelta()
-                        - matchPenalty,
-                0.0F,
-                1.0F
-        );
-
-        return new IngredientStateData(
-                recipe.output().state(),
-                stats.createdTick(),
-                Mth.clamp(
-                        stats.quality() * 0.42F
-                                + stats.freshness() * 0.16F
-                                + plateAccuracy * 0.22F
-                                + recipe.output().qualityBonus()
-                                + 0.08F
-                                - matchPenalty,
-                        0.05F,
-                        1.0F
-                ),
-                plateAccuracy,
-                Mth.clamp(stats.flavor() + recipe.output().flavorDelta() + 0.03F, 0.0F, 1.0F),
-                Mth.clamp(stats.texture() + recipe.output().textureDelta() + 0.05F, 0.0F, 1.0F),
-                Mth.clamp(stats.structure() + recipe.output().structureDelta() + 0.03F, 0.0F, 1.0F),
-                Mth.clamp(stats.moisture() + recipe.output().moistureDelta(), 0.0F, 1.0F),
-                Mth.clamp(stats.purity() + recipe.output().purityDelta() + 0.02F, 0.0F, 1.0F),
-                Mth.clamp(stats.aeration() + recipe.output().aerationDelta(), 0.0F, 1.0F),
-                stats.maxDepth() + 1,
-                Math.max(recipe.output().nourishment(), stats.nourishment()),
-                Math.max(0, Math.max(recipe.output().enjoyment(), stats.enjoyment()) - Math.max(0, Math.round(matchPenalty * 3.0F)))
-        );
     }
 
     public static QualityBreakdown evaluateStack(ItemStack stack, Level level) {
@@ -251,9 +106,9 @@ public final class DishEvaluation {
         DishRecognitionResult recognition = DishSchema.preview(stack, level.getGameTime());
         DishFamily family = dishFamily(stack, effectiveState, recognition, foodMatter);
         FoodMaterialProfile expectedProfile = FoodMaterialProfiles.profileFor(stack).orElse(null);
-        DishSchemaScore schemaScore = DishSchemaScorer.bestScore(foodMatter, item -> item == stack.getItem());
+        DishSchemaScore schemaScore = DishSchemaScorer.bestScore(stack, foodMatter, item -> item == stack.getItem(), level.getGameTime());
         if (schemaScore == null) {
-            schemaScore = DishSchemaScorer.bestScore(foodMatter, item -> true);
+            schemaScore = DishSchemaScorer.bestScore(stack, foodMatter, item -> true, level.getGameTime());
         }
 
         float recognitionScore = recognition != null ? recognition.score() : 0.38F;
@@ -491,77 +346,6 @@ public final class DishEvaluation {
                 Math.max(0, enjoyment / counted),
                 maxDepth
         );
-    }
-
-    private static float evaluateHeatAccuracy(KitchenProcessRecipe recipe, HeatLevel actualHeat) {
-        if (!recipe.usesHeat()) {
-            return 0.03F;
-        }
-        if (actualHeat == HeatLevel.OFF) {
-            return -0.18F;
-        }
-        if (actualHeat.ordinal() < recipe.minimumHeat().ordinal()) {
-            return -0.14F;
-        }
-        if (recipe.maximumHeat() != HeatLevel.OFF && actualHeat.ordinal() > recipe.maximumHeat().ordinal()) {
-            return -0.12F;
-        }
-        if (recipe.preferredHeat() != HeatLevel.OFF && actualHeat == recipe.preferredHeat()) {
-            return 0.10F;
-        }
-        return 0.03F;
-    }
-
-    private static float evaluateHeatQuality(KitchenProcessRecipe recipe, HeatLevel actualHeat) {
-        if (!recipe.usesHeat()) {
-            return 0.0F;
-        }
-        if (actualHeat == HeatLevel.OFF) {
-            return -0.12F;
-        }
-        if (recipe.maximumHeat() != HeatLevel.OFF && actualHeat.ordinal() > recipe.maximumHeat().ordinal()) {
-            return -0.10F;
-        }
-        if (actualHeat.ordinal() < recipe.minimumHeat().ordinal()) {
-            return -0.08F;
-        }
-        return actualHeat == recipe.preferredHeat() ? 0.07F : 0.02F;
-    }
-
-    private static MethodAdjustment methodAdjustment(KitchenMethod method, float heatAccuracy, float toolAccuracy, ProcessMode mode) {
-        float passiveBonus = mode == ProcessMode.PASSIVE ? 0.02F : 0.0F;
-        return switch (method) {
-            case CUT -> new MethodAdjustment(0.02F, 0.06F, 0.00F, 0.08F + toolAccuracy * 0.2F, 0.02F, -0.02F, 0.02F, 0.00F);
-            case GRIND -> new MethodAdjustment(0.03F, 0.07F, 0.12F + toolAccuracy * 0.15F, -0.02F, 0.00F, -0.02F, 0.10F, 0.02F);
-            case STRAIN -> new MethodAdjustment(0.04F, 0.06F, 0.02F, -0.02F, 0.00F, -0.03F, 0.18F, 0.00F);
-            case MIX -> new MethodAdjustment(0.03F, 0.06F, 0.02F, 0.02F, 0.08F, 0.05F, 0.03F, 0.02F);
-            case PROCESS -> new MethodAdjustment(0.03F, 0.07F, 0.10F, 0.06F, 0.04F, -0.04F, 0.06F, 0.02F);
-            case BLEND -> new MethodAdjustment(0.04F, 0.08F, 0.04F, 0.06F, 0.04F, 0.08F, 0.03F, 0.10F);
-            case JUICE -> new MethodAdjustment(0.03F, 0.06F, 0.02F, 0.02F, 0.00F, 0.12F, 0.08F, 0.00F);
-            case WHISK -> new MethodAdjustment(0.02F, 0.08F, 0.00F, 0.04F, 0.06F, 0.00F, 0.02F, 0.18F + toolAccuracy * 0.12F);
-            case KNEAD -> new MethodAdjustment(0.03F, 0.09F, 0.00F, 0.06F, 0.18F + toolAccuracy * 0.15F, -0.01F, 0.02F, 0.03F);
-            case BATTER -> new MethodAdjustment(0.03F, 0.07F, 0.04F, 0.10F, 0.06F, 0.05F, 0.02F, 0.01F);
-            case MARINATE -> new MethodAdjustment(0.04F + passiveBonus, 0.08F + passiveBonus, 0.16F, 0.02F, 0.02F, 0.06F, 0.04F, 0.00F);
-            case BOIL -> new MethodAdjustment(-0.01F + heatAccuracy * 0.1F, 0.04F, 0.06F, -0.03F, 0.02F, 0.10F, -0.04F, 0.00F);
-            case SIMMER -> new MethodAdjustment(0.04F + passiveBonus, 0.08F + passiveBonus, 0.15F, 0.02F, 0.04F, 0.08F, 0.10F, 0.00F);
-            case PAN_FRY -> new MethodAdjustment(0.05F, 0.08F, 0.18F, 0.16F, 0.04F, -0.07F, 0.00F, 0.00F);
-            case DEEP_FRY -> new MethodAdjustment(0.04F, 0.07F, 0.20F, 0.22F, 0.02F, -0.10F, -0.02F, 0.00F);
-            case BAKE -> new MethodAdjustment(0.06F, 0.10F, 0.08F, 0.12F, 0.18F, -0.04F, 0.02F, 0.04F);
-            case ROAST -> new MethodAdjustment(0.05F, 0.08F, 0.18F, 0.12F, 0.08F, -0.10F, 0.00F, 0.00F);
-            case BROIL -> new MethodAdjustment(0.03F, 0.05F, 0.14F, 0.08F, 0.02F, -0.08F, 0.00F, 0.00F);
-            case STEAM -> new MethodAdjustment(0.03F, 0.08F, 0.06F, 0.08F, 0.04F, 0.10F, 0.04F, 0.00F);
-            case SMOKE -> new MethodAdjustment(0.05F + passiveBonus, 0.08F + passiveBonus, 0.22F, 0.06F, 0.04F, -0.05F, 0.03F, 0.00F);
-            case FERMENT -> new MethodAdjustment(0.04F + passiveBonus, 0.08F + passiveBonus, 0.12F, 0.02F, 0.02F, 0.03F, 0.08F, 0.00F);
-            case CAN -> new MethodAdjustment(0.05F + passiveBonus, 0.08F, 0.08F, 0.00F, 0.02F, 0.08F, 0.12F, 0.00F);
-            case DRY -> new MethodAdjustment(0.03F + passiveBonus, 0.07F, 0.12F, 0.05F, 0.02F, -0.20F, 0.04F, 0.00F);
-            case FREEZE_DRY -> new MethodAdjustment(0.04F + passiveBonus, 0.08F, 0.10F, 0.06F, 0.04F, -0.18F, 0.18F, 0.00F);
-            case MICROWAVE -> new MethodAdjustment(0.02F + heatAccuracy * 0.1F, 0.05F, 0.08F, 0.06F, 0.02F, -0.04F, 0.00F, 0.00F);
-            case COOL -> new MethodAdjustment(0.03F, 0.06F, 0.00F, 0.04F, 0.06F, 0.02F, 0.02F, 0.00F);
-            case REST -> new MethodAdjustment(0.05F, 0.08F, 0.02F, 0.10F, 0.10F, 0.04F, 0.02F, 0.00F);
-            case SLICE -> new MethodAdjustment(0.02F, 0.05F, 0.00F, 0.04F, 0.02F, 0.00F, 0.03F, 0.00F);
-            case PLATE -> new MethodAdjustment(0.04F, 0.10F, 0.03F, 0.04F, 0.03F, 0.02F, 0.02F, 0.00F);
-            case NONE -> new MethodAdjustment(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
-        };
     }
 
     private static boolean isFinishedState(IngredientState state) {

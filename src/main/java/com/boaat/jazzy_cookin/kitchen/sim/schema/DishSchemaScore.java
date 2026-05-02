@@ -14,6 +14,8 @@ public record DishSchemaScore(
         float cookingScore,
         float textureScore,
         float techniqueScore,
-        float presentationScore
+        float presentationScore,
+        float ingredientScore,
+        float cap
 ) {
 }

@@ -41,8 +41,12 @@
   "required_techniques": [
     "plated"
   ],
-  "prerequisite_schemas": [ "chicken_curry_prep" ],
-  "serving_items": [ "jazzycookin:ceramic_bowl" ],
+  "prerequisite_schemas": [
+    "chicken_curry_prep"
+  ],
+  "serving_items": [
+    "jazzycookin:ceramic_bowl"
+  ],
   "weights": {
     "roles": 0.26,
     "composition": 0.1,
@@ -51,5 +55,46 @@
     "texture": 0.12,
     "technique": 0.08,
     "presentation": 0.12
-  }
+  },
+  "ingredients": [
+    {
+      "role": "protein",
+      "any_traits": [],
+      "all_traits": [
+        "chicken",
+        "protein"
+      ],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "sauce",
+        "tomato",
+        "vegetable",
+        "coconut"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "plated",
+      "station": "plating_station",
+      "technique": "plated",
+      "prerequisites": [],
+      "progress_target": 1.0
+    }
+  ]
 }

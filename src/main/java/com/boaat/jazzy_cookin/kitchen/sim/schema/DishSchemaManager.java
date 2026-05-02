@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.google.gson.Gson;
@@ -63,8 +64,44 @@ public final class DishSchemaManager {
             if (schema.requiredRoles().isEmpty() && schema.requiredTechniques().isEmpty()) {
                 problems.add("schema " + schema.key() + " has no required roles or techniques");
             }
+            if (schema.ingredients().isEmpty()) {
+                problems.add("schema " + schema.key() + " has no quantified ingredients");
+            }
+            if (schema.steps().isEmpty()) {
+                problems.add("schema " + schema.key() + " has no ordered steps");
+            }
+            for (DishIngredientRequirement ingredient : schema.ingredients()) {
+                ingredient.item().ifPresent(item -> {
+                    if (BuiltInRegistries.ITEM.get(item) == Items.AIR) {
+                        problems.add("schema " + schema.key() + " points at missing ingredient item " + item);
+                    }
+                });
+                if (ingredient.hasMeasuredAmount() && ingredient.maxAmount() < ingredient.minAmount()) {
+                    problems.add("schema " + schema.key() + " has an invalid amount range for " + ingredient.item().map(ResourceLocation::toString).orElse(ingredient.role().getSerializedName()));
+                }
+            }
+            Set<String> stepIds = new java.util.HashSet<>();
+            for (DishStepRequirement step : schema.steps()) {
+                if (step.id().isBlank()) {
+                    problems.add("schema " + schema.key() + " has a blank step id");
+                }
+                if (!stepIds.add(step.id())) {
+                    problems.add("schema " + schema.key() + " repeats step id " + step.id());
+                }
+                if (step.progressTarget() <= 0.0F) {
+                    problems.add("schema " + schema.key() + " step " + step.id() + " has a non-positive progress target");
+                }
+            }
         }
         for (DishSchemaDefinition schema : schemas) {
+            Set<String> reachableStepIds = new java.util.HashSet<>();
+            schema.steps().forEach(step -> reachableStepIds.add(step.id()));
+            for (String prerequisiteSchema : schema.prerequisiteSchemas()) {
+                DishSchemaDefinition prerequisite = byKey.get(prerequisiteSchema);
+                if (prerequisite != null) {
+                    prerequisite.steps().forEach(step -> reachableStepIds.add(step.id()));
+                }
+            }
             for (String prerequisiteSchema : schema.prerequisiteSchemas()) {
                 if (!byKey.containsKey(prerequisiteSchema)) {
                     problems.add("schema " + schema.key() + " depends on missing prerequisite schema " + prerequisiteSchema);
@@ -73,6 +110,13 @@ public final class DishSchemaManager {
             for (ResourceLocation servingItem : schema.servingItems()) {
                 if (BuiltInRegistries.ITEM.get(servingItem) == Items.AIR) {
                     problems.add("schema " + schema.key() + " points at missing serving item " + servingItem);
+                }
+            }
+            for (DishStepRequirement step : schema.steps()) {
+                for (String prerequisite : step.prerequisites()) {
+                    if (!reachableStepIds.contains(prerequisite)) {
+                        problems.add("schema " + schema.key() + " step " + step.id() + " depends on missing step " + prerequisite);
+                    }
                 }
             }
         }

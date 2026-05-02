@@ -4,17 +4,87 @@
   "result": "jazzycookin:french_toast",
   "category": "pan_dish",
   "meal": true,
-  "preview_threshold": 0.54,
-  "finalize_threshold": 0.6,
+  "preview_threshold": 0.62,
+  "finalize_threshold": 0.68,
   "desirability": 0.78,
   "required_roles": [
-    { "role": "grain", "any_traits": [ "bread", "grain", "wheat" ], "weight": 0.8 }
+    {
+      "role": "grain",
+      "any_traits": [
+        "bread",
+        "grain",
+        "wheat"
+      ],
+      "weight": 0.8
+    }
   ],
   "optional_roles": [
-    { "role": "garnish", "any_traits": [ "sweetener", "syrup", "fruit", "spice" ], "weight": 0.28 }
+    {
+      "role": "garnish",
+      "any_traits": [
+        "sweetener",
+        "syrup",
+        "fruit",
+        "spice"
+      ],
+      "weight": 0.28
+    }
   ],
-  "required_techniques": [ "plated" ],
-  "prerequisite_schemas": [ "french_toast_prep" ],
-  "serving_items": [ "jazzycookin:ceramic_plate" ],
-  "weights": { "roles": 0.26, "composition": 0.1, "seasoning": 0.14, "cooking": 0.18, "texture": 0.12, "technique": 0.08, "presentation": 0.12 }
+  "required_techniques": [
+    "plated"
+  ],
+  "prerequisite_schemas": [
+    "french_toast_prep"
+  ],
+  "serving_items": [
+    "jazzycookin:ceramic_plate"
+  ],
+  "weights": {
+    "roles": 0.26,
+    "composition": 0.1,
+    "seasoning": 0.14,
+    "cooking": 0.18,
+    "texture": 0.12,
+    "technique": 0.08,
+    "presentation": 0.12
+  },
+  "ingredients": [
+    {
+      "item": "jazzycookin:french_toast_prep",
+      "role": "grain",
+      "any_traits": [
+        "bread",
+        "grain",
+        "wheat"
+      ],
+      "ideal_amount": 1,
+      "min_amount": 1,
+      "max_amount": 1,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "item": "jazzycookin:ceramic_plate",
+      "role": "container",
+      "ideal_amount": 1,
+      "min_amount": 1,
+      "max_amount": 1,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "plate",
+      "station": "plating_station",
+      "technique": "plated",
+      "prerequisites": [
+        "pan"
+      ],
+      "progress_target": 1.0,
+      "output_state": "plated"
+    }
+  ]
 }

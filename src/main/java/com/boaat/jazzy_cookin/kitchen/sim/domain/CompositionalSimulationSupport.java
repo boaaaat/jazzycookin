@@ -7,6 +7,7 @@ import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
@@ -20,6 +21,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -418,11 +420,13 @@ final class CompositionalSimulationSupport {
             FoodMatterData matter,
             Predicate<DishSchemaDefinition> schemaFilter
     ) {
-        DishSchemaScore score = bestSchemaScore(matter, schemaFilter, true);
+        DishSchemaScore score = bestSchemaScore(access, matter, schemaFilter, true, 0.85F);
         if (score == null || !(score.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
             return ItemStack.EMPTY;
         }
-        return SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
+        ItemStack output = SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
+        KitchenStackUtil.setDishAttempt(output, DishAttemptAssembler.build(score.schema(), DishAttemptAssembler.view(access), 0.85F));
+        return output;
     }
 
     static int schemaPreviewId(FoodMatterData matter, Predicate<DishSchemaDefinition> schemaFilter) {
@@ -431,11 +435,13 @@ final class CompositionalSimulationSupport {
     }
 
     static ItemStack recognizedMealOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter, Predicate<Item> filter) {
-        DishRecognitionResult result = DishSchema.finalizeResult(matter, item -> item instanceof KitchenMealItem && filter.test(item));
-        if (result == null || !(result.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
+        DishSchemaScore score = bestSchemaScore(access, matter, schema -> schema.meal() && filter.test(BuiltInRegistries.ITEM.get(schema.result())), true, 0.82F);
+        if (score == null || !(score.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
             return ItemStack.EMPTY;
         }
-        return SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
+        ItemStack output = SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
+        KitchenStackUtil.setDishAttempt(output, DishAttemptAssembler.build(score.schema(), DishAttemptAssembler.view(access), 0.82F));
+        return output;
     }
 
     private static DishSchemaScore bestSchemaScore(FoodMatterData matter, Predicate<DishSchemaDefinition> schemaFilter, boolean finalize) {
@@ -446,6 +452,33 @@ final class CompositionalSimulationSupport {
         return DishSchemaScorer.schemas().stream()
                 .filter(schemaFilter)
                 .map(schema -> DishSchemaScorer.score(schema, context))
+                .filter(java.util.Optional::isPresent)
+                .map(java.util.Optional::get)
+                .filter(score -> score.resultItem().get() instanceof KitchenIngredientItem)
+                .filter(score -> score.score() >= (finalize ? score.schema().finalizeThreshold() : score.schema().previewThreshold()))
+                .max(java.util.Comparator.comparing(DishSchemaScore::score).thenComparing(score -> score.schema().desirability()))
+                .orElse(null);
+    }
+
+    private static DishSchemaScore bestSchemaScore(
+            StationSimulationAccess access,
+            FoodMatterData matter,
+            Predicate<DishSchemaDefinition> schemaFilter,
+            boolean finalize,
+            float stationQuality
+    ) {
+        if (matter == null) {
+            return null;
+        }
+        DishAttemptAssembler.StationSimulationAccessView view = DishAttemptAssembler.view(access);
+        return DishSchemaScorer.schemas().stream()
+                .filter(schemaFilter)
+                .map(schema -> {
+                    ItemStack projected = new ItemStack(BuiltInRegistries.ITEM.get(schema.result()));
+                    KitchenStackUtil.setDishAttempt(projected, DishAttemptAssembler.build(schema, view, stationQuality));
+                    DishAttemptContext context = new DishAttemptContext(matter, KitchenStackUtil.inferStateFromMatter(matter), projected, KitchenStackUtil.dishAttempt(projected));
+                    return DishSchemaScorer.score(schema, context);
+                })
                 .filter(java.util.Optional::isPresent)
                 .map(java.util.Optional::get)
                 .filter(score -> score.resultItem().get() instanceof KitchenIngredientItem)

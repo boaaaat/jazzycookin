@@ -44,7 +44,10 @@ public enum ToolProfile implements StringRepresentable {
     SAUCEPAN("saucepan"),
     FORK("fork"),
     SPOON("spoon"),
-    TABLE_KNIFE("table_knife");
+    TABLE_KNIFE("table_knife"),
+    MEASURING_CUP("measuring_cup"),
+    MEASURING_SPOONS("measuring_spoons"),
+    KITCHEN_SCALE("kitchen_scale");
 
     private static final Map<String, ToolProfile> BY_NAME = Arrays.stream(values())
             .collect(Collectors.toMap(ToolProfile::getSerializedName, Function.identity()));

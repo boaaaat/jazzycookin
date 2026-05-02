@@ -1,0 +1,108 @@
+{
+  "key": "french_toast_soaked",
+  "preview_id": 1179,
+  "result": "jazzycookin:french_toast_soaked",
+  "category": "pan_dish",
+  "preview_threshold": 0.62,
+  "finalize_threshold": 0.66,
+  "desirability": 0.8,
+  "required_roles": [
+    {
+      "role": "grain",
+      "any_traits": [
+        "bread",
+        "grain",
+        "wheat"
+      ],
+      "weight": 0.9
+    },
+    {
+      "role": "binder",
+      "any_traits": [
+        "egg"
+      ],
+      "weight": 0.55
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "dairy"
+      ],
+      "weight": 0.35
+    },
+    {
+      "role": "sweetener",
+      "any_traits": [
+        "sweetener"
+      ],
+      "weight": 0.24
+    }
+  ],
+  "required_techniques": [
+    "dip_or_coat"
+  ],
+  "prerequisite_schemas": [
+    "french_toast_batter"
+  ],
+  "ingredients": [
+    {
+      "item": "jazzycookin:batter_mix",
+      "role": "binder",
+      "any_traits": [
+        "egg",
+        "dairy"
+      ],
+      "ideal_amount": 1,
+      "min_amount": 1,
+      "max_amount": 1,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "item": "jazzycookin:bread",
+      "role": "grain",
+      "any_traits": [
+        "bread",
+        "grain",
+        "wheat"
+      ],
+      "ideal_amount": 8,
+      "min_amount": 6,
+      "max_amount": 10,
+      "unit": "slice",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "dip",
+      "station": "mixing_bowl",
+      "technique": "dip_or_coat",
+      "tool": "whisk",
+      "prerequisites": [
+        "batter"
+      ],
+      "progress_target": 1.0,
+      "output_state": "battered"
+    }
+  ],
+  "targets": {
+    "water": {
+      "min": 0.18,
+      "max": 0.58,
+      "softness": 0.18
+    },
+    "protein": {
+      "min": 0.08,
+      "max": 0.4,
+      "softness": 0.18
+    },
+    "cohesiveness": {
+      "min": 0.28,
+      "max": 0.78,
+      "softness": 0.18
+    }
+  }
+}

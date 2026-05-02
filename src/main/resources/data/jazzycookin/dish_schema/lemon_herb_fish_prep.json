@@ -7,23 +7,142 @@
   "finalize_threshold": 0.62,
   "desirability": 0.86,
   "required_roles": [
-    { "role": "protein", "all_traits": [ "fish", "protein" ], "weight": 0.9 },
-    { "role": "acid", "any_traits": [ "acidic", "fruit" ], "weight": 0.35 },
-    { "role": "herb", "any_traits": [ "herb" ], "weight": 0.25 }
+    {
+      "role": "protein",
+      "all_traits": [
+        "fish",
+        "protein"
+      ],
+      "weight": 0.9
+    },
+    {
+      "role": "acid",
+      "any_traits": [
+        "acidic",
+        "fruit"
+      ],
+      "weight": 0.35
+    },
+    {
+      "role": "herb",
+      "any_traits": [
+        "herb"
+      ],
+      "weight": 0.25
+    }
   ],
   "optional_roles": [
-    { "role": "fat", "any_traits": [ "fat", "oil" ], "weight": 0.25 },
-    { "role": "salt", "any_traits": [ "salt" ], "weight": 0.18 }
+    {
+      "role": "fat",
+      "any_traits": [
+        "fat",
+        "oil"
+      ],
+      "weight": 0.25
+    },
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.18
+    }
   ],
-  "required_techniques": [ "pan_fried" ],
+  "required_techniques": [
+    "pan_fried"
+  ],
   "targets": {
-    "water": { "min": 0.18, "max": 0.62, "softness": 0.18 },
-    "fat": { "min": 0.02, "max": 0.38, "softness": 0.16 },
-    "protein": { "min": 0.24, "max": 0.78, "softness": 0.18 },
-    "seasoning": { "min": 0.04, "max": 0.34, "softness": 0.14 },
-    "herb": { "min": 0.02, "max": 0.34, "softness": 0.14 },
-    "protein_set": { "min": 0.42, "max": 0.86, "softness": 0.2 },
-    "browning": { "min": 0.02, "max": 0.36, "softness": 0.16 },
-    "char_level": { "min": 0.0, "max": 0.10, "softness": 0.08 }
-  }
+    "water": {
+      "min": 0.18,
+      "max": 0.62,
+      "softness": 0.18
+    },
+    "fat": {
+      "min": 0.02,
+      "max": 0.38,
+      "softness": 0.16
+    },
+    "protein": {
+      "min": 0.24,
+      "max": 0.78,
+      "softness": 0.18
+    },
+    "seasoning": {
+      "min": 0.04,
+      "max": 0.34,
+      "softness": 0.14
+    },
+    "herb": {
+      "min": 0.02,
+      "max": 0.34,
+      "softness": 0.14
+    },
+    "protein_set": {
+      "min": 0.42,
+      "max": 0.86,
+      "softness": 0.2
+    },
+    "browning": {
+      "min": 0.02,
+      "max": 0.36,
+      "softness": 0.16
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.1,
+      "softness": 0.08
+    }
+  },
+  "ingredients": [
+    {
+      "role": "protein",
+      "any_traits": [],
+      "all_traits": [
+        "fish",
+        "protein"
+      ],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "role": "acid",
+      "any_traits": [
+        "acidic",
+        "fruit"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "role": "herb",
+      "any_traits": [
+        "herb"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "pan_fried",
+      "station": "stove",
+      "technique": "pan_fried",
+      "prerequisites": [],
+      "progress_target": 1.0
+    }
+  ]
 }

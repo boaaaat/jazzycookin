@@ -11,6 +11,7 @@ import com.boaat.jazzy_cookin.kitchen.FreshnessBand;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
+import com.boaat.jazzy_cookin.kitchen.MeasureUnit;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 import com.boaat.jazzy_cookin.kitchen.StationCapacityProfile;
@@ -25,6 +26,8 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptData;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaManager;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
@@ -38,8 +41,8 @@ import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
 import com.boaat.jazzy_cookin.recipebook.SourceGuideRegistry;
 import com.boaat.jazzy_cookin.recipebook.network.RecipeBookSyncPayload;
 import com.boaat.jazzy_cookin.registry.JazzyBlocks;
+import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
-import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -266,6 +269,9 @@ public final class KitchenGameTests {
         require(ToolProfile.fromStack(new ItemStack(JazzyItems.POT.get())) == ToolProfile.POT, "Pot should advertise the pot profile");
         require(ToolProfile.fromStack(new ItemStack(JazzyItems.SAUCEPAN.get())) == ToolProfile.SAUCEPAN, "Saucepan should advertise the saucepan profile");
         require(ToolProfile.fromStack(new ItemStack(JazzyItems.TABLE_KNIFE.get())) == ToolProfile.TABLE_KNIFE, "Table knife should advertise the silverware profile");
+        require(ToolProfile.fromStack(new ItemStack(JazzyItems.MEASURING_CUP.get())) == ToolProfile.MEASURING_CUP, "Measuring cup should advertise the measuring profile");
+        require(ToolProfile.fromStack(new ItemStack(JazzyItems.MEASURING_SPOONS.get())) == ToolProfile.MEASURING_SPOONS, "Measuring spoons should advertise the measuring profile");
+        require(ToolProfile.fromStack(new ItemStack(JazzyItems.KITCHEN_SCALE.get())) == ToolProfile.KITCHEN_SCALE, "Kitchen scale should advertise the measuring profile");
         helper.succeed();
     }
 
@@ -288,16 +294,6 @@ public final class KitchenGameTests {
         require(level.getRecipeManager().byKey(stoveRecipeId).isPresent(), "Expected vanilla crafting recipe jazzycookin:stove to be present");
         require(DishSchemaScorer.schemas().stream().anyMatch(schema -> schema.key().equals("chana_masala_prep")),
                 "Expected schema chana_masala_prep to be present");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty")
-    public static void recipeInputCountsRespectStationCapacities(GameTestHelper helper) {
-        ServerLevel level = helper.getLevel();
-        require(level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PROCESS_TYPE.get()).isEmpty(),
-                "Kitchen process recipes should be removed; schemas now drive station outputs");
-        require(level.getRecipeManager().getAllRecipesFor(JazzyRecipes.KITCHEN_PLATE_TYPE.get()).isEmpty(),
-                "Kitchen plate recipes should be removed; schemas now drive plating outputs");
         helper.succeed();
     }
 
@@ -1053,6 +1049,26 @@ public final class KitchenGameTests {
         require(hummusPlan.steps().stream().anyMatch(step ->
                         step.outputKey().equals(outputKey(JazzyItems.HUMMUS_PREP.get(), IngredientState.SMOOTH_PASTE))),
                 "Expanded content schemas should support mapped plate-name prep dependencies");
+
+        JazzyRecipeBookPlanner.Plan frenchToastPlan = requirePlan(
+                planner,
+                selection(JazzyItems.FRENCH_TOAST.get(), IngredientState.PLATED, "schema:french_toast")
+        );
+        require(frenchToastPlan.steps().stream().anyMatch(step ->
+                        step.outputKey().equals(outputKey(JazzyItems.BATTER_MIX.get(), IngredientState.BATTER))),
+                "French toast guide should start with the measured batter schema");
+        require(frenchToastPlan.steps().stream().anyMatch(step ->
+                        step.outputKey().equals(outputKey(JazzyItems.FRENCH_TOAST_SOAKED.get(), IngredientState.BATTERED))),
+                "French toast guide should include the dip/coating schema step");
+        require(frenchToastPlan.steps().stream().anyMatch(step ->
+                        step.outputKey().equals(outputKey(JazzyItems.FRENCH_TOAST_PREP.get(), IngredientState.PAN_FRIED))),
+                "French toast guide should include the pan-cook schema step");
+        require(frenchToastPlan.steps().stream()
+                        .flatMap(step -> step.options().stream())
+                        .flatMap(option -> option.requirements().stream())
+                        .flatMap(requirement -> requirement.choices().stream())
+                        .anyMatch(KitchenStackUtil::isMeasured),
+                "French toast guide should render measured ingredient examples");
         helper.succeed();
     }
 
@@ -1307,6 +1323,71 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void measuringToolsCreateMeasuredPortions(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        KitchenStationBlockEntity prepTable = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        prepTable.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ALL_PURPOSE_FLOUR).get().createStack(2, level.getGameTime()));
+        prepTable.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.KITCHEN_SCALE.get()));
+
+        require(prepTable.handleButton(6, fakePlayer), "Kitchen scale should measure a flour portion");
+        ItemStack firstPortion = prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(KitchenStackUtil.measuredQuantity(firstPortion) != null, "Measured output should carry quantity data");
+        require(closeTo(KitchenStackUtil.measuredAmount(firstPortion, MeasureUnit.GRAM), 30.0F, 0.01F), "Kitchen scale should create a 30 g flour portion");
+
+        require(prepTable.handleButton(6, fakePlayer), "Kitchen scale should merge a second compatible portion");
+        ItemStack mergedPortion = prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(closeTo(KitchenStackUtil.measuredAmount(mergedPortion, MeasureUnit.GRAM), 60.0F, 0.01F), "Compatible measured portions should merge by amount");
+        require(prepTable.getItem(0).isEmpty(), "Measuring should consume the source ingredient stack");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void frenchToastScoringRequiresMeasuredStepLineage(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long gameTime = level.getGameTime();
+        DishSchemaDefinition schema = schemaByKey("french_toast");
+
+        ItemStack shortcut = JazzyItems.FRENCH_TOAST.get().createStack(1, gameTime);
+        FoodMatterData shortcutMatter = KitchenStackUtil.getOrCreateFoodMatter(shortcut, gameTime);
+        DishSchemaScore shortcutScore = DishSchemaScorer.bestScore(shortcut, shortcutMatter, item -> item == JazzyItems.FRENCH_TOAST.get(), gameTime);
+        require(shortcutScore != null, "French toast shortcut should still score for diagnostics");
+        require(shortcutScore.cap() <= 0.60F && shortcutScore.score() <= 0.60F,
+                "French toast without batter/dip/pan/plate lineage should be capped below high grades");
+
+        ItemStack complete = JazzyItems.FRENCH_TOAST.get().createStack(1, gameTime);
+        KitchenStackUtil.setDishAttempt(complete, new DishAttemptData(
+                schema.key(),
+                List.of("batter", "dip", "pan", "plate"),
+                1.0F,
+                false,
+                false,
+                false,
+                0.0F
+        ));
+        FoodMatterData completeMatter = KitchenStackUtil.getOrCreateFoodMatter(complete, gameTime);
+        DishSchemaScore completeScore = DishSchemaScorer.bestScore(complete, completeMatter, item -> item == JazzyItems.FRENCH_TOAST.get(), gameTime);
+        require(completeScore != null, "Complete French toast attempt should score");
+        require(completeScore.score() >= schema.finalizeThreshold(), "Complete measured French toast chain should reach finalization");
+        require(completeScore.cap() >= 0.95F, "Complete French toast chain should not be capped by missing steps or quantities");
+
+        ItemStack missingCore = complete.copy();
+        KitchenStackUtil.setDishAttempt(missingCore, new DishAttemptData(
+                schema.key(),
+                List.of("batter", "dip", "pan", "plate"),
+                0.45F,
+                true,
+                false,
+                false,
+                0.0F
+        ));
+        DishSchemaScore missingCoreScore = DishSchemaScorer.bestScore(missingCore, completeMatter, item -> item == JazzyItems.FRENCH_TOAST.get(), gameTime);
+        require(missingCoreScore != null && missingCoreScore.cap() <= 0.55F,
+                "Missing a core French toast ingredient should enforce the missing-core cap");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void catalogGraderPrefersBalancedFoodAcrossFamilies(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         long gameTime = level.getGameTime();
@@ -1485,6 +1566,13 @@ public final class KitchenGameTests {
                 .withWorkingState(0.42F, 0.12F, 0.18F, 0.72F, 0.68F, 0.12F, charLevel, 0.34F, 1, 1, 10, 2, true);
     }
 
+    private static DishSchemaDefinition schemaByKey(String key) {
+        return DishSchemaScorer.schemas().stream()
+                .filter(schema -> schema.key().equals(key))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Expected schema " + key + " to be present"));
+    }
+
     private static JazzyRecipeBookPlanner.Plan requirePlan(JazzyRecipeBookPlanner planner, JazzyRecipeBookSelection selection) {
         return planner.planFor(selection).orElseThrow(() -> new AssertionError(
                 "Expected recipe-book plan for " + selection.itemId() + "@" + selection.state().getSerializedName() + " (" + selection.normalizedChainKey() + ")"
@@ -1509,6 +1597,10 @@ public final class KitchenGameTests {
 
     private static ItemStack stackWithState(ItemLike itemLike, IngredientState state) {
         return RecipeBookDisplayUtil.displayStack(new ItemStack(itemLike), state, 1);
+    }
+
+    private static boolean closeTo(float actual, float expected, float tolerance) {
+        return Math.abs(actual - expected) <= tolerance;
     }
 
     private static void require(boolean condition, String message) {

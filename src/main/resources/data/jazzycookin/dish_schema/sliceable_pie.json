@@ -48,5 +48,31 @@
     "texture": 0.12,
     "technique": 0.08,
     "presentation": 0.12
-  }
+  },
+  "ingredients": [
+    {
+      "role": "grain",
+      "any_traits": [
+        "flour",
+        "wheat",
+        "grain"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "plated",
+      "station": "plating_station",
+      "technique": "plated",
+      "prerequisites": [],
+      "progress_target": 1.0
+    }
+  ]
 }

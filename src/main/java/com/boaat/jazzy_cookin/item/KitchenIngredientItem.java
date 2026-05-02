@@ -8,6 +8,7 @@ import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.KitchenStateRules;
+import com.boaat.jazzy_cookin.kitchen.MeasuredQuantity;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
@@ -266,6 +267,12 @@ public class KitchenIngredientItem extends Item {
         IngredientState displayState = level != null ? KitchenStackUtil.effectiveState(stack, level.getGameTime()) : data.state();
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.state", Component.translatable("state.jazzycookin." + displayState.getSerializedName()))
                 .withStyle(ChatFormatting.GRAY));
+        MeasuredQuantity measured = KitchenStackUtil.measuredQuantity(stack);
+        if (measured != null) {
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.measured_quantity",
+                    measured.displayLabel().isBlank() ? Component.literal(measured.amount() + " " + measured.unit().getSerializedName()) : Component.literal(measured.displayLabel()))
+                    .withStyle(ChatFormatting.DARK_AQUA));
+        }
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.quality", DishGrade.fromScore(data.quality()).displayName())
                 .withStyle(ChatFormatting.GOLD));
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.recipe_accuracy", Math.round(data.recipeAccuracy() * 100.0F))

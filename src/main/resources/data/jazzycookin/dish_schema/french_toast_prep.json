@@ -3,27 +3,134 @@
   "preview_id": 1180,
   "result": "jazzycookin:french_toast_prep",
   "category": "pan_dish",
-  "preview_threshold": 0.56,
-  "finalize_threshold": 0.62,
+  "preview_threshold": 0.68,
+  "finalize_threshold": 0.72,
   "desirability": 0.8,
   "required_roles": [
-    { "role": "grain", "any_traits": [ "bread", "grain", "wheat" ], "weight": 0.75 },
-    { "role": "binder", "any_traits": [ "egg", "protein" ], "weight": 0.55 },
-    { "role": "fat", "any_traits": [ "fat", "oil", "dairy" ], "weight": 0.28 }
+    {
+      "role": "grain",
+      "any_traits": [
+        "bread",
+        "grain",
+        "wheat"
+      ],
+      "weight": 0.9
+    },
+    {
+      "role": "binder",
+      "any_traits": [
+        "egg"
+      ],
+      "weight": 0.55
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "dairy"
+      ],
+      "weight": 0.35
+    },
+    {
+      "role": "sweetener",
+      "any_traits": [
+        "sweetener"
+      ],
+      "weight": 0.24
+    }
   ],
   "optional_roles": [
-    { "role": "sweetener", "any_traits": [ "sweetener", "syrup" ], "weight": 0.22 },
-    { "role": "spice", "any_traits": [ "spice" ], "weight": 0.16 }
+    {
+      "role": "sweetener",
+      "any_traits": [
+        "sweetener",
+        "syrup"
+      ],
+      "weight": 0.22
+    },
+    {
+      "role": "spice",
+      "any_traits": [
+        "spice"
+      ],
+      "weight": 0.16
+    }
   ],
-  "required_techniques": [ "pan_fried" ],
+  "required_techniques": [
+    "pan_fried"
+  ],
   "targets": {
-    "water": { "min": 0.18, "max": 0.60, "softness": 0.18 },
-    "fat": { "min": 0.04, "max": 0.40, "softness": 0.18 },
-    "protein": { "min": 0.10, "max": 0.54, "softness": 0.18 },
-    "seasoning": { "min": 0.0, "max": 0.30, "softness": 0.14 },
-    "protein_set": { "min": 0.34, "max": 0.82, "softness": 0.20 },
-    "browning": { "min": 0.08, "max": 0.46, "softness": 0.16 },
-    "char_level": { "min": 0.0, "max": 0.12, "softness": 0.08 },
-    "cohesiveness": { "min": 0.28, "max": 0.76, "softness": 0.18 }
-  }
+    "water": {
+      "min": 0.18,
+      "max": 0.6,
+      "softness": 0.18
+    },
+    "fat": {
+      "min": 0.04,
+      "max": 0.4,
+      "softness": 0.18
+    },
+    "protein": {
+      "min": 0.1,
+      "max": 0.54,
+      "softness": 0.18
+    },
+    "seasoning": {
+      "min": 0.0,
+      "max": 0.3,
+      "softness": 0.14
+    },
+    "protein_set": {
+      "min": 0.34,
+      "max": 0.82,
+      "softness": 0.2
+    },
+    "browning": {
+      "min": 0.08,
+      "max": 0.46,
+      "softness": 0.16
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.12,
+      "softness": 0.08
+    },
+    "cohesiveness": {
+      "min": 0.28,
+      "max": 0.76,
+      "softness": 0.18
+    }
+  },
+  "ingredients": [
+    {
+      "item": "jazzycookin:french_toast_soaked",
+      "role": "grain",
+      "any_traits": [
+        "bread",
+        "grain",
+        "wheat"
+      ],
+      "ideal_amount": 1,
+      "min_amount": 1,
+      "max_amount": 1,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "pan",
+      "station": "stove",
+      "technique": "pan_fried",
+      "tool": "pan",
+      "prerequisites": [
+        "dip"
+      ],
+      "progress_target": 1.0,
+      "output_state": "pan_fried"
+    }
+  ],
+  "prerequisite_schemas": [
+    "french_toast_soaked"
+  ]
 }

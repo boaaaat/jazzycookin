@@ -339,6 +339,7 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenIngredientItem> RATATOUILLE_PREP = prepared("ratatouille_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 2L, 70, 6, 5, true, false);
     public static final DeferredItem<KitchenIngredientItem> POTATO_GRATIN_PREP = prepared("potato_gratin_prep", IngredientState.BAKED, PantrySortTab.OTHER, DAY * 3L, 100, 7, 5, true, true);
     public static final DeferredItem<KitchenIngredientItem> LEMON_HERB_FISH_PREP = prepared("lemon_herb_fish_prep", IngredientState.PAN_FRIED, PantrySortTab.OTHER, DAY * 2L, 60, 7, 5, true, true);
+    public static final DeferredItem<KitchenIngredientItem> FRENCH_TOAST_SOAKED = prepared("french_toast_soaked", IngredientState.BATTERED, PantrySortTab.OTHER, DAY * 1L, 0, 4, 4, true, false);
     public static final DeferredItem<KitchenIngredientItem> FRENCH_TOAST_PREP = prepared("french_toast_prep", IngredientState.PAN_FRIED, PantrySortTab.OTHER, DAY * 1L, 40, 5, 5, true, false);
     public static final DeferredItem<KitchenIngredientItem> APPLE_OATMEAL_PREP = prepared("apple_oatmeal_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 1L, 50, 6, 5, true, false);
     public static final DeferredItem<KitchenIngredientItem> SHAKSHUKA_PREP = prepared("shakshuka_prep", IngredientState.SIMMERED, PantrySortTab.OTHER, DAY * 1L, 60, 6, 5, true, false);
@@ -448,6 +449,7 @@ public final class JazzyItems {
             RATATOUILLE_PREP,
             POTATO_GRATIN_PREP,
             LEMON_HERB_FISH_PREP,
+            FRENCH_TOAST_SOAKED,
             FRENCH_TOAST_PREP,
             APPLE_OATMEAL_PREP,
             SHAKSHUKA_PREP,
@@ -496,6 +498,9 @@ public final class JazzyItems {
     public static final DeferredItem<KitchenToolItem> FORK = tool("fork", ToolProfile.FORK, 0.01F, 1.00F, 96);
     public static final DeferredItem<KitchenToolItem> SPOON = tool("spoon", ToolProfile.SPOON, 0.01F, 1.00F, 96);
     public static final DeferredItem<KitchenToolItem> TABLE_KNIFE = tool("table_knife", ToolProfile.TABLE_KNIFE, 0.02F, 1.02F, 96);
+    public static final DeferredItem<KitchenToolItem> MEASURING_CUP = tool("measuring_cup", ToolProfile.MEASURING_CUP, 0.03F, 1.00F, 128);
+    public static final DeferredItem<KitchenToolItem> MEASURING_SPOONS = tool("measuring_spoons", ToolProfile.MEASURING_SPOONS, 0.03F, 1.00F, 128);
+    public static final DeferredItem<KitchenToolItem> KITCHEN_SCALE = tool("kitchen_scale", ToolProfile.KITCHEN_SCALE, 0.04F, 1.00F, 192);
 
     public static final DeferredItem<KitchenMealItem> FRUIT_JUICE = meal("fruit_juice", IngredientState.PLATED, DAY * 2L, 4, 4);
     public static final DeferredItem<KitchenMealItem> SOFT_SCRAMBLED_EGGS = meal("soft_scrambled_eggs", IngredientState.PAN_FRIED, DAY, 5, 5);

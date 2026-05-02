@@ -9,6 +9,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
+import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
@@ -98,8 +99,9 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
             return;
         }
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
-            if (!access.simulationItem(slot).isEmpty()) {
-                access.simulationRemoveItem(slot, 1);
+            ItemStack stack = access.simulationItem(slot);
+            if (!stack.isEmpty()) {
+                access.simulationRemoveItem(slot, stack.getCount());
             }
         }
         access.simulationMergeIntoSlot(access.outputSlot(), output);
@@ -168,6 +170,9 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
     }
 
     private static KitchenMethod inferredMethod(SimulationIngredientAnalysis analysis, int controlSetting) {
+        if (analysis.has(JazzyItems.BATTER_MIX.get()) && analysis.hasTrait(FoodTrait.BREAD)) {
+            return KitchenMethod.BATTER;
+        }
         if (analysis.hasTrait(FoodTrait.FLOUR)) {
             return controlSetting == 2 ? KitchenMethod.KNEAD : KitchenMethod.MIX;
         }
@@ -187,6 +192,7 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
     }
 
     private static boolean isMixSchema(com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition schema) {
-        return !schema.meal() && schema.requiredTechniques().contains(DishTechnique.MIXED);
+        return !schema.meal() && (schema.requiredTechniques().contains(DishTechnique.MIXED)
+                || schema.requiredTechniques().contains(DishTechnique.DIP_OR_COAT));
     }
 }

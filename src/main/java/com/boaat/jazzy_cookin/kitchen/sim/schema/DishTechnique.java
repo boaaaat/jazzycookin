@@ -10,6 +10,7 @@ public enum DishTechnique implements StringRepresentable {
     PREPPED("prepped"),
     CUT("cut"),
     MIXED("mixed"),
+    DIP_OR_COAT("dip_or_coat"),
     SIMMERED("simmered"),
     PAN_FRIED("pan_fried"),
     BAKED("baked"),
@@ -41,6 +42,8 @@ public enum DishTechnique implements StringRepresentable {
                 default -> matter.fragmentation() >= 0.24F ? 0.72F : 0.25F;
             };
             case MIXED -> Math.max(matter.whiskWork() >= 0.18F ? 0.85F : 0.0F, matter.cohesiveness() >= 0.36F ? 0.72F : 0.28F);
+            case DIP_OR_COAT -> state == IngredientState.BATTERED || state == IngredientState.BATTERED_PROTEIN
+                    || (matter.cohesiveness() >= 0.30F && matter.water() >= 0.18F && matter.processDepth() >= 1) ? 1.0F : 0.22F;
             case SIMMERED -> switch (state) {
                 case SIMMERED, SOUP_BASE, STRAINED_SOUP, SIMMERED_FILLING, BOILED -> 1.0F;
                 default -> matter.water() >= 0.48F && matter.processDepth() >= 1 ? 0.72F : 0.20F;

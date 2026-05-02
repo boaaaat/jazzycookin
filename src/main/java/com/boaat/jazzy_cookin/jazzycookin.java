@@ -8,7 +8,6 @@ import com.boaat.jazzy_cookin.registry.JazzyCreativeTabs;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 import com.boaat.jazzy_cookin.registry.JazzyMenus;
-import com.boaat.jazzy_cookin.registry.JazzyRecipes;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaManager;
 import com.boaat.jazzy_cookin.recipebook.network.RecipeBookNetworking;
 import com.mojang.logging.LogUtils;
@@ -28,8 +27,6 @@ public class JazzyCookin {
         JazzyBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         JazzyMenus.MENUS.register(modEventBus);
         JazzyDataComponents.DATA_COMPONENTS.register(modEventBus);
-        JazzyRecipes.RECIPE_TYPES.register(modEventBus);
-        JazzyRecipes.RECIPE_SERIALIZERS.register(modEventBus);
         JazzyCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         modEventBus.addListener(RecipeBookNetworking::register);

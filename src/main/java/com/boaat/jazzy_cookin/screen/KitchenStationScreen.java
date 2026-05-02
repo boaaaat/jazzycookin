@@ -1227,6 +1227,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             case MIX -> Component.translatable("screen.jazzycookin.action_hint.hold_mix");
             case KNEAD -> Component.translatable("screen.jazzycookin.action_hint.hold_knead");
             case BATTER -> Component.translatable("screen.jazzycookin.action_hint.hold_batter");
+            case MEASURE -> Component.literal("Measure the selected portion");
             case PROCESS -> Component.translatable("screen.jazzycookin.action_hint.hold_process");
             case BLEND -> Component.translatable("screen.jazzycookin.action_hint.hold_blend");
             case JUICE -> Component.translatable("screen.jazzycookin.action_hint.hold_juice");
@@ -1572,6 +1573,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     private Component primaryActionLabel() {
         return switch (this.menu.currentMethod()) {
             case WHISK -> Component.translatable("screen.jazzycookin.whisk");
+            case MEASURE -> Component.literal("Measure");
             case PAN_FRY -> Component.literal("Take");
             case CUT -> Component.literal("Cut");
             case GRIND -> Component.literal("Grind");

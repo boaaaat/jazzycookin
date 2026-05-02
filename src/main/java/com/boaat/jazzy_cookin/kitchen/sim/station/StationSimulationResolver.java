@@ -11,6 +11,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.domain.FoodProcessorSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.FreezeDrySimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.HeatChamberSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.JuicerSimulationDomain;
+import com.boaat.jazzy_cookin.kitchen.sim.domain.MeasuringSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.MixingSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.PanSimulationDomain;
 import com.boaat.jazzy_cookin.kitchen.sim.domain.PlateAssemblySimulationDomain;
@@ -26,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 
 public final class StationSimulationResolver {
     private static final List<StationSimulationDomain> DOMAINS = List.of(
+            new MeasuringSimulationDomain(),
             new PanSimulationDomain(),
             new MixingSimulationDomain(),
             new PrepSimulationDomain(),

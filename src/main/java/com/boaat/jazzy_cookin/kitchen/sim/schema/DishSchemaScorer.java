@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class DishSchemaScorer {
@@ -60,6 +62,17 @@ public final class DishSchemaScorer {
             return null;
         }
         DishAttemptContext context = DishAttemptContext.fromMatter(matter);
+        return bestScore(context, filter);
+    }
+
+    public static DishSchemaScore bestScore(ItemStack stack, FoodMatterData matter, Predicate<Item> filter, long gameTime) {
+        DishAttemptContext context = stack != null && !stack.isEmpty()
+                ? DishAttemptContext.fromStack(stack, gameTime)
+                : DishAttemptContext.fromMatter(matter);
+        return bestScore(context, filter);
+    }
+
+    public static DishSchemaScore bestScore(DishAttemptContext context, Predicate<Item> filter) {
         return schemas().stream()
                 .map(schema -> score(schema, context))
                 .filter(Optional::isPresent)
@@ -90,6 +103,7 @@ public final class DishSchemaScorer {
         float textureScore = schema.targets().textureScore(matter);
         float techniqueScore = techniqueScore(schema, context);
         float presentationScore = presentationScore(schema, context);
+        IngredientEvaluation ingredientEvaluation = ingredientScore(schema, context);
         DishScoreWeights weights = schema.weights();
         float weightedTotal = weights.roles()
                 + weights.composition()
@@ -107,7 +121,12 @@ public final class DishSchemaScorer {
                 + textureScore * weights.texture()
                 + techniqueScore * weights.technique()
                 + presentationScore * weights.presentation()) / weightedTotal;
+        if (!schema.ingredients().isEmpty()) {
+            score = score * 0.68F + ingredientEvaluation.score() * 0.32F;
+        }
         score = Mth.clamp(score + optionalRoleBonus, 0.0F, 1.0F);
+        float cap = scoreCap(schema, context, ingredientEvaluation);
+        score = Math.min(score, cap);
         return Optional.of(new DishSchemaScore(
                 schema,
                 () -> item,
@@ -118,8 +137,111 @@ public final class DishSchemaScorer {
                 cookingScore,
                 textureScore,
                 techniqueScore,
-                presentationScore
+                presentationScore,
+                ingredientEvaluation.score(),
+                cap
         ));
+    }
+
+    private static float scoreCap(DishSchemaDefinition schema, DishAttemptContext context, IngredientEvaluation ingredients) {
+        float cap = 1.0F;
+        if (ingredients.missingCore()) {
+            cap = Math.min(cap, 0.55F);
+        }
+        if (ingredients.unmeasured()) {
+            cap = Math.min(cap, 0.75F);
+        }
+        DishAttemptData attempt = context.attempt();
+        if (attempt != null && attempt.wrongTechnique()) {
+            cap = Math.min(cap, 0.65F);
+        }
+        if (!schema.steps().isEmpty() && context.stack() != null && !context.stack().isEmpty()) {
+            boolean sameAttempt = attempt != null && schema.key().equals(attempt.schemaKey());
+            boolean missingStep = !sameAttempt;
+            if (sameAttempt) {
+                for (DishStepRequirement step : schema.steps()) {
+                    if (!attempt.hasStep(step.id())) {
+                        missingStep = true;
+                        break;
+                    }
+                    for (String prerequisite : step.prerequisites()) {
+                        if (!attempt.hasStep(prerequisite)) {
+                            missingStep = true;
+                            break;
+                        }
+                    }
+                    if (missingStep) {
+                        break;
+                    }
+                }
+            }
+            if (missingStep) {
+                cap = Math.min(cap, 0.60F);
+            }
+        }
+        if (attempt != null && attempt.qualityPenalty() > 0.0F) {
+            cap = Math.min(cap, 1.0F - attempt.qualityPenalty() * 0.35F);
+        }
+        return Mth.clamp(cap, 0.0F, 1.0F);
+    }
+
+    private static IngredientEvaluation ingredientScore(DishSchemaDefinition schema, DishAttemptContext context) {
+        if (schema.ingredients().isEmpty()) {
+            return IngredientEvaluation.EMPTY;
+        }
+        DishAttemptData attempt = context.attempt();
+        if (attempt != null && schema.key().equals(attempt.schemaKey()) && attempt.ingredientScore() > 0.0F) {
+            return new IngredientEvaluation(attempt.ingredientScore(), attempt.missingCoreIngredient(), attempt.unmeasuredIngredient());
+        }
+
+        float total = 0.0F;
+        int count = 0;
+        boolean missingCore = false;
+        boolean unmeasured = false;
+        for (DishIngredientRequirement ingredient : schema.ingredients()) {
+            float score = ingredientFallbackScore(ingredient, context);
+            total += score;
+            count++;
+            if (ingredient.core() && score < 0.50F) {
+                missingCore = true;
+            }
+            if (ingredient.measuredRequired() && score > 0.0F && !hasMeasuredContext(context)) {
+                unmeasured = true;
+            }
+        }
+        return new IngredientEvaluation(count > 0 ? Mth.clamp(total / count, 0.0F, 1.0F) : 1.0F, missingCore, unmeasured);
+    }
+
+    private static boolean hasMeasuredContext(DishAttemptContext context) {
+        return context.stack() != null && !context.stack().isEmpty() && KitchenStackUtil.isMeasured(context.stack());
+    }
+
+    private static float ingredientFallbackScore(DishIngredientRequirement ingredient, DishAttemptContext context) {
+        FoodMatterData matter = context.matter();
+        ItemStack stack = context.stack();
+        boolean itemMatched = stack != null && !stack.isEmpty()
+                && ingredient.item().map(item -> KitchenStackUtil.itemKey(stack).equals(item)).orElse(false);
+        boolean traitMatched = matter != null
+                && (ingredient.allTraits().isEmpty() || ingredient.allTraits().stream().allMatch(matter::hasTrait))
+                && (ingredient.anyTraits().isEmpty() || ingredient.anyTraits().stream().anyMatch(matter::hasTrait));
+        boolean matched = itemMatched || traitMatched;
+        if (!matched) {
+            return 0.0F;
+        }
+        if (!ingredient.hasMeasuredAmount()) {
+            return 1.0F;
+        }
+        if (stack == null || stack.isEmpty()) {
+            return 1.0F;
+        }
+        float amount = KitchenStackUtil.measuredAmount(stack, ingredient.unit());
+        if (amount >= ingredient.minAmount() && amount <= ingredient.maxAmount()) {
+            return 1.0F;
+        }
+        if (amount < ingredient.minAmount()) {
+            return Mth.clamp(amount / Math.max(0.001F, ingredient.minAmount()), 0.0F, 1.0F);
+        }
+        return Mth.clamp(ingredient.maxAmount() / Math.max(0.001F, amount), 0.0F, 1.0F);
     }
 
     private static float roleScore(List<DishRoleRequirement> roles, FoodMatterData matter) {
@@ -166,5 +288,9 @@ public final class DishSchemaScorer {
 
     private static Item itemFor(DishSchemaDefinition schema) {
         return BuiltInRegistries.ITEM.get(schema.result());
+    }
+
+    private record IngredientEvaluation(float score, boolean missingCore, boolean unmeasured) {
+        private static final IngredientEvaluation EMPTY = new IngredientEvaluation(1.0F, false, false);
     }
 }

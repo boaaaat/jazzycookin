@@ -7,10 +7,13 @@ import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptData;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -105,6 +108,8 @@ public final class KitchenStackUtil {
             stack.remove(JazzyDataComponents.FOOD_STATE.get());
             stack.remove(JazzyDataComponents.SPOILAGE_DISPLAY.get());
             stack.remove(JazzyDataComponents.COOKING_DISPLAY.get());
+            stack.remove(JazzyDataComponents.MEASURED_QUANTITY.get());
+            stack.remove(JazzyDataComponents.DISH_ATTEMPT.get());
             stack.remove(DataComponents.MAX_STACK_SIZE);
             return;
         }
@@ -137,6 +142,77 @@ public final class KitchenStackUtil {
             return true;
         }
         return false;
+    }
+
+    public static MeasuredQuantity measuredQuantity(ItemStack stack) {
+        return stack.get(JazzyDataComponents.MEASURED_QUANTITY.get());
+    }
+
+    public static void setMeasuredQuantity(ItemStack stack, MeasuredQuantity quantity) {
+        if (stack.isEmpty() || quantity == null || quantity.amount() <= 0.0F) {
+            stack.remove(JazzyDataComponents.MEASURED_QUANTITY.get());
+            return;
+        }
+        stack.set(JazzyDataComponents.MEASURED_QUANTITY.get(), quantity.normalized());
+    }
+
+    public static float measuredAmount(ItemStack stack, MeasureUnit unit) {
+        MeasuredQuantity quantity = measuredQuantity(stack);
+        if (quantity != null && quantity.unit() == unit) {
+            return quantity.amount();
+        }
+        if (quantity != null && quantity.unit() == MeasureUnit.MILLILITER && unit == MeasureUnit.GRAM) {
+            float gramsPerMl = gramsPerMilliliter(quantity.sourceItem());
+            if (gramsPerMl > 0.0F) {
+                return quantity.amount() * gramsPerMl;
+            }
+        }
+        if (quantity != null && quantity.unit() == MeasureUnit.GRAM && unit == MeasureUnit.MILLILITER) {
+            float gramsPerMl = gramsPerMilliliter(quantity.sourceItem());
+            if (gramsPerMl > 0.0F) {
+                return quantity.amount() / gramsPerMl;
+            }
+        }
+        if (unit == MeasureUnit.COUNT || unit == MeasureUnit.SLICE) {
+            return Math.max(1, stack.getCount());
+        }
+        return Math.max(1, stack.getCount());
+    }
+
+    public static boolean isMeasured(ItemStack stack) {
+        MeasuredQuantity quantity = measuredQuantity(stack);
+        return quantity != null && quantity.measured();
+    }
+
+    public static DishAttemptData dishAttempt(ItemStack stack) {
+        DishAttemptData attempt = stack.get(JazzyDataComponents.DISH_ATTEMPT.get());
+        return attempt != null ? attempt.normalized() : DishAttemptData.EMPTY;
+    }
+
+    public static void setDishAttempt(ItemStack stack, DishAttemptData attempt) {
+        if (stack.isEmpty() || attempt == null || attempt.schemaKey().isBlank()) {
+            stack.remove(JazzyDataComponents.DISH_ATTEMPT.get());
+            return;
+        }
+        stack.set(JazzyDataComponents.DISH_ATTEMPT.get(), attempt.normalized());
+    }
+
+    public static ResourceLocation itemKey(ItemStack stack) {
+        return BuiltInRegistries.ITEM.getKey(stack.getItem());
+    }
+
+    private static float gramsPerMilliliter(ResourceLocation itemId) {
+        if (itemId == null) {
+            return 0.0F;
+        }
+        String path = itemId.getPath();
+        if (path.contains("flour")) {
+            return 120.0F / 240.0F;
+        }
+        if (path.contains("sugar")) {
+            return 200.0F / 240.0F;
+        }
+        return 0.0F;
     }
 
     public static void initializeStack(ItemStack stack, IngredientState state, FoodMatterData matter, long gameTime) {

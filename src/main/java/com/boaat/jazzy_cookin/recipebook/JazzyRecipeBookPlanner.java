@@ -21,11 +21,14 @@ import org.jetbrains.annotations.Nullable;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.KitchenSourceProfile;
+import com.boaat.jazzy_cookin.kitchen.MeasuredQuantity;
 import com.boaat.jazzy_cookin.kitchen.ProcessMode;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishIngredientRequirement;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishRoleRequirement;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
@@ -535,7 +538,7 @@ public final class JazzyRecipeBookPlanner {
         boolean platedGuide = schema.requiredTechniques().contains(DishTechnique.PLATED);
         List<Requirement> requirements = platedGuide
                 ? schemaPlatingRequirements(schema)
-                : schemaRoleRequirements(schema.requiredRoles());
+                : !schema.ingredients().isEmpty() ? schemaIngredientRequirements(schema.ingredients()) : schemaRoleRequirements(schema.requiredRoles());
         List<OutputKey> prerequisites = schemaPrerequisites(schema);
         DishTechnique primaryTechnique = primaryTechnique(schema);
         StationType station = stationFor(primaryTechnique);
@@ -600,6 +603,9 @@ public final class JazzyRecipeBookPlanner {
         if (schema.requiredTechniques().contains(DishTechnique.MIXED)) {
             return DishTechnique.MIXED;
         }
+        if (schema.requiredTechniques().contains(DishTechnique.DIP_OR_COAT)) {
+            return DishTechnique.DIP_OR_COAT;
+        }
         if (schema.requiredTechniques().contains(DishTechnique.CUT) || schema.requiredTechniques().contains(DishTechnique.PREPPED)) {
             return DishTechnique.CUT;
         }
@@ -614,7 +620,7 @@ public final class JazzyRecipeBookPlanner {
             case PLATED -> StationType.PLATING_STATION;
             case PAN_FRIED, SIMMERED -> StationType.STOVE;
             case BAKED -> StationType.OVEN;
-            case MIXED -> StationType.MIXING_BOWL;
+            case MIXED, DIP_OR_COAT -> StationType.MIXING_BOWL;
             case CUT, PREPPED -> StationType.PREP_TABLE;
             case RESTED -> StationType.RESTING_BOARD;
         };
@@ -629,6 +635,7 @@ public final class JazzyRecipeBookPlanner {
             case MIXED -> schema.requiredRoles().stream().anyMatch(role -> role.role().getSerializedName().equals("grain"))
                     ? KitchenMethod.KNEAD
                     : KitchenMethod.MIX;
+            case DIP_OR_COAT -> KitchenMethod.BATTER;
             case CUT, PREPPED -> KitchenMethod.CUT;
             case RESTED -> KitchenMethod.REST;
         };
@@ -642,6 +649,7 @@ public final class JazzyRecipeBookPlanner {
             case MIXED -> schema.requiredRoles().stream().anyMatch(role -> role.role().getSerializedName().equals("grain"))
                     ? ToolProfile.ROLLING_PIN
                     : ToolProfile.WHISK;
+            case DIP_OR_COAT -> ToolProfile.WHISK;
             case CUT, PREPPED -> ToolProfile.CHEF_KNIFE;
             default -> null;
         };
@@ -660,6 +668,7 @@ public final class JazzyRecipeBookPlanner {
             case MIXED -> preferredTool == ToolProfile.ROLLING_PIN
                     ? List.of(ToolProfile.ROLLING_PIN, ToolProfile.WHISK)
                     : List.of(ToolProfile.WHISK);
+            case DIP_OR_COAT -> List.of(ToolProfile.WHISK, ToolProfile.SPOON, ToolProfile.FORK);
             case CUT, PREPPED -> List.of(ToolProfile.KNIFE, ToolProfile.CHEF_KNIFE, ToolProfile.PARING_KNIFE);
             default -> List.of(preferredTool);
         };
@@ -672,6 +681,7 @@ public final class JazzyRecipeBookPlanner {
             case SIMMERED -> 220;
             case BAKED -> 260;
             case MIXED -> 60;
+            case DIP_OR_COAT -> 45;
             case CUT, PREPPED -> 36;
             case RESTED -> 80;
         };
@@ -714,6 +724,40 @@ public final class JazzyRecipeBookPlanner {
         return requirements;
     }
 
+    private static List<Requirement> schemaIngredientRequirements(List<DishIngredientRequirement> ingredients) {
+        List<Requirement> requirements = new ArrayList<>();
+        for (DishIngredientRequirement ingredient : ingredients) {
+            List<ItemStack> choices = ingredient.item()
+                    .map(itemId -> {
+                        Item item = BuiltInRegistries.ITEM.get(itemId);
+                        if (item == Items.AIR) {
+                            return List.<ItemStack>of();
+                        }
+                        ItemStack stack = RecipeBookDisplayUtil.displayStack(new ItemStack(item), RecipeBookDisplayUtil.defaultStateForItem(item), 1);
+                        if (ingredient.hasMeasuredAmount() && ingredient.measuredRequired()) {
+                            KitchenStackUtil.setMeasuredQuantity(stack, new MeasuredQuantity(
+                                    ingredient.idealAmount(),
+                                    ingredient.unit(),
+                                    ingredient.idealAmount() + " " + ingredient.unit().getSerializedName(),
+                                    itemId,
+                                    true
+                            ));
+                        }
+                        return List.of(stack);
+                    })
+                    .orElseGet(() -> exampleStacksFor(new DishRoleRequirement(ingredient.role(), ingredient.anyTraits(), ingredient.allTraits(), 1.0F)));
+            if (choices.isEmpty()) {
+                continue;
+            }
+            IngredientState state = ingredient.state().orElse(RecipeBookDisplayUtil.defaultStateForItem(choices.get(0).getItem()));
+            OutputKey dependency = choices.size() == 1 && RecipeBookDisplayUtil.isModItem(choices.get(0).getItem())
+                    ? RecipeBookDisplayUtil.outputKey(choices.get(0), state)
+                    : null;
+            requirements.add(new Requirement(choices, state, 1, dependency));
+        }
+        return requirements;
+    }
+
     private static List<Requirement> schemaPlatingRequirements(DishSchemaDefinition schema) {
         List<Requirement> requirements = new ArrayList<>();
         for (String prerequisiteSchema : schema.prerequisiteSchemas()) {
@@ -723,7 +767,7 @@ public final class JazzyRecipeBookPlanner {
             }
         }
         if (requirements.isEmpty()) {
-            requirements.addAll(schemaRoleRequirements(schema.requiredRoles()));
+            requirements.addAll(!schema.ingredients().isEmpty() ? schemaIngredientRequirements(schema.ingredients()) : schemaRoleRequirements(schema.requiredRoles()));
         }
         for (ResourceLocation servingItemId : schema.servingItems()) {
             Item servingItem = BuiltInRegistries.ITEM.get(servingItemId);

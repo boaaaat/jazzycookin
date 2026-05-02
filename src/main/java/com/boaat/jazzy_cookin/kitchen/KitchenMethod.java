@@ -19,6 +19,7 @@ public enum KitchenMethod implements StringRepresentable {
     GRIND("grind"),
     STRAIN("strain"),
     MIX("mix"),
+    MEASURE("measure"),
     PROCESS("process"),
     BLEND("blend"),
     JUICE("juice"),

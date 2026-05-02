@@ -8,14 +8,92 @@
   "finalize_threshold": 0.6,
   "desirability": 0.84,
   "required_roles": [
-    { "role": "protein", "any_traits": [ "legume", "plant_protein" ], "weight": 0.8 },
-    { "role": "liquid", "any_traits": [ "tomato", "sauce", "vegetable" ], "weight": 0.45 }
+    {
+      "role": "protein",
+      "any_traits": [
+        "legume",
+        "plant_protein"
+      ],
+      "weight": 0.8
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "tomato",
+        "sauce",
+        "vegetable"
+      ],
+      "weight": 0.45
+    }
   ],
   "optional_roles": [
-    { "role": "garnish", "any_traits": [ "herb", "salt", "spice", "acidic" ], "weight": 0.25 }
+    {
+      "role": "garnish",
+      "any_traits": [
+        "herb",
+        "salt",
+        "spice",
+        "acidic"
+      ],
+      "weight": 0.25
+    }
   ],
-  "required_techniques": [ "plated" ],
-  "prerequisite_schemas": [ "chana_masala_prep" ],
-  "serving_items": [ "jazzycookin:ceramic_bowl" ],
-  "weights": { "roles": 0.26, "composition": 0.1, "seasoning": 0.14, "cooking": 0.18, "texture": 0.12, "technique": 0.08, "presentation": 0.12 }
+  "required_techniques": [
+    "plated"
+  ],
+  "prerequisite_schemas": [
+    "chana_masala_prep"
+  ],
+  "serving_items": [
+    "jazzycookin:ceramic_bowl"
+  ],
+  "weights": {
+    "roles": 0.26,
+    "composition": 0.1,
+    "seasoning": 0.14,
+    "cooking": 0.18,
+    "texture": 0.12,
+    "technique": 0.08,
+    "presentation": 0.12
+  },
+  "ingredients": [
+    {
+      "role": "protein",
+      "any_traits": [
+        "legume",
+        "plant_protein"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "tomato",
+        "sauce",
+        "vegetable"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "plated",
+      "station": "plating_station",
+      "technique": "plated",
+      "prerequisites": [],
+      "progress_target": 1.0
+    }
+  ]
 }

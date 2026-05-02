@@ -94,5 +94,45 @@
       "max": 0.58,
       "softness": 0.18
     }
-  }
+  },
+  "ingredients": [
+    {
+      "role": "protein",
+      "any_traits": [
+        "legume",
+        "plant_protein"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "sauce",
+        "tomato",
+        "vegetable"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "simmered",
+      "station": "stove",
+      "technique": "simmered",
+      "prerequisites": [],
+      "progress_target": 1.0
+    }
+  ]
 }

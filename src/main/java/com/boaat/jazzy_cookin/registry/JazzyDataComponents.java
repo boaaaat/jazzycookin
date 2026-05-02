@@ -2,8 +2,10 @@ package com.boaat.jazzy_cookin.registry;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
+import com.boaat.jazzy_cookin.kitchen.MeasuredQuantity;
 import com.boaat.jazzy_cookin.kitchen.SpoilageDisplayData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptData;
 
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
@@ -36,6 +38,18 @@ public final class JazzyDataComponents {
             DATA_COMPONENTS.registerComponentType(
                     "cooking_display",
                     builder -> builder.networkSynchronized(ByteBufCodecs.BOOL)
+            );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<MeasuredQuantity>> MEASURED_QUANTITY =
+            DATA_COMPONENTS.registerComponentType(
+                    "measured_quantity",
+                    builder -> builder.persistent(MeasuredQuantity.CODEC)
+            );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<DishAttemptData>> DISH_ATTEMPT =
+            DATA_COMPONENTS.registerComponentType(
+                    "dish_attempt",
+                    builder -> builder.persistent(DishAttemptData.CODEC)
             );
 
     private JazzyDataComponents() {

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
+import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
@@ -18,6 +19,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 
@@ -59,8 +61,8 @@ final class PanSchemaSimulationActions {
         return Math.round(readiness(access).progress() * 100.0F);
     }
 
-    static int previewId(FoodMatterData matter) {
-        return bestPanScore(matter, false)
+    static int previewId(StationSimulationAccess access, FoodMatterData matter) {
+        return bestPanScore(access, matter, false)
                 .map(score -> score.schema().previewId())
                 .orElse(0);
     }
@@ -88,7 +90,7 @@ final class PanSchemaSimulationActions {
         }
 
         FoodMatterData matter = access.simulationBatch().matter();
-        Optional<DishSchemaScore> score = bestPanScore(matter, true);
+        Optional<DishSchemaScore> score = bestPanScore(access, matter, true);
         if (score.isEmpty()) {
             return false;
         }
@@ -118,6 +120,7 @@ final class PanSchemaSimulationActions {
                 SimulationIngredientAnalysis.analyzeStacks(foodInputStacks(access), access.simulationLevel().getGameTime()),
                 finalized
         );
+        KitchenStackUtil.setDishAttempt(output, DishAttemptAssembler.build(score.get().schema(), DishAttemptAssembler.view(access), readiness.quality()));
         if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
             return false;
         }
@@ -237,18 +240,22 @@ final class PanSchemaSimulationActions {
         if (access.simulationLevel() == null) {
             return Optional.empty();
         }
-        return bestPanScore(inputMatter(access, access.simulationLevel().getGameTime()), false);
+        return bestPanScore(access, inputMatter(access, access.simulationLevel().getGameTime()), false);
     }
 
-    private static Optional<DishSchemaScore> bestPanScore(FoodMatterData matter, boolean finalize) {
+    private static Optional<DishSchemaScore> bestPanScore(StationSimulationAccess access, FoodMatterData matter, boolean finalize) {
         if (matter == null) {
             return Optional.empty();
         }
-
-        DishAttemptContext context = DishAttemptContext.fromMatter(matter);
+        DishAttemptAssembler.StationSimulationAccessView view = DishAttemptAssembler.view(access);
         return DishSchemaScorer.schemas().stream()
                 .filter(PanSchemaSimulationActions::isPanSchema)
-                .map(schema -> DishSchemaScorer.score(schema, context))
+                .map(schema -> {
+                    ItemStack projected = new ItemStack(BuiltInRegistries.ITEM.get(schema.result()));
+                    KitchenStackUtil.setDishAttempt(projected, DishAttemptAssembler.build(schema, view, readiness(access).quality()));
+                    DishAttemptContext context = new DishAttemptContext(matter, IngredientState.PAN_FRIED, projected, KitchenStackUtil.dishAttempt(projected));
+                    return DishSchemaScorer.score(schema, context);
+                })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .filter(score -> score.resultItem().get() instanceof KitchenIngredientItem)

@@ -1,0 +1,195 @@
+{
+  "key": "french_toast_batter",
+  "preview_id": 1178,
+  "result": "jazzycookin:batter_mix",
+  "category": "pan_dish",
+  "preview_threshold": 0.68,
+  "finalize_threshold": 0.72,
+  "desirability": 0.82,
+  "required_roles": [
+    {
+      "role": "binder",
+      "any_traits": [
+        "egg"
+      ],
+      "weight": 0.9
+    },
+    {
+      "role": "liquid",
+      "any_traits": [
+        "dairy"
+      ],
+      "weight": 0.75
+    },
+    {
+      "role": "grain",
+      "any_traits": [
+        "flour",
+        "wheat"
+      ],
+      "weight": 0.55
+    },
+    {
+      "role": "sweetener",
+      "any_traits": [
+        "sweetener"
+      ],
+      "weight": 0.42
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "weight": 0.16
+    },
+    {
+      "role": "spice",
+      "any_traits": [
+        "spice"
+      ],
+      "weight": 0.18
+    }
+  ],
+  "required_techniques": [
+    "mixed"
+  ],
+  "ingredients": [
+    {
+      "item": "jazzycookin:eggs",
+      "role": "binder",
+      "any_traits": [
+        "egg"
+      ],
+      "ideal_amount": 4,
+      "min_amount": 3.5,
+      "max_amount": 4.5,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "item": "jazzycookin:almond_milk",
+      "role": "liquid",
+      "any_traits": [
+        "dairy"
+      ],
+      "ideal_amount": 160,
+      "min_amount": 135,
+      "max_amount": 185,
+      "unit": "ml",
+      "core": true,
+      "measured_required": true
+    },
+    {
+      "item": "jazzycookin:all_purpose_flour",
+      "role": "grain",
+      "any_traits": [
+        "flour",
+        "wheat"
+      ],
+      "ideal_amount": 30,
+      "min_amount": 24,
+      "max_amount": 38,
+      "unit": "g",
+      "core": true,
+      "measured_required": true
+    },
+    {
+      "item": "jazzycookin:white_sugar",
+      "role": "sweetener",
+      "any_traits": [
+        "sweetener"
+      ],
+      "ideal_amount": 50,
+      "min_amount": 40,
+      "max_amount": 62,
+      "unit": "g",
+      "core": true,
+      "measured_required": true
+    },
+    {
+      "item": "jazzycookin:table_salt",
+      "role": "salt",
+      "any_traits": [
+        "salt"
+      ],
+      "ideal_amount": 1.25,
+      "min_amount": 0.5,
+      "max_amount": 2.5,
+      "unit": "ml",
+      "core": false,
+      "measured_required": true
+    },
+    {
+      "item": "jazzycookin:cinnamon",
+      "role": "spice",
+      "any_traits": [
+        "spice"
+      ],
+      "ideal_amount": 5,
+      "min_amount": 3,
+      "max_amount": 7,
+      "unit": "ml",
+      "core": false,
+      "measured_required": true
+    },
+    {
+      "item": "jazzycookin:vanilla_extract",
+      "role": "spice",
+      "any_traits": [
+        "spice"
+      ],
+      "ideal_amount": 5,
+      "min_amount": 3,
+      "max_amount": 7,
+      "unit": "ml",
+      "core": false,
+      "measured_required": true
+    }
+  ],
+  "steps": [
+    {
+      "id": "batter",
+      "station": "mixing_bowl",
+      "technique": "mixed",
+      "tool": "whisk",
+      "prerequisites": [],
+      "progress_target": 1.0,
+      "output_state": "batter"
+    }
+  ],
+  "targets": {
+    "water": {
+      "min": 0.24,
+      "max": 0.62,
+      "softness": 0.18
+    },
+    "protein": {
+      "min": 0.08,
+      "max": 0.34,
+      "softness": 0.18
+    },
+    "aeration": {
+      "min": 0.08,
+      "max": 0.46,
+      "softness": 0.18
+    },
+    "cohesiveness": {
+      "min": 0.28,
+      "max": 0.72,
+      "softness": 0.18
+    }
+  },
+  "weights": {
+    "roles": 0.18,
+    "composition": 0.18,
+    "seasoning": 0.12,
+    "cooking": 0.04,
+    "texture": 0.18,
+    "technique": 0.12,
+    "presentation": 0.04
+  }
+}
