@@ -127,17 +127,16 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.startButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.start"), button -> this.sendButton(this.primaryActionButtonId()))
                     .bounds(this.leftPos + primary.x(), this.topPos + primary.y(), primary.width(), primary.height())
                     .build());
-            this.startButton.setAlpha(0.0F);
             LayoutRegion secondary = this.layout.secondaryAction().bounds();
-            this.secondaryActionButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.stir"), button -> this.sendButton(7))
+            Component secondaryLabel = this.menu.stationType() == StationType.OVEN ? this.ovenPreheatButtonText() : Component.translatable("screen.jazzycookin.stir");
+            this.secondaryActionButton = this.addRenderableWidget(Button.builder(secondaryLabel,
+                    button -> this.sendButton(this.menu.stationType() == StationType.OVEN ? 4000 : 7))
                     .bounds(this.leftPos + secondary.x(), this.topPos + secondary.y(), secondary.width(), secondary.height())
                     .build());
-            this.secondaryActionButton.setAlpha(0.0F);
             LayoutRegion tertiary = this.layout.tertiaryAction().bounds();
             this.tertiaryActionButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.fold_flip"), button -> this.sendButton(8))
                     .bounds(this.leftPos + tertiary.x(), this.topPos + tertiary.y(), tertiary.width(), tertiary.height())
                     .build());
-            this.tertiaryActionButton.setAlpha(0.0F);
 
             int recipeButtonWidth = Math.max(66, this.font.width(Component.translatable("screen.jazzycookin.recipe_book_short")) + 14);
             this.recipeBookButton = this.addRenderableWidget(Button.builder(Component.translatable("screen.jazzycookin.recipe_book_short"),
@@ -168,18 +167,18 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                 LayoutRegion low = this.layout.lowHeatAction().bounds();
                 LayoutRegion medium = this.layout.mediumHeatAction().bounds();
                 LayoutRegion high = this.layout.highHeatAction().bounds();
-                this.lowHeatButton = this.addRenderableWidget(Button.builder(Component.literal("L"), button -> this.sendButton(1))
+                this.lowHeatButton = this.addRenderableWidget(Button.builder(Component.literal("L"),
+                        button -> this.sendButton(this.menu.stationType() == StationType.STOVE ? 3102 : 1))
                         .bounds(this.leftPos + low.x(), this.topPos + low.y(), low.width(), low.height())
                         .build());
-                this.lowHeatButton.setAlpha(0.0F);
-                this.mediumHeatButton = this.addRenderableWidget(Button.builder(Component.literal("M"), button -> this.sendButton(2))
+                this.mediumHeatButton = this.addRenderableWidget(Button.builder(Component.literal("M"),
+                        button -> this.sendButton(this.menu.stationType() == StationType.STOVE ? 3104 : 2))
                         .bounds(this.leftPos + medium.x(), this.topPos + medium.y(), medium.width(), medium.height())
                         .build());
-                this.mediumHeatButton.setAlpha(0.0F);
-                this.highHeatButton = this.addRenderableWidget(Button.builder(Component.literal("H"), button -> this.sendButton(3))
+                this.highHeatButton = this.addRenderableWidget(Button.builder(Component.literal("H"),
+                        button -> this.sendButton(this.menu.stationType() == StationType.STOVE ? 3105 : 3))
                         .bounds(this.leftPos + high.x(), this.topPos + high.y(), high.width(), high.height())
                         .build());
-                this.highHeatButton.setAlpha(0.0F);
             }
 
             if (this.menu.stationType().supportsStationControl()) {
@@ -188,11 +187,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                 this.lowerControlButton = this.addRenderableWidget(Button.builder(Component.literal("<"), button -> this.sendButton(4))
                         .bounds(this.leftPos + lower.x(), this.topPos + lower.y(), lower.width(), lower.height())
                         .build());
-                this.lowerControlButton.setAlpha(0.0F);
                 this.raiseControlButton = this.addRenderableWidget(Button.builder(Component.literal(">"), button -> this.sendButton(5))
                         .bounds(this.leftPos + raise.x(), this.topPos + raise.y(), raise.width(), raise.height())
                         .build());
-                this.raiseControlButton.setAlpha(0.0F);
             }
         }
 
@@ -200,7 +197,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private boolean usesApplianceUiLib() {
-        return this.menu.stationType() == StationType.STOVE || this.menu.stationType() == StationType.OVEN;
+        return false;
     }
 
     private void resetApplianceWidgets() {
@@ -419,7 +416,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         SlotPositioning.setPosition(toolSlot, this.profile.toolPosition().x(), this.profile.toolPosition().y());
 
         if (this.menu.usesFuelSlot()) {
-            StationUiProfile.Point fuel = this.usesApplianceUiLib() ? this.applianceFuelSlotPosition() : this.profile.toolPosition();
+            StationUiProfile.Point fuel = this.vanillaFuelSlotPosition();
             Slot fuelSlot = this.menu.getSlot(this.menu.fuelMenuSlotIndex());
             SlotPositioning.setPosition(fuelSlot, fuel.x(), fuel.y());
         }
@@ -446,6 +443,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         }
     }
 
+    private StationUiProfile.Point vanillaFuelSlotPosition() {
+        return new StationUiProfile.Point(this.profile.toolPosition().x(), this.profile.toolPosition().y() + 26);
+    }
+
     @Override
     protected void containerTick() {
         super.containerTick();
@@ -464,9 +465,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.startButton.active = this.primaryActionActive();
         }
         if (this.secondaryActionButton != null) {
-            boolean panSimulation = this.isPanSimulation();
-            this.secondaryActionButton.visible = panSimulation;
-            this.secondaryActionButton.active = panSimulation && this.menu.simulationBatchPresent();
+            if (this.menu.stationType() == StationType.OVEN) {
+                this.secondaryActionButton.setMessage(this.ovenPreheatButtonText());
+                this.secondaryActionButton.visible = true;
+                this.secondaryActionButton.active = true;
+            } else {
+                boolean panSimulation = this.isPanSimulation();
+                this.secondaryActionButton.visible = panSimulation;
+                this.secondaryActionButton.active = panSimulation && this.menu.simulationBatchPresent();
+            }
         }
         if (this.tertiaryActionButton != null) {
             boolean panSimulation = this.isPanSimulation();
@@ -732,53 +739,15 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         int left = this.leftPos;
         int top = this.topPos;
-        StationUiProfile.Theme theme = this.profile.theme();
-
-        if (this.usesApplianceUiLib()) {
-            this.renderApplianceBackground(guiGraphics, left, top, theme);
-            for (int slotIndex = 0; slotIndex < this.menu.slots.size(); slotIndex++) {
-                Slot slot = this.menu.getSlot(slotIndex);
-                if (slotIndex == this.menu.toolMenuSlotIndex() && !this.menu.stationType().usesTools()) {
-                    JazzyGuiRenderer.drawDisabledSlot(guiGraphics, left + slot.x, top + slot.y);
-                } else {
-                    JazzyGuiRenderer.drawSlot(guiGraphics, left + slot.x, top + slot.y);
-                }
-            }
-            return;
-        }
-
-        JazzyGuiRenderer.drawStationShell(guiGraphics, left, top, this.imageWidth, this.imageHeight, theme);
-        JazzyGuiRenderer.drawWorkspaceBackdrop(guiGraphics, left, top, this.layout.workspaceRegion(), this.layout.toolRegion(), theme, this.layout.family());
-        JazzyGuiRenderer.drawPreviewBackdrop(guiGraphics, left, top, this.layout.previewRegion(), this.layout.outputRegion(), this.layout.byproductRegion(), theme);
-        JazzyGuiRenderer.drawMetricCluster(guiGraphics, left, top, this.layout.metricClusterRegion(), theme);
-        JazzyGuiRenderer.drawControlStrip(guiGraphics, left, top, this.layout.controlStripRegion(), theme);
-        JazzyGuiRenderer.drawInventoryShelf(guiGraphics, left, top, this.layout.inventoryShelfRegion(), theme);
-
-        Component methodLabel = this.menu.currentMethod().displayName();
-        LayoutRegion chipBounds = this.headerChipBounds(methodLabel);
-        if (chipBounds != null) {
-            JazzyGuiRenderer.drawChip(
-                    guiGraphics,
-                    left + chipBounds.x(),
-                    top + chipBounds.y(),
-                    chipBounds.width(),
-                    chipBounds.height(),
-                    this.menu.currentMethod().isCookMethod(),
-                    theme
-            );
-        }
-
-        if (!this.controlDisplayLabel().getString().isEmpty()) {
-            JazzyGuiRenderer.drawChip(
-                    guiGraphics,
-                    left + this.layout.controlChipRegion().x(),
-                    top + this.layout.controlChipRegion().y(),
-                    this.layout.controlChipRegion().width(),
-                    this.layout.controlChipRegion().height(),
-                    this.menu.stationType().supportsHeat(),
-                    theme
-            );
-        }
+        JazzyGuiRenderer.drawVanillaContainerBackground(guiGraphics, left, top, this.imageWidth, this.imageHeight);
+        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.layout.workspaceRegion().x(), top + this.layout.workspaceRegion().y(),
+                this.layout.workspaceRegion().width(), this.layout.workspaceRegion().height());
+        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.layout.previewRegion().x(), top + this.layout.previewRegion().y(),
+                this.layout.previewRegion().width(), this.layout.previewRegion().height());
+        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.layout.metricClusterRegion().x(), top + this.layout.metricClusterRegion().y(),
+                this.layout.metricClusterRegion().width(), this.layout.metricClusterRegion().height());
+        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.layout.controlStripRegion().x(), top + this.layout.controlStripRegion().y(),
+                this.layout.controlStripRegion().width(), this.layout.controlStripRegion().height());
 
         for (int slotIndex = 0; slotIndex < this.menu.slots.size(); slotIndex++) {
             Slot slot = this.menu.getSlot(slotIndex);
@@ -789,13 +758,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             }
         }
 
-        if (this.visibleSimulationMetrics().isEmpty()) {
-            this.renderStatusLane(guiGraphics, left, top);
-        } else {
-            this.renderSimulationMetrics(guiGraphics, left, top);
-        }
-
-        this.renderActionButtons(guiGraphics, left, top, mouseX, mouseY);
+        SimulationStatusView statusView = this.simulationStatusView();
+        LayoutRegion lane = this.layout.statusLaneRegion();
+        JazzyGuiRenderer.drawVanillaMeter(guiGraphics, left + lane.x(), top + lane.y() + 7, lane.width(), 4,
+                statusView.barRatio(), statusView.barColor());
     }
 
     private void renderApplianceBackground(GuiGraphics guiGraphics, int left, int top, StationUiProfile.Theme theme) {
@@ -1029,14 +995,6 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
 
         this.drawTrimmedLabel(guiGraphics, this.workspaceLabel(), this.layout.workspaceRegion().x() + 8, this.layout.workspaceRegion().y() + 8,
                 this.layout.workspaceRegion().width() - 16, JazzyGuiRenderer.TEXT_MUTED);
-        if (this.menu.stationType().usesTools()) {
-            int toolLabelY = this.layout.toolRegion().bottom() + 4;
-            if (toolLabelY + 8 >= this.layout.controlStripRegion().y()) {
-                toolLabelY = Math.max(this.layout.workspaceRegion().y() + 18, this.layout.toolRegion().y() - 10);
-            }
-            this.drawCenteredTrimmedLabel(guiGraphics, Component.translatable("screen.jazzycookin.tool_short"),
-                    this.layout.toolRegion().centerX(), toolLabelY, this.layout.toolRegion().width() + 18, JazzyGuiRenderer.TEXT_SOFT, false);
-        }
 
         boolean showPreviewSubline = previewStatus.height() >= 20
                 && previewStatus.width() >= 72

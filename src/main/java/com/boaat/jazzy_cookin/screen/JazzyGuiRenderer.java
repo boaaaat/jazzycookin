@@ -8,24 +8,83 @@ import com.boaat.jazzy_cookin.screen.layout.ActionWidgetSpec;
 import com.boaat.jazzy_cookin.screen.layout.LayoutRegion;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 
 final class JazzyGuiRenderer {
-    static final int TITLE_TEXT = 0xF0F2F5;
-    static final int TEXT = 0xE7ECF4;
-    static final int TEXT_MUTED = 0xAFB8C8;
-    static final int TEXT_SOFT = 0x8B96A8;
-    static final int READY_TEXT = 0x4ADE80;
-    static final int BLOCKED_TEXT = 0xF87171;
-    static final int ACCENT = 0x5CC8D0;
-    static final int ACCENT_WARM = 0xF0B429;
+    static final int TITLE_TEXT = 0x404040;
+    static final int TEXT = 0x404040;
+    static final int TEXT_MUTED = 0x606060;
+    static final int TEXT_SOFT = 0x808080;
+    static final int READY_TEXT = 0x2E7D32;
+    static final int BLOCKED_TEXT = 0xAA3333;
+    static final int ACCENT = 0x3F76A8;
+    static final int ACCENT_WARM = 0xB46B24;
 
     private static final int FRAME_OUTER = 0xFF101318;
     private static final int SLOT_EDGE = 0xFF353C4A;
     private static final int SLOT_BASE = 0xFF262C36;
     private static final int SLOT_INNER = 0xFF14181E;
     private static final int SLOT_DISABLED = 0x88101418;
+    private static final ResourceLocation GENERIC_54 = ResourceLocation.withDefaultNamespace("textures/gui/container/generic_54.png");
+    private static final int VANILLA_PANEL = 0xFFC6C6C6;
+    private static final int VANILLA_PANEL_LIGHT = 0xFFFFFFFF;
+    private static final int VANILLA_PANEL_DARK = 0xFF555555;
+    private static final int VANILLA_SLOT_LIGHT = 0xFFFFFFFF;
+    private static final int VANILLA_SLOT_DARK = 0xFF373737;
+    private static final int VANILLA_SLOT_BG = 0xFF8B8B8B;
+    private static final int VANILLA_DISABLED = 0x66A0A0A0;
 
     private JazzyGuiRenderer() {
+    }
+
+    static void drawVanillaContainerBackground(GuiGraphics guiGraphics, int x, int y, int width, int height) {
+        if (width == 176 && height == 222) {
+            guiGraphics.blit(GENERIC_54, x, y, 0, 0, 176, 222);
+            guiGraphics.fill(x + 7, y + 17, x + 169, y + 123, VANILLA_PANEL);
+            bevel(guiGraphics, x + 7, y + 17, 162, 106);
+            return;
+        }
+        guiGraphics.fill(x, y, x + width, y + height, VANILLA_PANEL);
+        bevel(guiGraphics, x, y, width, height);
+    }
+
+    static void drawVanillaSection(GuiGraphics guiGraphics, int x, int y, int width, int height) {
+        guiGraphics.fill(x, y, x + width, y + height, 0xFFD8D8D8);
+        bevel(guiGraphics, x, y, width, height);
+    }
+
+    static void drawSlot(GuiGraphics guiGraphics, int x, int y) {
+        drawVanillaSlot(guiGraphics, x, y);
+    }
+
+    static void drawDisabledSlot(GuiGraphics guiGraphics, int x, int y) {
+        drawVanillaSlot(guiGraphics, x, y);
+        guiGraphics.fill(x, y, x + 16, y + 16, VANILLA_DISABLED);
+    }
+
+    static void drawVanillaMeter(GuiGraphics guiGraphics, int x, int y, int width, int height, float ratio, int color) {
+        guiGraphics.fill(x, y, x + width, y + height, 0xFF8B8B8B);
+        guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, 0xFF373737);
+        int fill = Math.max(0, Math.min(width - 2, Math.round((width - 2) * ratio)));
+        if (fill > 0) {
+            guiGraphics.fill(x + 1, y + 1, x + 1 + fill, y + height - 1, opaque(color));
+        }
+    }
+
+    private static void drawVanillaSlot(GuiGraphics guiGraphics, int x, int y) {
+        guiGraphics.fill(x - 1, y - 1, x + 17, y + 17, VANILLA_SLOT_DARK);
+        guiGraphics.fill(x, y, x + 16, y + 16, VANILLA_SLOT_BG);
+        guiGraphics.fill(x, y, x + 16, y + 1, VANILLA_SLOT_DARK);
+        guiGraphics.fill(x, y, x + 1, y + 16, VANILLA_SLOT_DARK);
+        guiGraphics.fill(x + 15, y, x + 16, y + 16, VANILLA_SLOT_LIGHT);
+        guiGraphics.fill(x, y + 15, x + 16, y + 16, VANILLA_SLOT_LIGHT);
+    }
+
+    private static void bevel(GuiGraphics guiGraphics, int x, int y, int width, int height) {
+        guiGraphics.fill(x, y, x + width, y + 1, VANILLA_PANEL_LIGHT);
+        guiGraphics.fill(x, y, x + 1, y + height, VANILLA_PANEL_LIGHT);
+        guiGraphics.fill(x, y + height - 1, x + width, y + height, VANILLA_PANEL_DARK);
+        guiGraphics.fill(x + width - 1, y, x + width, y + height, VANILLA_PANEL_DARK);
     }
 
     static void drawStationShell(GuiGraphics guiGraphics, int x, int y, int width, int height, StationUiProfile.Theme theme) {
@@ -173,24 +232,11 @@ final class JazzyGuiRenderer {
         guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, bg);
     }
 
-    static void drawSlot(GuiGraphics guiGraphics, int x, int y) {
-        guiGraphics.fill(x - 1, y - 1, x + 17, y + 17, SLOT_EDGE);
-        guiGraphics.fill(x, y, x + 16, y + 16, SLOT_BASE);
-        guiGraphics.fill(x, y, x + 16, y + 1, SLOT_INNER);
-        guiGraphics.fill(x, y, x + 1, y + 16, SLOT_INNER);
-        guiGraphics.fill(x + 1, y + 1, x + 15, y + 15, SLOT_INNER);
-    }
-
-    static void drawDisabledSlot(GuiGraphics guiGraphics, int x, int y) {
-        drawSlot(guiGraphics, x, y);
-        guiGraphics.fill(x + 1, y + 1, x + 15, y + 15, SLOT_DISABLED);
-    }
-
     static void drawStorageTab(GuiGraphics guiGraphics, int x, int y, boolean hovered, boolean selected, StorageType storageType) {
-        Palette palette = paletteFor(storageTheme(storageType));
-        int frame = selected ? palette.headerAccent() : hovered ? pale(palette.headerAccent(), 0.30F) : palette.panelBorder();
+        int frame = selected ? 0xFF6F6F6F : hovered ? 0xFF8F8F8F : 0xFF555555;
         guiGraphics.fill(x, y, x + 22, y + 22, frame);
-        guiGraphics.fill(x + 1, y + 1, x + 21, y + 21, palette.panelSurface());
+        guiGraphics.fill(x + 1, y + 1, x + 21, y + 21, 0xFFC6C6C6);
+        bevel(guiGraphics, x + 1, y + 1, 20, 20);
         drawSlot(guiGraphics, x + 3, y + 3);
     }
 

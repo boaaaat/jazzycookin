@@ -57,11 +57,9 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
             this.previousPageButton = this.addRenderableWidget(Button.builder(Component.literal("^"), pressed -> this.changePantryPage(-1))
                     .bounds(this.leftPos + up.x(), this.topPos + up.y(), up.width(), up.height())
                     .build());
-            this.previousPageButton.setAlpha(0.0F);
             this.nextPageButton = this.addRenderableWidget(Button.builder(Component.literal("v"), pressed -> this.changePantryPage(1))
                     .bounds(this.leftPos + down.x(), this.topPos + down.y(), down.width(), down.height())
                     .build());
-            this.nextPageButton.setAlpha(0.0F);
             for (int index = 0; index < PantrySortTab.tabs().size(); index++) {
                 this.addTab(PantrySortTab.tabs().get(index), this.profile.tabBounds(index));
             }
@@ -139,12 +137,11 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         int left = this.leftPos;
         int top = this.topPos;
 
-        JazzyGuiRenderer.drawStorageShell(guiGraphics, left, top, this.imageWidth, this.imageHeight, this.menu.storageType());
-        JazzyGuiRenderer.drawPanel(guiGraphics, left + this.profile.storageRegion().x(), top + this.profile.storageRegion().y(),
-                this.profile.storageRegion().width(), this.profile.storageRegion().height(),
-                storageTheme(), JazzyGuiRenderer.PanelStyle.WORKSPACE);
-        JazzyGuiRenderer.drawStorageSupport(guiGraphics, left, top, this.profile.supportRegion(), this.menu.storageType());
-        JazzyGuiRenderer.drawInventoryShelf(guiGraphics, left, top, this.profile.inventoryShelfRegion(), storageTheme());
+        JazzyGuiRenderer.drawVanillaContainerBackground(guiGraphics, left, top, this.imageWidth, this.imageHeight);
+        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.profile.storageRegion().x(), top + this.profile.storageRegion().y(),
+                this.profile.storageRegion().width(), this.profile.storageRegion().height());
+        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.profile.supportRegion().x(), top + this.profile.supportRegion().y(),
+                this.profile.supportRegion().width(), this.profile.supportRegion().height());
 
         for (int slotIndex = 0; slotIndex < this.menu.slots.size(); slotIndex++) {
             JazzyGuiRenderer.drawSlot(guiGraphics, left + this.menu.getSlot(slotIndex).x, top + this.menu.getSlot(slotIndex).y);
@@ -154,13 +151,6 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
             for (PantryTabButton tab : this.pantryTabs) {
                 this.drawPantryTab(guiGraphics, tab, mouseX, mouseY);
             }
-            this.drawPageButton(guiGraphics, this.previousPageButton, this.profile.pageUpBounds(), mouseX, mouseY, "^");
-            this.drawPageButton(guiGraphics, this.nextPageButton, this.profile.pageDownBounds(), mouseX, mouseY, "v");
-        }
-
-        LayoutRegion chipBounds = this.headerChipBounds();
-        if (chipBounds != null) {
-            JazzyGuiRenderer.drawChip(guiGraphics, left + chipBounds.x(), top + chipBounds.y(), chipBounds.width(), chipBounds.height(), false, storageTheme());
         }
     }
 
@@ -168,14 +158,7 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         this.drawTrimmedLabel(guiGraphics, this.title, this.profile.titleRegion().x(), this.profile.titleRegion().y(),
                 this.profile.titleRegion().width(), JazzyGuiRenderer.TITLE_TEXT);
-        LayoutRegion chipBounds = this.headerChipBounds();
-        if (chipBounds != null) {
-            this.drawCenteredTrimmedLabel(guiGraphics, this.menu.storageType().displayName(), chipBounds.centerX(), chipBounds.y() + 4,
-                    chipBounds.width() - 10, JazzyGuiRenderer.TEXT, false);
-        }
 
-        guiGraphics.drawString(this.font, Component.translatable("screen.jazzycookin.storage_short"),
-                this.profile.storageRegion().x() + 8, this.profile.storageRegion().y() + 8, JazzyGuiRenderer.TEXT_MUTED, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.profile.inventoryLabelRegion().x(), this.profile.inventoryLabelRegion().y(),
                 JazzyGuiRenderer.TEXT, false);
 

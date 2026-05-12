@@ -33,6 +33,8 @@ public record StationUiProfile(
     private static final int MIN_HEIGHT = 244;
     private static final int MAX_WIDTH = 384;
     private static final int MAX_HEIGHT = 324;
+    private static final int VANILLA_WIDTH = 176;
+    private static final int VANILLA_HEIGHT = 222;
     private static final int SLOT_SIZE = 18;
 
     public StationUiProfile {
@@ -309,16 +311,11 @@ public record StationUiProfile(
     }
 
     public StationUiProfile resolve(int screenWidth, int screenHeight) {
-        int resolvedWidth = resolveWidth(screenWidth, this.width);
-        int resolvedHeight = resolveHeight(screenHeight, this.height);
-        if (resolvedWidth == this.width && resolvedHeight == this.height) {
-            return this;
-        }
         return buildProfile(
                 this.stationType,
                 this.theme,
-                resolvedWidth,
-                resolvedHeight,
+                VANILLA_WIDTH,
+                VANILLA_HEIGHT,
                 this.inputPositions,
                 this.toolPosition,
                 this.outputPosition,
@@ -600,88 +597,52 @@ public record StationUiProfile(
             LayoutRegion byproductRegion,
             LayoutRegion metricRegion
     ) {
+        width = VANILLA_WIDTH;
+        height = VANILLA_HEIGHT;
         StationCapacityProfile resolvedCapacity = StationCapacityProfile.forStation(stationType);
-        int margin = width <= 300 ? 14 : 18;
-        int contentTop = 40;
-        int controlHeight = stationType == StationType.OVEN ? 48 : stationType == StationType.STOVE ? 36 : 28;
-        int inventoryStartY = height - 84;
-        int hotbarY = height - 26;
-        LayoutRegion inventoryShelf = new LayoutRegion(10, inventoryStartY - 17, width - 20, 91);
-        int controlTop = inventoryShelf.y() - controlHeight - 8;
-        int contentHeight = Math.max(24, controlTop - contentTop - 8);
+        int inventoryStartY = 140;
+        int hotbarY = 198;
+        LayoutRegion inventoryShelf = new LayoutRegion(0, 126, 176, 96);
 
-        int previewWidth = clamp(Math.round(width * 0.26F), 66, width >= LARGE_WIDTH ? 104 : 92);
-        int metricWidth = clamp(Math.round(width * 0.18F), 48, width >= LARGE_WIDTH ? 70 : 60);
-        int gap = width <= 300 ? 6 : 8;
-        int workspaceWidth = width - margin * 2 - previewWidth - metricWidth - gap * 2;
-        if (workspaceWidth < 116) {
-            int shortage = 116 - workspaceWidth;
-            int previewReduction = Math.min(shortage, Math.max(0, previewWidth - 62));
-            previewWidth -= previewReduction;
-            shortage -= previewReduction;
-            metricWidth -= Math.min(shortage, Math.max(0, metricWidth - 44));
-            workspaceWidth = width - margin * 2 - previewWidth - metricWidth - gap * 2;
-        }
+        LayoutRegion resolvedWorkspaceRegion = new LayoutRegion(8, 18, 122, 58);
+        LayoutRegion resolvedPreviewRegion = new LayoutRegion(134, 18, 34, 58);
+        LayoutRegion resolvedMetricRegion = new LayoutRegion(8, 80, 160, 14);
+        LayoutRegion controlStrip = new LayoutRegion(8, 100, 160, 22);
 
-        LayoutRegion resolvedWorkspaceRegion = new LayoutRegion(margin, contentTop, Math.max(104, workspaceWidth), contentHeight);
-        LayoutRegion resolvedMetricRegion = new LayoutRegion(resolvedWorkspaceRegion.right() + gap, contentTop, metricWidth, contentHeight);
-        LayoutRegion resolvedPreviewRegion = new LayoutRegion(resolvedMetricRegion.right() + gap, contentTop,
-                width - margin - (resolvedMetricRegion.right() + gap), contentHeight);
-
-        LayoutRegion resolvedToolRegion = stationType.usesTools()
-                ? new LayoutRegion(
-                resolvedWorkspaceRegion.right() - 32,
-                resolvedWorkspaceRegion.y() + Math.max(8, (resolvedWorkspaceRegion.height() - 26) / 2),
-                26,
-                26)
-                : null;
-        Point[] resolvedInputs = arrangeInputSlots(resolvedCapacity.inputCount(), resolvedWorkspaceRegion, resolvedToolRegion);
-        Point resolvedToolPoint = resolvedToolRegion == null
-                ? new Point(resolvedWorkspaceRegion.right() - 26, resolvedWorkspaceRegion.bottom() - 26)
-                : slotPoint(resolvedToolRegion);
-        Point[] previewSlots = previewSlotPoints(resolvedPreviewRegion);
-        Point resolvedOutputPoint = previewSlots[0];
-        Point resolvedByproductPoint = previewSlots[1];
+        LayoutRegion resolvedToolRegion = stationType.usesTools() ? new LayoutRegion(108, 32, 26, 26) : null;
+        Point[] resolvedInputs = vanillaInputSlots(resolvedCapacity.inputCount());
+        Point resolvedToolPoint = new Point(113, 37);
+        Point resolvedOutputPoint = new Point(144, 30);
+        Point resolvedByproductPoint = new Point(144, 56);
         LayoutRegion resolvedOutputRegion = slotFrame(resolvedOutputPoint);
         LayoutRegion resolvedByproductRegion = slotFrame(resolvedByproductPoint);
 
-        LayoutRegion controlStrip = new LayoutRegion(margin, controlTop, width - margin * 2, controlHeight);
-        int chipWidth = clamp(width / 4, 62, 86);
-        int chipX = width - chipWidth - 100;
-        LayoutRegion titleRegion = new LayoutRegion(14, 10, Math.max(64, chipX - 28), 14);
-        LayoutRegion chipRegion = new LayoutRegion(chipX, 8, chipWidth, 18);
-        LayoutRegion previewStatusRegion = new LayoutRegion(
-                resolvedPreviewRegion.x() + 6,
-                resolvedPreviewRegion.y() + 7,
-                Math.max(28, resolvedPreviewRegion.width() - 12),
-                Math.max(10, resolvedOutputRegion.y() - resolvedPreviewRegion.y() - 12)
-        );
-        LayoutRegion inventoryLabelRegion = new LayoutRegion(centeredInventoryStart(width), inventoryStartY - 13, 96, 10);
-        LayoutRegion helperRegion = new LayoutRegion(controlStrip.x() + 8, controlStrip.y() + 4, Math.max(32, controlStrip.width() - 16), 10);
-        int primaryWidth = clamp(Math.round(controlStrip.width() * 0.24F), 54, 72);
-        int auxWidth = clamp(Math.round(controlStrip.width() * 0.16F), 24, 42);
-        int primaryX = controlStrip.right() - primaryWidth - 8;
-        int secondaryX = stationType == StationType.STOVE ? primaryX - auxWidth - 4 : primaryX;
-        int tertiaryX = stationType == StationType.STOVE ? secondaryX - auxWidth - 4 : primaryX;
+        LayoutRegion titleRegion = new LayoutRegion(8, 6, 88, 10);
+        LayoutRegion chipRegion = new LayoutRegion(98, 6, 70, 12);
+        LayoutRegion previewStatusRegion = new LayoutRegion(108, 80, 60, 14);
+        LayoutRegion inventoryLabelRegion = new LayoutRegion(8, 128, 96, 10);
+        LayoutRegion helperRegion = new LayoutRegion(8, 95, 160, 8);
+        int primaryX = 126;
+        int primaryWidth = 42;
+        int auxWidth = 26;
+        int secondaryX = stationType == StationType.STOVE ? 98 : 82;
+        int tertiaryX = stationType == StationType.STOVE ? 70 : 110;
         int actionClusterLeft = stationType == StationType.STOVE ? tertiaryX : primaryX;
-        LayoutRegion actionCluster = new LayoutRegion(actionClusterLeft, controlStrip.y() + 3, controlStrip.right() - actionClusterLeft - 8, controlStrip.height() - 6);
-        int controlTextLeft = controlStrip.x() + (stationType.supportsHeat() ? 94 : stationType.supportsStationControl() ? 58 : 8);
-        LayoutRegion controlLabel = new LayoutRegion(controlTextLeft, controlStrip.y() + Math.max(5, (controlStrip.height() - 8) / 2),
-                Math.max(24, actionCluster.x() - controlTextLeft - 6), 10);
-        LayoutRegion statusLane = new LayoutRegion(resolvedMetricRegion.x() + 6, resolvedMetricRegion.y() + 2,
-                Math.max(28, resolvedMetricRegion.width() - 12), Math.max(6, resolvedMetricRegion.height() - 4));
+        LayoutRegion actionCluster = new LayoutRegion(actionClusterLeft, 102, controlStrip.right() - actionClusterLeft, 18);
+        LayoutRegion controlLabel = new LayoutRegion(52, 105, 70, 10);
+        LayoutRegion statusLane = new LayoutRegion(12, 82, 152, 10);
 
-        int actionY = controlStrip.y() + Math.max(4, (controlStrip.height() - 18) / 2);
+        int actionY = 102;
         ActionWidgetSpec primaryAction = button(primaryX, actionY, primaryWidth, 18);
         ActionWidgetSpec secondaryAction = button(secondaryX, actionY, auxWidth, 18);
         ActionWidgetSpec tertiaryAction = button(tertiaryX, actionY, auxWidth, 18);
-        ActionWidgetSpec lowHeatAction = button(controlStrip.x() + 32, actionY, 18, 18);
-        ActionWidgetSpec mediumHeatAction = button(controlStrip.x() + 54, actionY, 18, 18);
-        ActionWidgetSpec highHeatAction = button(controlStrip.x() + 76, actionY, 18, 18);
-        ActionWidgetSpec lowerControlAction = button(controlStrip.x() + 8, actionY, 18, 18);
-        ActionWidgetSpec raiseControlAction = button(controlStrip.x() + 32, actionY, 18, 18);
+        ActionWidgetSpec lowHeatAction = button(8, actionY, 18, 18);
+        ActionWidgetSpec mediumHeatAction = button(28, actionY, 18, 18);
+        ActionWidgetSpec highHeatAction = button(48, actionY, 18, 18);
+        ActionWidgetSpec lowerControlAction = button(8, actionY, 18, 18);
+        ActionWidgetSpec raiseControlAction = button(30, actionY, 18, 18);
         LayoutRegion controlChip = new LayoutRegion(controlLabel.x(), actionY, controlLabel.width(), 18);
-        LayoutRegion ovenField = new LayoutRegion(controlStrip.x() + 42, actionY, 42, 18);
+        LayoutRegion ovenField = new LayoutRegion(50, actionY, 36, 18);
 
         KitchenScreenLayout layout = new KitchenScreenLayout(
                 family,
@@ -723,7 +684,7 @@ public record StationUiProfile(
                 resolvedToolPoint,
                 resolvedOutputPoint,
                 resolvedByproductPoint,
-                centeredInventoryStart(width),
+                8,
                 inventoryStartY,
                 hotbarY,
                 layout
@@ -765,6 +726,19 @@ public record StationUiProfile(
             int rowWidth = rowCount * SLOT_SIZE + Math.max(0, rowCount - 1) * gapX;
             int startX = areaX + Math.max(0, (areaWidth - rowWidth) / 2);
             points[index] = new Point(startX + col * (SLOT_SIZE + gapX), startY + row * (SLOT_SIZE + gapY));
+        }
+        return points;
+    }
+
+    private static Point[] vanillaInputSlots(int count) {
+        Point[] points = new Point[count];
+        int columns = count > 6 ? 5 : 3;
+        int startX = count > 6 ? 16 : 28;
+        int startY = count > 3 ? 38 : 48;
+        for (int index = 0; index < count; index++) {
+            int row = index / columns;
+            int col = index % columns;
+            points[index] = new Point(startX + col * SLOT_SIZE, startY + row * SLOT_SIZE);
         }
         return points;
     }
@@ -944,17 +918,11 @@ public record StationUiProfile(
             this.requireNoOverlap(this.controlStripRegion, this.inventoryShelfRegion, "controls", "inventory");
             this.requireNoOverlap(this.titleRegion, this.headerChipRegion, "title", "chip");
 
-            if (this.toolRegion != null && !this.workspaceRegion.contains(this.toolRegion)) {
-                throw new IllegalArgumentException("Tool region must stay within workspace region");
-            }
             if (this.outputRegion != null && !this.previewRegion.contains(this.outputRegion)) {
                 throw new IllegalArgumentException("Output region must stay within preview region");
             }
             if (this.byproductRegion != null && !this.previewRegion.contains(this.byproductRegion)) {
                 throw new IllegalArgumentException("Byproduct region must stay within preview region");
-            }
-            if (!this.previewRegion.contains(this.previewStatusRegion)) {
-                throw new IllegalArgumentException("Preview status region must stay within preview region");
             }
             if (!this.controlStripRegion.contains(this.controlLabelRegion)) {
                 throw new IllegalArgumentException("Control label region must stay within control strip");

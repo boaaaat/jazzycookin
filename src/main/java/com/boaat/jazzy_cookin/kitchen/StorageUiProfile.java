@@ -22,6 +22,8 @@ public record StorageUiProfile(
 ) {
     private static final int BASE_WIDTH = 308;
     private static final int BASE_HEIGHT = 278;
+    private static final int VANILLA_WIDTH = 176;
+    private static final int VANILLA_HEIGHT = 222;
     private static final int MIN_WIDTH = 244;
     private static final int MIN_HEIGHT = 256;
     private static final int MAX_WIDTH = 356;
@@ -53,28 +55,23 @@ public record StorageUiProfile(
     }
 
     public static StorageUiProfile forType(StorageType storageType) {
-        return buildProfile(storageType, BASE_WIDTH, storageType == StorageType.PANTRY ? 286 : BASE_HEIGHT);
+        return buildProfile(storageType, VANILLA_WIDTH, VANILLA_HEIGHT);
     }
 
     private static StorageUiProfile buildProfile(StorageType storageType, int width, int height) {
-        int inventoryStartX = (width - 162) / 2;
-        int inventoryStartY = height - 92;
-        int hotbarY = height - 34;
-        int shelfY = inventoryStartY - 17;
-        int margin = width <= 270 ? 14 : 20;
-        boolean compact = height < 276;
-        int storageWidth = Math.min(width - margin * 2, Math.max(186, 162 + 36));
-        int storageX = (width - storageWidth) / 2;
-        LayoutRegion storageRegion = new LayoutRegion(storageX, compact ? 38 : 44, storageWidth, compact ? 48 : 54);
-        int supportHeight = storageType == StorageType.PANTRY ? (compact ? 46 : 68) : (compact ? 36 : 46);
-        LayoutRegion supportRegion = new LayoutRegion(margin, storageRegion.bottom() + (compact ? 6 : 8), width - margin * 2, supportHeight);
-        LayoutRegion inventoryShelf = new LayoutRegion(10, shelfY, width - 20, 91);
-        int chipWidth = Math.min(84, Math.max(62, width / 4));
-        LayoutRegion chipRegion = new LayoutRegion(width - chipWidth - 100, 8, chipWidth, 18);
-        LayoutRegion titleRegion = new LayoutRegion(14, 10, Math.max(64, chipRegion.x() - 28), 14);
-        LayoutRegion inventoryLabel = new LayoutRegion(inventoryStartX, inventoryStartY - 13, 96, 10);
-        int storageStartX = storageRegion.x() + (storageRegion.width() - 9 * SLOT_SIZE) / 2;
-        int storageStartY = storageRegion.y() + Math.max(6, (storageRegion.height() - 2 * SLOT_SIZE) / 2);
+        width = VANILLA_WIDTH;
+        height = VANILLA_HEIGHT;
+        int inventoryStartX = 8;
+        int inventoryStartY = 140;
+        int hotbarY = 198;
+        LayoutRegion storageRegion = new LayoutRegion(7, 17, 162, 38);
+        LayoutRegion supportRegion = new LayoutRegion(8, 60, 160, 62);
+        LayoutRegion inventoryShelf = new LayoutRegion(0, 126, 176, 96);
+        LayoutRegion chipRegion = new LayoutRegion(98, 6, 70, 12);
+        LayoutRegion titleRegion = new LayoutRegion(8, 6, 88, 10);
+        LayoutRegion inventoryLabel = new LayoutRegion(8, 128, 96, 10);
+        int storageStartX = 8;
+        int storageStartY = 18;
         if (storageType == StorageType.PANTRY) {
             return new StorageUiProfile(
                     storageType,
@@ -87,8 +84,8 @@ public record StorageUiProfile(
                     hotbarY,
                     storageRegion,
                     supportRegion,
-                    new LayoutRegion(supportRegion.x() + 8, supportRegion.y() + (compact ? 4 : 15), Math.max(160, supportRegion.width() - 54), compact ? 40 : 48),
-                    new LayoutRegion(supportRegion.right() - 38, supportRegion.y() + (compact ? 6 : 18), 28, compact ? 36 : 42),
+                    new LayoutRegion(10, 64, 118, 54),
+                    new LayoutRegion(136, 66, 28, 50),
                     inventoryShelf,
                     titleRegion,
                     chipRegion,
@@ -156,12 +153,7 @@ public record StorageUiProfile(
     }
 
     public StorageUiProfile resolve(int screenWidth, int screenHeight) {
-        int resolvedWidth = resolveWidth(screenWidth, this.width);
-        int resolvedHeight = resolveHeight(screenHeight, this.height, this.storageType == StorageType.PANTRY);
-        if (resolvedWidth == this.width && resolvedHeight == this.height) {
-            return this;
-        }
-        return buildProfile(this.storageType, resolvedWidth, resolvedHeight);
+        return buildProfile(this.storageType, VANILLA_WIDTH, VANILLA_HEIGHT);
     }
 
     private float layoutScale() {
