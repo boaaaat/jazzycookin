@@ -296,7 +296,7 @@ public class KitchenIngredientItem extends Item {
         }
         Component equipmentLineage = equipmentLineageTooltip(stack);
         if (equipmentLineage != null) {
-            tooltipComponents.add(equipmentLineage.withStyle(ChatFormatting.DARK_PURPLE));
+            tooltipComponents.add(equipmentLineage.copy().withStyle(ChatFormatting.DARK_PURPLE));
         }
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.shelf_life", this.shelfLifeLabel()).withStyle(ChatFormatting.DARK_GRAY));
         if (this.cookTimeTicks > 0) {

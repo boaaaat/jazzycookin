@@ -251,7 +251,6 @@ public enum IngredientState implements StringRepresentable {
     COUSCOUS("couscous"),
     LENTILS("lentils"),
     DRY_BEANS("dry_beans"),
-    BREAD("bread"),
     KETCHUP("ketchup"),
     MUSTARD("mustard"),
     MAYONNAISE("mayonnaise"),
