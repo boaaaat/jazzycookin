@@ -14,6 +14,7 @@ public record DishStepRequirement(
         StationType station,
         DishTechnique technique,
         Optional<ToolProfile> tool,
+        List<ToolProfile> tools,
         List<String> prerequisites,
         float progressTarget,
         Optional<IngredientState> outputState
@@ -23,6 +24,7 @@ public record DishStepRequirement(
             StationType.CODEC.fieldOf("station").forGetter(DishStepRequirement::station),
             DishTechnique.CODEC.fieldOf("technique").forGetter(DishStepRequirement::technique),
             ToolProfile.CODEC.optionalFieldOf("tool").forGetter(DishStepRequirement::tool),
+            ToolProfile.CODEC.listOf().optionalFieldOf("tools", List.of()).forGetter(DishStepRequirement::tools),
             Codec.STRING.listOf().optionalFieldOf("prerequisites", List.of()).forGetter(DishStepRequirement::prerequisites),
             Codec.FLOAT.optionalFieldOf("progress_target", 1.0F).forGetter(DishStepRequirement::progressTarget),
             IngredientState.CODEC.optionalFieldOf("output_state").forGetter(DishStepRequirement::outputState)

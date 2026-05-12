@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "jazzycookin:bread",
+    "jazzycookin:whole_wheat_bread",
+    "jazzycookin:sourdough_bread",
+    "jazzycookin:rye_bread"
+  ]
+}

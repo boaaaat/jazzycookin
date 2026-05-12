@@ -13,6 +13,8 @@ public record DishSchemaScore(
         float seasoningScore,
         float cookingScore,
         float textureScore,
+        float processScore,
+        float thermalScore,
         float techniqueScore,
         float presentationScore,
         float ingredientScore,

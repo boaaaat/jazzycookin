@@ -281,6 +281,18 @@ These are the major chains currently implemented in code and game tests.
 6. `Resting Board` -> rest broiled protein
 7. `Plating Station` + `Ceramic Plate` -> `Plated Roast Meal`
 
+### Flexible Sandwich Plate
+
+1. Pick any bread loaf ingredient such as `Bread`, `Whole Wheat Bread`, `Sourdough Bread`, or `Rye Bread`.
+2. Optionally toast the bread in an oven. Light browning can grade well; heavy char lowers the cooking score.
+3. Prep any vegetable filling. Tomatoes, leafy greens, onions, peppers, cabbage, and other vegetable-trait ingredients can satisfy the base filling role.
+4. Add optional seasoning, herbs, spices, condiments, protein, or cheese.
+5. `Prep Table` + knife -> `Sandwich Filling`
+6. `Prep Table` + knife -> bread plus filling -> `Assembled Sandwich`
+7. `Plating Station` + `Ceramic Plate` -> `Sandwich Plate`
+
+The sandwich schemas grade against the base idea of bread plus vegetable filling, but allow variations. Missing bread caps the score below a valid sandwich, while optional cheese, protein, seasoning, herbs, sauces, and controlled toast can improve the result.
+
 ## Other Implemented Processing Recipes
 
 - `Farm Egg` -> `Boiled Egg`
@@ -298,10 +310,12 @@ These are the major chains currently implemented in code and game tests.
 
 - Recipes require the correct state, not just the correct item.
 - Underworked or overworked outputs can block later recipes.
+- Schema recipes grade process targets directly, including pan time, stir count, flip count, whisk work, and process depth.
+- Cooked schemas grade both process and thermal targets, including surface and core temperature, so rushed, unstirred, cold, underheated, and overheated attempts can lose accuracy.
 - Plating recipes can require finished states such as rested protein or sliced bread.
 - Deep frying degrades oil from `Fresh Oil` -> `Used Oil` -> `Dirty Oil` -> `Burnt Oil`.
 - Passive stations do not finish instantly and should not be interrupted.
-- Quality, freshness, prep, combine, cooking, finishing, and plating all affect the final result.
+- Quality, freshness, recipe fit, seasoning, cooking, process, heat, texture, and presentation all affect the final result.
 
 ## Tooltips And Food Rewards
 
@@ -314,6 +328,8 @@ Ingredient and meal tooltips show:
 - prep score
 - combine score
 - cooking score
+- process score
+- heat score
 - finishing score
 - plating score
 - nourishment

@@ -98,7 +98,43 @@
       "min": 0.28,
       "max": 0.76,
       "softness": 0.18
+    },
+    "flip_count": {
+      "min": 1.0,
+      "max": 4.0,
+      "softness": 2.0
+    },
+    "time_in_pan": {
+      "min": 145.0,
+      "max": 270.0,
+      "softness": 90.0
+    },
+    "process_depth": {
+      "min": 1.0,
+      "max": 4.0,
+      "softness": 2.0
+    },
+    "surface_temp_c": {
+      "min": 115.0,
+      "max": 180.0,
+      "softness": 55.0
+    },
+    "core_temp_c": {
+      "min": 62.0,
+      "max": 86.0,
+      "softness": 24.0
     }
+  },
+  "weights": {
+    "roles": 0.22,
+    "composition": 0.12,
+    "seasoning": 0.1,
+    "cooking": 0.16,
+    "texture": 0.1,
+    "process": 0.12,
+    "thermal": 0.08,
+    "technique": 0.08,
+    "presentation": 0.02
   },
   "ingredients": [
     {
@@ -123,6 +159,11 @@
       "station": "stove",
       "technique": "pan_fried",
       "tool": "pan",
+      "tools": [
+        "pan",
+        "skillet",
+        "frying_skillet"
+      ],
       "prerequisites": [
         "dip"
       ],

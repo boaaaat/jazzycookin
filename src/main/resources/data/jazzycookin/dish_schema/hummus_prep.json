@@ -82,7 +82,27 @@
       "min": 0.46,
       "max": 0.92,
       "softness": 0.18
+    },
+    "stir_count": {
+      "min": 1.0,
+      "max": 6.0,
+      "softness": 3.0
+    },
+    "process_depth": {
+      "min": 1.0,
+      "max": 4.0,
+      "softness": 1.0
     }
+  },
+  "weights": {
+    "roles": 0.24,
+    "composition": 0.16,
+    "seasoning": 0.14,
+    "cooking": 0.04,
+    "texture": 0.18,
+    "process": 0.1,
+    "technique": 0.1,
+    "presentation": 0.04
   },
   "ingredients": [
     {
@@ -119,6 +139,12 @@
       "id": "mixed",
       "station": "mixing_bowl",
       "technique": "mixed",
+      "tools": [
+        "whisk",
+        "heavy_whisk",
+        "spoon",
+        "fork"
+      ],
       "prerequisites": [],
       "progress_target": 1.0
     }

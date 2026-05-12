@@ -156,6 +156,12 @@
       "station": "mixing_bowl",
       "technique": "mixed",
       "tool": "whisk",
+      "tools": [
+        "whisk",
+        "heavy_whisk",
+        "spoon",
+        "fork"
+      ],
       "prerequisites": [],
       "progress_target": 1.0,
       "output_state": "batter"
@@ -181,6 +187,16 @@
       "min": 0.28,
       "max": 0.72,
       "softness": 0.18
+    },
+    "whisk_work": {
+      "min": 0.18,
+      "max": 0.85,
+      "softness": 0.18
+    },
+    "process_depth": {
+      "min": 1.0,
+      "max": 3.0,
+      "softness": 1.0
     }
   },
   "weights": {
@@ -188,8 +204,9 @@
     "composition": 0.18,
     "seasoning": 0.12,
     "cooking": 0.04,
-    "texture": 0.18,
+    "texture": 0.16,
+    "process": 0.08,
     "technique": 0.12,
-    "presentation": 0.04
+    "presentation": 0.02
   }
 }

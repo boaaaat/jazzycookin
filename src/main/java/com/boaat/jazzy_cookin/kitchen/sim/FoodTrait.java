@@ -46,7 +46,8 @@ public enum FoodTrait {
     COCONUT,
     RICE,
     WHEAT,
-    CORN;
+    CORN,
+    BREAD_LOAF;
 
     public long mask() {
         return 1L << this.ordinal();

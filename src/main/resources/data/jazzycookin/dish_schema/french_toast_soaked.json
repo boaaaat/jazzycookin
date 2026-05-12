@@ -81,6 +81,12 @@
       "station": "mixing_bowl",
       "technique": "dip_or_coat",
       "tool": "whisk",
+      "tools": [
+        "whisk",
+        "heavy_whisk",
+        "spoon",
+        "fork"
+      ],
       "prerequisites": [
         "batter"
       ],
@@ -103,6 +109,26 @@
       "min": 0.28,
       "max": 0.78,
       "softness": 0.18
+    },
+    "whisk_work": {
+      "min": 0.12,
+      "max": 0.9,
+      "softness": 0.22
+    },
+    "process_depth": {
+      "min": 2.0,
+      "max": 4.0,
+      "softness": 1.0
     }
+  },
+  "weights": {
+    "roles": 0.24,
+    "composition": 0.16,
+    "seasoning": 0.08,
+    "cooking": 0.04,
+    "texture": 0.16,
+    "process": 0.1,
+    "technique": 0.16,
+    "presentation": 0.06
   }
 }

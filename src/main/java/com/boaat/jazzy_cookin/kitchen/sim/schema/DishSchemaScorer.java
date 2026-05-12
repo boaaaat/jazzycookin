@@ -6,7 +6,9 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -101,6 +103,8 @@ public final class DishSchemaScorer {
         float seasoningScore = schema.targets().seasoningScore(matter);
         float cookingScore = schema.targets().cookingScore(matter);
         float textureScore = schema.targets().textureScore(matter);
+        float processScore = schema.targets().processScore(matter);
+        float thermalScore = schema.targets().thermalScore(matter);
         float techniqueScore = techniqueScore(schema, context);
         float presentationScore = presentationScore(schema, context);
         IngredientEvaluation ingredientEvaluation = ingredientScore(schema, context);
@@ -110,6 +114,8 @@ public final class DishSchemaScorer {
                 + weights.seasoning()
                 + weights.cooking()
                 + weights.texture()
+                + weights.process()
+                + weights.thermal()
                 + weights.technique()
                 + weights.presentation();
         float score = weightedTotal <= 0.0F
@@ -119,6 +125,8 @@ public final class DishSchemaScorer {
                 + seasoningScore * weights.seasoning()
                 + cookingScore * weights.cooking()
                 + textureScore * weights.texture()
+                + processScore * weights.process()
+                + thermalScore * weights.thermal()
                 + techniqueScore * weights.technique()
                 + presentationScore * weights.presentation()) / weightedTotal;
         if (!schema.ingredients().isEmpty()) {
@@ -136,6 +144,8 @@ public final class DishSchemaScorer {
                 seasoningScore,
                 cookingScore,
                 textureScore,
+                processScore,
+                thermalScore,
                 techniqueScore,
                 presentationScore,
                 ingredientEvaluation.score(),
@@ -182,6 +192,29 @@ public final class DishSchemaScorer {
         if (attempt != null && attempt.qualityPenalty() > 0.0F) {
             cap = Math.min(cap, 1.0F - attempt.qualityPenalty() * 0.35F);
         }
+        if (context.matter() != null && schema.targets().charLevel().isPresent()) {
+            FloatRange target = schema.targets().charLevel().get();
+            float excessChar = context.matter().charLevel() - target.max();
+            if (excessChar > target.softness()) {
+                cap = Math.min(cap, Mth.clamp(0.85F - excessChar * 0.90F, 0.45F, 0.85F));
+            }
+        }
+        if (context.matter() != null && schema.targets().hasProcessTargets()) {
+            float processScore = schema.targets().processScore(context.matter());
+            if (processScore < 0.20F) {
+                cap = Math.min(cap, 0.62F);
+            } else if (processScore < 0.45F) {
+                cap = Math.min(cap, 0.78F);
+            }
+        }
+        if (context.matter() != null && schema.targets().hasThermalTargets()) {
+            float thermalScore = schema.targets().thermalScore(context.matter());
+            if (thermalScore < 0.20F) {
+                cap = Math.min(cap, 0.62F);
+            } else if (thermalScore < 0.45F) {
+                cap = Math.min(cap, 0.78F);
+            }
+        }
         return Mth.clamp(cap, 0.0F, 1.0F);
     }
 
@@ -221,10 +254,20 @@ public final class DishSchemaScorer {
         ItemStack stack = context.stack();
         boolean itemMatched = stack != null && !stack.isEmpty()
                 && ingredient.item().map(item -> KitchenStackUtil.itemKey(stack).equals(item)).orElse(false);
-        boolean traitMatched = matter != null
-                && (ingredient.allTraits().isEmpty() || ingredient.allTraits().stream().allMatch(matter::hasTrait))
-                && (ingredient.anyTraits().isEmpty() || ingredient.anyTraits().stream().anyMatch(matter::hasTrait));
-        boolean matched = itemMatched || traitMatched;
+        boolean hasTraitFilters = !ingredient.allTraits().isEmpty() || !ingredient.anyTraits().isEmpty();
+        boolean traitMatched = traitFiltersMatch(ingredient, matter, stack);
+        boolean roleMatched = hasTraitFilters || roleMatches(ingredient.role(), matter, stack);
+        boolean matched;
+        if (ingredient.item().isPresent()) {
+            matched = stack != null && !stack.isEmpty()
+                    ? itemMatched && traitMatched
+                    : hasTraitFilters && traitMatched;
+            if (!matched && (stack == null || stack.isEmpty()) && !hasTraitFilters && ingredient.role() == DishRole.CONTAINER) {
+                return 1.0F;
+            }
+        } else {
+            matched = roleMatched && traitMatched;
+        }
         if (!matched) {
             return 0.0F;
         }
@@ -242,6 +285,49 @@ public final class DishSchemaScorer {
             return Mth.clamp(amount / Math.max(0.001F, ingredient.minAmount()), 0.0F, 1.0F);
         }
         return Mth.clamp(ingredient.maxAmount() / Math.max(0.001F, amount), 0.0F, 1.0F);
+    }
+
+    private static boolean traitFiltersMatch(DishIngredientRequirement ingredient, FoodMatterData matter, ItemStack stack) {
+        boolean all = ingredient.allTraits().isEmpty() || ingredient.allTraits().stream().allMatch(trait -> hasTrait(matter, stack, trait));
+        boolean any = ingredient.anyTraits().isEmpty() || ingredient.anyTraits().stream().anyMatch(trait -> hasTrait(matter, stack, trait));
+        return all && any;
+    }
+
+    private static boolean roleMatches(DishRole role, FoodMatterData matter, ItemStack stack) {
+        return switch (role) {
+            case PROTEIN -> hasAnyTrait(matter, stack, FoodTrait.PROTEIN, FoodTrait.ANIMAL_PROTEIN, FoodTrait.PLANT_PROTEIN, FoodTrait.EGG);
+            case GRAIN -> hasAnyTrait(matter, stack, FoodTrait.GRAIN, FoodTrait.STARCH, FoodTrait.WHEAT, FoodTrait.RICE, FoodTrait.CORN, FoodTrait.BREAD, FoodTrait.PASTA);
+            case FAT -> hasAnyTrait(matter, stack, FoodTrait.FAT, FoodTrait.OIL);
+            case AROMATIC -> hasAnyTrait(matter, stack, FoodTrait.AROMATIC, FoodTrait.ALLIUM);
+            case ACID -> hasAnyTrait(matter, stack, FoodTrait.ACIDIC);
+            case SWEETENER -> hasAnyTrait(matter, stack, FoodTrait.SWEETENER, FoodTrait.SYRUP);
+            case HERB -> hasAnyTrait(matter, stack, FoodTrait.HERB);
+            case SALT -> hasAnyTrait(matter, stack, FoodTrait.SALT);
+            case SPICE -> hasAnyTrait(matter, stack, FoodTrait.SPICE, FoodTrait.PEPPER);
+            case BINDER -> hasAnyTrait(matter, stack, FoodTrait.EGG, FoodTrait.FLOUR, FoodTrait.STARCH);
+            case LIQUID -> hasAnyTrait(matter, stack, FoodTrait.DAIRY, FoodTrait.SAUCE, FoodTrait.ACIDIC);
+            case VEGETABLE -> hasAnyTrait(matter, stack, FoodTrait.VEGETABLE, FoodTrait.LEAFY_GREEN, FoodTrait.LEGUME);
+            case FRUIT -> hasAnyTrait(matter, stack, FoodTrait.FRUIT);
+            case DAIRY -> hasAnyTrait(matter, stack, FoodTrait.DAIRY);
+            case CONTAINER -> false;
+            case GARNISH -> hasAnyTrait(matter, stack, FoodTrait.HERB, FoodTrait.SPICE, FoodTrait.FRUIT, FoodTrait.VEGETABLE);
+        };
+    }
+
+    private static boolean hasAnyTrait(FoodMatterData matter, ItemStack stack, FoodTrait... traits) {
+        for (FoodTrait trait : traits) {
+            if (hasTrait(matter, stack, trait)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasTrait(FoodMatterData matter, ItemStack stack, FoodTrait trait) {
+        if (matter != null) {
+            return matter.hasTrait(trait);
+        }
+        return stack != null && !stack.isEmpty() && FoodMaterialProfiles.hasTrait(stack, trait);
     }
 
     private static float roleScore(List<DishRoleRequirement> roles, FoodMatterData matter) {
@@ -276,7 +362,99 @@ public final class DishSchemaScorer {
         for (DishTechnique technique : schema.requiredTechniques()) {
             total += technique.score(context.matter(), context.state());
         }
-        return Mth.clamp(total / schema.requiredTechniques().size(), 0.0F, 1.0F);
+        float techniqueFit = total / schema.requiredTechniques().size();
+        float equipmentFit = equipmentScore(schema, context.attempt());
+        return Mth.clamp(techniqueFit * 0.78F + equipmentFit * 0.22F, 0.0F, 1.0F);
+    }
+
+    private static float equipmentScore(DishSchemaDefinition schema, DishAttemptData attempt) {
+        if (attempt == null
+                || !schema.key().equals(attempt.schemaKey())
+                || attempt.station().isBlank()) {
+            return 1.0F;
+        }
+        List<DishStepRequirement> steps = equipmentScoredSteps(schema);
+        if (steps.isEmpty()) {
+            return 1.0F;
+        }
+        float total = 0.0F;
+        int scoredSteps = 0;
+        for (DishStepRequirement step : steps) {
+            EquipmentEvent event = equipmentEventFor(step.id(), attempt);
+            if (event == null) {
+                continue;
+            }
+            total += equipmentScoreFor(step, event.station(), event.tool());
+            scoredSteps++;
+        }
+        return scoredSteps > 0 ? Mth.clamp(total / scoredSteps, 0.0F, 1.0F) : 1.0F;
+    }
+
+    private static List<DishStepRequirement> equipmentScoredSteps(DishSchemaDefinition schema) {
+        java.util.ArrayList<DishStepRequirement> steps = new java.util.ArrayList<>();
+        collectEquipmentSteps(schema, steps, new java.util.HashSet<>());
+        return steps;
+    }
+
+    private static void collectEquipmentSteps(
+            DishSchemaDefinition schema,
+            java.util.List<DishStepRequirement> steps,
+            java.util.Set<String> visited
+    ) {
+        if (schema == null || !visited.add(schema.key())) {
+            return;
+        }
+        for (String prerequisiteSchema : schema.prerequisiteSchemas()) {
+            collectEquipmentSteps(schemaByKey(prerequisiteSchema), steps, visited);
+        }
+        steps.addAll(schema.steps());
+    }
+
+    private static DishSchemaDefinition schemaByKey(String key) {
+        return schemas().stream()
+                .filter(schema -> schema.key().equals(key))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static EquipmentEvent equipmentEventFor(String stepId, DishAttemptData attempt) {
+        for (String event : attempt.equipmentEvents()) {
+            String[] parts = event.split("\\|", -1);
+            if (parts.length == 3 && parts[0].equals(stepId)) {
+                return new EquipmentEvent(parts[1], parts[2]);
+            }
+        }
+        if (stepId.equals(attempt.equipmentStep())) {
+            return new EquipmentEvent(attempt.station(), attempt.tool());
+        }
+        return null;
+    }
+
+    private static float equipmentScoreFor(DishStepRequirement step, String stationName, String toolName) {
+        float stationScore = step.station().getSerializedName().equals(stationName) ? 1.0F : 0.25F;
+        float toolScore = toolScore(step, toolName);
+        return Mth.clamp(stationScore * 0.55F + toolScore * 0.45F, 0.0F, 1.0F);
+    }
+
+    private static float toolScore(DishStepRequirement step, String toolName) {
+        if (step.tools().isEmpty() && step.tool().isEmpty()) {
+            return 1.0F;
+        }
+        if (toolName == null || toolName.isBlank() || "none".equals(toolName)) {
+            return 0.35F;
+        }
+        if (!step.tools().isEmpty()) {
+            for (int index = 0; index < step.tools().size(); index++) {
+                if (step.tools().get(index).getSerializedName().equals(toolName)) {
+                    return index == 0 ? 1.0F : 0.88F;
+                }
+            }
+            return 0.30F;
+        }
+        return step.tool().filter(tool -> tool.getSerializedName().equals(toolName)).isPresent() ? 1.0F : 0.30F;
+    }
+
+    private record EquipmentEvent(String station, String tool) {
     }
 
     private static float presentationScore(DishSchemaDefinition schema, DishAttemptContext context) {

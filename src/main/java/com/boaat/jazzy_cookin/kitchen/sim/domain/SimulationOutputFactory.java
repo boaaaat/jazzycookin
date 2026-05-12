@@ -3,6 +3,7 @@ package com.boaat.jazzy_cookin.kitchen.sim.domain;
 import java.util.function.UnaryOperator;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
+import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.IngredientStateData;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
@@ -37,6 +38,16 @@ public final class SimulationOutputFactory {
             long gameTime,
             SimulationIngredientAnalysis analysis,
             FoodMatterData targetMatter
+    ) {
+        return createOutput(item, gameTime, analysis, targetMatter, null);
+    }
+
+    public static ItemStack createOutput(
+            KitchenIngredientItem item,
+            long gameTime,
+            SimulationIngredientAnalysis analysis,
+            FoodMatterData targetMatter,
+            IngredientState outputState
     ) {
         ItemStack output = item.createStack(1, analysis.createdTick() > 0L ? analysis.createdTick() : gameTime);
         FoodMatterData seeded = KitchenStackUtil.getOrCreateFoodMatter(output, gameTime);
@@ -80,6 +91,9 @@ public final class SimulationOutputFactory {
                     targetMatter.finalizedServing()
             ).clamp();
             KitchenStackUtil.setFoodMatter(output, blended, gameTime);
+        }
+        if (outputState != null) {
+            KitchenStackUtil.setFoodState(output, outputState);
         }
         return legalOutput(output, gameTime);
     }

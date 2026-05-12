@@ -28,11 +28,15 @@ import com.boaat.jazzy_cookin.kitchen.ProcessMode;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishIngredientRequirement;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishRole;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishRoleRequirement;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishStepRequirement;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.FloatRange;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.HolderLookup;
@@ -538,13 +542,13 @@ public final class JazzyRecipeBookPlanner {
         boolean platedGuide = schema.requiredTechniques().contains(DishTechnique.PLATED);
         List<Requirement> requirements = platedGuide
                 ? schemaPlatingRequirements(schema)
-                : !schema.ingredients().isEmpty() ? schemaIngredientRequirements(schema.ingredients()) : schemaRoleRequirements(schema.requiredRoles());
+                : schemaProcessRequirements(schema);
         List<OutputKey> prerequisites = schemaPrerequisites(schema);
         DishTechnique primaryTechnique = primaryTechnique(schema);
         StationType station = stationFor(primaryTechnique);
         KitchenMethod method = methodFor(primaryTechnique, schema);
         ToolProfile preferredTool = preferredToolFor(primaryTechnique, schema);
-        List<ToolProfile> allowedTools = allowedToolsFor(primaryTechnique, preferredTool);
+        List<ToolProfile> allowedTools = allowedToolsFor(primaryTechnique, preferredTool, schema);
 
         return new StepOptionBuilder(
                 "schema:" + schema.key(),
@@ -559,7 +563,7 @@ public final class JazzyRecipeBookPlanner {
                 preferredTool,
                 allowedTools,
                 preferredTool != null,
-                durationFor(primaryTechnique),
+                durationFor(primaryTechnique, schema),
                 preferredHeatFor(primaryTechnique),
                 minimumHeatFor(primaryTechnique),
                 maximumHeatFor(primaryTechnique),
@@ -606,8 +610,11 @@ public final class JazzyRecipeBookPlanner {
         if (schema.requiredTechniques().contains(DishTechnique.DIP_OR_COAT)) {
             return DishTechnique.DIP_OR_COAT;
         }
-        if (schema.requiredTechniques().contains(DishTechnique.CUT) || schema.requiredTechniques().contains(DishTechnique.PREPPED)) {
+        if (schema.requiredTechniques().contains(DishTechnique.CUT)) {
             return DishTechnique.CUT;
+        }
+        if (schema.requiredTechniques().contains(DishTechnique.PREPPED)) {
+            return DishTechnique.PREPPED;
         }
         if (schema.requiredTechniques().contains(DishTechnique.RESTED)) {
             return DishTechnique.RESTED;
@@ -642,6 +649,24 @@ public final class JazzyRecipeBookPlanner {
     }
 
     private static @Nullable ToolProfile preferredToolFor(DishTechnique technique, DishSchemaDefinition schema) {
+        Optional<DishStepRequirement> primaryStep = primaryStepFor(schema, technique);
+        if (primaryStep.isPresent()) {
+            DishStepRequirement step = primaryStep.get();
+            if (!step.tools().isEmpty()) {
+                ToolProfile fallback = defaultPreferredToolFor(technique, schema);
+                if (fallback != null && step.tools().contains(fallback)) {
+                    return fallback;
+                }
+                return step.tools().get(0);
+            }
+            if (step.tool().isPresent()) {
+                return step.tool().get();
+            }
+        }
+        return defaultPreferredToolFor(technique, schema);
+    }
+
+    private static @Nullable ToolProfile defaultPreferredToolFor(DishTechnique technique, DishSchemaDefinition schema) {
         return switch (technique) {
             case PAN_FRIED -> ToolProfile.FRYING_SKILLET;
             case SIMMERED -> ToolProfile.SAUCEPAN;
@@ -655,7 +680,17 @@ public final class JazzyRecipeBookPlanner {
         };
     }
 
-    private static List<ToolProfile> allowedToolsFor(DishTechnique technique, @Nullable ToolProfile preferredTool) {
+    private static List<ToolProfile> allowedToolsFor(DishTechnique technique, @Nullable ToolProfile preferredTool, DishSchemaDefinition schema) {
+        Optional<DishStepRequirement> primaryStep = primaryStepFor(schema, technique);
+        if (primaryStep.isPresent()) {
+            DishStepRequirement step = primaryStep.get();
+            if (!step.tools().isEmpty()) {
+                return List.copyOf(step.tools());
+            }
+            if (step.tool().isPresent()) {
+                return List.of(step.tool().get());
+            }
+        }
         if (preferredTool == null) {
             return List.of();
         }
@@ -674,6 +709,12 @@ public final class JazzyRecipeBookPlanner {
         };
     }
 
+    private static Optional<DishStepRequirement> primaryStepFor(DishSchemaDefinition schema, DishTechnique technique) {
+        return schema.steps().stream()
+                .filter(step -> step.technique() == technique)
+                .findFirst();
+    }
+
     private static int durationFor(DishTechnique technique) {
         return switch (technique) {
             case PLATED -> 24;
@@ -685,6 +726,12 @@ public final class JazzyRecipeBookPlanner {
             case CUT, PREPPED -> 36;
             case RESTED -> 80;
         };
+    }
+
+    private static int durationFor(DishTechnique technique, DishSchemaDefinition schema) {
+        return schema.targets().timeInPan()
+                .map(range -> Math.round((range.min() + range.max()) * 0.5F))
+                .orElseGet(() -> durationFor(technique));
     }
 
     private static HeatLevel preferredHeatFor(DishTechnique technique) {
@@ -727,35 +774,89 @@ public final class JazzyRecipeBookPlanner {
     private static List<Requirement> schemaIngredientRequirements(List<DishIngredientRequirement> ingredients) {
         List<Requirement> requirements = new ArrayList<>();
         for (DishIngredientRequirement ingredient : ingredients) {
-            List<ItemStack> choices = ingredient.item()
-                    .map(itemId -> {
-                        Item item = BuiltInRegistries.ITEM.get(itemId);
-                        if (item == Items.AIR) {
-                            return List.<ItemStack>of();
-                        }
-                        ItemStack stack = RecipeBookDisplayUtil.displayStack(new ItemStack(item), RecipeBookDisplayUtil.defaultStateForItem(item), 1);
-                        if (ingredient.hasMeasuredAmount() && ingredient.measuredRequired()) {
-                            KitchenStackUtil.setMeasuredQuantity(stack, new MeasuredQuantity(
-                                    ingredient.idealAmount(),
-                                    ingredient.unit(),
-                                    ingredient.idealAmount() + " " + ingredient.unit().getSerializedName(),
-                                    itemId,
-                                    true
-                            ));
-                        }
-                        return List.of(stack);
-                    })
-                    .orElseGet(() -> exampleStacksFor(new DishRoleRequirement(ingredient.role(), ingredient.anyTraits(), ingredient.allTraits(), 1.0F)));
-            if (choices.isEmpty()) {
-                continue;
-            }
-            IngredientState state = ingredient.state().orElse(RecipeBookDisplayUtil.defaultStateForItem(choices.get(0).getItem()));
-            OutputKey dependency = choices.size() == 1 && RecipeBookDisplayUtil.isModItem(choices.get(0).getItem())
-                    ? RecipeBookDisplayUtil.outputKey(choices.get(0), state)
-                    : null;
-            requirements.add(new Requirement(choices, state, 1, dependency));
+            schemaIngredientRequirement(ingredient).ifPresent(requirements::add);
         }
         return requirements;
+    }
+
+    private static Optional<Requirement> schemaIngredientRequirement(DishIngredientRequirement ingredient) {
+        List<ItemStack> choices = ingredient.item()
+                .map(itemId -> {
+                    Item item = BuiltInRegistries.ITEM.get(itemId);
+                    if (item == Items.AIR) {
+                        return List.<ItemStack>of();
+                    }
+                    ItemStack stack = RecipeBookDisplayUtil.displayStack(new ItemStack(item), RecipeBookDisplayUtil.defaultStateForItem(item), 1);
+                    if (ingredient.hasMeasuredAmount() && ingredient.measuredRequired()) {
+                        KitchenStackUtil.setMeasuredQuantity(stack, new MeasuredQuantity(
+                                ingredient.idealAmount(),
+                                ingredient.unit(),
+                                ingredient.idealAmount() + " " + ingredient.unit().getSerializedName(),
+                                itemId,
+                                true
+                        ));
+                    }
+                    return List.of(stack);
+                })
+                .orElseGet(() -> exampleStacksFor(new DishRoleRequirement(ingredient.role(), ingredient.anyTraits(), ingredient.allTraits(), 1.0F)));
+        if (choices.isEmpty()) {
+            return Optional.empty();
+        }
+        IngredientState state = ingredient.state().orElse(RecipeBookDisplayUtil.defaultStateForItem(choices.get(0).getItem()));
+        OutputKey dependency = choices.size() == 1 && RecipeBookDisplayUtil.isModItem(choices.get(0).getItem())
+                ? RecipeBookDisplayUtil.outputKey(choices.get(0), state)
+                : null;
+        return Optional.of(new Requirement(choices, state, 1, dependency));
+    }
+
+    private static List<Requirement> schemaProcessRequirements(DishSchemaDefinition schema) {
+        if (schema.prerequisiteSchemas().isEmpty()) {
+            return !schema.ingredients().isEmpty() ? schemaIngredientRequirements(schema.ingredients()) : schemaRoleRequirements(schema.requiredRoles());
+        }
+
+        List<Requirement> requirements = new ArrayList<>();
+        List<DishSchemaDefinition> prerequisites = schema.prerequisiteSchemas().stream()
+                .map(JazzyRecipeBookPlanner::schemaByKey)
+                .filter(Objects::nonNull)
+                .toList();
+        for (DishSchemaDefinition prerequisite : prerequisites) {
+            Requirement dependency = schemaDependencyRequirement(prerequisite.key());
+            if (dependency != null) {
+                requirements.add(dependency);
+            }
+        }
+        for (DishIngredientRequirement ingredient : schema.ingredients()) {
+            if (!isSuppliedByPrerequisite(ingredient, prerequisites)) {
+                schemaIngredientRequirement(ingredient).ifPresent(requirements::add);
+            }
+        }
+        if (requirements.isEmpty()) {
+            requirements.addAll(schemaRoleRequirements(schema.requiredRoles()));
+        }
+        return requirements;
+    }
+
+    private static boolean isSuppliedByPrerequisite(DishIngredientRequirement ingredient, List<DishSchemaDefinition> prerequisites) {
+        for (DishSchemaDefinition prerequisite : prerequisites) {
+            if (ingredient.item().isPresent() && ingredient.item().get().equals(prerequisite.result())) {
+                return true;
+            }
+            if (isAggregatePrerequisiteForRole(prerequisite, ingredient.role())
+                    && prerequisite.requiredRoles().stream().map(DishRoleRequirement::role).anyMatch(role -> role == ingredient.role())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isAggregatePrerequisiteForRole(DishSchemaDefinition prerequisite, DishRole role) {
+        String roleName = role.getSerializedName();
+        String key = prerequisite.key();
+        String resultPath = prerequisite.result().getPath();
+        return key.contains(roleName)
+                || resultPath.contains(roleName)
+                || key.contains("filling")
+                || resultPath.contains("filling");
     }
 
     private static List<Requirement> schemaPlatingRequirements(DishSchemaDefinition schema) {
@@ -797,9 +898,7 @@ public final class JazzyRecipeBookPlanner {
     }
 
     private static @Nullable OutputKey schemaOutputKey(String schemaKey) {
-        return DishSchemaScorer.schemas().stream()
-                .filter(schema -> schema.key().equals(schemaKey))
-                .findFirst()
+        return Optional.ofNullable(schemaByKey(schemaKey))
                 .map(schema -> {
                     Item item = BuiltInRegistries.ITEM.get(schema.result());
                     if (item == Items.AIR) {
@@ -810,13 +909,36 @@ public final class JazzyRecipeBookPlanner {
                 .orElse(null);
     }
 
+    private static @Nullable DishSchemaDefinition schemaByKey(String schemaKey) {
+        return DishSchemaScorer.schemas().stream()
+                .filter(schema -> schema.key().equals(schemaKey))
+                .findFirst()
+                .orElse(null);
+    }
+
     private static List<ItemStack> exampleStacksFor(DishRoleRequirement role) {
-        return candidateExampleItems().stream()
+        List<Item> candidates = isBreadRole(role) ? breadExampleItems() : candidateExampleItems();
+        return candidates.stream()
                 .filter(item -> roleMatches(new ItemStack(item), role))
                 .limit(5)
                 .map(item -> RecipeBookDisplayUtil.displayStack(new ItemStack(item), RecipeBookDisplayUtil.defaultStateForItem(item), 1))
                 .filter(stack -> !stack.isEmpty())
                 .toList();
+    }
+
+    private static boolean isBreadRole(DishRoleRequirement role) {
+        return role.anyTraits().contains(FoodTrait.BREAD)
+                || role.allTraits().contains(FoodTrait.BREAD)
+                || role.allTraits().contains(FoodTrait.BREAD_LOAF);
+    }
+
+    private static List<Item> breadExampleItems() {
+        return List.of(
+                JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get(),
+                JazzyItems.ingredient(JazzyItems.IngredientId.WHOLE_WHEAT_BREAD).get(),
+                JazzyItems.ingredient(JazzyItems.IngredientId.SOURDOUGH_BREAD).get(),
+                JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get()
+        );
     }
 
     private static List<Item> candidateExampleItems() {
@@ -850,7 +972,12 @@ public final class JazzyRecipeBookPlanner {
                     .map(DishTechnique::getSerializedName)
                     .collect(Collectors.joining(", ")) + ".");
         }
+        processTargetNote(schema).ifPresent(notes::add);
+        thermalTargetNote(schema).ifPresent(notes::add);
         notes.add("Flexible schema guide: examples are suggestions, and matching substitutions can still score well.");
+        if (schema.key().contains("sandwich")) {
+            notes.add("Sandwich variants can use matching bread types, untoasted or lightly toasted bread, optional cheese, and optional seasoning.");
+        }
         if (primaryTechnique == DishTechnique.BAKED) {
             notes.add("Preheat the oven and manage bake time to avoid pale or burned results.");
         } else if (primaryTechnique == DishTechnique.PAN_FRIED) {
@@ -861,6 +988,40 @@ public final class JazzyRecipeBookPlanner {
             notes.add("Plate a matching prepared component; garnish and the right container improve presentation.");
         }
         return List.copyOf(notes);
+    }
+
+    private static Optional<String> processTargetNote(DishSchemaDefinition schema) {
+        List<String> parts = new ArrayList<>();
+        schema.targets().timeInPan().ifPresent(range -> parts.add("cook " + rangeLabel(range) + " ticks"));
+        schema.targets().stirCount().ifPresent(range -> parts.add("stir " + rangeLabel(range) + "x"));
+        schema.targets().flipCount().ifPresent(range -> parts.add("flip " + rangeLabel(range) + "x"));
+        schema.targets().whiskWork().ifPresent(range -> parts.add("whisk work " + rangeLabel(range)));
+        schema.targets().processDepth().ifPresent(range -> parts.add("process depth " + rangeLabel(range)));
+        if (parts.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of("Process targets: " + String.join("; ", parts) + ".");
+    }
+
+    private static Optional<String> thermalTargetNote(DishSchemaDefinition schema) {
+        List<String> parts = new ArrayList<>();
+        schema.targets().surfaceTempC().ifPresent(range -> parts.add("surface " + rangeLabel(range) + "C"));
+        schema.targets().coreTempC().ifPresent(range -> parts.add("core " + rangeLabel(range) + "C"));
+        if (parts.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of("Thermal targets: " + String.join("; ", parts) + ".");
+    }
+
+    private static String rangeLabel(FloatRange range) {
+        return compact(range.min()) + "-" + compact(range.max());
+    }
+
+    private static String compact(float value) {
+        if (Math.abs(value - Math.round(value)) < 0.001F) {
+            return Integer.toString(Math.round(value));
+        }
+        return Float.toString(value);
     }
 
     private static String roleSummary(List<DishRoleRequirement> roles) {

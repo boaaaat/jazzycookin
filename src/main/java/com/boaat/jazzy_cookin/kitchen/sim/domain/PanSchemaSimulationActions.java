@@ -12,6 +12,7 @@ import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.reaction.EggPanReactionSolver;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptData;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptContext;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishCategory;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
@@ -252,8 +253,12 @@ final class PanSchemaSimulationActions {
                 .filter(PanSchemaSimulationActions::isPanSchema)
                 .map(schema -> {
                     ItemStack projected = new ItemStack(BuiltInRegistries.ITEM.get(schema.result()));
-                    KitchenStackUtil.setDishAttempt(projected, DishAttemptAssembler.build(schema, view, readiness(access).quality()));
-                    DishAttemptContext context = new DishAttemptContext(matter, IngredientState.PAN_FRIED, projected, KitchenStackUtil.dishAttempt(projected));
+                    DishAttemptData attempt = DishAttemptAssembler.build(schema, view, readiness(access).quality());
+                    if (attempt.wrongTechnique()) {
+                        return Optional.<DishSchemaScore>empty();
+                    }
+                    KitchenStackUtil.setDishAttempt(projected, attempt);
+                    DishAttemptContext context = new DishAttemptContext(matter, IngredientState.PAN_FRIED, projected, attempt);
                     return DishSchemaScorer.score(schema, context);
                 })
                 .filter(Optional::isPresent)
@@ -272,7 +277,7 @@ final class PanSchemaSimulationActions {
             return false;
         }
         ToolProfile toolProfile = ToolProfile.fromStack(access.simulationItem(access.toolSlot()));
-        if (toolProfile != ToolProfile.PAN && toolProfile != ToolProfile.FRYING_SKILLET) {
+        if (toolProfile != ToolProfile.PAN && toolProfile != ToolProfile.SKILLET && toolProfile != ToolProfile.FRYING_SKILLET) {
             return false;
         }
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {

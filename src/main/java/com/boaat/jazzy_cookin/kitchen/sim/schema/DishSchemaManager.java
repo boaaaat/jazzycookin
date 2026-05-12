@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
+import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
@@ -70,6 +71,7 @@ public final class DishSchemaManager {
             if (schema.steps().isEmpty()) {
                 problems.add("schema " + schema.key() + " has no ordered steps");
             }
+            validateRealismTargets(schema, problems);
             for (DishIngredientRequirement ingredient : schema.ingredients()) {
                 ingredient.item().ifPresent(item -> {
                     if (BuiltInRegistries.ITEM.get(item) == Items.AIR) {
@@ -78,6 +80,13 @@ public final class DishSchemaManager {
                 });
                 if (ingredient.hasMeasuredAmount() && ingredient.maxAmount() < ingredient.minAmount()) {
                     problems.add("schema " + schema.key() + " has an invalid amount range for " + ingredient.item().map(ResourceLocation::toString).orElse(ingredient.role().getSerializedName()));
+                }
+                if (ingredient.item().isPresent()
+                        && ingredient.role() != DishRole.CONTAINER
+                        && ingredient.allTraits().isEmpty()
+                        && ingredient.anyTraits().isEmpty()) {
+                    problems.add("schema " + schema.key() + " has item-specific food ingredient "
+                            + ingredient.item().get() + " without explicit trait filters");
                 }
             }
             Set<String> stepIds = new java.util.HashSet<>();
@@ -91,6 +100,7 @@ public final class DishSchemaManager {
                 if (step.progressTarget() <= 0.0F) {
                     problems.add("schema " + schema.key() + " step " + step.id() + " has a non-positive progress target");
                 }
+                validateStepTools(schema, step, problems);
             }
         }
         for (DishSchemaDefinition schema : schemas) {
@@ -121,6 +131,55 @@ public final class DishSchemaManager {
             }
         }
         return List.copyOf(problems);
+    }
+
+    private static void validateRealismTargets(DishSchemaDefinition schema, List<String> problems) {
+        if (usesAnyTechnique(schema, DishTechnique.MIXED, DishTechnique.DIP_OR_COAT, DishTechnique.CUT, DishTechnique.PREPPED)
+                && (!schema.targets().hasProcessTargets() || schema.weights().process() <= 0.0F)) {
+            problems.add("schema " + schema.key() + " handles food but does not score process targets");
+        }
+        if (usesAnyTechnique(schema, DishTechnique.PAN_FRIED, DishTechnique.SIMMERED, DishTechnique.BAKED)) {
+            if (!schema.targets().hasProcessTargets() || schema.weights().process() <= 0.0F) {
+                problems.add("schema " + schema.key() + " cooks food but does not score timing or handling process");
+            }
+            if (!schema.targets().hasThermalTargets() || schema.weights().thermal() <= 0.0F) {
+                problems.add("schema " + schema.key() + " cooks food but does not score thermal targets");
+            }
+        }
+    }
+
+    private static void validateStepTools(DishSchemaDefinition schema, DishStepRequirement step, List<String> problems) {
+        if (step.technique() == DishTechnique.PAN_FRIED
+                && !hasAnyTool(step, ToolProfile.PAN, ToolProfile.SKILLET, ToolProfile.FRYING_SKILLET)) {
+            problems.add("schema " + schema.key() + " step " + step.id() + " pan-fries without pan cookware tools");
+        } else if (step.technique() == DishTechnique.SIMMERED
+                && !hasAnyTool(step, ToolProfile.POT, ToolProfile.STOCK_POT, ToolProfile.SAUCEPAN)) {
+            problems.add("schema " + schema.key() + " step " + step.id() + " simmers without pot cookware tools");
+        } else if (step.technique() == DishTechnique.BAKED
+                && !hasAnyTool(step, ToolProfile.BAKING_TRAY, ToolProfile.PIE_TIN)) {
+            problems.add("schema " + schema.key() + " step " + step.id() + " bakes without bakeware tools");
+        } else if ((step.technique() == DishTechnique.CUT || step.technique() == DishTechnique.PREPPED)
+                && !hasAnyTool(step, ToolProfile.KNIFE, ToolProfile.CHEF_KNIFE, ToolProfile.PARING_KNIFE, ToolProfile.CLEAVER, ToolProfile.TABLE_KNIFE)) {
+            problems.add("schema " + schema.key() + " step " + step.id() + " preps food without knife tools");
+        }
+    }
+
+    private static boolean usesAnyTechnique(DishSchemaDefinition schema, DishTechnique... techniques) {
+        for (DishTechnique technique : techniques) {
+            if (schema.requiredTechniques().contains(technique)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasAnyTool(DishStepRequirement step, ToolProfile... tools) {
+        for (ToolProfile tool : tools) {
+            if (step.tool().filter(tool::equals).isPresent() || step.tools().contains(tool)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static final class ReloadListener extends SimpleJsonResourceReloadListener {

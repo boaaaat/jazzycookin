@@ -3,9 +3,12 @@ package com.boaat.jazzy_cookin.kitchen.sim.domain;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
@@ -117,7 +120,10 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
         }
 
         int primarySlot = dominantPrimarySlot(access);
-        if (primarySlot >= 0) {
+        boolean schemaOutput = !KitchenStackUtil.dishAttempt(output).schemaKey().isBlank();
+        if (schemaOutput) {
+            CompositionalSimulationSupport.removeAllFoodInputs(access);
+        } else if (primarySlot >= 0) {
             access.simulationRemoveItem(primarySlot, 1);
         } else {
             CompositionalSimulationSupport.removeAllFoodInputs(access);
@@ -152,7 +158,13 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
         }
 
         if (primarySlot >= 0 && access.simulationItem(primarySlot).getItem() instanceof KitchenIngredientItem ingredientItem) {
-            return SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
+            return SimulationOutputFactory.createOutput(
+                    ingredientItem,
+                    access.simulationLevel().getGameTime(),
+                    analysis,
+                    matter,
+                    inferPrepState(access, access.simulationItem(primarySlot))
+            );
         }
         return CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
     }
@@ -186,7 +198,7 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
 
     private static KitchenMethod inferPrepMethod(StationSimulationAccess access) {
         ItemStack primary = dominantPrimaryStack(access);
-        if (primary.is(JazzyItems.ingredient(IngredientId.BREAD).get())) {
+        if (isBread(primary)) {
             return KitchenMethod.SLICE;
         }
         return KitchenMethod.CUT;
@@ -227,7 +239,7 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
         if (primary.is(JazzyItems.ingredient(IngredientId.FISH_FILLET).get())) {
             return IngredientState.CLEANED_FISH;
         }
-        if (primary.is(JazzyItems.ingredient(IngredientId.BREAD).get())) {
+        if (isBread(primary)) {
             return IngredientState.SLICED_BREAD;
         }
         if (primary.is(JazzyItems.ingredient(IngredientId.JALAPENOS).get()) && access.activeInputCount() > 1) {
@@ -262,6 +274,12 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             }
         }
         return false;
+    }
+
+    private static boolean isBread(ItemStack stack) {
+        return stack.getItem() instanceof KitchenIngredientItem ingredientItem
+                && ingredientItem.defaultState() == IngredientState.BREAD
+                && FoodMaterialProfiles.hasTrait(stack, FoodTrait.BREAD);
     }
 
     private static ItemStack dominantPrimaryStack(StationSimulationAccess access) {

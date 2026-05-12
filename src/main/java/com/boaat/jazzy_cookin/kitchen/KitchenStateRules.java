@@ -55,6 +55,12 @@ public final class KitchenStateRules {
             IngredientState.CHOPPED,
             IngredientState.DICED
     );
+    private static final Set<IngredientState> BREAD_STATES = EnumSet.of(
+            IngredientState.BREAD,
+            IngredientState.BAKED_BREAD,
+            IngredientState.RESTED_BREAD,
+            IngredientState.SLICED_BREAD
+    );
 
     private KitchenStateRules() {
     }
@@ -138,6 +144,9 @@ public final class KitchenStateRules {
         }
         if ("fruit_juice_blend".equals(itemPath)) {
             return BLEND_STATES.contains(targetState);
+        }
+        if (ingredientItem.defaultState() == IngredientState.BREAD) {
+            return BREAD_STATES.contains(targetState);
         }
 
         return targetState == ingredientItem.defaultState();

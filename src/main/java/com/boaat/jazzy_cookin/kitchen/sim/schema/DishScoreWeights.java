@@ -9,10 +9,12 @@ public record DishScoreWeights(
         float seasoning,
         float cooking,
         float texture,
+        float process,
+        float thermal,
         float technique,
         float presentation
 ) {
-    public static final DishScoreWeights DEFAULT = new DishScoreWeights(0.24F, 0.14F, 0.16F, 0.18F, 0.12F, 0.12F, 0.04F);
+    public static final DishScoreWeights DEFAULT = new DishScoreWeights(0.24F, 0.14F, 0.16F, 0.18F, 0.12F, 0.0F, 0.0F, 0.12F, 0.04F);
 
     public static final Codec<DishScoreWeights> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("roles", DEFAULT.roles).forGetter(DishScoreWeights::roles),
@@ -20,6 +22,8 @@ public record DishScoreWeights(
             Codec.FLOAT.optionalFieldOf("seasoning", DEFAULT.seasoning).forGetter(DishScoreWeights::seasoning),
             Codec.FLOAT.optionalFieldOf("cooking", DEFAULT.cooking).forGetter(DishScoreWeights::cooking),
             Codec.FLOAT.optionalFieldOf("texture", DEFAULT.texture).forGetter(DishScoreWeights::texture),
+            Codec.FLOAT.optionalFieldOf("process", DEFAULT.process).forGetter(DishScoreWeights::process),
+            Codec.FLOAT.optionalFieldOf("thermal", DEFAULT.thermal).forGetter(DishScoreWeights::thermal),
             Codec.FLOAT.optionalFieldOf("technique", DEFAULT.technique).forGetter(DishScoreWeights::technique),
             Codec.FLOAT.optionalFieldOf("presentation", DEFAULT.presentation).forGetter(DishScoreWeights::presentation)
     ).apply(instance, DishScoreWeights::new));

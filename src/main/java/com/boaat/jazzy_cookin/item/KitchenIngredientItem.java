@@ -14,6 +14,7 @@ import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.reaction.EggPanReactionSolver;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptData;
 import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 
 import net.minecraft.ChatFormatting;
@@ -275,18 +276,27 @@ public class KitchenIngredientItem extends Item {
         }
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.quality", DishGrade.fromScore(data.quality()).displayName())
                 .withStyle(ChatFormatting.GOLD));
-        tooltipComponents.add(Component.translatable("tooltip.jazzycookin.recipe_accuracy", Math.round(data.recipeAccuracy() * 100.0F))
-                .withStyle(ChatFormatting.AQUA));
         if (level != null) {
             QualityBreakdown breakdown = DishEvaluation.evaluateStack(stack, level);
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.recipe_accuracy", Math.round(breakdown.recipeAccuracy() * 100.0F))
+                    .withStyle(ChatFormatting.AQUA));
             tooltipComponents.add(breakdown.summary().withStyle(ChatFormatting.YELLOW));
             tooltipComponents.add(Component.translatable("tooltip.jazzycookin.freshness", Component.translatable("freshness.jazzycookin." + KitchenStackUtil.freshnessLabel(stack, level)))
                     .withStyle(ChatFormatting.GREEN));
             tooltipComponents.add(Component.translatable("tooltip.jazzycookin.prep_score", Math.round(breakdown.prepScore() * 100.0F)).withStyle(ChatFormatting.DARK_GREEN));
             tooltipComponents.add(Component.translatable("tooltip.jazzycookin.combine_score", Math.round(breakdown.combineScore() * 100.0F)).withStyle(ChatFormatting.DARK_AQUA));
             tooltipComponents.add(Component.translatable("tooltip.jazzycookin.cooking_score", Math.round(breakdown.cookingScore() * 100.0F)).withStyle(ChatFormatting.RED));
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.process_score", Math.round(breakdown.processScore() * 100.0F)).withStyle(ChatFormatting.GOLD));
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.thermal_score", Math.round(breakdown.thermalScore() * 100.0F)).withStyle(ChatFormatting.RED));
             tooltipComponents.add(Component.translatable("tooltip.jazzycookin.finishing_score", Math.round(breakdown.finishingScore() * 100.0F)).withStyle(ChatFormatting.BLUE));
             tooltipComponents.add(Component.translatable("tooltip.jazzycookin.plating_score", Math.round(breakdown.platingScore() * 100.0F)).withStyle(ChatFormatting.LIGHT_PURPLE));
+        } else {
+            tooltipComponents.add(Component.translatable("tooltip.jazzycookin.recipe_accuracy", Math.round(data.recipeAccuracy() * 100.0F))
+                    .withStyle(ChatFormatting.AQUA));
+        }
+        Component equipmentLineage = equipmentLineageTooltip(stack);
+        if (equipmentLineage != null) {
+            tooltipComponents.add(equipmentLineage.withStyle(ChatFormatting.DARK_PURPLE));
         }
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.shelf_life", this.shelfLifeLabel()).withStyle(ChatFormatting.DARK_GRAY));
         if (this.cookTimeTicks > 0) {
@@ -297,6 +307,31 @@ public class KitchenIngredientItem extends Item {
         if (level != null && this.canConsume(stack, level)) {
             tooltipComponents.add(Component.translatable("tooltip.jazzycookin.meal_hint").withStyle(ChatFormatting.AQUA));
         }
+    }
+
+    private static Component equipmentLineageTooltip(ItemStack stack) {
+        DishAttemptData attempt = KitchenStackUtil.dishAttempt(stack);
+        if (!attempt.equipmentEvents().isEmpty()) {
+            String latest = attempt.equipmentEvents().get(attempt.equipmentEvents().size() - 1);
+            String[] parts = latest.split("\\|", -1);
+            if (parts.length == 3) {
+                return Component.translatable(
+                        "tooltip.jazzycookin.equipment_lineage",
+                        attempt.equipmentEvents().size(),
+                        Component.translatable("station.jazzycookin." + parts[1]),
+                        Component.translatable("tool.jazzycookin." + parts[2])
+                );
+            }
+        }
+        if (!attempt.station().isBlank()) {
+            return Component.translatable(
+                    "tooltip.jazzycookin.equipment_lineage",
+                    1,
+                    Component.translatable("station.jazzycookin." + attempt.station()),
+                    Component.translatable("tool.jazzycookin." + (attempt.tool().isBlank() ? "none" : attempt.tool()))
+            );
+        }
+        return null;
     }
 
     @Override

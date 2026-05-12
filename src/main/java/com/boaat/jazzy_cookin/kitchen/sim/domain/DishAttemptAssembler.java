@@ -31,18 +31,21 @@ final class DishAttemptAssembler {
             return DishAttemptData.EMPTY;
         }
         Set<String> completed = new LinkedHashSet<>();
+        Set<String> equipmentEvents = new LinkedHashSet<>();
         for (ItemStack stack : access.inputStacks()) {
             DishAttemptData inherited = KitchenStackUtil.dishAttempt(stack);
             completed.addAll(inherited.completedSteps());
+            equipmentEvents.addAll(inherited.equipmentEvents());
         }
 
         DishStepRequirement currentStep = currentStep(schema, access.stationType(), access.toolProfile(), completed);
         if (currentStep != null) {
             completed.add(currentStep.id());
+            equipmentEvents.add(equipmentEvent(currentStep.id(), access.stationType(), access.toolProfile()));
         }
 
         IngredientResult ingredients = scoreIngredients(schema, access.inputStacks());
-        boolean wrongTechnique = currentStep == null && !schema.steps().isEmpty();
+        boolean wrongTechnique = currentStep == null && schema.steps().stream().anyMatch(step -> !completed.contains(step.id()));
         return new DishAttemptData(
                 schema.key(),
                 List.copyOf(completed),
@@ -50,8 +53,16 @@ final class DishAttemptAssembler {
                 ingredients.missingCore(),
                 ingredients.unmeasured(),
                 wrongTechnique,
-                Mth.clamp(1.0F - stationQuality, 0.0F, 1.0F)
+                Mth.clamp(1.0F - stationQuality, 0.0F, 1.0F),
+                currentStep != null ? currentStep.id() : "",
+                access.stationType().getSerializedName(),
+                access.toolProfile().getSerializedName(),
+                List.copyOf(equipmentEvents)
         ).normalized();
+    }
+
+    private static String equipmentEvent(String stepId, StationType stationType, ToolProfile toolProfile) {
+        return stepId + "|" + stationType.getSerializedName() + "|" + toolProfile.getSerializedName();
     }
 
     private static DishStepRequirement currentStep(
@@ -61,10 +72,13 @@ final class DishAttemptAssembler {
             Set<String> completed
     ) {
         for (DishStepRequirement step : schema.steps()) {
+            if (completed.contains(step.id())) {
+                continue;
+            }
             if (step.station() != stationType) {
                 continue;
             }
-            if (step.tool().isPresent() && step.tool().get() != toolProfile) {
+            if (!toolMatches(step, toolProfile)) {
                 continue;
             }
             if (!completed.containsAll(step.prerequisites())) {
@@ -73,11 +87,19 @@ final class DishAttemptAssembler {
             return step;
         }
         return schema.steps().stream()
+                .filter(step -> !completed.contains(step.id()))
                 .filter(step -> step.station() == stationType && techniqueMatchesStation(step.technique(), stationType))
-                .filter(step -> step.tool().isEmpty() || step.tool().get() == toolProfile)
+                .filter(step -> toolMatches(step, toolProfile))
                 .filter(step -> completed.containsAll(step.prerequisites()))
                 .findFirst()
                 .orElse(null);
+    }
+
+    private static boolean toolMatches(DishStepRequirement step, ToolProfile toolProfile) {
+        if (!step.tools().isEmpty()) {
+            return step.tools().contains(toolProfile);
+        }
+        return step.tool().isEmpty() || step.tool().get() == toolProfile;
     }
 
     private static boolean techniqueMatchesStation(DishTechnique technique, StationType stationType) {
@@ -146,13 +168,21 @@ final class DishAttemptAssembler {
             return false;
         }
         if (requirement.item().isPresent()) {
-            return BuiltInRegistries.ITEM.get(requirement.item().get()) == stack.getItem();
+            if (BuiltInRegistries.ITEM.get(requirement.item().get()) != stack.getItem()) {
+                return false;
+            }
+            return traitFiltersMatch(requirement, stack);
         }
 
-        if (!roleMatches(requirement.role(), stack)) {
+        boolean hasTraitFilters = !requirement.allTraits().isEmpty() || !requirement.anyTraits().isEmpty();
+        if (!hasTraitFilters && !roleMatches(requirement.role(), stack)) {
             return false;
         }
 
+        return traitFiltersMatch(requirement, stack);
+    }
+
+    private static boolean traitFiltersMatch(DishIngredientRequirement requirement, ItemStack stack) {
         FoodMatterData matter = KitchenStackUtil.getFoodMatter(stack);
         if (matter != null) {
             boolean all = requirement.allTraits().isEmpty() || requirement.allTraits().stream().allMatch(matter::hasTrait);
@@ -188,7 +218,7 @@ final class DishAttemptAssembler {
     private static boolean hasAnyTrait(ItemStack stack, FoodTrait... traits) {
         FoodMatterData matter = KitchenStackUtil.getFoodMatter(stack);
         for (FoodTrait trait : traits) {
-            if ((matter != null && matter.hasTrait(trait)) || FoodMaterialProfiles.hasTrait(stack, trait)) {
+            if (matter != null ? matter.hasTrait(trait) : FoodMaterialProfiles.hasTrait(stack, trait)) {
                 return true;
             }
         }

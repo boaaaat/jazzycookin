@@ -6,7 +6,9 @@ import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.KitchenStackUtil;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
@@ -159,6 +161,18 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
             return access.simulationStationType() == StationType.MICROWAVE ? applyMicrowavePenalty(schemaOutput, access.simulationLevel().getGameTime()) : schemaOutput;
         }
         ItemStack output = CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
+        if (output.isEmpty()) {
+            ItemStack fallbackInput = singleFoodInput(access);
+            if (fallbackInput.getItem() instanceof KitchenIngredientItem ingredientItem) {
+                output = SimulationOutputFactory.createOutput(
+                        ingredientItem,
+                        access.simulationLevel().getGameTime(),
+                        analysis,
+                        matter,
+                        inferState(access, analysis)
+                );
+            }
+        }
         return access.simulationStationType() == StationType.MICROWAVE ? applyMicrowavePenalty(output, access.simulationLevel().getGameTime()) : output;
     }
 
@@ -236,7 +250,9 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
             case SMOKER -> IngredientState.SMOKED;
             case STEAMER -> analysis.has(JazzyItems.RAW_DUMPLINGS.get()) ? IngredientState.STEAMED_DUMPLINGS : IngredientState.STEAMED;
             case OVEN -> {
-                if (analysis.has(JazzyItems.SHAPED_FOCACCIA_BASE.get()) || analysis.has(JazzyItems.ASSEMBLED_FOCACCIA_PIZZA.get())) {
+                if (analysis.has(JazzyItems.SHAPED_FOCACCIA_BASE.get())
+                        || analysis.has(JazzyItems.ASSEMBLED_FOCACCIA_PIZZA.get())
+                        || hasBreadIngredient(access)) {
                     yield IngredientState.BAKED_BREAD;
                 }
                 if (analysis.has(JazzyItems.ASSEMBLED_TRAY_PIE.get()) || analysis.has(JazzyItems.ASSEMBLED_SAVORY_PIE.get())) {
@@ -277,5 +293,32 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
                 matter.finalizedServing()
         ));
         return output;
+    }
+
+    private static boolean hasBreadIngredient(StationSimulationAccess access) {
+        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
+            ItemStack stack = access.simulationItem(slot);
+            if (stack.getItem() instanceof KitchenIngredientItem ingredientItem
+                    && ingredientItem.defaultState() == IngredientState.BREAD
+                    && FoodMaterialProfiles.hasTrait(stack, FoodTrait.BREAD)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static ItemStack singleFoodInput(StationSimulationAccess access) {
+        ItemStack single = ItemStack.EMPTY;
+        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
+            ItemStack stack = access.simulationItem(slot);
+            if (!CompositionalSimulationSupport.isFood(stack)) {
+                continue;
+            }
+            if (!single.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+            single = stack;
+        }
+        return single;
     }
 }

@@ -190,6 +190,9 @@ public final class JazzyItems {
         LENTILS("lentils", dryGood(DAY * 180L, 90, 3, 1)),
         DRY_BEANS("dry_beans", dryGood(DAY * 210L, 140, 3, 1)),
         BREAD("bread", dryGood(DAY * 7L, 0, 2, 1)),
+        WHOLE_WHEAT_BREAD("whole_wheat_bread", dryGood(DAY * 7L, 0, 2, 1)),
+        SOURDOUGH_BREAD("sourdough_bread", dryGood(DAY * 9L, 0, 2, 2)),
+        RYE_BREAD("rye_bread", dryGood(DAY * 8L, 0, 2, 2)),
 
         KETCHUP("ketchup", condiment(DAY * 90L, 0, 0, 1, true)),
         MUSTARD("mustard", condiment(DAY * 120L, 0, 0, 1, true)),
@@ -233,6 +236,9 @@ public final class JazzyItems {
         }
 
         public IngredientState defaultState() {
+            if (this.id.endsWith("_bread")) {
+                return IngredientState.BREAD;
+            }
             return IngredientState.byName(this.id);
         }
     }

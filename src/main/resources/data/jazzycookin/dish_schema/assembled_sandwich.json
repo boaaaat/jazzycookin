@@ -1,0 +1,206 @@
+{
+  "key": "assembled_sandwich",
+  "preview_id": 1201,
+  "result": "jazzycookin:assembled_sandwich",
+  "category": "plated",
+  "preview_threshold": 0.5,
+  "finalize_threshold": 0.56,
+  "desirability": 0.82,
+  "required_roles": [
+    {
+      "role": "grain",
+      "any_traits": [
+        "bread"
+      ],
+      "all_traits": [
+        "bread_loaf"
+      ],
+      "weight": 1.0
+    },
+    {
+      "role": "vegetable",
+      "any_traits": [
+        "vegetable",
+        "leafy_green",
+        "allium",
+        "tomato",
+        "pepper"
+      ],
+      "weight": 0.72
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "dairy",
+      "any_traits": [
+        "dairy"
+      ],
+      "weight": 0.22
+    },
+    {
+      "role": "protein",
+      "any_traits": [
+        "protein",
+        "animal_protein",
+        "plant_protein"
+      ],
+      "weight": 0.22
+    },
+    {
+      "role": "salt",
+      "any_traits": [
+        "salt",
+        "condiment",
+        "sauce"
+      ],
+      "weight": 0.18
+    },
+    {
+      "role": "garnish",
+      "any_traits": [
+        "herb",
+        "spice",
+        "pepper",
+        "acidic"
+      ],
+      "weight": 0.16
+    }
+  ],
+  "required_techniques": [
+    "prepped"
+  ],
+  "prerequisite_schemas": [
+    "sandwich_filling"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.22,
+      "max": 0.66,
+      "softness": 0.18
+    },
+    "fat": {
+      "min": 0.0,
+      "max": 0.42,
+      "softness": 0.18
+    },
+    "protein": {
+      "min": 0.0,
+      "max": 0.5,
+      "softness": 0.18
+    },
+    "seasoning": {
+      "min": 0.02,
+      "max": 0.34,
+      "softness": 0.16
+    },
+    "cheese": {
+      "min": 0.0,
+      "max": 0.34,
+      "softness": 0.14
+    },
+    "onion": {
+      "min": 0.0,
+      "max": 0.34,
+      "softness": 0.14
+    },
+    "herb": {
+      "min": 0.0,
+      "max": 0.28,
+      "softness": 0.14
+    },
+    "pepper": {
+      "min": 0.0,
+      "max": 0.28,
+      "softness": 0.14
+    },
+    "browning": {
+      "min": 0.0,
+      "max": 0.38,
+      "softness": 0.18
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.1,
+      "softness": 0.06
+    },
+    "fragmentation": {
+      "min": 0.18,
+      "max": 0.66,
+      "softness": 0.18
+    },
+    "cohesiveness": {
+      "min": 0.24,
+      "max": 0.78,
+      "softness": 0.18
+    },
+    "process_depth": {
+      "min": 2.0,
+      "max": 5.0,
+      "softness": 1.0
+    }
+  },
+  "weights": {
+    "roles": 0.24,
+    "composition": 0.12,
+    "seasoning": 0.12,
+    "cooking": 0.24,
+    "texture": 0.1,
+    "process": 0.08,
+    "technique": 0.07,
+    "presentation": 0.05
+  },
+  "ingredients": [
+    {
+      "role": "grain",
+      "any_traits": [
+        "bread"
+      ],
+      "all_traits": [
+        "bread_loaf"
+      ],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "item": "jazzycookin:sandwich_filling",
+      "role": "vegetable",
+      "any_traits": [
+        "vegetable",
+        "leafy_green",
+        "allium",
+        "tomato",
+        "pepper"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "assemble",
+      "station": "prep_table",
+      "technique": "prepped",
+      "tools": [
+        "knife",
+        "chef_knife",
+        "paring_knife",
+        "cleaver",
+        "table_knife"
+      ],
+      "prerequisites": [
+        "fill"
+      ],
+      "progress_target": 1.0,
+      "output_state": "assembled_sandwich"
+    }
+  ]
+}

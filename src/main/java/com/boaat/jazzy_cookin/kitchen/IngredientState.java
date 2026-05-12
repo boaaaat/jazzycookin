@@ -156,6 +156,7 @@ public enum IngredientState implements StringRepresentable {
     QUINOA("quinoa"),
     SEMOLINA("semolina"),
     BREADCRUMBS("breadcrumbs"),
+    BREAD("bread"),
     BAKING_SODA("baking_soda"),
     BAKING_POWDER("baking_powder"),
     ACTIVE_DRY_YEAST("active_dry_yeast"),

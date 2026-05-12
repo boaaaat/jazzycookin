@@ -93,7 +93,43 @@
       "min": 0.22,
       "max": 0.68,
       "softness": 0.18
+    },
+    "time_in_pan": {
+      "min": 200.0,
+      "max": 500.0,
+      "softness": 120.0
+    },
+    "stir_count": {
+      "min": 2.0,
+      "max": 8.0,
+      "softness": 3.0
+    },
+    "process_depth": {
+      "min": 1.0,
+      "max": 4.0,
+      "softness": 1.0
+    },
+    "surface_temp_c": {
+      "min": 82.0,
+      "max": 108.0,
+      "softness": 24.0
+    },
+    "core_temp_c": {
+      "min": 72.0,
+      "max": 98.0,
+      "softness": 24.0
     }
+  },
+  "weights": {
+    "roles": 0.22,
+    "composition": 0.14,
+    "seasoning": 0.12,
+    "cooking": 0.14,
+    "texture": 0.1,
+    "process": 0.08,
+    "thermal": 0.1,
+    "technique": 0.06,
+    "presentation": 0.04
   },
   "ingredients": [
     {
@@ -131,6 +167,11 @@
       "id": "simmered",
       "station": "stove",
       "technique": "simmered",
+      "tools": [
+        "pot",
+        "stock_pot",
+        "saucepan"
+      ],
       "prerequisites": [],
       "progress_target": 1.0
     }

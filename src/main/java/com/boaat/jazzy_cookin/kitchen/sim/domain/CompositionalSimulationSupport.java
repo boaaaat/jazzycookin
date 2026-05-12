@@ -15,6 +15,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptData;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptContext;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
@@ -408,7 +409,9 @@ final class CompositionalSimulationSupport {
 
     static ItemStack recognizedPreparedOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter) {
         DishRecognitionResult result = DishSchema.finalizePrepared(matter);
-        if (result == null || !(result.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
+        if (result == null
+                || requiresStationAwareSchema(result.key())
+                || !(result.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
             return ItemStack.EMPTY;
         }
         return SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
@@ -475,8 +478,12 @@ final class CompositionalSimulationSupport {
                 .filter(schemaFilter)
                 .map(schema -> {
                     ItemStack projected = new ItemStack(BuiltInRegistries.ITEM.get(schema.result()));
-                    KitchenStackUtil.setDishAttempt(projected, DishAttemptAssembler.build(schema, view, stationQuality));
-                    DishAttemptContext context = new DishAttemptContext(matter, KitchenStackUtil.inferStateFromMatter(matter), projected, KitchenStackUtil.dishAttempt(projected));
+                    DishAttemptData attempt = DishAttemptAssembler.build(schema, view, stationQuality);
+                    if (attempt.wrongTechnique()) {
+                        return java.util.Optional.<DishSchemaScore>empty();
+                    }
+                    KitchenStackUtil.setDishAttempt(projected, attempt);
+                    DishAttemptContext context = new DishAttemptContext(matter, KitchenStackUtil.inferStateFromMatter(matter), projected, attempt);
                     return DishSchemaScorer.score(schema, context);
                 })
                 .filter(java.util.Optional::isPresent)
@@ -485,6 +492,12 @@ final class CompositionalSimulationSupport {
                 .filter(score -> score.score() >= (finalize ? score.schema().finalizeThreshold() : score.schema().previewThreshold()))
                 .max(java.util.Comparator.comparing(DishSchemaScore::score).thenComparing(score -> score.schema().desirability()))
                 .orElse(null);
+    }
+
+    private static boolean requiresStationAwareSchema(String schemaKey) {
+        return DishSchemaScorer.schemas().stream()
+                .filter(schema -> schema.key().equals(schemaKey))
+                .anyMatch(schema -> !schema.steps().isEmpty() || !schema.prerequisiteSchemas().isEmpty());
     }
 
     static void advanceTimedBatch(StationSimulationAccess access, IngredientState state, boolean finalizedServing, float waterBias, float aeration, float fragmentation, float cohesiveness, float proteinSet, float browning, float charLevel) {

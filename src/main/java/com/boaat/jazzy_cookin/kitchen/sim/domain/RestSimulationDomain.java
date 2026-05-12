@@ -5,7 +5,9 @@ import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
@@ -127,7 +129,13 @@ public final class RestSimulationDomain implements StationSimulationDomain {
         }
         ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, RestSimulationDomain::isRestSchema);
         return schemaOutput.isEmpty()
-                ? SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter)
+                ? SimulationOutputFactory.createOutput(
+                        ingredientItem,
+                        access.simulationLevel().getGameTime(),
+                        analysis,
+                        matter,
+                        outputState(access, dominant)
+                )
                 : schemaOutput;
     }
 
@@ -177,7 +185,7 @@ public final class RestSimulationDomain implements StationSimulationDomain {
     private static boolean shouldSlice(StationSimulationAccess access) {
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
             ItemStack stack = access.simulationItem(slot);
-            if (stack.is(JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get())
+            if (isBread(stack)
                     || stack.is(JazzyItems.BAKED_CAKE.get())
                     || stack.is(JazzyItems.BAKED_BROWNIES.get())) {
                 return true;
@@ -193,10 +201,22 @@ public final class RestSimulationDomain implements StationSimulationDomain {
         return IngredientState.COOLED;
     }
 
+    private static IngredientState outputState(StationSimulationAccess access, ItemStack dominant) {
+        return access.simulationStationType() == StationType.COOLING_RACK
+                ? inferCoolingState(dominant)
+                : shouldSlice(access) ? inferSliceState(dominant) : IngredientState.RESTED;
+    }
+
     private static IngredientState inferSliceState(ItemStack dominant) {
-        if (dominant.is(JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get())) {
+        if (isBread(dominant)) {
             return IngredientState.SLICED_BREAD;
         }
         return IngredientState.SLICED;
+    }
+
+    private static boolean isBread(ItemStack stack) {
+        return stack.getItem() instanceof KitchenIngredientItem ingredientItem
+                && ingredientItem.defaultState() == IngredientState.BREAD
+                && FoodMaterialProfiles.hasTrait(stack, FoodTrait.BREAD);
     }
 }

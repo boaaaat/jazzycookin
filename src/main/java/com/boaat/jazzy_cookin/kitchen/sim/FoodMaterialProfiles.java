@@ -631,8 +631,17 @@ public final class FoodMaterialProfiles {
                 IngredientId.LENTILS,
                 IngredientId.DRY_BEANS);
         register(profile(0.34F, 0.04F, 0.10F, 0.48F, 0.04F, 0.08F, 0.03F, 0.02F, 0.0F, 0.0F, 0.02F, 0.0F, 0.0F,
-                        FoodTrait.BREAD, FoodTrait.STARCH, FoodTrait.WHEAT),
+                        FoodTrait.BREAD, FoodTrait.BREAD_LOAF, FoodTrait.STARCH, FoodTrait.WHEAT),
                 IngredientId.BREAD);
+        register(profile(0.36F, 0.04F, 0.11F, 0.46F, 0.03F, 0.16F, 0.03F, 0.02F, 0.0F, 0.0F, 0.02F, 0.0F, 0.0F,
+                        FoodTrait.BREAD, FoodTrait.BREAD_LOAF, FoodTrait.STARCH, FoodTrait.WHEAT),
+                IngredientId.WHOLE_WHEAT_BREAD);
+        register(profile(0.38F, 0.04F, 0.10F, 0.46F, 0.03F, 0.10F, 0.10F, 0.02F, 0.0F, 0.0F, 0.02F, 0.0F, 0.0F,
+                        FoodTrait.BREAD, FoodTrait.BREAD_LOAF, FoodTrait.STARCH, FoodTrait.WHEAT, FoodTrait.FERMENTED, FoodTrait.ACIDIC),
+                IngredientId.SOURDOUGH_BREAD);
+        register(profile(0.35F, 0.04F, 0.10F, 0.48F, 0.03F, 0.14F, 0.05F, 0.02F, 0.0F, 0.0F, 0.02F, 0.0F, 0.0F,
+                        FoodTrait.BREAD, FoodTrait.BREAD_LOAF, FoodTrait.STARCH, FoodTrait.WHEAT),
+                IngredientId.RYE_BREAD);
 
         register(profile(0.78F, 0.02F, 0.02F, 0.08F, 0.18F, 0.02F, 0.18F, 0.08F, 0.0F, 0.02F, 0.0F, 0.0F, 0.0F,
                         FoodTrait.CONDIMENT, FoodTrait.SAUCE, FoodTrait.TOMATO, FoodTrait.ACIDIC),
@@ -818,9 +827,20 @@ public final class FoodMaterialProfiles {
         addIf(builder, id, "apple", IngredientId.APPLES, 1.00F);
         addIf(builder, id, "oat", IngredientId.ROLLED_OATS, 1.00F);
         addIf(builder, id, "jalapeno", IngredientId.JALAPENOS, 1.00F);
-        addIf(builder, id, "bread", IngredientId.BREAD, 1.10F);
+        if (id.contains("bread") && !id.contains("breadcrumb") && !id.contains("breaded")) {
+            builder.add(profileForIngredient(IngredientId.BREAD), 1.10F);
+        }
         addIf(builder, id, "toast", IngredientId.BREAD, 1.10F);
-        addIf(builder, id, "sandwich", IngredientId.BREAD, 1.05F);
+        if (id.contains("sandwich_filling")) {
+            builder.add(profileForIngredient(IngredientId.TOMATOES), 0.80F);
+            builder.add(profileForIngredient(IngredientId.SPINACH), 0.55F);
+            builder.add(profileForIngredient(IngredientId.BLACK_PEPPER), 0.12F);
+        }
+        if (id.contains("sandwich") && !id.contains("sandwich_filling")) {
+            builder.add(profileForIngredient(IngredientId.BREAD), 1.05F);
+            builder.add(profileForIngredient(IngredientId.TOMATOES), 0.45F);
+            builder.add(profileForIngredient(IngredientId.SPINACH), 0.30F);
+        }
         addIf(builder, id, "focaccia", IngredientId.BREAD_FLOUR, 1.10F);
         addIf(builder, id, "pizza", IngredientId.CANNED_TOMATOES, 0.70F);
         addIf(builder, id, "pie", IngredientId.ALL_PURPOSE_FLOUR, 1.00F);

@@ -1,0 +1,165 @@
+{
+  "key": "sandwich_plate",
+  "preview_id": 1202,
+  "result": "jazzycookin:sandwich_plate",
+  "category": "plated",
+  "meal": true,
+  "preview_threshold": 0.52,
+  "finalize_threshold": 0.58,
+  "desirability": 0.82,
+  "required_roles": [
+    {
+      "role": "grain",
+      "any_traits": [
+        "bread"
+      ],
+      "all_traits": [
+        "bread_loaf"
+      ],
+      "weight": 1.0
+    },
+    {
+      "role": "vegetable",
+      "any_traits": [
+        "vegetable",
+        "leafy_green",
+        "allium",
+        "tomato",
+        "pepper"
+      ],
+      "weight": 0.58
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "dairy",
+      "any_traits": [
+        "dairy"
+      ],
+      "weight": 0.2
+    },
+    {
+      "role": "protein",
+      "any_traits": [
+        "protein",
+        "animal_protein",
+        "plant_protein"
+      ],
+      "weight": 0.2
+    },
+    {
+      "role": "garnish",
+      "any_traits": [
+        "salt",
+        "herb",
+        "spice",
+        "pepper",
+        "condiment",
+        "sauce",
+        "acidic"
+      ],
+      "weight": 0.24
+    }
+  ],
+  "required_techniques": [
+    "plated"
+  ],
+  "prerequisite_schemas": [
+    "assembled_sandwich"
+  ],
+  "serving_items": [
+    "jazzycookin:ceramic_plate"
+  ],
+  "targets": {
+    "water": {
+      "min": 0.22,
+      "max": 0.66,
+      "softness": 0.18
+    },
+    "seasoning": {
+      "min": 0.02,
+      "max": 0.34,
+      "softness": 0.16
+    },
+    "cheese": {
+      "min": 0.0,
+      "max": 0.34,
+      "softness": 0.14
+    },
+    "browning": {
+      "min": 0.0,
+      "max": 0.38,
+      "softness": 0.18
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.1,
+      "softness": 0.06
+    },
+    "fragmentation": {
+      "min": 0.18,
+      "max": 0.66,
+      "softness": 0.18
+    },
+    "cohesiveness": {
+      "min": 0.26,
+      "max": 0.8,
+      "softness": 0.18
+    },
+    "process_depth": {
+      "min": 3.0,
+      "max": 6.0,
+      "softness": 1.0
+    }
+  },
+  "weights": {
+    "roles": 0.26,
+    "composition": 0.12,
+    "seasoning": 0.12,
+    "cooking": 0.28,
+    "texture": 0.1,
+    "process": 0.06,
+    "technique": 0.06,
+    "presentation": 0.06
+  },
+  "ingredients": [
+    {
+      "item": "jazzycookin:assembled_sandwich",
+      "role": "grain",
+      "any_traits": [
+        "bread"
+      ],
+      "all_traits": [
+        "bread_loaf"
+      ],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    },
+    {
+      "item": "jazzycookin:ceramic_plate",
+      "role": "container",
+      "ideal_amount": 1.0,
+      "min_amount": 1.0,
+      "max_amount": 1.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "plate",
+      "station": "plating_station",
+      "technique": "plated",
+      "prerequisites": [
+        "assemble"
+      ],
+      "progress_target": 1.0,
+      "output_state": "plated"
+    }
+  ]
+}

@@ -53,6 +53,8 @@ public final class DishEvaluation {
             float recipeAccuracy,
             float seasoning,
             float cooking,
+            float process,
+            float thermal,
             float texture,
             float freshness,
             float presentation,
@@ -67,7 +69,7 @@ public final class DishEvaluation {
     public static QualityBreakdown evaluateStack(ItemStack stack, Level level) {
         IngredientStateData data = KitchenStackUtil.getOrCreateData(stack, level.getGameTime());
         if (data == null) {
-            return new QualityBreakdown(DishGrade.FAILED, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0, 0);
+            return new QualityBreakdown(DishGrade.FAILED, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0, 0);
         }
 
         float freshness = KitchenStackUtil.currentFreshnessScore(stack, level);
@@ -87,6 +89,8 @@ public final class DishEvaluation {
                 scores.recipeAccuracy(),
                 scores.seasoning(),
                 scores.cooking(),
+                scores.process(),
+                scores.thermal(),
                 scores.texture(),
                 scores.presentation(),
                 scores.recipeAccuracy(),
@@ -126,15 +130,24 @@ public final class DishEvaluation {
         float donenessFit = donenessFit(foodMatter, effectiveState, recognition, family);
         float browningFit = browningFit(foodMatter, effectiveState, recognition, family);
         float processFit = Mth.clamp(foodMatter.processDepth() / 4.0F, 0.0F, 1.0F);
+        float schemaProcessFit = schemaScore != null && schemaScore.schema().targets().hasProcessTargets()
+                ? schemaScore.processScore()
+                : processFit;
+        float thermalFit = schemaScore != null && schemaScore.schema().targets().hasThermalTargets()
+                ? schemaScore.thermalScore()
+                : average(
+                        around(foodMatter.surfaceTempC(), targetSurfaceTemp(family, effectiveState), 90.0F),
+                        around(foodMatter.coreTempC(), targetCoreTemp(family, effectiveState), 65.0F)
+                );
 
         float schemaRecipeFit = schemaScore != null
-                ? average(schemaScore.roleScore(), schemaScore.compositionScore(), schemaScore.techniqueScore(), schemaScore.score())
+                ? average(schemaScore.roleScore(), schemaScore.compositionScore(), schemaScore.techniqueScore(), schemaProcessFit, thermalFit, schemaScore.score())
                 : recognitionScore;
         float recipeAccuracy = Mth.clamp(
                 schemaRecipeFit * 0.50F
                         + recognitionScore * 0.18F
                         + compositionFit * 0.14F
-                        + processFit * 0.10F
+                        + schemaProcessFit * 0.10F
                         + data.recipeAccuracy() * 0.08F,
                 0.0F,
                 1.0F
@@ -149,13 +162,17 @@ public final class DishEvaluation {
         float cooking = Mth.clamp(
                 donenessFit * 0.30F
                         + browningFit * 0.22F
-                        + moistureFit * 0.14F
+                        + moistureFit * 0.12F
                         + (1.0F - foodMatter.charLevel()) * 0.14F
                         + integrity * 0.12F
-                        + (schemaScore != null ? schemaScore.cookingScore() : donenessFit) * 0.08F,
+                        + (schemaScore != null ? schemaScore.cookingScore() : donenessFit) * 0.06F
+                        + schemaProcessFit * 0.02F
+                        + thermalFit * 0.02F,
                 0.0F,
                 1.0F
         );
+        float process = Mth.clamp(schemaProcessFit * 0.72F + processFit * 0.28F, 0.0F, 1.0F);
+        float thermal = Mth.clamp(thermalFit, 0.0F, 1.0F);
         float texture = Mth.clamp(
                 structureFit * 0.36F
                         + moistureFit * 0.20F
@@ -169,7 +186,7 @@ public final class DishEvaluation {
                 servingFit(foodMatter, effectiveState) * 0.46F
                         + (schemaScore != null ? schemaScore.presentationScore() : foodMatter.finalizedServing() ? 1.0F : 0.42F) * 0.24F
                         + recognitionQuality * 0.16F
-                        + processFit * 0.08F
+                        + process * 0.08F
                         + integrity * 0.06F,
                 0.0F,
                 1.0F
@@ -195,10 +212,12 @@ public final class DishEvaluation {
         float total = Mth.clamp(
                 recipeAccuracy * 0.24F
                         + seasoning * 0.15F
-                        + cooking * 0.20F
-                        + texture * 0.14F
+                        + cooking * 0.18F
+                        + process * 0.06F
+                        + thermal * 0.04F
+                        + texture * 0.12F
                         + freshnessScore * 0.15F
-                        + presentation * 0.08F
+                        + presentation * 0.04F
                         + ingredientQuality * 0.04F,
                 0.0F,
                 1.0F
@@ -217,6 +236,8 @@ public final class DishEvaluation {
                 recipeAccuracy,
                 seasoning,
                 cooking,
+                process,
+                thermal,
                 texture,
                 freshnessScore,
                 presentation,
@@ -235,6 +256,8 @@ public final class DishEvaluation {
         float prep = Mth.clamp((data.texture() + data.purity()) * 0.5F, 0.0F, 1.0F);
         float combine = Mth.clamp((data.structure() + data.aeration() + data.moisture()) / 3.0F, 0.0F, 1.0F);
         float cooking = Mth.clamp((data.flavor() + data.moisture() + data.texture()) / 3.0F, 0.0F, 1.0F);
+        float process = Mth.clamp(data.processDepth() / 4.0F, 0.0F, 1.0F);
+        float thermal = cooking;
         float finishing = isFinishedState(effectiveState)
                 ? 0.95F
                 : requiresFinishing(effectiveState)
@@ -244,14 +267,16 @@ public final class DishEvaluation {
                 : 0.45F;
         float plating = effectiveState.isPlatedState() ? 1.0F : 0.7F;
         float total = Mth.clamp(
-                data.quality() * 0.22F
+                data.quality() * 0.21F
                         + freshness * 0.14F
                         + data.recipeAccuracy() * 0.16F
                         + prep * 0.12F
                         + combine * 0.12F
-                        + cooking * 0.14F
-                        + finishing * 0.06F
-                        + plating * 0.04F,
+                        + cooking * 0.13F
+                        + process * 0.04F
+                        + thermal * 0.03F
+                        + finishing * 0.05F
+                        + plating * 0.0F,
                 0.0F,
                 1.0F
         );
@@ -271,6 +296,8 @@ public final class DishEvaluation {
                 prep,
                 combine,
                 cooking,
+                process,
+                thermal,
                 finishing,
                 plating,
                 data.recipeAccuracy(),
@@ -395,6 +422,26 @@ public final class DishEvaluation {
             case EGG -> 0.12F;
             case SAUCE, SOUP -> 0.08F;
             default -> 0.10F;
+        };
+    }
+
+    private static float targetSurfaceTemp(DishFamily family, IngredientState state) {
+        return switch (family) {
+            case FRIED -> 150.0F;
+            case BAKED -> 175.0F;
+            case SOUP -> 92.0F;
+            case EGG -> 120.0F;
+            default -> state == IngredientState.PAN_FRIED ? 145.0F : 32.0F;
+        };
+    }
+
+    private static float targetCoreTemp(DishFamily family, IngredientState state) {
+        return switch (family) {
+            case FRIED -> 72.0F;
+            case BAKED -> 88.0F;
+            case SOUP -> 82.0F;
+            case EGG -> 70.0F;
+            default -> state == IngredientState.PAN_FRIED ? 70.0F : 28.0F;
         };
     }
 

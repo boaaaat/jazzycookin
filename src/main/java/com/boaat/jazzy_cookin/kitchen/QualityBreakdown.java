@@ -11,6 +11,8 @@ public record QualityBreakdown(
         float prepScore,
         float combineScore,
         float cookingScore,
+        float processScore,
+        float thermalScore,
         float finishingScore,
         float platingScore,
         float recipeAccuracy,

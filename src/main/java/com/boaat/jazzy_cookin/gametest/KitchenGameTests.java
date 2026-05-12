@@ -26,11 +26,13 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodMaterialProfiles;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptContext;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishAttemptData;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaManager;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.SimulationExecutionMode;
 import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
@@ -738,7 +740,13 @@ public final class KitchenGameTests {
         bowl.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ALL_PURPOSE_FLOUR).get().createStack(1, level.getGameTime()));
         bowl.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, level.getGameTime()));
         require(bowl.handleButton(6, fakePlayer), "Mix action should form pie dough from flour and butter");
-        require(bowl.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.PIE_DOUGH.get()), "Mixing bowl simulation should output pie dough");
+        ItemStack pieDough = bowl.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(pieDough.is(JazzyItems.PIE_DOUGH.get()), "Mixing bowl simulation should output pie dough");
+        DishAttemptData attempt = KitchenStackUtil.dishAttempt(pieDough);
+        require("pie_dough".equals(attempt.schemaKey())
+                        && attempt.ingredientScore() > 0.95F
+                        && !attempt.missingCoreIngredient(),
+                "Pie dough schema should score explicit flour and fat traits without coarse role rejection");
         helper.succeed();
     }
 
@@ -1069,6 +1077,75 @@ public final class KitchenGameTests {
                         .flatMap(requirement -> requirement.choices().stream())
                         .anyMatch(KitchenStackUtil::isMeasured),
                 "French toast guide should render measured ingredient examples");
+        JazzyRecipeBookPlanner.PlanStep soakedFrenchToastStep = frenchToastPlan.steps().stream()
+                .filter(step -> step.outputKey().equals(outputKey(JazzyItems.FRENCH_TOAST_SOAKED.get(), IngredientState.BATTERED)))
+                .findFirst()
+                .orElse(null);
+        require(soakedFrenchToastStep != null
+                        && soakedFrenchToastStep.options().stream()
+                        .flatMap(option -> option.requirements().stream())
+                        .flatMap(requirement -> requirement.choices().stream())
+                        .anyMatch(stack -> stack.is(JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get())),
+                "French toast soaking guide should still require bread in addition to batter");
+
+        JazzyRecipeBookPlanner.Plan sandwichPlan = requirePlan(
+                planner,
+                selection(JazzyItems.SANDWICH_PLATE.get(), IngredientState.PLATED, "schema:sandwich_plate")
+        );
+        require(planner.catalogEntry(itemId(JazzyItems.SANDWICH_PLATE.get())).isPresent()
+                        && planner.producibleStates(itemId(JazzyItems.SANDWICH_PLATE.get())).contains(IngredientState.PLATED),
+                "Sandwich plate should be discoverable as a producible plated meal in the recipe-book catalog");
+        require(sandwichPlan.steps().stream().anyMatch(step ->
+                        step.outputKey().equals(outputKey(JazzyItems.ASSEMBLED_SANDWICH.get(), IngredientState.ASSEMBLED_SANDWICH))),
+                "Sandwich guide should include the flexible assembled-sandwich schema step");
+        require(sandwichPlan.steps().stream().anyMatch(step ->
+                        step.outputKey().equals(outputKey(JazzyItems.SANDWICH_FILLING.get(), IngredientState.CHOPPED))),
+                "Sandwich guide should include a flexible vegetable filling schema step");
+        JazzyRecipeBookPlanner.PlanStep assembledSandwichStep = sandwichPlan.steps().stream()
+                .filter(step -> step.outputKey().equals(outputKey(JazzyItems.ASSEMBLED_SANDWICH.get(), IngredientState.ASSEMBLED_SANDWICH)))
+                .findFirst()
+                .orElse(null);
+        require(assembledSandwichStep != null
+                        && assembledSandwichStep.options().stream()
+                        .flatMap(option -> option.requirements().stream())
+                        .flatMap(requirement -> requirement.choices().stream())
+                        .anyMatch(stack -> stack.is(JazzyItems.SANDWICH_FILLING.get())),
+                "Assembled-sandwich guide step should use prepared filling instead of repeating raw vegetables");
+        require(assembledSandwichStep != null
+                        && assembledSandwichStep.options().stream()
+                        .anyMatch(option -> option.preferredTool() == ToolProfile.CHEF_KNIFE
+                                && option.allowedTools().contains(ToolProfile.TABLE_KNIFE)
+                                && option.allowedTools().contains(ToolProfile.CLEAVER)),
+                "Assembled-sandwich guide should preserve schema-declared prep tools");
+        require(sandwichPlan.steps().stream()
+                        .flatMap(step -> step.options().stream())
+                        .flatMap(option -> option.requirements().stream())
+                        .flatMap(requirement -> requirement.choices().stream())
+                        .anyMatch(stack -> stack.is(JazzyItems.ingredient(JazzyItems.IngredientId.WHOLE_WHEAT_BREAD).get()))
+                        && sandwichPlan.steps().stream()
+                        .flatMap(step -> step.options().stream())
+                        .flatMap(option -> option.requirements().stream())
+                        .flatMap(requirement -> requirement.choices().stream())
+                        .anyMatch(stack -> stack.is(JazzyItems.ingredient(JazzyItems.IngredientId.SOURDOUGH_BREAD).get()))
+                        && sandwichPlan.steps().stream()
+                        .flatMap(step -> step.options().stream())
+                        .flatMap(option -> option.requirements().stream())
+                        .flatMap(requirement -> requirement.choices().stream())
+                        .anyMatch(stack -> stack.is(JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get())),
+                "Sandwich guide should surface whole wheat, sourdough, and rye bread choices");
+        require(assembledSandwichStep != null
+                        && assembledSandwichStep.options().stream()
+                        .flatMap(option -> option.requirements().stream())
+                        .flatMap(requirement -> requirement.choices().stream())
+                        .noneMatch(stack -> stack.is(JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get())),
+                "Sandwich guide should prefer loaf bread examples instead of breadcrumbs");
+        require(sandwichPlan.steps().stream()
+                        .flatMap(step -> step.options().stream())
+                        .flatMap(option -> option.notes().stream())
+                        .anyMatch(note -> note.contains("untoasted or lightly toasted bread")
+                                && note.contains("optional cheese")
+                                && note.contains("optional seasoning")),
+                "Sandwich guide should explain toast, cheese, and seasoning variations");
         helper.succeed();
     }
 
@@ -1456,6 +1533,426 @@ public final class KitchenGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void sandwichSchemaGradesFlexibleBreadVeggieSeasoningVariants(GameTestHelper helper) {
+        long gameTime = helper.getLevel().getGameTime();
+        DishSchemaDefinition schema = schemaByKey("assembled_sandwich");
+        require(JazzyItems.ingredient(JazzyItems.IngredientId.WHOLE_WHEAT_BREAD).get().defaultState() == IngredientState.BREAD,
+                "Whole wheat bread should behave as a bread ingredient");
+        require(JazzyItems.ingredient(JazzyItems.IngredientId.SOURDOUGH_BREAD).get().defaultState() == IngredientState.BREAD,
+                "Sourdough bread should behave as a bread ingredient");
+        require(FoodMaterialProfiles.hasTrait(new ItemStack(JazzyItems.ingredient(JazzyItems.IngredientId.SOURDOUGH_BREAD).get()), FoodTrait.FERMENTED)
+                        && FoodMaterialProfiles.hasTrait(new ItemStack(JazzyItems.ingredient(JazzyItems.IngredientId.SOURDOUGH_BREAD).get()), FoodTrait.ACIDIC),
+                "Sourdough bread should keep fermented and acidic profile traits");
+        require(FoodMaterialProfiles.hasTrait(new ItemStack(JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get()), FoodTrait.BREAD)
+                        && FoodMaterialProfiles.hasTrait(new ItemStack(JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get()), FoodTrait.BREAD_LOAF),
+                "Rye bread should expose bread loaf traits for flexible sandwich schemas");
+        require(!FoodMaterialProfiles.hasTrait(new ItemStack(JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get()), FoodTrait.BREAD_LOAF)
+                        && !FoodMaterialProfiles.hasTrait(new ItemStack(JazzyItems.ingredient(JazzyItems.IngredientId.COOKIES).get()), FoodTrait.BREAD_LOAF),
+                "Crumbs and cookies should not count as sandwich bread loaves");
+        require(!FoodMaterialProfiles.hasTrait(new ItemStack(JazzyItems.PACKED_BREADCRUMBS.get()), FoodTrait.BREAD_LOAF)
+                        && !FoodMaterialProfiles.hasTrait(new ItemStack(JazzyItems.BREADED_FISH_FILLET.get()), FoodTrait.BREAD_LOAF),
+                "Prepared crumbs and breaded coatings should not inherit bread loaf traits from their item names");
+        require(FoodMaterialProfiles.hasTrait(new ItemStack(JazzyItems.GARLIC_BREAD_PREP.get()), FoodTrait.BREAD_LOAF),
+                "Prepared garlic bread should keep bread loaf traits");
+        ItemStack ryeBread = JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get().createStack(1, gameTime);
+        require(KitchenStackUtil.isStateAllowed(ryeBread, IngredientState.SLICED_BREAD, gameTime)
+                        && KitchenStackUtil.isStateAllowed(ryeBread, IngredientState.BAKED_BREAD, gameTime),
+                "Alternate breads should allow sliced and toasted bread states");
+        KitchenStationBlockEntity prepTable = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        prepTable.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.SOURDOUGH_BREAD).get().createStack(1, gameTime));
+        prepTable.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        require(prepTable.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())), "Prep table should process alternate bread types");
+        tickStation(helper.getLevel(), prepTable, 80);
+        ItemStack slicedSourdough = prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(KitchenStackUtil.getFoodState(slicedSourdough) == IngredientState.SLICED_BREAD,
+                "Alternate bread should slice into the sliced-bread state");
+
+        KitchenStationBlockEntity oven = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(3, 1, 0)), JazzyBlocks.OVEN.get());
+        oven.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.SOURDOUGH_BREAD).get().createStack(1, gameTime));
+        oven.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.BAKING_TRAY.get()));
+        oven.handleButton(4000, FakePlayerFactory.getMinecraft(helper.getLevel()));
+        oven.handleButton(5001, FakePlayerFactory.getMinecraft(helper.getLevel()));
+        tickStation(helper.getLevel(), oven, 720);
+        require(oven.simulationPreheatProgress() >= 100, "Oven should preheat before toasting alternate bread");
+        require(oven.handleButton(0, FakePlayerFactory.getMinecraft(helper.getLevel())), "Oven should toast alternate bread types");
+        tickStation(helper.getLevel(), oven, 1210);
+        ItemStack toastedSourdough = oven.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        FoodMatterData toastedMatter = KitchenStackUtil.getFoodMatter(toastedSourdough);
+        require(toastedSourdough.is(JazzyItems.ingredient(JazzyItems.IngredientId.SOURDOUGH_BREAD).get()),
+                "Toasting should preserve the selected alternate bread item");
+        require(KitchenStackUtil.getFoodState(toastedSourdough) == IngredientState.BAKED_BREAD,
+                "Toasted alternate bread should carry the baked-bread state");
+        require(toastedMatter != null && toastedMatter.browning() > 0.0F,
+                "Toasted alternate bread should carry browning matter for sandwich grading");
+
+        FoodMatterData untoastedVeggie = schemaSandwichMatter(gameTime, 0.0F, 0.0F, 0.12F, 0.0F);
+        FoodMatterData toastedCheeseVeggie = schemaSandwichMatter(gameTime, 0.18F, 0.02F, 0.16F, 0.18F);
+        FoodMatterData overCharred = schemaSandwichMatter(gameTime, 0.72F, 0.42F, 0.16F, 0.18F);
+        FoodMatterData rushedAssembly = schemaSandwichMatter(gameTime, 0.12F, 0.0F, 0.14F, 0.12F)
+                .withWorkingState(0.42F, 0.02F, 0.38F, 0.54F, 0.04F, 0.12F, 0.0F, 0.0F, 0, 0, 0, 0, false);
+        FoodMatterData missingBread = new FoodMatterData(
+                gameTime,
+                FoodTrait.maskOf(FoodTrait.VEGETABLE, FoodTrait.TOMATO, FoodTrait.SALT, FoodTrait.HERB),
+                24.0F,
+                24.0F,
+                0.64F,
+                0.02F,
+                0.02F,
+                0.02F,
+                0.48F,
+                0.24F,
+                0.0F,
+                0.0F,
+                0.0F,
+                0.12F,
+                0.0F,
+                0.04F,
+                0.06F,
+                0.02F,
+                FoodMatterData.UNSET_ENVIRONMENT,
+                FoodMatterData.UNSET_ENVIRONMENT,
+                FoodMatterData.UNSET_ENVIRONMENT,
+                0.0F,
+                0,
+                0,
+                0,
+                1,
+                false
+        ).clamp();
+
+        DishSchemaScore untoastedScore = DishSchemaScorer.bestScore(untoastedVeggie, item -> item == JazzyItems.ASSEMBLED_SANDWICH.get());
+        DishSchemaScore toastedScore = DishSchemaScorer.bestScore(toastedCheeseVeggie, item -> item == JazzyItems.ASSEMBLED_SANDWICH.get());
+        DishSchemaScore charredScore = DishSchemaScorer.bestScore(overCharred, item -> item == JazzyItems.ASSEMBLED_SANDWICH.get());
+        DishSchemaScore rushedScore = DishSchemaScorer.bestScore(rushedAssembly, item -> item == JazzyItems.ASSEMBLED_SANDWICH.get());
+        DishSchemaScore missingBreadScore = DishSchemaScorer.bestScore(missingBread, item -> item == JazzyItems.ASSEMBLED_SANDWICH.get());
+
+        require(untoastedScore != null && untoastedScore.score() >= schema.finalizeThreshold(),
+                "Untoasted veggie sandwich should still be a valid sandwich variant");
+        require(toastedScore != null && toastedScore.score() >= schema.finalizeThreshold(),
+                "Toasted bread with cheese and seasoning should be a valid sandwich variant");
+        require(toastedScore.score() >= untoastedScore.score(),
+                "Supportive cheese, seasoning, and light toast should not lower sandwich grade");
+        require(charredScore != null && charredScore.score() < toastedScore.score(),
+                "Over-charred bread should lower the sandwich grade");
+        require(charredScore.score() <= 0.85F,
+                "Over-charred bread should cap the sandwich grade instead of scoring near perfect");
+        require(rushedScore != null && rushedScore.processScore() < untoastedScore.processScore() && rushedScore.cap() <= 0.62F,
+                "Sandwich-like matter without prep depth should lose process score and be capped");
+        require(missingBreadScore == null || missingBreadScore.score() <= 0.55F,
+                "Vegetables and seasoning without bread should not grade as a sandwich");
+
+        KitchenStationBlockEntity rawSandwichPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(6, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        rawSandwichPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get().createStack(1, gameTime));
+        rawSandwichPrep.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, gameTime));
+        rawSandwichPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        require(!rawSandwichPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Raw bread and vegetables should not skip the prepared sandwich filling step");
+
+        KitchenStationBlockEntity alliumPepperPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(8, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        alliumPepperPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ONIONS).get().createStack(1, gameTime));
+        alliumPepperPrep.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.RED_PEPPER).get().createStack(1, gameTime));
+        alliumPepperPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.TABLE_KNIFE.get()));
+        require(alliumPepperPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Allium and pepper vegetable traits should satisfy flexible sandwich filling at the station");
+        tickStation(helper.getLevel(), alliumPepperPrep, 80);
+        require(alliumPepperPrep.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SANDWICH_FILLING.get()),
+                "Flexible sandwich filling should accept non-tomato vegetable variants");
+
+        KitchenStationBlockEntity seasonedSingleVegPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(10, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        seasonedSingleVegPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, gameTime));
+        seasonedSingleVegPrep.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, gameTime));
+        seasonedSingleVegPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.PARING_KNIFE.get()));
+        require(seasonedSingleVegPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Single-vegetable sandwich filling should still incorporate optional seasoning");
+        tickStation(helper.getLevel(), seasonedSingleVegPrep, 80);
+        require(seasonedSingleVegPrep.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SANDWICH_FILLING.get()),
+                "Seasoned single vegetable should produce flexible sandwich filling");
+        require(seasonedSingleVegPrep.getItem(1).isEmpty(),
+                "Schema-recognized sandwich filling should consume seasoning that contributed to its grade");
+
+        KitchenStationBlockEntity fillingPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(9, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        fillingPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, gameTime));
+        fillingPrep.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.SPINACH).get().createStack(1, gameTime));
+        fillingPrep.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, gameTime));
+        fillingPrep.setItem(3, JazzyItems.ingredient(JazzyItems.IngredientId.CHEESE).get().createStack(1, gameTime));
+        fillingPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        require(fillingPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Prep table should make a flexible sandwich filling from vegetables and seasoning");
+        tickStation(helper.getLevel(), fillingPrep, 80);
+        ItemStack sandwichFilling = fillingPrep.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(sandwichFilling.is(JazzyItems.SANDWICH_FILLING.get()),
+                "Flexible vegetables and seasoning should produce sandwich filling");
+        require(KitchenStackUtil.dishAttempt(sandwichFilling).hasStep("fill"),
+                "Sandwich filling should record the fill schema step");
+        require(KitchenStackUtil.dishAttempt(sandwichFilling).equipmentStep().equals("fill")
+                        && KitchenStackUtil.dishAttempt(sandwichFilling).station().equals(StationType.PREP_TABLE.getSerializedName())
+                        && KitchenStackUtil.dishAttempt(sandwichFilling).tool().equals(ToolProfile.CHEF_KNIFE.getSerializedName()),
+                "Sandwich filling should record the station and knife used for grading");
+
+        KitchenStationBlockEntity crumbSandwichPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(11, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        crumbSandwichPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get().createStack(1, gameTime));
+        crumbSandwichPrep.setItem(1, sandwichFilling.copy());
+        crumbSandwichPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        require(!crumbSandwichPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Breadcrumbs should not satisfy the sandwich bread loaf requirement");
+
+        ItemStack malformedFilling = JazzyItems.SANDWICH_FILLING.get().createStack(1, gameTime);
+        KitchenStackUtil.setFoodMatter(
+                malformedFilling,
+                FoodMaterialProfiles.BLACK_PEPPER.create(IngredientState.CHOPPED, gameTime, 1, false),
+                gameTime
+        );
+        KitchenStationBlockEntity malformedSandwichPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(17, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        malformedSandwichPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get().createStack(1, gameTime));
+        malformedSandwichPrep.setItem(1, malformedFilling);
+        malformedSandwichPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        require(!malformedSandwichPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Named sandwich filling should still need vegetable traits to satisfy the assembled-sandwich ingredient");
+
+        KitchenStationBlockEntity cheeseSandwichPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(13, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        cheeseSandwichPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get().createStack(1, gameTime));
+        cheeseSandwichPrep.setItem(1, sandwichFilling.copy());
+        cheeseSandwichPrep.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.CHEESE).get().createStack(1, gameTime));
+        cheeseSandwichPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.TABLE_KNIFE.get()));
+        require(cheeseSandwichPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Prep table should assemble sandwich variants with optional cheese at assembly time");
+        tickStation(helper.getLevel(), cheeseSandwichPrep, 80);
+        ItemStack cheeseSandwich = cheeseSandwichPrep.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        FoodMatterData cheeseSandwichMatter = KitchenStackUtil.getFoodMatter(cheeseSandwich);
+        require(cheeseSandwich.is(JazzyItems.ASSEMBLED_SANDWICH.get()),
+                "Bread, filling, and optional cheese should produce an assembled sandwich");
+        require(cheeseSandwichMatter != null && cheeseSandwichMatter.cheeseLoad() > 0.0F && cheeseSandwichMatter.hasTrait(FoodTrait.DAIRY),
+                "Assembled cheese sandwich should carry dairy matter for grading");
+
+        KitchenStationBlockEntity sandwichPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(12, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        sandwichPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get().createStack(1, gameTime));
+        sandwichPrep.setItem(1, sandwichFilling.copy());
+        sandwichPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        require(sandwichPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Prep table should assemble bread with prepared sandwich filling");
+        tickStation(helper.getLevel(), sandwichPrep, 80);
+        ItemStack assembledSandwich = sandwichPrep.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(assembledSandwich.is(JazzyItems.ASSEMBLED_SANDWICH.get()),
+                "Bread plus prepared filling should produce an assembled sandwich");
+        require(KitchenStackUtil.dishAttempt(assembledSandwich).hasStep("fill"),
+                "Assembled sandwich should retain the filling schema step");
+        require(KitchenStackUtil.dishAttempt(assembledSandwich).hasStep("assemble"),
+                "Assembled sandwich should record the assemble schema step");
+        FoodMatterData assembledMatter = KitchenStackUtil.getFoodMatter(assembledSandwich);
+        require(assembledMatter != null && assembledMatter.processDepth() >= 2,
+                "Assembled sandwich should carry enough process depth to satisfy its handling target");
+
+        KitchenStationBlockEntity platingStation = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(15, 1, 0)), JazzyBlocks.PLATING_STATION.get());
+        platingStation.setItem(0, assembledSandwich.copy());
+        platingStation.setItem(1, new ItemStack(JazzyItems.CERAMIC_PLATE.get()));
+        require(platingStation.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Plating station should accept an assembled sandwich and ceramic plate");
+        tickStation(helper.getLevel(), platingStation, 24);
+        ItemStack sandwichPlate = platingStation.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(sandwichPlate.is(JazzyItems.SANDWICH_PLATE.get()),
+                "Assembled sandwich plus plate should produce a sandwich plate");
+        require(platingStation.getItem(0).isEmpty() && platingStation.getItem(1).isEmpty(),
+                "Plating a sandwich should consume both the assembled sandwich and ceramic plate inputs");
+        require(KitchenStackUtil.dishAttempt(sandwichPlate).hasStep("plate"),
+                "Sandwich plate should record the plating schema step");
+        require(KitchenStackUtil.dishAttempt(sandwichPlate).equipmentEvents().stream().anyMatch(event -> event.equals("fill|prep_table|chef_knife"))
+                        && KitchenStackUtil.dishAttempt(sandwichPlate).equipmentEvents().stream().anyMatch(event -> event.equals("assemble|prep_table|chef_knife"))
+                        && KitchenStackUtil.dishAttempt(sandwichPlate).equipmentEvents().stream().anyMatch(event -> event.equals("plate|plating_station|none")),
+                "Sandwich plate should preserve equipment lineage from filling through plating");
+        DishSchemaDefinition sandwichPlateSchema = schemaByKey("sandwich_plate");
+        DishAttemptData sandwichPlateAttempt = KitchenStackUtil.dishAttempt(sandwichPlate);
+        FoodMatterData sandwichPlateMatter = KitchenStackUtil.getFoodMatter(sandwichPlate);
+        DishSchemaScore correctLineageScore = DishSchemaScorer.score(
+                sandwichPlateSchema,
+                new DishAttemptContext(sandwichPlateMatter, IngredientState.PLATED, sandwichPlate, sandwichPlateAttempt)
+        ).orElseThrow(() -> new AssertionError("Correct sandwich plate lineage should score"));
+        DishAttemptData wrongFillLineage = new DishAttemptData(
+                sandwichPlateAttempt.schemaKey(),
+                sandwichPlateAttempt.completedSteps(),
+                sandwichPlateAttempt.ingredientScore(),
+                sandwichPlateAttempt.missingCoreIngredient(),
+                sandwichPlateAttempt.unmeasuredIngredient(),
+                sandwichPlateAttempt.wrongTechnique(),
+                sandwichPlateAttempt.qualityPenalty(),
+                sandwichPlateAttempt.equipmentStep(),
+                sandwichPlateAttempt.station(),
+                sandwichPlateAttempt.tool(),
+                List.of("fill|oven|baking_tray", "assemble|prep_table|chef_knife", "plate|plating_station|none")
+        );
+        DishSchemaScore wrongFillLineageScore = DishSchemaScorer.score(
+                sandwichPlateSchema,
+                new DishAttemptContext(sandwichPlateMatter, IngredientState.PLATED, sandwichPlate, wrongFillLineage)
+        ).orElseThrow(() -> new AssertionError("Wrong sandwich fill lineage should still score for diagnostics"));
+        require(correctLineageScore.techniqueScore() > wrongFillLineageScore.techniqueScore(),
+                "Final sandwich plate grade should account for prerequisite filling station and tool lineage");
+        require(sandwichPlateSchema.targets().processDepth().isPresent() && sandwichPlateSchema.weights().process() > 0.0F,
+                "Final sandwich plate should grade the full handling depth of the fill/assemble/plate chain");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void schemaProcessTargetsGradePanTimeAndHandling(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long gameTime = level.getGameTime();
+        DishSchemaDefinition schema = schemaByKey("pan_seared_chicken_prep");
+        FoodMatterData balancedPanChicken = schemaPanChickenMatter(gameTime, 2, 210, 2);
+        FoodMatterData rushedPanChicken = schemaPanChickenMatter(gameTime, 0, 20, 0);
+        FoodMatterData coldPanChicken = balancedPanChicken.withTemps(35.0F, 35.0F);
+
+        DishSchemaScore balancedScore = DishSchemaScorer.score(schema,
+                new DishAttemptContext(balancedPanChicken, IngredientState.PAN_FRIED, ItemStack.EMPTY, DishAttemptData.EMPTY))
+                .orElseThrow(() -> new AssertionError("Balanced pan chicken should score against its schema"));
+        DishSchemaScore rushedScore = DishSchemaScorer.score(schema,
+                new DishAttemptContext(rushedPanChicken, IngredientState.PAN_FRIED, ItemStack.EMPTY, DishAttemptData.EMPTY))
+                .orElseThrow(() -> new AssertionError("Rushed pan chicken should still produce a graded schema attempt"));
+        DishSchemaScore coldScore = DishSchemaScorer.score(schema,
+                new DishAttemptContext(coldPanChicken, IngredientState.PAN_FRIED, ItemStack.EMPTY, DishAttemptData.EMPTY))
+                .orElseThrow(() -> new AssertionError("Cold pan chicken should still produce a graded schema attempt"));
+
+        require(balancedScore.processScore() > 0.95F, "Balanced pan chicken should hit its process target");
+        require(balancedScore.thermalScore() > 0.95F, "Balanced pan chicken should hit its thermal target");
+        require(rushedScore.processScore() < balancedScore.processScore(), "Rushed pan chicken should lose process score");
+        require(coldScore.thermalScore() < balancedScore.thermalScore() && coldScore.cap() <= 0.78F,
+                "Cold food should lose thermal score and be capped even if other process values look right");
+        require(rushedScore.cap() <= 0.78F, "Poor pan time and handling should cap recipe accuracy");
+        require(balancedScore.score() > rushedScore.score(), "Correct pan timing and flipping should improve the recipe grade");
+
+        DishSchemaScore preferredPanScore = DishSchemaScorer.score(schema,
+                new DishAttemptContext(
+                        balancedPanChicken,
+                        IngredientState.PAN_FRIED,
+                        ItemStack.EMPTY,
+                        new DishAttemptData(
+                                schema.key(),
+                                List.of("pan_fried"),
+                                1.0F,
+                                false,
+                                false,
+                                false,
+                                0.0F,
+                                "pan_fried",
+                                StationType.STOVE.getSerializedName(),
+                                ToolProfile.PAN.getSerializedName()
+                        )))
+                .orElseThrow(() -> new AssertionError("Preferred pan equipment should score"));
+        DishSchemaScore wrongCookwareScore = DishSchemaScorer.score(schema,
+                new DishAttemptContext(
+                        balancedPanChicken,
+                        IngredientState.PAN_FRIED,
+                        ItemStack.EMPTY,
+                        new DishAttemptData(
+                                schema.key(),
+                                List.of("pan_fried"),
+                                1.0F,
+                                false,
+                                false,
+                                false,
+                                0.0F,
+                                "pan_fried",
+                                StationType.OVEN.getSerializedName(),
+                                ToolProfile.BAKING_TRAY.getSerializedName()
+                        )))
+                .orElseThrow(() -> new AssertionError("Wrong cookware attempt should still score for diagnostics"));
+        require(preferredPanScore.techniqueScore() > wrongCookwareScore.techniqueScore()
+                        && preferredPanScore.score() > wrongCookwareScore.score(),
+                "Recipe grade should account for the station and cookware used, not only the food matter");
+
+        ItemStack balancedStack = JazzyItems.PAN_SEARED_CHICKEN_PREP.get().createStack(1, gameTime);
+        ItemStack rushedStack = JazzyItems.PAN_SEARED_CHICKEN_PREP.get().createStack(1, gameTime);
+        ItemStack coldStack = JazzyItems.PAN_SEARED_CHICKEN_PREP.get().createStack(1, gameTime);
+        KitchenStackUtil.setFoodMatter(balancedStack, balancedPanChicken, gameTime);
+        KitchenStackUtil.setFoodMatter(rushedStack, rushedPanChicken, gameTime);
+        KitchenStackUtil.setFoodMatter(coldStack, coldPanChicken, gameTime);
+        QualityBreakdown balancedBreakdown = DishEvaluation.evaluateStack(balancedStack, level);
+        QualityBreakdown rushedBreakdown = DishEvaluation.evaluateStack(rushedStack, level);
+        QualityBreakdown coldBreakdown = DishEvaluation.evaluateStack(coldStack, level);
+        require(balancedBreakdown.processScore() > rushedBreakdown.processScore(),
+                "Dish evaluation should expose better process score for properly timed and flipped food");
+        require(balancedBreakdown.thermalScore() > coldBreakdown.thermalScore(),
+                "Dish evaluation should expose better heat score for correctly heated food");
+        require(balancedBreakdown.finalScore() > rushedBreakdown.finalScore(),
+                "Process score should feed into the visible final dish grade");
+        require(balancedBreakdown.finalScore() > coldBreakdown.finalScore(),
+                "Heat score should feed into the visible final dish grade");
+
+        JazzyRecipeBookPlanner.Plan plan = requirePlan(
+                JazzyRecipeBookPlanner.create(level),
+                selection(JazzyItems.PAN_SEARED_CHICKEN_PREP.get(), IngredientState.PAN_FRIED, "schema:pan_seared_chicken")
+        );
+        JazzyRecipeBookPlanner.StepOption option = plan.steps().stream()
+                .filter(step -> step.outputKey().equals(outputKey(JazzyItems.PAN_SEARED_CHICKEN_PREP.get(), IngredientState.PAN_FRIED)))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Pan seared chicken guide should include the process step"))
+                .options()
+                .get(0);
+        require(option.durationTicks() == 215, "Pan seared chicken guide should use schema pan-time targets for duration");
+        require(option.notes().stream().anyMatch(note -> note.contains("cook 150-280 ticks") && note.contains("flip 1-4x")),
+                "Pan seared chicken guide should explain its process targets");
+        require(option.notes().stream().anyMatch(note -> note.contains("surface 125-190C") && note.contains("core 68-88C")),
+                "Pan seared chicken guide should explain its thermal targets");
+        require(option.allowedTools().contains(ToolProfile.PAN)
+                        && option.allowedTools().contains(ToolProfile.SKILLET)
+                        && option.allowedTools().contains(ToolProfile.FRYING_SKILLET),
+                "Pan seared chicken guide should use the schema cookware list");
+        require(schemaByKey("french_toast_batter").targets().whiskWork().isPresent(),
+                "French toast batter should grade whisk work as a mixing process target");
+        require(schemaByKey("french_toast_soaked").targets().processDepth().isPresent(),
+                "French toast soaking should grade process depth after battering bread");
+        require(schemaByKey("hummus_prep").targets().stirCount().isPresent(),
+                "Hummus should grade mixing/stirring as part of its process target");
+        require(schemaByKey("pie_dough").targets().processDepth().isPresent(),
+                "Pie dough should grade handling depth as part of its process target");
+        for (DishSchemaDefinition processSchema : DishSchemaScorer.schemas()) {
+            if (processSchema.requiredTechniques().contains(DishTechnique.MIXED)
+                    || processSchema.requiredTechniques().contains(DishTechnique.DIP_OR_COAT)
+                    || processSchema.requiredTechniques().contains(DishTechnique.CUT)
+                    || processSchema.requiredTechniques().contains(DishTechnique.PREPPED)) {
+                require(processSchema.targets().hasProcessTargets(),
+                        "Non-cooked schema " + processSchema.key() + " should grade mixing or handling process");
+                require(processSchema.weights().process() > 0.0F,
+                        "Non-cooked schema " + processSchema.key() + " should give process targets scoring weight");
+                require(!processSchema.ingredients().isEmpty(),
+                        "Non-cooked schema " + processSchema.key() + " should score ingredient choices");
+            }
+        }
+        for (DishSchemaDefinition cookedSchema : DishSchemaScorer.schemas()) {
+            if (cookedSchema.requiredTechniques().contains(DishTechnique.PAN_FRIED)
+                    || cookedSchema.requiredTechniques().contains(DishTechnique.SIMMERED)
+                    || cookedSchema.requiredTechniques().contains(DishTechnique.BAKED)) {
+                require(cookedSchema.targets().hasProcessTargets(),
+                        "Cooked schema " + cookedSchema.key() + " should grade timing or handling process");
+                require(cookedSchema.weights().process() > 0.0F,
+                        "Cooked schema " + cookedSchema.key() + " should give process targets scoring weight");
+                require(cookedSchema.targets().hasThermalTargets(),
+                        "Cooked schema " + cookedSchema.key() + " should grade heat targets");
+                require(cookedSchema.weights().thermal() > 0.0F,
+                        "Cooked schema " + cookedSchema.key() + " should give thermal targets scoring weight");
+                if (cookedSchema.requiredTechniques().contains(DishTechnique.PAN_FRIED)) {
+                    require(cookedSchema.steps().stream().anyMatch(step -> step.technique() == DishTechnique.PAN_FRIED
+                                    && (step.tools().contains(ToolProfile.PAN)
+                                    || step.tools().contains(ToolProfile.SKILLET)
+                                    || step.tools().contains(ToolProfile.FRYING_SKILLET))),
+                            "Pan-fried schema " + cookedSchema.key() + " should declare allowed pan cookware");
+                }
+                if (cookedSchema.requiredTechniques().contains(DishTechnique.SIMMERED)) {
+                    require(cookedSchema.steps().stream().anyMatch(step -> step.technique() == DishTechnique.SIMMERED
+                                    && step.tools().contains(ToolProfile.POT)
+                                    && step.tools().contains(ToolProfile.STOCK_POT)
+                                    && step.tools().contains(ToolProfile.SAUCEPAN)),
+                            "Simmered schema " + cookedSchema.key() + " should declare allowed pot cookware");
+                }
+                if (cookedSchema.requiredTechniques().contains(DishTechnique.BAKED)) {
+                    require(cookedSchema.steps().stream().anyMatch(step -> step.technique() == DishTechnique.BAKED
+                                    && (step.tools().contains(ToolProfile.BAKING_TRAY)
+                                    || step.tools().contains(ToolProfile.PIE_TIN))),
+                            "Baked schema " + cookedSchema.key() + " should declare allowed bakeware");
+                }
+            }
+        }
+        helper.succeed();
+    }
+
     private static KitchenStationBlockEntity placeStation(ServerLevel level, BlockPos pos, net.minecraft.world.level.block.Block block) {
         level.setBlockAndUpdate(pos, block.defaultBlockState());
         KitchenStationBlockEntity blockEntity = (KitchenStationBlockEntity) level.getBlockEntity(pos);
@@ -1564,6 +2061,86 @@ public final class KitchenGameTests {
                 .withAddedTraits(traits)
                 .withFlavorLoads(0.24F, seasoning, 0.0F, 0.0F, herb, pepper)
                 .withWorkingState(0.42F, 0.12F, 0.18F, 0.72F, 0.68F, 0.12F, charLevel, 0.34F, 1, 1, 10, 2, true);
+    }
+
+    private static FoodMatterData schemaSandwichMatter(long gameTime, float browning, float charLevel, float seasoning, float cheese) {
+        long traits = FoodTrait.maskOf(
+                FoodTrait.BREAD,
+                FoodTrait.BREAD_LOAF,
+                FoodTrait.WHEAT,
+                FoodTrait.STARCH,
+                FoodTrait.VEGETABLE,
+                FoodTrait.TOMATO,
+                FoodTrait.LEAFY_GREEN,
+                FoodTrait.SALT,
+                FoodTrait.CONDIMENT,
+                FoodTrait.HERB,
+                FoodTrait.PEPPER
+        );
+        if (cheese > 0.0F) {
+            traits |= FoodTrait.DAIRY.mask() | FoodTrait.PROTEIN.mask() | FoodTrait.FAT.mask();
+        }
+        return new FoodMatterData(
+                gameTime,
+                traits,
+                24.0F,
+                24.0F,
+                0.42F,
+                cheese > 0.0F ? 0.16F : 0.04F,
+                cheese > 0.0F ? 0.12F : 0.04F,
+                0.02F,
+                0.38F,
+                0.54F,
+                0.04F,
+                browning,
+                charLevel,
+                seasoning,
+                cheese,
+                0.06F,
+                0.06F,
+                0.04F,
+                FoodMatterData.UNSET_ENVIRONMENT,
+                FoodMatterData.UNSET_ENVIRONMENT,
+                FoodMatterData.UNSET_ENVIRONMENT,
+                0.0F,
+                0,
+                0,
+                browning > 0.0F ? 6 : 0,
+                2,
+                false
+        ).clamp();
+    }
+
+    private static FoodMatterData schemaPanChickenMatter(long gameTime, int flipCount, int timeInPan, int processDepth) {
+        return new FoodMatterData(
+                gameTime,
+                FoodTrait.maskOf(FoodTrait.CHICKEN, FoodTrait.PROTEIN, FoodTrait.ANIMAL_PROTEIN, FoodTrait.FAT, FoodTrait.OIL, FoodTrait.SALT),
+                158.0F,
+                74.0F,
+                0.38F,
+                0.18F,
+                0.58F,
+                0.02F,
+                0.16F,
+                0.58F,
+                0.68F,
+                0.22F,
+                0.04F,
+                0.14F,
+                0.0F,
+                0.0F,
+                0.02F,
+                0.02F,
+                FoodMatterData.UNSET_ENVIRONMENT,
+                FoodMatterData.UNSET_ENVIRONMENT,
+                FoodMatterData.UNSET_ENVIRONMENT,
+                0.0F,
+                0,
+                flipCount,
+                timeInPan,
+                processDepth,
+                false
+        ).clamp();
     }
 
     private static DishSchemaDefinition schemaByKey(String key) {

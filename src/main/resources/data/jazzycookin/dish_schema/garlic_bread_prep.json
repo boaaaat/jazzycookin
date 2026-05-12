@@ -83,7 +83,38 @@
       "min": 0.42,
       "max": 0.88,
       "softness": 0.18
+    },
+    "time_in_pan": {
+      "min": 100.0,
+      "max": 240.0,
+      "softness": 70.0
+    },
+    "process_depth": {
+      "min": 1.0,
+      "max": 3.0,
+      "softness": 1.0
+    },
+    "surface_temp_c": {
+      "min": 130.0,
+      "max": 190.0,
+      "softness": 28.0
+    },
+    "core_temp_c": {
+      "min": 65.0,
+      "max": 95.0,
+      "softness": 22.0
     }
+  },
+  "weights": {
+    "roles": 0.22,
+    "composition": 0.14,
+    "seasoning": 0.12,
+    "cooking": 0.14,
+    "texture": 0.1,
+    "process": 0.08,
+    "thermal": 0.1,
+    "technique": 0.06,
+    "presentation": 0.04
   },
   "ingredients": [
     {
@@ -122,6 +153,9 @@
       "id": "baked",
       "station": "oven",
       "technique": "baked",
+      "tools": [
+        "baking_tray"
+      ],
       "prerequisites": [],
       "progress_target": 1.0
     }
