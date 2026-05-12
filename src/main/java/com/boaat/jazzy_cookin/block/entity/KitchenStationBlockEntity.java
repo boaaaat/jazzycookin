@@ -144,6 +144,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     private StationPhysicsState stationPhysics = StationPhysicsState.idle();
     private CookingBatchState simulationBatch;
     private UUID activeGuidePlayerId;
+    private boolean redstonePowered;
 
     public KitchenStationBlockEntity(BlockPos pos, BlockState blockState) {
         super(JazzyBlockEntities.KITCHEN_STATION.get(), pos, blockState);
@@ -319,6 +320,43 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         }
 
         return false;
+    }
+
+    public void applyRedstoneSignal(boolean powered, int signalStrength) {
+        int clampedStrength = Math.max(0, Math.min(15, signalStrength));
+        boolean risingEdge = powered && !this.redstonePowered;
+        boolean changed = this.redstonePowered != powered;
+        this.redstonePowered = powered;
+
+        StationType stationType = this.getStationType();
+        if (stationType == StationType.STOVE) {
+            int dialLevel = powered ? Math.round(clampedStrength * (MAX_STOVE_BURNER_LEVEL / 15.0F)) : 0;
+            int previousDialLevel = this.stoveDialLevel();
+            this.setStoveDialLevel(dialLevel);
+            if (dialLevel > 0) {
+                this.tryIgniteFuel();
+            }
+            changed |= previousDialLevel != this.stoveDialLevel();
+        } else if (stationType == StationType.OVEN) {
+            if (this.ovenPreheating != powered) {
+                this.ovenPreheating = powered;
+                if (powered) {
+                    this.tryIgniteFuel();
+                }
+                changed = true;
+            }
+        } else if (stationType.supportsStationControl()) {
+            int previousControl = this.controlSetting;
+            this.controlSetting = clampedStrength <= 5 ? 0 : clampedStrength <= 10 ? 1 : 2;
+            changed |= previousControl != this.controlSetting;
+        }
+
+        if (risingEdge && StationSimulationResolver.handleAction(this, 6)) {
+            changed = true;
+        }
+        if (changed) {
+            this.setChanged();
+        }
     }
 
     private void resetSimulationState() {
@@ -505,6 +543,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         }
         tag.putBoolean("OvenPreheating", this.ovenPreheating);
         tag.putFloat("OvenHeatDegrees", this.ovenHeatDegrees);
+        tag.putBoolean("RedstonePowered", this.redstonePowered);
         if (this.getStationType() == StationType.STOVE) {
             tag.putInt("StoveDialLevel", this.stoveDialLevel);
         }
@@ -542,6 +581,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.stoveFuelBurnRemainder = Math.max(0.0F, tag.getFloat("StoveFuelBurnRemainder"));
         this.ovenPreheating = tag.getBoolean("OvenPreheating");
         this.ovenHeatDegrees = tag.contains("OvenHeatDegrees") ? Math.max(0.0F, tag.getFloat("OvenHeatDegrees")) : 0.0F;
+        this.redstonePowered = tag.getBoolean("RedstonePowered");
         if (this.getStationType() == StationType.STOVE) {
             this.stoveDialLevel = tag.contains("StoveDialLevel")
                     ? normalizeStoveBurnerLevel(tag.getInt("StoveDialLevel"))

@@ -1,0 +1,21 @@
+b=4F8A3A
+d=2F5E2A
+l=C64535
+a=6B4B2A
+
+d b b b d b b b d b b b d b b b
+b b b d b b b d b b b d b b b d
+b b d b b b d b b b d b b b d b
+b d b b b l b b b d l b b d b b
+d b b b d l b b d b l b d b b b
+b b b d l l l l l l l l b b b d
+b b d b b l d b b b l b b b d b
+b d b b b l b b b d l b b d b b
+d b b b d l b b d b l b d b b b
+b b b d b l b d b b l d b b b d
+b b d b l l l l l l l l b b d b
+b d b b b d b b b d b b b d b b
+a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a

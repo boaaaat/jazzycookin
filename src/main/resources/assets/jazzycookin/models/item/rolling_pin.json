@@ -1,4 +1,6 @@
 {
   "parent": "minecraft:item/generated",
-  "textures": { "layer0": "minecraft:item/stick" }
+  "textures": {
+    "layer0": "jazzycookin:item/rolling_pin"
+  }
 }

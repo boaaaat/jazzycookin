@@ -56,6 +56,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 
@@ -274,6 +275,30 @@ public final class KitchenGameTests {
         require(ToolProfile.fromStack(new ItemStack(JazzyItems.MEASURING_CUP.get())) == ToolProfile.MEASURING_CUP, "Measuring cup should advertise the measuring profile");
         require(ToolProfile.fromStack(new ItemStack(JazzyItems.MEASURING_SPOONS.get())) == ToolProfile.MEASURING_SPOONS, "Measuring spoons should advertise the measuring profile");
         require(ToolProfile.fromStack(new ItemStack(JazzyItems.KITCHEN_SCALE.get())) == ToolProfile.KITCHEN_SCALE, "Kitchen scale should advertise the measuring profile");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void redstoneAutomatesKitchenStations(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+
+        BlockPos prepPos = helper.absolutePos(new BlockPos(0, 1, 0));
+        KitchenStationBlockEntity prepTable = placeStation(level, prepPos, JazzyBlocks.PREP_TABLE.get());
+        level.setBlockAndUpdate(prepPos.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        require(prepTable.simulationControlSetting() == 2, "Strong redstone should drive controllable stations to high intensity");
+
+        BlockPos stovePos = helper.absolutePos(new BlockPos(3, 1, 0));
+        KitchenStationBlockEntity stove = placeStation(level, stovePos, JazzyBlocks.STOVE.get());
+        level.setBlockAndUpdate(stovePos.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        require(stove.stoveDialLevel() == 6, "Strong redstone should drive the stove to its highest burner level");
+        level.setBlockAndUpdate(stovePos.east(), Blocks.AIR.defaultBlockState());
+        require(stove.stoveDialLevel() == 0, "Removing redstone power should shut the stove burner off");
+
+        BlockPos ovenPos = helper.absolutePos(new BlockPos(6, 1, 0));
+        KitchenStationBlockEntity oven = placeStation(level, ovenPos, JazzyBlocks.OVEN.get());
+        level.setBlockAndUpdate(ovenPos.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+        tickStation(level, oven, 20);
+        require(oven.simulationPreheatProgress() > 0, "Redstone power should start oven preheating");
         helper.succeed();
     }
 

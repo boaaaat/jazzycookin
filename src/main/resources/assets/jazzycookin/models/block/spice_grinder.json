@@ -1,4 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
-  "textures": { "all": "minecraft:block/deepslate_tiles" }
+  "textures": {
+    "all": "jazzycookin:block/spice_grinder"
+  }
 }

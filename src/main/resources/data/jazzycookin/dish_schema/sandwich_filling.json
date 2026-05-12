@@ -40,7 +40,8 @@
       "role": "spice",
       "any_traits": [
         "spice",
-        "pepper"
+        "pepper",
+        "acidic"
       ],
       "weight": 0.18
     },
@@ -107,6 +108,16 @@
       "min": 1.0,
       "max": 3.0,
       "softness": 1.0
+    },
+    "surface_temp_c": {
+      "min": 4.0,
+      "max": 38.0,
+      "softness": 12.0
+    },
+    "core_temp_c": {
+      "min": 4.0,
+      "max": 38.0,
+      "softness": 12.0
     }
   },
   "weights": {
@@ -117,7 +128,8 @@
     "texture": 0.16,
     "process": 0.08,
     "technique": 0.06,
-    "presentation": 0.02
+    "presentation": 0.02,
+    "thermal": 0.04
   },
   "ingredients": [
     {
@@ -144,11 +156,11 @@
       "station": "prep_table",
       "technique": "cut",
       "tools": [
-        "knife",
         "chef_knife",
         "paring_knife",
         "cleaver",
-        "table_knife"
+        "table_knife",
+        "knife"
       ],
       "prerequisites": [],
       "progress_target": 1.0,

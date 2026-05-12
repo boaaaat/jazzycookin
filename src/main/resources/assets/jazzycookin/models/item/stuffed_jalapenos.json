@@ -1,6 +1,6 @@
 {
-    "textures":  {
-                     "layer0":  "minecraft:item/dried_kelp"
-                 },
-    "parent":  "minecraft:item/generated"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "jazzycookin:item/stuffed_jalapenos"
+  }
 }

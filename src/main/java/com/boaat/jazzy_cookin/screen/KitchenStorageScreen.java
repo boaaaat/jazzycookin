@@ -137,11 +137,17 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
         int left = this.leftPos;
         int top = this.topPos;
 
-        JazzyGuiRenderer.drawVanillaContainerBackground(guiGraphics, left, top, this.imageWidth, this.imageHeight);
-        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.profile.storageRegion().x(), top + this.profile.storageRegion().y(),
-                this.profile.storageRegion().width(), this.profile.storageRegion().height());
-        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.profile.supportRegion().x(), top + this.profile.supportRegion().y(),
-                this.profile.supportRegion().width(), this.profile.supportRegion().height());
+        JazzyGuiRenderer.drawStorageShell(guiGraphics, left, top, this.imageWidth, this.imageHeight, this.menu.storageType());
+        JazzyGuiRenderer.drawPanel(guiGraphics, left + this.profile.storageRegion().x(), top + this.profile.storageRegion().y(),
+                this.profile.storageRegion().width(), this.profile.storageRegion().height(), this.storageTheme(), JazzyGuiRenderer.PanelStyle.STORAGE);
+        JazzyGuiRenderer.drawStorageSupport(guiGraphics, left, top, this.profile.supportRegion(), this.menu.storageType());
+        JazzyGuiRenderer.drawInventoryShelf(guiGraphics, left, top, this.profile.inventoryShelfRegion(), this.storageTheme());
+
+        LayoutRegion headerChip = this.headerChipBounds();
+        if (headerChip != null) {
+            JazzyGuiRenderer.drawChip(guiGraphics, left + headerChip.x(), top + headerChip.y(), headerChip.width(), headerChip.height(),
+                    this.menu.storageType().targetTempC() < 10.0F, this.storageTheme());
+        }
 
         for (int slotIndex = 0; slotIndex < this.menu.slots.size(); slotIndex++) {
             JazzyGuiRenderer.drawSlot(guiGraphics, left + this.menu.getSlot(slotIndex).x, top + this.menu.getSlot(slotIndex).y);
@@ -231,6 +237,11 @@ public class KitchenStorageScreen extends AbstractContainerScreen<KitchenStorage
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+        if (this.menu.isPantry()) {
+            this.drawPageButton(guiGraphics, this.previousPageButton, this.profile.pageUpBounds(), mouseX, mouseY, "^");
+            this.drawPageButton(guiGraphics, this.nextPageButton, this.profile.pageDownBounds(), mouseX, mouseY, "v");
+        }
 
         PantryTabButton hoveredTab = null;
         for (PantryTabButton tab : this.pantryTabs) {

@@ -739,15 +739,29 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         int left = this.leftPos;
         int top = this.topPos;
-        JazzyGuiRenderer.drawVanillaContainerBackground(guiGraphics, left, top, this.imageWidth, this.imageHeight);
-        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.layout.workspaceRegion().x(), top + this.layout.workspaceRegion().y(),
-                this.layout.workspaceRegion().width(), this.layout.workspaceRegion().height());
-        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.layout.previewRegion().x(), top + this.layout.previewRegion().y(),
-                this.layout.previewRegion().width(), this.layout.previewRegion().height());
-        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.layout.metricClusterRegion().x(), top + this.layout.metricClusterRegion().y(),
-                this.layout.metricClusterRegion().width(), this.layout.metricClusterRegion().height());
-        JazzyGuiRenderer.drawVanillaSection(guiGraphics, left + this.layout.controlStripRegion().x(), top + this.layout.controlStripRegion().y(),
-                this.layout.controlStripRegion().width(), this.layout.controlStripRegion().height());
+        if (this.usesApplianceUiLib()) {
+            this.renderApplianceBackground(guiGraphics, left, top, this.profile.theme());
+        } else {
+            JazzyGuiRenderer.drawStationShell(guiGraphics, left, top, this.imageWidth, this.imageHeight, this.profile.theme());
+            JazzyGuiRenderer.drawWorkspaceBackdrop(guiGraphics, left, top, this.layout.workspaceRegion(), this.layout.toolRegion(),
+                    this.profile.theme(), this.layout.family());
+            JazzyGuiRenderer.drawPreviewBackdrop(guiGraphics, left, top, this.layout.previewRegion(), this.layout.outputRegion(),
+                    this.layout.byproductRegion(), this.profile.theme());
+            JazzyGuiRenderer.drawMetricCluster(guiGraphics, left, top, this.layout.metricClusterRegion(), this.profile.theme());
+            JazzyGuiRenderer.drawControlStrip(guiGraphics, left, top, this.layout.controlStripRegion(), this.profile.theme());
+            JazzyGuiRenderer.drawInventoryShelf(guiGraphics, left, top, this.layout.inventoryShelfRegion(), this.profile.theme());
+
+            LayoutRegion headerChip = this.headerChipBounds(this.menu.currentMethod().displayName());
+            if (headerChip != null) {
+                JazzyGuiRenderer.drawChip(guiGraphics, left + headerChip.x(), top + headerChip.y(), headerChip.width(), headerChip.height(),
+                        false, this.profile.theme());
+            }
+            if (this.layout.controlChipRegion() != null && !this.controlDisplayLabel().getString().isEmpty()) {
+                LayoutRegion controlChip = this.layout.controlChipRegion();
+                JazzyGuiRenderer.drawChip(guiGraphics, left + controlChip.x(), top + controlChip.y(), controlChip.width(), controlChip.height(),
+                        this.menu.stationType().supportsHeat(), this.profile.theme());
+            }
+        }
 
         for (int slotIndex = 0; slotIndex < this.menu.slots.size(); slotIndex++) {
             Slot slot = this.menu.getSlot(slotIndex);
@@ -758,10 +772,8 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             }
         }
 
-        SimulationStatusView statusView = this.simulationStatusView();
-        LayoutRegion lane = this.layout.statusLaneRegion();
-        JazzyGuiRenderer.drawVanillaMeter(guiGraphics, left + lane.x(), top + lane.y() + 7, lane.width(), 4,
-                statusView.barRatio(), statusView.barColor());
+        this.renderSimulationMetrics(guiGraphics, left, top);
+        this.renderStatusLane(guiGraphics, left, top);
     }
 
     private void renderApplianceBackground(GuiGraphics guiGraphics, int left, int top, StationUiProfile.Theme theme) {
@@ -1651,6 +1663,8 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         if (this.applianceOverlayRoot != null) {
             this.applianceOverlayRoot.renderTree(guiGraphics, mouseX, mouseY, partialTick);
+        } else {
+            this.renderActionButtons(guiGraphics, this.leftPos, this.topPos, mouseX, mouseY);
         }
         this.renderTooltip(guiGraphics, mouseX, mouseY);
         this.renderSimulationTooltips(guiGraphics, mouseX, mouseY);

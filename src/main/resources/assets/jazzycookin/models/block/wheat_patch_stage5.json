@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "jazzycookin:block/wheat_patch_stage5"
+  }
+}

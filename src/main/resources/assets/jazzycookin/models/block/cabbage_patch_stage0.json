@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "jazzycookin:block/cabbage_patch_stage0"
+  }
+}

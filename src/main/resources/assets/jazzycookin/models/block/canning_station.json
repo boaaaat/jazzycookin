@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "minecraft:block/barrel_side"
+    "all": "jazzycookin:block/canning_station"
   }
 }

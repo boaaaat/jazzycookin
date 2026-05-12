@@ -96,6 +96,16 @@
       "max": 0.1,
       "softness": 0.06
     },
+    "surface_temp_c": {
+      "min": 4.0,
+      "max": 65.0,
+      "softness": 18.0
+    },
+    "core_temp_c": {
+      "min": 4.0,
+      "max": 60.0,
+      "softness": 18.0
+    },
     "fragmentation": {
       "min": 0.18,
       "max": 0.66,
@@ -119,6 +129,7 @@
     "cooking": 0.28,
     "texture": 0.1,
     "process": 0.06,
+    "thermal": 0.04,
     "technique": 0.06,
     "presentation": 0.06
   },

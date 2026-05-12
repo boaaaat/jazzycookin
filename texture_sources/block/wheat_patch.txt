@@ -1,0 +1,21 @@
+b=B99535
+d=7A6227
+l=E2C15A
+a=5E4025
+
+d b b b d b b b d b b b d b b b
+b b b d b b b d b b b d b b b d
+b b d b b b d b b b d b b b d b
+b d b b b l b b b d l b b d b b
+d b b b d l b b d b l b d b b b
+b b b d l l l l l l l l b b b d
+b b d b b l d b b b l b b b d b
+b d b b b l b b b d l b b d b b
+d b b b d l b b d b l b d b b b
+b b b d b l b d b b l d b b b d
+b b d b l l l l l l l l b b d b
+b d b b b d b b b d b b b d b b
+a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a

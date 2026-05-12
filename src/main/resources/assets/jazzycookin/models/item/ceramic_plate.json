@@ -1,4 +1,6 @@
 {
   "parent": "minecraft:item/generated",
-  "textures": { "layer0": "minecraft:item/brick" }
+  "textures": {
+    "layer0": "jazzycookin:item/ceramic_plate"
+  }
 }

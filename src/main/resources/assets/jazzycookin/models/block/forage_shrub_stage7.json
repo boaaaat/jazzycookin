@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "jazzycookin:block/forage_shrub_stage7"
+  }
+}

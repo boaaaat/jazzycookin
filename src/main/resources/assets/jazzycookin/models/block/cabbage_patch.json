@@ -1,7 +1,6 @@
 {
-  "render_type": "cutout",
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cross",
   "textures": {
-    "all": "minecraft:block/green_wool"
+    "cross": "jazzycookin:block/cabbage_patch"
   }
 }

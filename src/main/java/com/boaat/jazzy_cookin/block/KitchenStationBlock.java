@@ -62,6 +62,22 @@ public class KitchenStationBlock extends BaseEntityBlock implements EntityBlock 
     }
 
     @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, level, pos, block, fromPos, isMoving);
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof KitchenStationBlockEntity stationBlockEntity) {
+            stationBlockEntity.applyRedstoneSignal(level.hasNeighborSignal(pos), level.getBestNeighborSignal(pos));
+        }
+    }
+
+    @Override
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (!state.is(oldState.getBlock()) && !level.isClientSide && level.getBlockEntity(pos) instanceof KitchenStationBlockEntity stationBlockEntity) {
+            stationBlockEntity.applyRedstoneSignal(level.hasNeighborSignal(pos), level.getBestNeighborSignal(pos));
+        }
+    }
+
+    @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);

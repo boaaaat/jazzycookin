@@ -1,8 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/bread",
-    "layer1": "minecraft:item/carrot",
-    "layer2": "minecraft:item/dried_kelp"
+    "layer0": "jazzycookin:item/assembled_sandwich"
   }
 }

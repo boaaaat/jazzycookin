@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "jazzycookin:block/herb_bed_stage7"
+  }
+}

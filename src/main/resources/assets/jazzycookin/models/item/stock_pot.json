@@ -1,4 +1,6 @@
 {
   "parent": "minecraft:item/generated",
-  "textures": { "layer0": "minecraft:item/bucket" }
+  "textures": {
+    "layer0": "jazzycookin:item/stock_pot"
+  }
 }

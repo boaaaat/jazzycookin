@@ -123,6 +123,16 @@
       "max": 0.1,
       "softness": 0.06
     },
+    "surface_temp_c": {
+      "min": 4.0,
+      "max": 65.0,
+      "softness": 18.0
+    },
+    "core_temp_c": {
+      "min": 4.0,
+      "max": 60.0,
+      "softness": 18.0
+    },
     "fragmentation": {
       "min": 0.18,
       "max": 0.66,
@@ -146,6 +156,7 @@
     "cooking": 0.24,
     "texture": 0.1,
     "process": 0.08,
+    "thermal": 0.04,
     "technique": 0.07,
     "presentation": 0.05
   },
@@ -190,11 +201,11 @@
       "station": "prep_table",
       "technique": "prepped",
       "tools": [
-        "knife",
         "chef_knife",
         "paring_knife",
         "cleaver",
-        "table_knife"
+        "table_knife",
+        "knife"
       ],
       "prerequisites": [
         "fill"

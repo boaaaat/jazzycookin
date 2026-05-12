@@ -1,6 +1,6 @@
 {
-    "textures":  {
-                     "layer0":  "minecraft:item/pumpkin_pie"
-                 },
-    "parent":  "minecraft:item/generated"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "jazzycookin:item/assembled_focaccia_pizza"
+  }
 }

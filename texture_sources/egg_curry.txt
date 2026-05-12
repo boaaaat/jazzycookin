@@ -1,0 +1,23 @@
+p=ECE4D2
+r=B8A88C
+b=C9652A
+s=B64022
+c=F1D786
+h=68A65C
+
+. . . . . . . . . . . . . . . .
+. . . . . p p p p p p . . . . .
+. . . . p p r r r r p p . . . .
+. . . p r r b b b b r r p . . .
+. . p r r b b h s b b r r p . .
+. p p r b c c s b c c b r p p .
+. p r b b b s b b s b h b r p .
+. p r b h s b b s b b s b r p .
+. p r b s b c c h b s b b r p .
+. p r b b b s b b s c c b r p .
+. p p r c c b b s b b b r p p .
+. . p r r b h s c c b h r p . .
+. . . p r r b b b b r r p . . .
+. . . . p p r r r r p p . . . .
+. . . . . p p p p p p . . . . .
+. . . . . . . . . . . . . . . .
