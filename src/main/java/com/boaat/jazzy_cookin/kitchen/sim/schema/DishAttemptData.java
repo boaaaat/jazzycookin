@@ -75,11 +75,24 @@ public record DishAttemptData(
                 this.equipmentStep == null ? "" : this.equipmentStep,
                 this.station == null ? "" : this.station,
                 this.tool == null ? "" : this.tool,
-                this.equipmentEvents == null ? List.of() : List.copyOf(this.equipmentEvents)
+                normalizedEquipmentEvents()
         );
     }
 
     public boolean hasStep(String stepId) {
         return stepId != null && this.completedSteps.contains(stepId);
+    }
+
+    private List<String> normalizedEquipmentEvents() {
+        if (this.equipmentEvents != null && !this.equipmentEvents.isEmpty()) {
+            return List.copyOf(this.equipmentEvents);
+        }
+        String step = this.equipmentStep == null ? "" : this.equipmentStep;
+        String stationName = this.station == null ? "" : this.station;
+        String toolName = this.tool == null || this.tool.isBlank() ? "none" : this.tool;
+        if (!step.isBlank() && !stationName.isBlank()) {
+            return List.of(step + "|" + stationName + "|" + toolName);
+        }
+        return List.of();
     }
 }

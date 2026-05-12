@@ -1725,6 +1725,30 @@ public final class KitchenGameTests {
         require(cheeseSandwichMatter != null && cheeseSandwichMatter.cheeseLoad() > 0.0F && cheeseSandwichMatter.hasTrait(FoodTrait.DAIRY),
                 "Assembled cheese sandwich should carry dairy matter for grading");
 
+        KitchenStationBlockEntity plainFillingPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(18, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        plainFillingPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, gameTime));
+        plainFillingPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        require(plainFillingPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Plain vegetable filling should be available for assembly-seasoning checks");
+        tickStation(helper.getLevel(), plainFillingPrep, 80);
+
+        KitchenStationBlockEntity seasonedAssemblyPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(19, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        seasonedAssemblyPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get().createStack(1, gameTime));
+        seasonedAssemblyPrep.setItem(1, plainFillingPrep.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).copy());
+        seasonedAssemblyPrep.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, gameTime));
+        seasonedAssemblyPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.TABLE_KNIFE.get()));
+        require(seasonedAssemblyPrep.handleButton(6, FakePlayerFactory.getMinecraft(helper.getLevel())),
+                "Prep table should allow seasoning to be added during sandwich assembly");
+        tickStation(helper.getLevel(), seasonedAssemblyPrep, 80);
+        ItemStack seasonedAssembly = seasonedAssemblyPrep.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        FoodMatterData seasonedAssemblyMatter = KitchenStackUtil.getFoodMatter(seasonedAssembly);
+        require(seasonedAssembly.is(JazzyItems.ASSEMBLED_SANDWICH.get()),
+                "Bread, filling, and assembly-time seasoning should produce an assembled sandwich");
+        require(seasonedAssemblyPrep.getItem(2).isEmpty(),
+                "Assembly-time seasoning should be consumed into the sandwich");
+        require(seasonedAssemblyMatter != null && seasonedAssemblyMatter.seasoningLoad() > 0.0F && seasonedAssemblyMatter.pepperLoad() > 0.0F,
+                "Assembly-time seasoning should carry into sandwich matter for grading");
+
         KitchenStationBlockEntity sandwichPrep = placeStation(helper.getLevel(), helper.absolutePos(new BlockPos(12, 1, 0)), JazzyBlocks.PREP_TABLE.get());
         sandwichPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.RYE_BREAD).get().createStack(1, gameTime));
         sandwichPrep.setItem(1, sandwichFilling.copy());

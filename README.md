@@ -46,6 +46,7 @@ Important rules:
 - Extra filled input slots can prevent recipe matching.
 - State matters. `whole_apple`, `peeled_apple`, and `sliced_apple` are different recipe ingredients.
 - Heat matters. Wrong heat can block the recipe or reduce quality.
+- Station, tool, and cookware lineage matters. Schema outputs remember the equipment used at each step, and final meals can lose recipe accuracy if a prerequisite was prepared on the wrong station or with the wrong cookware.
 - Some recipes are passive and take longer than active prep recipes.
 - Some recipes require nearby water.
 - Oven recipes can require preheat.
@@ -312,6 +313,7 @@ The sandwich schemas grade against the base idea of bread plus vegetable filling
 - Underworked or overworked outputs can block later recipes.
 - Schema recipes grade process targets directly, including pan time, stir count, flip count, whisk work, and process depth.
 - Cooked schemas grade both process and thermal targets, including surface and core temperature, so rushed, unstirred, cold, underheated, and overheated attempts can lose accuracy.
+- Schema recipes also grade equipment lineage. A plated dish can account for the prep, cooking, assembly, and plating stations/tools used earlier in the chain.
 - Plating recipes can require finished states such as rested protein or sliced bread.
 - Deep frying degrades oil from `Fresh Oil` -> `Used Oil` -> `Dirty Oil` -> `Burnt Oil`.
 - Passive stations do not finish instantly and should not be interrupted.
@@ -330,6 +332,7 @@ Ingredient and meal tooltips show:
 - cooking score
 - process score
 - heat score
+- equipment lineage
 - finishing score
 - plating score
 - nourishment
