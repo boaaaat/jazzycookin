@@ -10,8 +10,7 @@
     {
       "role": "vegetable",
       "any_traits": [
-        "starch",
-        "vegetable"
+        "starch"
       ],
       "weight": 0.85
     },
@@ -135,8 +134,7 @@
     {
       "role": "vegetable",
       "any_traits": [
-        "starch",
-        "vegetable"
+        "starch"
       ],
       "all_traits": [],
       "ideal_amount": 1.0,

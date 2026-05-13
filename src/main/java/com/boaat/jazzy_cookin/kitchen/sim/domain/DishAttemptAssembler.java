@@ -118,14 +118,15 @@ final class DishAttemptAssembler {
         if (schema.ingredients().isEmpty()) {
             return new IngredientResult(1.0F, false, false);
         }
+        List<DishIngredientRequirement> requirements = schema.ingredients();
+        Match[] matches = bestUniqueMatches(requirements, inputs);
         float total = 0.0F;
-        int count = 0;
         boolean missingCore = false;
         boolean unmeasured = false;
-        for (DishIngredientRequirement requirement : schema.ingredients()) {
-            Match match = bestMatch(requirement, inputs);
+        for (int index = 0; index < requirements.size(); index++) {
+            DishIngredientRequirement requirement = requirements.get(index);
+            Match match = matches[index];
             total += match.score();
-            count++;
             if (requirement.core() && match.score() < 0.50F) {
                 missingCore = true;
             }
@@ -133,24 +134,72 @@ final class DishAttemptAssembler {
                 unmeasured = true;
             }
         }
-        return new IngredientResult(count > 0 ? Mth.clamp(total / count, 0.0F, 1.0F) : 1.0F, missingCore, unmeasured);
+        return new IngredientResult(Mth.clamp(total / requirements.size(), 0.0F, 1.0F), missingCore, unmeasured);
     }
 
-    private static Match bestMatch(DishIngredientRequirement requirement, List<ItemStack> inputs) {
-        float totalAmount = 0.0F;
-        boolean matched = false;
-        boolean measured = false;
-        for (ItemStack stack : inputs) {
-            if (stack.isEmpty() || !matches(requirement, stack)) {
+    private static Match[] bestUniqueMatches(List<DishIngredientRequirement> requirements, List<ItemStack> inputs) {
+        Match[][] matrix = new Match[requirements.size()][inputs.size()];
+        for (int requirementIndex = 0; requirementIndex < requirements.size(); requirementIndex++) {
+            for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+                matrix[requirementIndex][inputIndex] = match(requirements.get(requirementIndex), inputs.get(inputIndex));
+            }
+        }
+        Assignment assignment = bestAssignment(requirements, matrix, 0, new boolean[inputs.size()], new Match[requirements.size()]);
+        return assignment.matches();
+    }
+
+    private static Assignment bestAssignment(
+            List<DishIngredientRequirement> requirements,
+            Match[][] matrix,
+            int requirementIndex,
+            boolean[] usedInputs,
+            Match[] current
+    ) {
+        if (requirementIndex >= requirements.size()) {
+            Match[] copy = new Match[current.length];
+            System.arraycopy(current, 0, copy, 0, current.length);
+            return new Assignment(copy, assignmentScore(requirements, copy));
+        }
+
+        Assignment best = null;
+        current[requirementIndex] = Match.NONE;
+        best = bestAssignment(requirements, matrix, requirementIndex + 1, usedInputs, current);
+        for (int inputIndex = 0; inputIndex < usedInputs.length; inputIndex++) {
+            Match match = matrix[requirementIndex][inputIndex];
+            if (usedInputs[inputIndex] || match.score() <= 0.0F) {
                 continue;
             }
-            matched = true;
-            totalAmount += KitchenStackUtil.measuredAmount(stack, requirement.unit());
-            measured |= KitchenStackUtil.isMeasured(stack);
+            usedInputs[inputIndex] = true;
+            current[requirementIndex] = match;
+            Assignment candidate = bestAssignment(requirements, matrix, requirementIndex + 1, usedInputs, current);
+            if (candidate.score() > best.score()) {
+                best = candidate;
+            }
+            current[requirementIndex] = Match.NONE;
+            usedInputs[inputIndex] = false;
         }
-        if (!matched) {
-            return new Match(0.0F, false);
+        return best;
+    }
+
+    private static float assignmentScore(List<DishIngredientRequirement> requirements, Match[] matches) {
+        float total = 0.0F;
+        int coreMissing = 0;
+        for (int index = 0; index < requirements.size(); index++) {
+            Match match = matches[index];
+            total += match.score();
+            if (requirements.get(index).core() && match.score() < 0.50F) {
+                coreMissing++;
+            }
         }
+        return total - coreMissing * 0.55F;
+    }
+
+    private static Match match(DishIngredientRequirement requirement, ItemStack stack) {
+        if (stack.isEmpty() || !matches(requirement, stack)) {
+            return Match.NONE;
+        }
+        float totalAmount = KitchenStackUtil.measuredAmount(stack, requirement.unit());
+        boolean measured = KitchenStackUtil.isMeasured(stack);
         if (!requirement.hasMeasuredAmount()) {
             return new Match(1.0F, measured);
         }
@@ -244,5 +293,9 @@ final class DishAttemptAssembler {
     }
 
     private record Match(float score, boolean measured) {
+        private static final Match NONE = new Match(0.0F, false);
+    }
+
+    private record Assignment(Match[] matches, float score) {
     }
 }
