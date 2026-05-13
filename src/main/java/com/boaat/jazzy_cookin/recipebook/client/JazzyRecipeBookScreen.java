@@ -10,7 +10,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
+import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookPlanner;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookSelection;
@@ -869,7 +871,7 @@ public class JazzyRecipeBookScreen extends Screen {
         if (option.preferredHeat() != null && !"off".equals(option.preferredHeat().getSerializedName())) {
             tooltip.add(Component.translatable(
                     "screen.jazzycookin.recipe_book.tooltip.heat",
-                    Component.translatable("heat.jazzycookin." + option.preferredHeat().getSerializedName())
+                    recipeHeatLabel(option)
             ).withStyle(ChatFormatting.RED));
         }
         for (JazzyRecipeBookPlanner.Requirement requirement : option.requirements()) {
@@ -920,6 +922,23 @@ public class JazzyRecipeBookScreen extends Screen {
 
     private static String toolName(ToolProfile tool) {
         return Component.translatable("tool.jazzycookin." + tool.getSerializedName()).getString();
+    }
+
+    private static Component recipeHeatLabel(JazzyRecipeBookPlanner.StepOption option) {
+        if (usesNumberedHeat(option.station())) {
+            return Component.literal(switch (option.preferredHeat()) {
+                case LOW -> "1-2";
+                case MEDIUM -> "3-4";
+                case HIGH -> "5-6";
+                default -> "1";
+            });
+        }
+        HeatLevel heatLevel = option.preferredHeat();
+        return Component.translatable("heat.jazzycookin." + heatLevel.getSerializedName());
+    }
+
+    private static boolean usesNumberedHeat(StationType stationType) {
+        return stationType == StationType.STOVE || stationType == StationType.SMOKER || stationType == StationType.STEAMER;
     }
 
     private boolean isMouseOverItemList(double mouseX, double mouseY) {

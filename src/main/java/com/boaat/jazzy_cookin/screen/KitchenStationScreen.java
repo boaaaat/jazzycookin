@@ -171,18 +171,29 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                 LayoutRegion low = this.layout.lowHeatAction().bounds();
                 LayoutRegion medium = this.layout.mediumHeatAction().bounds();
                 LayoutRegion high = this.layout.highHeatAction().bounds();
-                this.lowHeatButton = this.addRenderableWidget(Button.builder(Component.literal("L"),
-                        button -> this.sendButton(this.menu.stationType() == StationType.STOVE ? 3102 : 1))
-                        .bounds(this.leftPos + low.x(), this.topPos + low.y(), low.width(), low.height())
-                        .build());
-                this.mediumHeatButton = this.addRenderableWidget(Button.builder(Component.literal("M"),
-                        button -> this.sendButton(this.menu.stationType() == StationType.STOVE ? 3104 : 2))
-                        .bounds(this.leftPos + medium.x(), this.topPos + medium.y(), medium.width(), medium.height())
-                        .build());
-                this.highHeatButton = this.addRenderableWidget(Button.builder(Component.literal("H"),
-                        button -> this.sendButton(this.menu.stationType() == StationType.STOVE ? 3105 : 3))
-                        .bounds(this.leftPos + high.x(), this.topPos + high.y(), high.width(), high.height())
-                        .build());
+                if (this.usesScrollableHeat()) {
+                    this.lowHeatButton = this.addRenderableWidget(Button.builder(Component.literal("-"),
+                            button -> this.applyScrollableHeatLevel(this.scrollableHeatLevel() - 1))
+                            .bounds(this.leftPos + low.x(), this.topPos + low.y(), low.width(), low.height())
+                            .build());
+                    this.highHeatButton = this.addRenderableWidget(Button.builder(Component.literal("+"),
+                            button -> this.applyScrollableHeatLevel(this.scrollableHeatLevel() + 1))
+                            .bounds(this.leftPos + medium.x(), this.topPos + medium.y(), medium.width(), medium.height())
+                            .build());
+                } else {
+                    this.lowHeatButton = this.addRenderableWidget(Button.builder(Component.literal("L"),
+                            button -> this.sendButton(1))
+                            .bounds(this.leftPos + low.x(), this.topPos + low.y(), low.width(), low.height())
+                            .build());
+                    this.mediumHeatButton = this.addRenderableWidget(Button.builder(Component.literal("M"),
+                            button -> this.sendButton(2))
+                            .bounds(this.leftPos + medium.x(), this.topPos + medium.y(), medium.width(), medium.height())
+                            .build());
+                    this.highHeatButton = this.addRenderableWidget(Button.builder(Component.literal("H"),
+                            button -> this.sendButton(3))
+                            .bounds(this.leftPos + high.x(), this.topPos + high.y(), high.width(), high.height())
+                            .build());
+                }
             }
 
             if (this.menu.stationType().supportsStationControl()) {
@@ -485,13 +496,17 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             this.tertiaryActionButton.active = panSimulation && this.menu.simulationBatchPresent();
         }
         if (this.lowHeatButton != null) {
-            this.lowHeatButton.active = this.menu.heatLevel() != HeatLevel.LOW;
+            this.lowHeatButton.active = this.usesScrollableHeat()
+                    ? this.scrollableHeatLevel() > 1
+                    : this.menu.heatLevel() != HeatLevel.LOW;
         }
         if (this.mediumHeatButton != null) {
             this.mediumHeatButton.active = this.menu.heatLevel() != HeatLevel.MEDIUM;
         }
         if (this.highHeatButton != null) {
-            this.highHeatButton.active = this.menu.heatLevel() != HeatLevel.HIGH;
+            this.highHeatButton.active = this.usesScrollableHeat()
+                    ? this.scrollableHeatLevel() < 6
+                    : this.menu.heatLevel() != HeatLevel.HIGH;
         }
         if (this.lowerControlButton != null) {
             this.lowerControlButton.active = this.menu.controlSetting() > 0;
@@ -1009,12 +1024,19 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         }
 
         if (this.lowHeatButton != null) {
-            this.renderActionButton(guiGraphics, left, top, mouseX, mouseY, this.lowHeatButton, this.layout.lowHeatAction(), Component.literal("L"),
-                    this.lowHeatButton.active || this.menu.heatLevel() == HeatLevel.LOW);
-            this.renderActionButton(guiGraphics, left, top, mouseX, mouseY, this.mediumHeatButton, this.layout.mediumHeatAction(), Component.literal("M"),
-                    this.mediumHeatButton.active || this.menu.heatLevel() == HeatLevel.MEDIUM);
-            this.renderActionButton(guiGraphics, left, top, mouseX, mouseY, this.highHeatButton, this.layout.highHeatAction(), Component.literal("H"),
-                    this.highHeatButton.active || this.menu.heatLevel() == HeatLevel.HIGH);
+            if (this.usesScrollableHeat()) {
+                this.renderActionButton(guiGraphics, left, top, mouseX, mouseY, this.lowHeatButton, this.layout.lowHeatAction(), Component.literal("-"),
+                        this.lowHeatButton.active);
+                this.renderActionButton(guiGraphics, left, top, mouseX, mouseY, this.highHeatButton, this.layout.mediumHeatAction(), Component.literal("+"),
+                        this.highHeatButton.active);
+            } else {
+                this.renderActionButton(guiGraphics, left, top, mouseX, mouseY, this.lowHeatButton, this.layout.lowHeatAction(), Component.literal("L"),
+                        this.lowHeatButton.active || this.menu.heatLevel() == HeatLevel.LOW);
+                this.renderActionButton(guiGraphics, left, top, mouseX, mouseY, this.mediumHeatButton, this.layout.mediumHeatAction(), Component.literal("M"),
+                        this.mediumHeatButton.active || this.menu.heatLevel() == HeatLevel.MEDIUM);
+                this.renderActionButton(guiGraphics, left, top, mouseX, mouseY, this.highHeatButton, this.layout.highHeatAction(), Component.literal("H"),
+                        this.highHeatButton.active || this.menu.heatLevel() == HeatLevel.HIGH);
+            }
         }
         if (this.lowerControlButton != null) {
             this.renderActionButton(guiGraphics, left, top, mouseX, mouseY, this.lowerControlButton, this.layout.lowerControlAction(), Component.literal("<"),
@@ -1303,6 +1325,9 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             return Component.empty();
         }
         if (this.menu.stationType().supportsHeat()) {
+            if (this.usesScrollableHeat()) {
+                return Component.literal("Heat " + this.scrollableHeatLevel());
+            }
             return Component.translatable("heat.jazzycookin." + this.menu.heatLevel().getSerializedName());
         }
         if (this.menu.stationType().supportsStationControl()) {
@@ -1703,6 +1728,27 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         return this.menu.currentMethod() == KitchenMethod.PAN_FRY;
     }
 
+    private boolean usesScrollableHeat() {
+        return this.menu.stationType() == StationType.STOVE
+                || this.menu.stationType() == StationType.SMOKER
+                || this.menu.stationType() == StationType.STEAMER;
+    }
+
+    private int scrollableHeatLevel() {
+        if (this.menu.stationType() == StationType.STOVE) {
+            return Math.max(1, Math.min(6, this.stoveDialLevel()));
+        }
+        return Math.max(1, Math.min(6, this.menu.scrollHeatLevel()));
+    }
+
+    private void applyScrollableHeatLevel(int level) {
+        int normalized = KitchenStationBlockEntity.normalizeScrollHeatLevel(level);
+        if (this.menu.stationType() == StationType.STOVE) {
+            this.pendingStoveDialLevel = normalized;
+        }
+        this.sendButton(3100 + normalized);
+    }
+
     private float simPanTempRatio() {
         return Math.max(0.0F, Math.min(1.0F, (this.menu.simPanTempF() - 72.0F) / 340.0F));
     }
@@ -1909,6 +1955,13 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             int baseDuration = this.pendingMicrowaveDuration > 0 ? this.pendingMicrowaveDuration : this.menu.microwaveDurationSeconds();
             int nextDuration = baseDuration + (scrollY > 0.0D ? 10 : -10);
             this.applyMicrowaveDuration(nextDuration);
+            return true;
+        }
+        if (this.usesScrollableHeat()
+                && scrollY != 0.0D
+                && this.isHovering(this.layout.controlStripRegion().x(), this.layout.controlStripRegion().y(),
+                this.layout.controlStripRegion().width(), this.layout.controlStripRegion().height(), mouseX, mouseY)) {
+            this.applyScrollableHeatLevel(this.scrollableHeatLevel() + (scrollY > 0.0D ? 1 : -1));
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);

@@ -1036,7 +1036,7 @@
     "tutorial.jazzycookin.station.open": "Right-click the %s to open its workstation. The left grid accepts ingredients, the highlighted slot accepts a tool when required, and the output slot previews the next result.",
     "tutorial.jazzycookin.station.tools": "Add a matching kitchen tool before starting the action. Better tools improve control, speed, and final quality.",
     "tutorial.jazzycookin.station.no_tools": "This station works from ingredients alone. Sort the inputs by recipe need, then use the station action to build the next food state.",
-    "tutorial.jazzycookin.station.heat": "Set heat before starting. Low heat protects texture, medium is balanced, and high heat is faster but raises browning and burn risk.",
+    "tutorial.jazzycookin.station.heat": "Set heat before starting. Stove, smoker, and steamer use levels 1-6: 1-2 are gentle, 3-4 are balanced, and 5-6 cook faster with more browning risk.",
     "tutorial.jazzycookin.station.control": "Use the station control or action button to shape texture. Holding an action keeps applying work while the item remains valid.",
     "tutorial.jazzycookin.station.recipe_book": "Open Recipes from the station screen to pin a live guide. Completed steps advance automatically, and the step keys can review the path.",
     "tutorial.jazzycookin.storage.open": "Right-click the %s to open storage. Move ingredients here before cooking so freshness and spoilage are tracked while you prepare other steps.",

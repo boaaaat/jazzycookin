@@ -40,7 +40,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
                 containerId,
                 playerInventory,
                 new SimpleContainer(StationCapacityProfile.TOTAL_SLOTS),
-                new SimpleContainerData(31),
+                new SimpleContainerData(32),
                 readStationType(extraData),
                 ContainerLevelAccess.NULL
         );
@@ -74,7 +74,7 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         this.capacity = this.uiProfile.capacity();
 
         checkContainerSize(container, StationCapacityProfile.TOTAL_SLOTS);
-        checkContainerDataCount(data, 31);
+        checkContainerDataCount(data, 32);
         container.startOpen(playerInventory.player);
 
         for (int inputIndex = 0; inputIndex < this.capacity.inputCount(); inputIndex++) {
@@ -203,6 +203,16 @@ public class KitchenStationMenu extends AbstractContainerMenu {
             return 0;
         }
         return KitchenStationBlockEntity.normalizeStoveBurnerLevel(this.data.get(21));
+    }
+
+    public int scrollHeatLevel() {
+        if (this.stationType == StationType.STOVE) {
+            return Math.max(1, this.stoveDialLevel());
+        }
+        if (this.stationType == StationType.SMOKER || this.stationType == StationType.STEAMER) {
+            return KitchenStationBlockEntity.normalizeScrollHeatLevel(this.data.get(31));
+        }
+        return 0;
     }
 
     public int stoveBurnerLevel(int burnerIndex) {

@@ -2,7 +2,7 @@
   "key": "spaghetti_pomodoro_prep",
   "preview_id": 1222,
   "result": "jazzycookin:spaghetti_pomodoro_prep",
-  "category": "stove_dish",
+  "category": "pan_dish",
   "preview_threshold": 0.54,
   "finalize_threshold": 0.6,
   "desirability": 0.82,

@@ -50,7 +50,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
     public static final int BYPRODUCT_SLOT = StationCapacityProfile.BYPRODUCT_SLOT;
     private static final int STOVE_BURNER_COUNT = 6;
     private static final int CONTAINER_SIZE = StationCapacityProfile.TOTAL_SLOTS;
-    private static final int DATA_COUNT = 31;
+    private static final int DATA_COUNT = 32;
     private static final int DEFAULT_MICROWAVE_DURATION_SECONDS = 30;
     private static final int MIN_MICROWAVE_DURATION_SECONDS = 10;
     private static final int MAX_MICROWAVE_DURATION_SECONDS = 300;
@@ -59,6 +59,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
     private static final int MIN_OVEN_COOK_TIME_MINUTES = 1;
     private static final int MAX_OVEN_COOK_TIME_MINUTES = 120;
     private static final int MIN_STOVE_BURNER_LEVEL = 0;
+    private static final int MIN_SCROLL_HEAT_LEVEL = 1;
     private static final int MAX_STOVE_BURNER_LEVEL = 6;
     private static final int STOVE_BURNER_DATA_START = 21;
     private static final int STOVE_BURNER_BUTTON_BASE = 3100;
@@ -99,6 +100,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
                 case 28 -> KitchenStationBlockEntity.this.fuelBurnDuration;
                 case 29 -> KitchenStationBlockEntity.this.ovenCookTimeMinutes;
                 case 30 -> KitchenStationBlockEntity.this.ovenPreheating ? 1 : 0;
+                case 31 -> KitchenStationBlockEntity.this.scrollHeatLevel();
                 default -> 0;
             };
         }
@@ -118,6 +120,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
                 case 28 -> KitchenStationBlockEntity.this.fuelBurnDuration = Math.max(0, value);
                 case 29 -> KitchenStationBlockEntity.this.ovenCookTimeMinutes = normalizeOvenCookTimeMinutes(value);
                 case 30 -> KitchenStationBlockEntity.this.ovenPreheating = value != 0;
+                case 31 -> KitchenStationBlockEntity.this.setScrollHeatLevel(value);
                 default -> {
                 }
             }
@@ -137,6 +140,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
     private int microwaveDurationSeconds = DEFAULT_MICROWAVE_DURATION_SECONDS;
     private int controlSetting = 1;
     private int stoveDialLevel;
+    private int scrollHeatLevel = 1;
     private int fuelBurnTime;
     private int fuelBurnDuration;
     private float stoveFuelBurnRemainder;
@@ -227,6 +231,17 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
         return this.stoveDialLevel();
     }
 
+    public int scrollHeatLevel() {
+        StationType stationType = this.getStationType();
+        if (stationType == StationType.STOVE) {
+            return Math.max(MIN_SCROLL_HEAT_LEVEL, this.stoveDialLevel());
+        }
+        if (usesScrollableHeat(stationType)) {
+            return normalizeScrollHeatLevel(this.scrollHeatLevel);
+        }
+        return 0;
+    }
+
     @Override
     public int simulationMicrowaveDurationSeconds() {
         return this.microwaveDurationSeconds;
@@ -238,6 +253,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
         }
         if (this.getStationType() == StationType.STOVE) {
             return heatLevelForStoveDial(this.stoveDialLevel());
+        }
+        if (usesScrollableHeat(this.getStationType())) {
+            return heatLevelForScrollLevel(this.scrollHeatLevel);
         }
         return this.getStationType() == StationType.OVEN
                 ? (this.ovenHeatDegrees >= HeatLevel.MIN_OVEN_TEMPERATURE
@@ -296,6 +314,11 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
             this.setChanged();
             return true;
         }
+        if (usesScrollableHeat(this.getStationType()) && buttonId >= STOVE_BURNER_BUTTON_BASE) {
+            this.setScrollHeatLevel(buttonId - STOVE_BURNER_BUTTON_BASE);
+            this.setChanged();
+            return true;
+        }
         if (this.getStationType() == StationType.STOVE && buttonId >= 1 && buttonId <= 3) {
             this.setStoveDialLevel(switch (buttonId) {
                 case 1 -> 2;
@@ -310,6 +333,16 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
         if (this.getStationType().supportsHeat() && this.getStationType() != StationType.MICROWAVE) {
             if (this.getStationType() == StationType.STOVE) {
                 return false;
+            }
+            if (usesScrollableHeat(this.getStationType())) {
+                this.setScrollHeatLevel(switch (buttonId) {
+                    case 1 -> 2;
+                    case 2 -> 4;
+                    case 3 -> 6;
+                    default -> this.scrollHeatLevel();
+                });
+                this.setChanged();
+                return true;
             }
             this.heatLevel = switch (buttonId) {
                 case 1 -> HeatLevel.LOW;
@@ -576,6 +609,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
         this.fuelBurnDuration = 0;
         this.stoveFuelBurnRemainder = 0.0F;
         this.stoveDialLevel = 0;
+        this.scrollHeatLevel = 1;
         this.ovenPreheating = false;
         this.ovenHeatDegrees = 0.0F;
         this.preheatProgress = 0;
@@ -618,7 +652,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
             tag.putInt("StoveDialLevel", this.stoveDialLevel);
         }
         tag.putBoolean("Processing", this.processing);
-        if (this.getStationType().supportsHeat() && this.getStationType() != StationType.STOVE && this.getStationType() != StationType.OVEN) {
+        if (usesScrollableHeat(this.getStationType())) {
+            tag.putInt("ScrollHeatLevel", this.scrollHeatLevel);
+        } else if (this.getStationType().supportsHeat() && this.getStationType() != StationType.STOVE && this.getStationType() != StationType.OVEN) {
             tag.putString("SelectedHeatLevel", this.heatLevel.getSerializedName());
         }
         if (this.activeGuidePlayerId != null) {
@@ -659,6 +695,12 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
             this.syncStoveBurnerDerivedState();
         } else {
             this.controlSetting = Math.max(0, Math.min(2, tag.getInt("StationControlSetting")));
+            if (usesScrollableHeat(this.getStationType())) {
+                this.scrollHeatLevel = tag.contains("ScrollHeatLevel")
+                        ? normalizeScrollHeatLevel(tag.getInt("ScrollHeatLevel"))
+                        : normalizeScrollHeatLevel(heatLevelToScrollLevel(this.heatLevel));
+                this.syncScrollHeatDerivedState();
+            }
         }
         this.processing = tag.getBoolean("Processing");
         this.activeGuidePlayerId = tag.hasUUID("ActiveGuidePlayer") ? tag.getUUID("ActiveGuidePlayer") : null;
@@ -701,6 +743,10 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
         return Math.max(MIN_STOVE_BURNER_LEVEL, Math.min(MAX_STOVE_BURNER_LEVEL, level));
     }
 
+    public static int normalizeScrollHeatLevel(int level) {
+        return Math.max(MIN_SCROLL_HEAT_LEVEL, Math.min(MAX_STOVE_BURNER_LEVEL, level));
+    }
+
     private void setStoveDialLevel(int level) {
         if (this.getStationType() != StationType.STOVE) {
             return;
@@ -709,10 +755,23 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
         this.syncStoveBurnerDerivedState();
     }
 
+    private void setScrollHeatLevel(int level) {
+        if (!usesScrollableHeat(this.getStationType())) {
+            return;
+        }
+        this.scrollHeatLevel = normalizeScrollHeatLevel(level);
+        this.syncScrollHeatDerivedState();
+    }
+
     private void syncStoveBurnerDerivedState() {
         int dialLevel = this.stoveDialLevel();
         this.controlSetting = dialLevel;
         this.heatLevel = heatLevelForStoveDial(dialLevel);
+    }
+
+    private void syncScrollHeatDerivedState() {
+        this.controlSetting = this.scrollHeatLevel;
+        this.heatLevel = heatLevelForScrollLevel(this.scrollHeatLevel);
     }
 
     private void serverTickFuelAndHeat() {
@@ -914,6 +973,30 @@ public class KitchenStationBlockEntity extends BlockEntity implements WorldlyCon
             return HeatLevel.MEDIUM;
         }
         return HeatLevel.HIGH;
+    }
+
+    private static HeatLevel heatLevelForScrollLevel(int level) {
+        int normalized = normalizeScrollHeatLevel(level);
+        if (normalized <= 2) {
+            return HeatLevel.LOW;
+        }
+        if (normalized <= 4) {
+            return HeatLevel.MEDIUM;
+        }
+        return HeatLevel.HIGH;
+    }
+
+    private static int heatLevelToScrollLevel(HeatLevel heatLevel) {
+        return switch (heatLevel) {
+            case HIGH -> 6;
+            case MEDIUM -> 4;
+            case LOW -> 2;
+            default -> 1;
+        };
+    }
+
+    private static boolean usesScrollableHeat(StationType stationType) {
+        return stationType == StationType.SMOKER || stationType == StationType.STEAMER;
     }
 
     @Override

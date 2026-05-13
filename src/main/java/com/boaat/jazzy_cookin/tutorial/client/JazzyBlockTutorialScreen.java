@@ -14,8 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 
 public class JazzyBlockTutorialScreen extends Screen {
-    private static final int PANEL_WIDTH = 292;
-    private static final int PANEL_HEIGHT = 164;
+    private static final int PANEL_WIDTH = 340;
+    private static final int PANEL_HEIGHT = 206;
 
     private final KitchenBlockTutorial tutorial;
     private int stepIndex;
@@ -42,40 +42,52 @@ public class JazzyBlockTutorialScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        guiGraphics.fill(0, 0, this.width, this.height, 0x9004080D);
 
         int left = (this.width - PANEL_WIDTH) / 2;
         int top = (this.height - PANEL_HEIGHT) / 2;
         guiGraphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xF0141820);
         guiGraphics.fill(left, top, left + PANEL_WIDTH, top + 26, 0xFF20343A);
         guiGraphics.fill(left, top + 26, left + PANEL_WIDTH, top + 28, 0xFF62D2C8);
-        guiGraphics.fill(left + 12, top + 42, left + 64, top + 94, 0xFF263139);
-        guiGraphics.fill(left + 13, top + 43, left + 63, top + 93, 0xFF111820);
+        guiGraphics.fill(left + 14, top + 44, left + 72, top + 102, 0xFF263139);
+        guiGraphics.fill(left + 15, top + 45, left + 71, top + 101, 0xFF111820);
 
         guiGraphics.drawString(this.font, this.title, left + 10, top + 9, 0xFFEAF7F4, false);
         guiGraphics.drawString(this.font, this.tutorial.category().copy().withStyle(ChatFormatting.AQUA), left + PANEL_WIDTH - 10 - this.font.width(this.tutorial.category()), top + 9, 0xFF91E8E0, false);
-        guiGraphics.renderItem(this.tutorial.icon(), left + 30, top + 60);
+        guiGraphics.renderItem(this.tutorial.icon(), left + 35, top + 65);
 
-        guiGraphics.drawString(this.font, this.tutorial.title(), left + 76, top + 45, 0xFFFFF3D4, false);
+        guiGraphics.drawString(this.font, this.tutorial.title(), left + 88, top + 45, 0xFFFFF3D4, false);
         guiGraphics.drawString(
                 this.font,
                 Component.translatable("screen.jazzycookin.block_tutorial.step_count", this.stepIndex + 1, this.tutorial.steps().size()),
-                left + 76,
+                left + 88,
                 top + 59,
                 0xFFAAB5C0,
                 false
         );
 
         Component step = this.tutorial.steps().get(this.stepIndex);
-        List<FormattedCharSequence> lines = this.font.split(step, PANEL_WIDTH - 102);
+        List<FormattedCharSequence> lines = this.font.split(step, PANEL_WIDTH - 116);
         int y = top + 78;
+        int maxTextBottom = top + PANEL_HEIGHT - 48;
         for (FormattedCharSequence line : lines) {
-            guiGraphics.drawString(this.font, line, left + 76, y, 0xFFE5E8EC, false);
+            if (y + 9 > maxTextBottom) {
+                break;
+            }
+            guiGraphics.drawString(this.font, line, left + 88, y, 0xFFE5E8EC, false);
             y += 11;
         }
 
-        this.renderProgress(guiGraphics, left + 18, top + 108, PANEL_WIDTH - 36);
+        this.renderProgress(guiGraphics, left + 18, top + PANEL_HEIGHT - 54, PANEL_WIDTH - 36);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    protected void renderBlurredBackground(float partialTick) {
+    }
+
+    @Override
+    public void renderTransparentBackground(GuiGraphics guiGraphics) {
     }
 
     @Override

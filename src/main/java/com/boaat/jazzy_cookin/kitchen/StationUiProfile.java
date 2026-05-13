@@ -877,12 +877,16 @@ public record StationUiProfile(
     ) {
         public MetricWidgetSpec metricWidget(int index, int count) {
             int gap = count > 2 ? 2 : 3;
-            int widgetHeight = Math.max(6, (this.metricClusterRegion.height() - Math.max(0, count - 1) * gap) / Math.max(1, count));
-            int y = this.metricClusterRegion.y() + index * (widgetHeight + gap);
+            int top = this.statusLaneRegion.height() > 0
+                    ? Math.min(this.metricClusterRegion.bottom() - 6, this.statusLaneRegion.bottom() + 4)
+                    : this.metricClusterRegion.y();
+            int availableHeight = Math.max(6, this.metricClusterRegion.bottom() - top);
+            int widgetHeight = Math.max(6, (availableHeight - Math.max(0, count - 1) * gap) / Math.max(1, count));
+            int y = top + index * (widgetHeight + gap);
             LayoutRegion widget = new LayoutRegion(this.metricClusterRegion.x(), y, this.metricClusterRegion.width(), widgetHeight);
-            LayoutRegion label = new LayoutRegion(widget.x() + 5, widget.y() + 1, Math.max(18, widget.width() - 36), 8);
+            LayoutRegion label = new LayoutRegion(widget.x() + 5, widget.y() + 1, Math.max(18, widget.width() - 40), 8);
             LayoutRegion meter = new LayoutRegion(widget.x() + 5, widget.bottom() - 3, Math.max(22, widget.width() - 30), 2);
-            LayoutRegion value = new LayoutRegion(widget.right() - 22, widget.y() + 1, 16, 8);
+            LayoutRegion value = new LayoutRegion(widget.right() - 28, widget.y() + 1, 22, 8);
             return new MetricWidgetSpec(widget, label, meter, value);
         }
 
