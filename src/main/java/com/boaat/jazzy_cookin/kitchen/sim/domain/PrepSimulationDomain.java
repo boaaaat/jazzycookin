@@ -338,6 +338,13 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             if (!CompositionalSimulationSupport.isFood(stack)) {
                 continue;
             }
+            if (access.simulationStationType() == StationType.SPICE_GRINDER || access.simulationStationType() == StationType.STRAINER) {
+                if (primarySlot >= 0) {
+                    return -1;
+                }
+                primarySlot = slot;
+                continue;
+            }
             if (!CompositionalSimulationSupport.isSupportiveExtra(stack)) {
                 if (primarySlot >= 0) {
                     return -1;

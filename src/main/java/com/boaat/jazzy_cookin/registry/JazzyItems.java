@@ -33,6 +33,11 @@ public final class JazzyItems {
     public static final DeferredItem<BlockItem> WHEAT_PATCH_ITEM = tutorialBlockItem("wheat_patch", JazzyBlocks.WHEAT_PATCH);
     public static final DeferredItem<BlockItem> CABBAGE_PATCH_ITEM = tutorialBlockItem("cabbage_patch", JazzyBlocks.CABBAGE_PATCH);
     public static final DeferredItem<BlockItem> ONION_PATCH_ITEM = tutorialBlockItem("onion_patch", JazzyBlocks.ONION_PATCH);
+    public static final DeferredItem<BlockItem> ROOT_VEGETABLE_PATCH_ITEM = tutorialBlockItem("root_vegetable_patch", JazzyBlocks.ROOT_VEGETABLE_PATCH);
+    public static final DeferredItem<BlockItem> LEAFY_GREENS_BED_ITEM = tutorialBlockItem("leafy_greens_bed", JazzyBlocks.LEAFY_GREENS_BED);
+    public static final DeferredItem<BlockItem> PEPPER_BUSH_ITEM = tutorialBlockItem("pepper_bush", JazzyBlocks.PEPPER_BUSH);
+    public static final DeferredItem<BlockItem> PEA_TRELLIS_ITEM = tutorialBlockItem("pea_trellis", JazzyBlocks.PEA_TRELLIS);
+    public static final DeferredItem<BlockItem> CITRUS_SAPLING_ITEM = tutorialBlockItem("citrus_sapling", JazzyBlocks.CITRUS_SAPLING);
     public static final DeferredItem<BlockItem> CHICKEN_COOP_ITEM = tutorialBlockItem("chicken_coop", JazzyBlocks.CHICKEN_COOP);
     public static final DeferredItem<BlockItem> DAIRY_STALL_ITEM = tutorialBlockItem("dairy_stall", JazzyBlocks.DAIRY_STALL);
     public static final DeferredItem<BlockItem> FISHING_TRAP_ITEM = tutorialBlockItem("fishing_trap", JazzyBlocks.FISHING_TRAP);

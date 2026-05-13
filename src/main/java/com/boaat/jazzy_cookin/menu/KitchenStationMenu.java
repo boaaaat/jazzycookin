@@ -202,7 +202,11 @@ public class KitchenStationMenu extends AbstractContainerMenu {
         if (this.stationType != StationType.STOVE) {
             return 0;
         }
-        return KitchenStationBlockEntity.normalizeStoveBurnerLevel(this.data.get(21));
+        int maxLevel = 0;
+        for (int burnerIndex = 0; burnerIndex < 6; burnerIndex++) {
+            maxLevel = Math.max(maxLevel, this.stoveBurnerLevel(burnerIndex));
+        }
+        return maxLevel;
     }
 
     public int scrollHeatLevel() {
@@ -216,10 +220,10 @@ public class KitchenStationMenu extends AbstractContainerMenu {
     }
 
     public int stoveBurnerLevel(int burnerIndex) {
-        if (this.stationType != StationType.STOVE) {
+        if (this.stationType != StationType.STOVE || burnerIndex < 0 || burnerIndex >= 6) {
             return 0;
         }
-        return this.stoveDialLevel();
+        return KitchenStationBlockEntity.normalizeStoveBurnerLevel(this.data.get(21 + burnerIndex));
     }
 
     public int environmentStatus() {

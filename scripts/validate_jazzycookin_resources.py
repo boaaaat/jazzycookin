@@ -36,6 +36,11 @@ JAVA_SOURCE_GUIDE_REGISTRY = ROOT / "src/main/java/com/boaat/jazzy_cookin/recipe
 JAVA_RECIPE_BOOK_PLANNER = ROOT / "src/main/java/com/boaat/jazzy_cookin/recipebook/JazzyRecipeBookPlanner.java"
 JAVA_RECIPE_BOOK_SCREEN = ROOT / "src/main/java/com/boaat/jazzy_cookin/recipebook/client/JazzyRecipeBookScreen.java"
 JAVA_COMPOSITIONAL_SIM = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/sim/domain/CompositionalSimulationSupport.java"
+JAVA_PAN_SIM = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/sim/domain/PanSchemaSimulationActions.java"
+JAVA_POT_SIM = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/sim/domain/PotSimulationDomain.java"
+JAVA_PREP_SIM = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/sim/domain/PrepSimulationDomain.java"
+JAVA_PRESERVE_SIM = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/sim/domain/PreserveSimulationDomain.java"
+PY_RECIPE_SIMULATOR = ROOT / "scripts/recipe_simulator.py"
 
 ROLES = {
     "protein", "grain", "fat", "aromatic", "acid", "sweetener", "herb", "salt", "spice", "binder",
@@ -307,12 +312,16 @@ def validate_sided_automation(errors: list[str]) -> None:
         "getSlotsForFace(Direction side)": "stations must declare side-visible slots",
         "Direction.DOWN": "stations must distinguish extraction from insertion sides",
         "new int[] { OUTPUT_SLOT, BYPRODUCT_SLOT }": "station bottom side must expose only output slots",
+        "this.getStationType() == StationType.STOVE": "stove automation must special-case outputless burner-surface extraction",
+        "slots[capacity.inputCount()] = BYPRODUCT_SLOT": "stove bottom side must expose byproducts after burner surface slots",
         "StationCapacityProfile.FUEL_SLOT": "fueled stations must expose a fuel insertion slot",
         "slots[index] = TOOL_SLOT": "stations must expose tool insertion for automation",
         "canPlaceItemThroughFace": "stations must validate automated insertion",
         "return this.canPlaceItem(slot, stack)": "automated insertion must reuse normal slot rules",
         "canTakeItemThroughFace": "stations must validate automated extraction",
         "slot == OUTPUT_SLOT || slot == BYPRODUCT_SLOT": "automation extraction must be limited to outputs/byproducts",
+        "this.capacityProfile().isActiveInputSlot(slot)": "stove automation extraction must come from active burner surface slots",
+        "this.simulationBatch == null": "stove automation must avoid pulling food while an active stove simulation is tracking it",
     }
     for token, message in required_station_tokens.items():
         if token not in station_java:
@@ -339,6 +348,9 @@ def validate_sided_automation(errors: list[str]) -> None:
         "canTakeItemThroughFace(0, tomatoes, Direction.DOWN)": "automation GameTest must reject unfinished input extraction",
         "canTakeItemThroughFace(KitchenStationBlockEntity.OUTPUT_SLOT": "automation GameTest must allow output extraction",
         "canPlaceItemThroughFace(StationCapacityProfile.FUEL_SLOT": "automation GameTest must verify fueled station insertion",
+        "Stove bottom automation should expose burner surface slots": "automation GameTest must verify outputless stove extraction slots",
+        "canTakeItemThroughFace(0, stove.getItem(0), Direction.DOWN)": "automation GameTest must allow finished stove food extraction from burner surface",
+        "hidden stove output slot": "automation GameTest must reject hidden stove output extraction",
         "canPlaceItemThroughFace(0, chicken, Direction.UP)": "automation GameTest must verify storage insertion",
         "canPlaceItemThroughFace(0, sugar, Direction.UP)": "automation GameTest must reject storage-invalid food",
     }
@@ -386,6 +398,9 @@ def validate_station_interaction_feedback(errors: list[str]) -> None:
     client_java = JAVA_CLIENT_ENTRYPOINT.read_text(encoding="utf-8")
     renderer_java = JAVA_STATION_BER.read_text(encoding="utf-8") if JAVA_STATION_BER.exists() else ""
     station_java = JAVA_STATION_ENTITY.read_text(encoding="utf-8")
+    pan_java = JAVA_PAN_SIM.read_text(encoding="utf-8")
+    pot_java = JAVA_POT_SIM.read_text(encoding="utf-8")
+    gametest_java = JAVA_GAMETESTS.read_text(encoding="utf-8")
     required_tokens = {
         "renderItemFlow(guiGraphics, left, top, partialTick)": "station UI must render animated item flow",
         "shouldShowItemFlow()": "station UI must gate flow feedback on active cooking state",
@@ -411,6 +426,19 @@ def validate_station_interaction_feedback(errors: list[str]) -> None:
         haystack = client_java + renderer_java + station_java
         if token not in haystack:
             errors.append(f"in-world station renderer contract: missing {message}")
+
+    if "access.outputSlot()" in pan_java or "access.outputSlot()" in pot_java:
+        errors.append("stove simulation contract: pan/pot finishes must stay on burner input slots, not station output slots")
+    stove_surface_tokens = {
+        "this.menu.stationType() == StationType.STOVE": "stove screen must special-case outputless burner UI",
+        "SlotPositioning.setPosition(outputSlot, -1000, -1000)": "stove output slot must be hidden offscreen",
+        "SlotPositioning.setPosition(byproductSlot, -1000, -1000)": "stove byproduct slot must be hidden offscreen",
+        "stove.getItem(0).is": "GameTests must assert stove results appear on the burner surface",
+    }
+    for token, message in stove_surface_tokens.items():
+        haystack = screen_java + gametest_java
+        if token not in haystack:
+            errors.append(f"stove surface cooking contract: missing {message}")
 
 
 def validate_recipe_book_guidance(errors: list[str]) -> None:
@@ -512,6 +540,10 @@ def validate_schemas(parsed: dict[Path, dict], errors: list[str]) -> None:
 def validate_goal_delivery_contract(parsed: dict[Path, dict], errors: list[str]) -> None:
     item_java = JAVA_ITEMS.read_text(encoding="utf-8")
     source_java = JAVA_SOURCE_PROFILES.read_text(encoding="utf-8")
+    source_guide_java = JAVA_SOURCE_GUIDE_REGISTRY.read_text(encoding="utf-8")
+    gametest_java = JAVA_GAMETESTS.read_text(encoding="utf-8")
+    prep_sim_java = JAVA_PREP_SIM.read_text(encoding="utf-8")
+    preserve_sim_java = JAVA_PRESERVE_SIM.read_text(encoding="utf-8")
     station_java = (ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/StationType.java").read_text(encoding="utf-8")
 
     meal_items = re.findall(r'meal\("([a-z0-9_]+)"', item_java)
@@ -535,22 +567,80 @@ def validate_goal_delivery_contract(parsed: dict[Path, dict], errors: list[str])
     plant_sources = [serialized for _, serialized, plant_like in source_profiles if plant_like == "true"]
     if len(source_profiles) < 8:
         errors.append(f"source profile count {len(source_profiles)} is below the farming/source coverage target")
-    if len(plant_sources) < 5:
+    if len(plant_sources) < 10:
         errors.append(f"plant-like source count {len(plant_sources)} is below the veggie farming coverage target")
+
+    fresh_produce_ids = [
+        "APPLES",
+        "TOMATOES",
+        "CARROTS",
+        "ONIONS",
+        "POTATOES",
+        "LEMONS",
+        "CABBAGE",
+        "GARLIC",
+        "GINGER",
+        "SHALLOTS",
+        "SPINACH",
+        "GREEN_PEAS",
+        "JALAPENOS",
+        "RED_PEPPER",
+    ]
+    for ingredient_id in fresh_produce_ids:
+        token = f"IngredientId.{ingredient_id}"
+        if token not in source_guide_java:
+            errors.append(f"{rel(JAVA_SOURCE_GUIDE_REGISTRY)}: missing source guide output for fresh produce {ingredient_id}")
+    if "freshProduceIngredientsExposeSourceGuides" not in gametest_java:
+        errors.append(f"{rel(JAVA_GAMETESTS)}: missing fresh produce source-guide GameTest coverage")
 
     station_names = re.findall(r'^\s*([A-Z0-9_]+)\("([a-z0-9_]+)"', station_java, flags=re.M)
     if len(station_names) < 12:
         errors.append(f"station count {len(station_names)} is below the interactive cooking station coverage target")
+
+    secondary_station_tokens = {
+        "secondaryStationsTransformFoodWithSimulationDomains": "secondary station GameTest coverage",
+        "IngredientState.GROUND_SPICE": "spice grinder transformed output coverage",
+        "IngredientState.STRAINED": "strainer transformed output coverage",
+        "IngredientState.DRIED_FRUIT": "drying rack transformed output coverage",
+        "IngredientState.FERMENTED_VEGETABLE": "fermentation crock transformed output coverage",
+        "IngredientState.COOLED": "cooling rack transformed output coverage",
+    }
+    for token, message in secondary_station_tokens.items():
+        if token not in gametest_java:
+            errors.append(f"{rel(JAVA_GAMETESTS)}: missing {message}")
+    if "StationType.SPICE_GRINDER || access.simulationStationType() == StationType.STRAINER" not in prep_sim_java:
+        errors.append(f"{rel(JAVA_PREP_SIM)}: spice grinder/strainer must accept a single supportive ingredient as the primary input")
+    if "directDominantOutput(access, analysis, matter)" not in preserve_sim_java:
+        errors.append(f"{rel(JAVA_PRESERVE_SIM)}: drying and fermentation stations must fall back to direct transformed ingredient outputs")
 
     texture_generators = [
         ROOT / "texture_sources/generate_meal_textures.py",
         ROOT / "texture_sources/generate_block_textures.py",
         ROOT / "texture_sources/generate_ingredient_textures.py",
         ROOT / "texture_sources/generate_remaining_item_textures.py",
+        ROOT / "texture_sources/generate_source_resources.py",
     ]
     for generator in texture_generators:
         if not generator.exists():
             errors.append(f"missing generated texture source script {rel(generator)}")
+
+    if not PY_RECIPE_SIMULATOR.exists():
+        errors.append(f"missing recipe builder/simulator script {rel(PY_RECIPE_SIMULATOR)}")
+    else:
+        simulator = PY_RECIPE_SIMULATOR.read_text(encoding="utf-8")
+        required_simulator_tokens = {
+            "def score_schema": "recipe simulator must score attempts against dish schemas",
+            "def canonical_attempt": "recipe simulator must synthesize validation attempts",
+            "--validate-all": "recipe simulator must expose whole-catalog validation",
+            "--validate-stations": "recipe simulator must validate station step inputs and outputs",
+            "--station-report": "recipe simulator must report expected station transformations",
+            "def simulate_station_steps": "recipe simulator must model schema station transformations",
+            "--emit-template": "recipe simulator must help build starter recipe schemas",
+            "finalize_threshold": "recipe simulator must validate recipe output thresholds",
+        }
+        for token, message in required_simulator_tokens.items():
+            if token not in simulator:
+                errors.append(f"{rel(PY_RECIPE_SIMULATOR)}: missing {message}")
 
 
 def validate_recipe_simulation_depth(parsed: dict[Path, dict], errors: list[str]) -> None:

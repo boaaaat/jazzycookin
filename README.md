@@ -21,7 +21,7 @@
 ## Quick Start
 
 1. Open the `Sources`, `Kitchen`, and `Tools` creative tabs.
-2. Place a few source blocks such as `Apple Sapling`, `Tomato Vine`, `Herb Bed`, `Wheat Patch`, `Cabbage Patch`, and `Onion Patch`.
+2. Place a few source blocks such as `Apple Sapling`, `Tomato Vine`, `Herb Bed`, `Wheat Patch`, `Cabbage Patch`, `Onion Patch`, `Root Vegetable Patch`, `Leafy Greens Bed`, `Pepper Bush`, `Pea Trellis`, and `Citrus Sapling`.
 3. Place the stations you need, usually `Prep Table`, `Mixing Bowl`, `Spice Grinder`, `Stove`, `Oven`, `Cooling Rack`, `Resting Board`, and `Plating Station`.
 4. Place a `Pantry` if you want quick access to flour, sugar, butter, spice, oil, plates, jars, and salt.
 5. Harvest ingredients, process them through stations, and plate the final food.
@@ -38,7 +38,7 @@ Each kitchen station works the same basic way:
 4. Set the station control if the station supports controls.
 5. Make sure any environment requirement is satisfied.
 6. Press `Start`.
-7. Take the main result from the output slot and any extra item from the byproduct slot.
+7. Take the main result from the output slot and any extra item from the byproduct slot. The stove is the exception: food stays on the active burner/tool surface and the hidden output slot is not part of normal play.
 
 Important rules:
 
@@ -50,6 +50,7 @@ Important rules:
 - Some recipes are passive and take longer than active prep recipes.
 - Some recipes require nearby water.
 - Oven recipes can require preheat.
+- Stove recipes use multiple individually controlled burners. Pan and pot outputs finish on the burner slot they cooked in, so hoppers pulling from below extract the burner surface instead of a separate output.
 
 ## Ingredient Sources
 
@@ -61,6 +62,11 @@ All source blocks are harvested by right-clicking them when ripe.
 - `Wheat Patch`: grows wheat sheaves.
 - `Cabbage Patch`: grows cabbage.
 - `Onion Patch`: grows onions.
+- `Root Vegetable Patch`: grows a random harvest of carrots, potatoes, garlic, ginger, or shallots.
+- `Leafy Greens Bed`: grows spinach.
+- `Pepper Bush`: grows a random harvest of jalapenos or red pepper.
+- `Pea Trellis`: grows green peas.
+- `Citrus Sapling`: grows lemons.
 - `Chicken Coop`: gives `Farm Egg` most of the time and occasionally `Raw Protein`.
 - `Dairy Stall`: gives `Fresh Milk`.
 - `Fishing Trap`: gives `Raw Fish`.
@@ -177,6 +183,8 @@ Tool notes:
 ### Stove
 
 - Used for boiling, simmering, pan frying, and deep frying.
+- Has six independently controllable burners.
+- Food cooks on the burner/input surface instead of moving to a visible output slot.
 - Some recipes require nearby water.
 - Deep frying returns degraded oil in the byproduct slot.
 
@@ -347,6 +355,15 @@ When you eat a plated meal:
 ## Developer Notes
 
 - Custom kitchen process recipes live in `src/main/resources/data/jazzycookin/recipe`.
+- Flexible dish schemas live in `src/main/resources/data/jazzycookin/dish_schema`.
+- `scripts/recipe_simulator.py` can score attempts, emit starter schemas, validate all schema midpoint attempts, and validate expected station-step outputs:
+
+```powershell
+python scripts/recipe_simulator.py --validate-all
+python scripts/recipe_simulator.py --validate-stations
+python scripts/recipe_simulator.py --station-report --schema sandwich_plate
+```
+
 - The main game tests for recipe chains and kitchen rules live in `src/main/java/com/boaat/jazzy_cookin/gametest/KitchenGameTests.java`.
 - Run the dev client with:
 

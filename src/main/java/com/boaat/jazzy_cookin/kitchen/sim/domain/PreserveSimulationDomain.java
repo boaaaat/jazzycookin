@@ -137,11 +137,36 @@ public final class PreserveSimulationDomain implements StationSimulationDomain {
                     ""
             );
         }
+        if (access.simulationStationType() == StationType.DRYING_RACK
+                || access.simulationStationType() == StationType.FERMENTATION_CROCK) {
+            ItemStack directOutput = directDominantOutput(access, analysis, matter);
+            if (!directOutput.isEmpty()) {
+                return directOutput;
+            }
+        }
         ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, PreserveSimulationDomain::isPreserveSchema);
         if (!schemaOutput.isEmpty()) {
             return schemaOutput;
         }
-        return CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
+        ItemStack preparedOutput = CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
+        if (!preparedOutput.isEmpty()) {
+            return preparedOutput;
+        }
+        return directDominantOutput(access, analysis, matter);
+    }
+
+    private static ItemStack directDominantOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter) {
+        ItemStack dominant = CompositionalSimulationSupport.dominantFoodInput(access);
+        if (dominant.getItem() instanceof KitchenIngredientItem ingredientItem) {
+            return SimulationOutputFactory.createOutput(
+                    ingredientItem,
+                    access.simulationLevel().getGameTime(),
+                    analysis,
+                    matter,
+                    inferState(access, analysis)
+            );
+        }
+        return ItemStack.EMPTY;
     }
 
     private static FoodMatterData previewMatter(StationSimulationAccess access) {

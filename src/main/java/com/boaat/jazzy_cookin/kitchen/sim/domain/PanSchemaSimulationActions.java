@@ -151,12 +151,13 @@ final class PanSchemaSimulationActions {
                 finalized
         );
         KitchenStackUtil.setDishAttempt(output, DishAttemptAssembler.build(score.get().schema(), DishAttemptAssembler.view(access), readiness.quality()));
-        if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
+        int surfaceSlot = firstPanFoodInputSlot(access);
+        if (surfaceSlot < 0 || output.isEmpty()) {
             return false;
         }
 
         removePanFoodInputs(access);
-        access.simulationMergeIntoSlot(access.outputSlot(), output);
+        access.simulationSetItem(surfaceSlot, output);
         access.simulationSetBatch(null);
         access.simulationMarkChanged();
         return true;
@@ -189,11 +190,12 @@ final class PanSchemaSimulationActions {
                 finalized,
                 IngredientState.PAN_FRIED
         );
-        if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
+        int surfaceSlot = firstPanFoodInputSlot(access);
+        if (surfaceSlot < 0 || output.isEmpty()) {
             return false;
         }
         removePanFoodInputs(access);
-        access.simulationMergeIntoSlot(access.outputSlot(), output);
+        access.simulationSetItem(surfaceSlot, output);
         access.simulationSetBatch(null);
         access.simulationMarkChanged();
         return true;
@@ -239,6 +241,16 @@ final class PanSchemaSimulationActions {
                 access.simulationRemoveItem(slot, stack.getCount());
             }
         }
+    }
+
+    private static int firstPanFoodInputSlot(StationSimulationAccess access) {
+        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
+            ItemStack stack = access.simulationItem(slot);
+            if (!stack.isEmpty() && stack.getItem() instanceof KitchenIngredientItem) {
+                return slot;
+            }
+        }
+        return -1;
     }
 
     private static boolean mutatePanMatter(StationSimulationAccess access, boolean stir) {

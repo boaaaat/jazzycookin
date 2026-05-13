@@ -79,7 +79,7 @@ public final class PotSimulationDomain implements StationSimulationDomain {
             return false;
         }
         ItemStack preview = previewOutput(access);
-        if (preview.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), preview)) {
+        if (preview.isEmpty() || firstFoodInputSlot(access) < 0) {
             return false;
         }
         access.simulationSetBatch(new CookingBatchState(transformedMatter(
@@ -115,14 +115,15 @@ public final class PotSimulationDomain implements StationSimulationDomain {
 
     private static void finish(StationSimulationAccess access) {
         ItemStack output = previewOutput(access);
-        if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
+        int surfaceSlot = firstFoodInputSlot(access);
+        if (surfaceSlot < 0 || output.isEmpty()) {
             access.simulationSetProgress(0, 0, false);
             access.simulationSetBatch(null);
             access.simulationMarkChanged();
             return;
         }
         CompositionalSimulationSupport.removeAllFoodInputs(access);
-        access.simulationMergeIntoSlot(access.outputSlot(), output);
+        access.simulationSetItem(surfaceSlot, output);
         access.simulationSetProgress(0, 0, false);
         access.simulationSetBatch(null);
         access.simulationMarkChanged();
@@ -184,6 +185,16 @@ public final class PotSimulationDomain implements StationSimulationDomain {
             }
         }
         return false;
+    }
+
+    private static int firstFoodInputSlot(StationSimulationAccess access) {
+        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
+            ItemStack stack = access.simulationItem(slot);
+            if (!stack.isEmpty() && stack.getItem() instanceof KitchenIngredientItem) {
+                return slot;
+            }
+        }
+        return -1;
     }
 
     private static int directLegacyPreviewId(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter) {

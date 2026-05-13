@@ -294,6 +294,9 @@ public final class KitchenGameTests {
         require(stove.stoveDialLevel() == 6, "Strong redstone should drive the stove to its highest burner level");
         level.setBlockAndUpdate(stovePos.east(), Blocks.AIR.defaultBlockState());
         require(stove.stoveDialLevel() == 0, "Removing redstone power should shut the stove burner off");
+        require(stove.handleButton(3200 + 2 * 10 + 4, null), "Individual stove burner control should accept encoded burner buttons");
+        require(stove.stoveBurnerLevel(2) == 4, "Individual stove burner control should update the selected burner");
+        require(stove.stoveBurnerLevel(1) == 0, "Individual stove burner control should not change neighboring burners");
 
         BlockPos ovenPos = helper.absolutePos(new BlockPos(6, 1, 0));
         KitchenStationBlockEntity oven = placeStation(level, ovenPos, JazzyBlocks.OVEN.get());
@@ -320,6 +323,11 @@ public final class KitchenGameTests {
         KitchenStationBlockEntity stove = placeStation(level, helper.absolutePos(new BlockPos(3, 1, 0)), JazzyBlocks.STOVE.get());
         require(stove.canPlaceItemThroughFace(StationCapacityProfile.FUEL_SLOT, new ItemStack(Items.COAL), Direction.NORTH), "Automation should insert fuel into fueled stations");
         require(!stove.canPlaceItemThroughFace(StationCapacityProfile.FUEL_SLOT, tomatoes, Direction.NORTH), "Automation should reject non-fuel in the fuel slot");
+        stove.setItem(0, JazzyItems.SOFT_SCRAMBLED_EGGS.get().createStack(1, gameTime));
+        require(stove.getSlotsForFace(Direction.DOWN)[0] == 0, "Stove bottom automation should expose burner surface slots instead of the hidden output slot");
+        require(stove.canTakeItemThroughFace(0, stove.getItem(0), Direction.DOWN), "Automation should extract finished stove food from the burner surface");
+        require(!stove.canTakeItemThroughFace(KitchenStationBlockEntity.OUTPUT_SLOT, stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT), Direction.DOWN),
+                "Automation should not extract from the hidden stove output slot");
 
         BlockPos fridgePos = helper.absolutePos(new BlockPos(6, 1, 0));
         level.setBlockAndUpdate(fridgePos, JazzyBlocks.FRIDGE.get().defaultBlockState());
@@ -422,7 +430,7 @@ public final class KitchenGameTests {
         require(stove.handleButton(6, fakePlayer), "Pour should start the stove simulation");
         tickStation(level, stove, 85);
         require(stove.handleButton(6, fakePlayer), "Remove should finalize the soft scramble");
-        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SOFT_SCRAMBLED_EGGS.get()), "Low heat early remove should yield soft scrambled eggs");
+        require(stove.getItem(0).is(JazzyItems.SOFT_SCRAMBLED_EGGS.get()), "Low heat early remove should yield soft scrambled eggs on the burner");
         helper.succeed();
     }
 
@@ -441,7 +449,7 @@ public final class KitchenGameTests {
         stove.handleButton(7, fakePlayer);
         tickStation(level, stove, 35);
         require(stove.handleButton(6, fakePlayer), "Remove should finalize the scramble");
-        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SCRAMBLED_EGGS.get()), "Medium heat with stirring should yield scrambled eggs");
+        require(stove.getItem(0).is(JazzyItems.SCRAMBLED_EGGS.get()), "Medium heat with stirring should yield scrambled eggs on the burner");
         helper.succeed();
     }
 
@@ -460,7 +468,7 @@ public final class KitchenGameTests {
         stove.handleButton(8, fakePlayer);
         tickStation(level, stove, 20);
         require(stove.handleButton(6, fakePlayer), "Remove should finalize the omelet");
-        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.OMELET.get()), "Folding and flipping should yield an omelet");
+        require(stove.getItem(0).is(JazzyItems.OMELET.get()), "Folding and flipping should yield an omelet on the burner");
 
         ItemStack secondMixture = whiskSimpleEggMixture(level, helper.absolutePos(new BlockPos(4, 1, 0)), fakePlayer);
         KitchenStationBlockEntity hotStove = prepareStove(level, helper.absolutePos(new BlockPos(6, 1, 0)), secondMixture);
@@ -469,7 +477,7 @@ public final class KitchenGameTests {
         tickStation(level, hotStove, 320);
         require(hotStove.dataAccess().get(19) == 5, "High heat should eventually preview burnt eggs");
         require(hotStove.handleButton(6, fakePlayer), "Remove should finalize the burnt batch");
-        require(hotStove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.BURNT_EGGS.get()), "Prolonged high heat should yield burnt eggs");
+        require(hotStove.getItem(0).is(JazzyItems.BURNT_EGGS.get()), "Prolonged high heat should yield burnt eggs on the burner");
         helper.succeed();
     }
 
@@ -495,7 +503,7 @@ public final class KitchenGameTests {
         stove.handleButton(7, fakePlayer);
         tickStation(level, stove, 35);
         require(stove.handleButton(6, fakePlayer), "Remove should finalize the add-in scramble");
-        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.SCRAMBLED_EGGS.get()), "Add-ins should still resolve to the egg dish family");
+        require(stove.getItem(0).is(JazzyItems.SCRAMBLED_EGGS.get()), "Add-ins should still resolve to the egg dish family on the burner");
         helper.succeed();
     }
 
@@ -603,7 +611,7 @@ public final class KitchenGameTests {
 
         require(stove.handleButton(0, fakePlayer), "Tagged pantry substitutions should still start expanded stove recipes");
         tickStation(level, stove, 240);
-        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.PASTA_E_FAGIOLI_PREP.get()), "Stock and alternate salts should satisfy the expanded simmer recipe");
+        require(stove.getItem(0).is(JazzyItems.PASTA_E_FAGIOLI_PREP.get()), "Stock and alternate salts should satisfy the expanded simmer recipe on the burner");
         helper.succeed();
     }
 
@@ -663,7 +671,7 @@ public final class KitchenGameTests {
 
         require(stove.handleButton(0, fakePlayer), "Expanded stove recipes should start with six active inputs");
         tickStation(level, stove, 240);
-        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.CHANA_MASALA_PREP.get()), "Expanded stove recipes should still resolve to chana masala prep");
+        require(stove.getItem(0).is(JazzyItems.CHANA_MASALA_PREP.get()), "Expanded stove recipes should still resolve to chana masala prep on the burner");
         helper.succeed();
     }
 
@@ -687,8 +695,8 @@ public final class KitchenGameTests {
 
         require(stove.handleButton(0, fakePlayer), "Glazed chicken stove recipe should start once the burner is set");
         tickStation(level, stove, 150);
-        require(stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.GLAZED_CHICKEN_PREP.get()),
-                "Glazed chicken inputs should produce glazed chicken prep");
+        require(stove.getItem(0).is(JazzyItems.GLAZED_CHICKEN_PREP.get()),
+                "Glazed chicken inputs should produce glazed chicken prep on the burner");
         helper.succeed();
     }
 
@@ -710,7 +718,7 @@ public final class KitchenGameTests {
         requireSchemaPreview(stove, "butter_chicken_prep", "Butter chicken should stay pinned while simmering");
         tickStation(level, stove, stove.simulationMaxProgress() + 1);
 
-        ItemStack output = stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        ItemStack output = stove.getItem(0);
         require(output.is(JazzyItems.BUTTER_CHICKEN_PREP.get()), "Butter chicken inputs should finish as butter chicken, not another curry");
         require("butter_chicken_prep".equals(KitchenStackUtil.dishAttempt(output).schemaKey()),
                 "Finished butter chicken output should keep its selected schema key");
@@ -754,8 +762,8 @@ public final class KitchenGameTests {
         require(panStove.handleButton(0, fakePlayer), "Pan schema fallback should start a chicken batch");
         tickStation(level, panStove, 160);
         require(panStove.handleButton(0, fakePlayer), "Pan schema fallback should finish a chicken batch");
-        require(panStove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.PAN_SEARED_CHICKEN_PREP.get()),
-                "Chicken, oil, salt, and herbs should produce pan-seared chicken prep");
+        require(panStove.getItem(0).is(JazzyItems.PAN_SEARED_CHICKEN_PREP.get()),
+                "Chicken, oil, salt, and herbs should produce pan-seared chicken prep on the burner");
 
         KitchenStationBlockEntity soupStove = placeStation(level, helper.absolutePos(new BlockPos(3, 1, 0)), JazzyBlocks.STOVE.get());
         soupStove.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.LENTILS).get().createStack(1, level.getGameTime()));
@@ -766,11 +774,11 @@ public final class KitchenGameTests {
         soupStove.handleButton(3104, fakePlayer);
         require(soupStove.handleButton(0, fakePlayer), "Pot schema fallback should start a lentil soup batch");
         tickStation(level, soupStove, 240);
-        require(soupStove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.LENTIL_SOUP_PREP.get()),
-                "Lentils, broth, aromatics, and salt should produce lentil soup prep");
+        require(soupStove.getItem(0).is(JazzyItems.LENTIL_SOUP_PREP.get()),
+                "Lentils, broth, aromatics, and salt should produce lentil soup prep on the burner");
 
         KitchenStationBlockEntity platingStation = placeStation(level, helper.absolutePos(new BlockPos(6, 1, 0)), JazzyBlocks.PLATING_STATION.get());
-        platingStation.setItem(0, soupStove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).copy());
+        platingStation.setItem(0, soupStove.getItem(0).copy());
         platingStation.setItem(1, new ItemStack(JazzyItems.CERAMIC_BOWL.get()));
         platingStation.setItem(2, new ItemStack(JazzyItems.SPOON.get()));
         require(platingStation.handleButton(0, fakePlayer), "Schema plating should start for lentil soup prep");
@@ -878,6 +886,88 @@ public final class KitchenGameTests {
         freezeDryer.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get().createStack(1, level.getGameTime()));
         require(freezeDryer.handleButton(6, fakePlayer), "Dry action should succeed with apples");
         require(freezeDryer.getItem(KitchenStationBlockEntity.OUTPUT_SLOT).is(JazzyItems.PACKED_FREEZE_DRY_APPLES.get()), "Freeze dryer simulation should output packed freeze-dried apples");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void secondaryStationsTransformFoodWithSimulationDomains(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        long gameTime = level.getGameTime();
+
+        KitchenStationBlockEntity grinder = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.SPICE_GRINDER.get());
+        grinder.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get().createStack(1, gameTime));
+        require(grinder.handleButton(6, fakePlayer), "Spice grinder should start grinding spices");
+        tickStation(level, grinder, 60);
+        ItemStack groundPepper = grinder.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(groundPepper.is(JazzyItems.ingredient(JazzyItems.IngredientId.BLACK_PEPPER).get())
+                        && KitchenStackUtil.effectiveState(groundPepper, level.getGameTime()) == IngredientState.GROUND_SPICE,
+                "Spice grinder should output the input spice as ground spice");
+
+        KitchenStationBlockEntity strainer = placeStation(level, helper.absolutePos(new BlockPos(2, 1, 0)), JazzyBlocks.STRAINER.get());
+        strainer.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, gameTime));
+        require(strainer.handleButton(6, fakePlayer), "Strainer should start straining produce");
+        tickStation(level, strainer, 60);
+        ItemStack strainedTomatoes = strainer.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(strainedTomatoes.is(JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get())
+                        && KitchenStackUtil.effectiveState(strainedTomatoes, level.getGameTime()) == IngredientState.STRAINED,
+                "Strainer should output strained food matter");
+
+        KitchenStationBlockEntity microwave = placeStation(level, helper.absolutePos(new BlockPos(4, 1, 0)), JazzyBlocks.MICROWAVE.get());
+        microwave.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.POTATOES).get().createStack(1, gameTime));
+        require(microwave.handleButton(6, fakePlayer), "Microwave should start a timed heat simulation");
+        tickStation(level, microwave, 620);
+        ItemStack microwavedPotatoes = microwave.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(microwavedPotatoes.is(JazzyItems.ingredient(JazzyItems.IngredientId.POTATOES).get())
+                        && KitchenStackUtil.effectiveState(microwavedPotatoes, level.getGameTime()) == IngredientState.SIMMERED,
+                "Microwave should output quickly heated food with simmered state");
+
+        KitchenStationBlockEntity smoker = placeStation(level, helper.absolutePos(new BlockPos(6, 1, 0)), JazzyBlocks.SMOKER.get());
+        smoker.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.PORK).get().createStack(1, gameTime));
+        smoker.handleButton(2, fakePlayer);
+        require(smoker.handleButton(6, fakePlayer), "Smoker should start a smoke simulation");
+        tickStation(level, smoker, 260);
+        ItemStack smokedPork = smoker.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(!smokedPork.isEmpty()
+                        && KitchenStackUtil.effectiveState(smokedPork, level.getGameTime()) == IngredientState.SMOKED,
+                "Smoker should output smoked food");
+
+        KitchenStationBlockEntity steamer = placeStation(level, helper.absolutePos(new BlockPos(8, 1, 0)), JazzyBlocks.STEAMER.get());
+        steamer.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.CABBAGE).get().createStack(1, gameTime));
+        steamer.handleButton(2, fakePlayer);
+        require(steamer.handleButton(6, fakePlayer), "Steamer should start a steam simulation");
+        tickStation(level, steamer, 200);
+        ItemStack steamedCabbage = steamer.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(!steamedCabbage.isEmpty()
+                        && KitchenStackUtil.effectiveState(steamedCabbage, level.getGameTime()) == IngredientState.STEAMED,
+                "Steamer should output steamed food");
+
+        KitchenStationBlockEntity dryingRack = placeStation(level, helper.absolutePos(new BlockPos(10, 1, 0)), JazzyBlocks.DRYING_RACK.get());
+        dryingRack.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get().createStack(1, gameTime));
+        require(dryingRack.handleButton(6, fakePlayer), "Drying rack should start drying fruit");
+        tickStation(level, dryingRack, 120);
+        ItemStack driedApples = dryingRack.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(!driedApples.isEmpty()
+                        && KitchenStackUtil.effectiveState(driedApples, level.getGameTime()) == IngredientState.DRIED_FRUIT,
+                "Drying rack should output dried fruit");
+
+        KitchenStationBlockEntity fermentationCrock = placeStation(level, helper.absolutePos(new BlockPos(12, 1, 0)), JazzyBlocks.FERMENTATION_CROCK.get());
+        fermentationCrock.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.CABBAGE).get().createStack(1, gameTime));
+        require(fermentationCrock.handleButton(6, fakePlayer), "Fermentation crock should start fermenting vegetables");
+        tickStation(level, fermentationCrock, 180);
+        ItemStack fermentedCabbage = fermentationCrock.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(!fermentedCabbage.isEmpty()
+                        && KitchenStackUtil.effectiveState(fermentedCabbage, level.getGameTime()) == IngredientState.FERMENTED_VEGETABLE,
+                "Fermentation crock should output fermented vegetables");
+
+        KitchenStationBlockEntity coolingRack = placeStation(level, helper.absolutePos(new BlockPos(14, 1, 0)), JazzyBlocks.COOLING_RACK.get());
+        coolingRack.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get().createStack(1, gameTime));
+        require(coolingRack.handleButton(6, fakePlayer), "Cooling rack should start cooling food");
+        tickStation(level, coolingRack, 60);
+        ItemStack cooledBread = coolingRack.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(cooledBread.is(JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get())
+                        && KitchenStackUtil.effectiveState(cooledBread, level.getGameTime()) == IngredientState.COOLED,
+                "Cooling rack should output cooled food");
         helper.succeed();
     }
 
@@ -1062,7 +1152,9 @@ public final class KitchenGameTests {
                 planner,
                 selection(JazzyItems.JAM_TOAST.get(), IngredientState.PLATED, "schema:jam_toast")
         );
-        require(toastPlan.steps().size() == 1 && toastPlan.steps().get(0).kind() == JazzyRecipeBookPlanner.StepKind.PLATE,
+        require(toastPlan.step(toastPlan.rootStepId())
+                        .map(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.PLATE)
+                        .orElse(false),
                 "Jam toast should be exposed through the schema plating guide");
 
         boolean hasLegacyOption = planner.catalog().stream()
@@ -1269,6 +1361,36 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void freshProduceIngredientsExposeSourceGuides(GameTestHelper helper) {
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(helper.getLevel());
+        for (JazzyItems.IngredientId ingredientId : List.of(
+                JazzyItems.IngredientId.APPLES,
+                JazzyItems.IngredientId.TOMATOES,
+                JazzyItems.IngredientId.CARROTS,
+                JazzyItems.IngredientId.ONIONS,
+                JazzyItems.IngredientId.POTATOES,
+                JazzyItems.IngredientId.LEMONS,
+                JazzyItems.IngredientId.CABBAGE,
+                JazzyItems.IngredientId.GARLIC,
+                JazzyItems.IngredientId.GINGER,
+                JazzyItems.IngredientId.SHALLOTS,
+                JazzyItems.IngredientId.SPINACH,
+                JazzyItems.IngredientId.GREEN_PEAS,
+                JazzyItems.IngredientId.JALAPENOS,
+                JazzyItems.IngredientId.RED_PEPPER
+        )) {
+            var item = JazzyItems.ingredient(ingredientId).get();
+            IngredientState state = defaultState(item);
+            ResourceLocation id = itemId(item);
+            require(SourceGuideRegistry.guideForOutput(id, state).isPresent(),
+                    "Fresh produce should have a source guide: " + ingredientId.id());
+            require(!planner.plansFor(id, state).isEmpty(),
+                    "Fresh produce should have a recipe-book source plan: " + ingredientId.id());
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void recipeBookPlannerBuildsExpandableDependencySteps(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
@@ -1295,9 +1417,23 @@ public final class KitchenGameTests {
     public static void recipeBookProgressAdvancesPinnedKitchenGuides(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        RecipeBookProgress.unpin(fakePlayer);
+        fakePlayer.getInventory().clearContent();
         JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
         JazzyRecipeBookSelection selection = selection(JazzyItems.HUMMUS_PLATE.get(), IngredientState.PLATED, "schema:hummus_plate");
         JazzyRecipeBookPlanner.Plan plan = requirePlan(planner, selection);
+        JazzyRecipeBookPlanner.PlanStep processStep = plan.steps().stream()
+                .filter(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.PROCESS)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Hummus guide should include a process step"));
+        JazzyRecipeBookPlanner.PlanStep servingPlateStep = plan.steps().stream()
+                .filter(step -> step.outputKey().equals(outputKey(JazzyItems.CERAMIC_PLATE.get(), IngredientState.PANTRY_READY)))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Hummus guide should include the serving plate prerequisite"));
+        JazzyRecipeBookPlanner.PlanStep plateStep = plan.steps().stream()
+                .filter(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.PLATE)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Hummus guide should include a plating step"));
 
         RecipeBookProgress.pin(fakePlayer, selection);
         require(RecipeBookProgress.recordKitchenOutput(fakePlayer,
@@ -1307,8 +1443,15 @@ public final class KitchenGameTests {
 
         Set<String> completedAfterPrep = RecipeBookProgress.completedSteps(fakePlayer);
         require(completedAfterPrep.size() == 1, "Recording the prep output should complete exactly one step");
-        require(plan.currentStep(completedAfterPrep) != null && plan.currentStep(completedAfterPrep).kind() == JazzyRecipeBookPlanner.StepKind.PLATE,
-                "After prep completion the guide should advance to the plating step");
+        require(completedAfterPrep.contains(processStep.id()), "Recording the prep output should complete the upstream process step");
+        require(plan.currentStep(completedAfterPrep) != null && plan.currentStep(completedAfterPrep).id().equals(servingPlateStep.id()),
+                "After prep completion the guide should advance to the serving plate prerequisite");
+
+        require(RecipeBookProgress.recordCraft(fakePlayer, new ItemStack(JazzyItems.CERAMIC_PLATE.get())),
+                "Crafting the serving plate should complete the plating prerequisite");
+        Set<String> completedAfterServingPlate = RecipeBookProgress.completedSteps(fakePlayer);
+        require(plan.currentStep(completedAfterServingPlate) != null && plan.currentStep(completedAfterServingPlate).id().equals(plateStep.id()),
+                "After prep and serving item completion the guide should advance to the plating step");
 
         require(RecipeBookProgress.recordKitchenOutput(fakePlayer, stackWithState(JazzyItems.HUMMUS_PLATE.get(), IngredientState.PLATED), "schema:hummus_plate"),
                 "Plated output should complete the final serve step");
@@ -1318,7 +1461,7 @@ public final class KitchenGameTests {
         RecipeBookSyncPayload sync = RecipeBookSyncPayload.from(RecipeBookProgress.syncState(fakePlayer));
         require(sync.selection() != null && sync.selection().itemId().equals(selection.itemId()),
                 "Sync payload should keep the active pinned selection");
-        require(sync.completedStepIds().size() == 2, "Sync payload should include both completed schema steps");
+        require(sync.completedStepIds().size() == 3, "Sync payload should include completed process, serving item, and plating steps");
         helper.succeed();
     }
 
@@ -1326,6 +1469,7 @@ public final class KitchenGameTests {
     public static void recipeBookProgressPersistsManualFocusedStep(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        RecipeBookProgress.unpin(fakePlayer);
         fakePlayer.getInventory().clearContent();
         JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
         JazzyRecipeBookSelection selection = selection(JazzyItems.HUMMUS_PLATE.get(), IngredientState.PLATED, "schema:hummus_plate");
@@ -1361,6 +1505,8 @@ public final class KitchenGameTests {
     public static void recipeBookProgressTracksCraftAndSourceHarvest(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        RecipeBookProgress.unpin(fakePlayer);
+        fakePlayer.getInventory().clearContent();
         JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
 
         JazzyRecipeBookSelection stoveSelection = selection(JazzyBlocks.STOVE.get(), IngredientState.PANTRY_READY, "");
@@ -1399,6 +1545,7 @@ public final class KitchenGameTests {
     public static void recipeBookProgressCompletesStepsFromInventory(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        RecipeBookProgress.unpin(fakePlayer);
         fakePlayer.getInventory().clearContent();
         JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
         JazzyRecipeBookSelection appleSelection = selection(

@@ -32,6 +32,7 @@ import net.minecraft.world.level.Level;
 public class KitchenStationScreen extends AbstractContainerScreen<KitchenStationMenu> {
     private static final int STOVE_BURNER_COUNT = 6;
     private static final int STOVE_BURNER_SIZE = 34;
+    private static final int STOVE_INDIVIDUAL_BURNER_BUTTON_BASE = 3200;
 
     private final StationUiProfile baseProfile;
     private StationUiProfile profile;
@@ -437,10 +438,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         }
 
         Slot outputSlot = this.menu.getSlot(this.menu.outputMenuSlotIndex());
-        SlotPositioning.setPosition(outputSlot, this.profile.outputPosition().x(), this.profile.outputPosition().y());
-
         Slot byproductSlot = this.menu.getSlot(this.menu.byproductMenuSlotIndex());
-        SlotPositioning.setPosition(byproductSlot, this.profile.byproductPosition().x(), this.profile.byproductPosition().y());
+        if (this.menu.stationType() == StationType.STOVE) {
+            SlotPositioning.setPosition(outputSlot, -1000, -1000);
+            SlotPositioning.setPosition(byproductSlot, -1000, -1000);
+        } else {
+            SlotPositioning.setPosition(outputSlot, this.profile.outputPosition().x(), this.profile.outputPosition().y());
+            SlotPositioning.setPosition(byproductSlot, this.profile.byproductPosition().x(), this.profile.byproductPosition().y());
+        }
 
         int playerInventoryBase = this.menu.visibleStationSlotCount();
         for (int row = 0; row < 3; row++) {
@@ -630,6 +635,11 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         this.sendButton(3100 + normalizedLevel);
     }
 
+    private void applyStoveBurnerLevel(int burnerIndex, int level) {
+        int normalizedLevel = KitchenStationBlockEntity.normalizeStoveBurnerLevel(level);
+        this.sendButton(STOVE_INDIVIDUAL_BURNER_BUTTON_BASE + burnerIndex * 10 + normalizedLevel);
+    }
+
     private void syncOvenTemperatureField() {
         boolean vanillaFocused = this.ovenTemperatureBox != null && this.ovenTemperatureBox.isFocused();
         boolean uiLibFocused = this.applianceOvenTemperatureField != null && this.applianceOvenTemperatureField.isFocused();
@@ -764,8 +774,14 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             JazzyGuiRenderer.drawStationShell(guiGraphics, left, top, this.imageWidth, this.imageHeight, this.profile.theme());
             JazzyGuiRenderer.drawWorkspaceBackdrop(guiGraphics, left, top, this.layout.workspaceRegion(), this.layout.toolRegion(),
                     this.profile.theme(), this.layout.family());
-            JazzyGuiRenderer.drawPreviewBackdrop(guiGraphics, left, top, this.layout.previewRegion(), this.layout.outputRegion(),
-                    this.layout.byproductRegion(), this.profile.theme());
+            if (this.menu.stationType() == StationType.STOVE) {
+                LayoutRegion preview = this.layout.previewRegion();
+                JazzyGuiRenderer.drawPanel(guiGraphics, left + preview.x(), top + preview.y(), preview.width(), preview.height(),
+                        this.profile.theme(), JazzyGuiRenderer.PanelStyle.PREVIEW);
+            } else {
+                JazzyGuiRenderer.drawPreviewBackdrop(guiGraphics, left, top, this.layout.previewRegion(), this.layout.outputRegion(),
+                        this.layout.byproductRegion(), this.profile.theme());
+            }
             JazzyGuiRenderer.drawMetricCluster(guiGraphics, left, top, this.layout.metricClusterRegion(), this.profile.theme());
             JazzyGuiRenderer.drawControlStrip(guiGraphics, left, top, this.layout.controlStripRegion(), this.profile.theme());
             JazzyGuiRenderer.drawInventoryShelf(guiGraphics, left, top, this.layout.inventoryShelfRegion(), this.profile.theme());
@@ -910,7 +926,6 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
                 0xFFE18428,
                 0xFFFFC14A
         };
-        int dialLevel = this.stoveDialLevel();
         LayoutRegion dial = this.applianceStoveDialRegion();
         int dialLeft = left + dial.x();
         int dialTop = top + dial.y();
@@ -928,17 +943,18 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             int burnerRight = burnerLeft + burner.width();
             int burnerBottom = burnerTop + burner.height();
             boolean occupied = this.menu.getSlot(burnerIndex).hasItem();
+            int burnerLevel = this.menu.stoveBurnerLevel(burnerIndex);
 
             guiGraphics.fill(burnerLeft, burnerTop, burnerRight, burnerBottom, 0x44271D16);
             guiGraphics.fill(burnerLeft + 2, burnerTop + 2, burnerRight - 2, burnerBottom - 2, 0xFF14110E);
             guiGraphics.fill(burnerLeft + 4, burnerTop + 4, burnerRight - 4, burnerBottom - 4, 0xFF231C16);
             guiGraphics.fill(burnerLeft + 7, burnerTop + 7, burnerRight - 7, burnerBottom - 7, 0xFF0F0C09);
 
-            if (dialLevel > 0) {
-                int glowInset = Math.max(4, 11 - dialLevel);
-                int glowColor = dialLevel <= 2 ? 0x557A3418 : dialLevel <= 4 ? 0x77BC5A1E : 0x99FFC14A;
+            if (burnerLevel > 0) {
+                int glowInset = Math.max(4, 11 - burnerLevel);
+                int glowColor = burnerLevel <= 2 ? 0x557A3418 : burnerLevel <= 4 ? 0x77BC5A1E : 0x99FFC14A;
                 if (occupied) {
-                    glowColor = dialLevel <= 2 ? 0x887A3418 : dialLevel <= 4 ? 0xAABC5A1E : 0xCCFFC14A;
+                    glowColor = burnerLevel <= 2 ? 0x887A3418 : burnerLevel <= 4 ? 0xAABC5A1E : 0xCCFFC14A;
                 }
                 guiGraphics.fill(burnerLeft + glowInset, burnerTop + glowInset, burnerRight - glowInset, burnerBottom - glowInset, glowColor);
             }
@@ -953,7 +969,7 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             for (int segment = 0; segment < 6; segment++) {
                 int segmentLeft = meterLeft + segment * (segmentWidth + segmentGap);
                 int segmentRight = segmentLeft + segmentWidth;
-                int color = segment < dialLevel ? heatColors[segment] : 0xFF2A211A;
+                int color = segment < burnerLevel ? heatColors[segment] : 0xFF2A211A;
                 guiGraphics.fill(segmentLeft, meterTop, segmentRight, meterTop + meterHeight, color);
             }
         }
@@ -1854,10 +1870,28 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             guiGraphics.renderTooltip(this.font, this.simulationPreviewLine(), mouseX, mouseY);
             return;
         }
+        int hoveredBurner = this.hoveredStoveBurner(mouseX, mouseY);
+        if (hoveredBurner >= 0) {
+            guiGraphics.renderTooltip(this.font, Component.literal("Burner " + (hoveredBurner + 1) + ": " + this.menu.stoveBurnerLevel(hoveredBurner) + "/6"), mouseX, mouseY);
+            return;
+        }
         if (this.isHovering(this.layout.controlStripRegion().x(), this.layout.controlStripRegion().y(),
                 this.layout.controlStripRegion().width(), this.layout.controlStripRegion().height(), mouseX, mouseY)) {
             guiGraphics.renderTooltip(this.font, this.simulationHint(), mouseX, mouseY);
         }
+    }
+
+    private int hoveredStoveBurner(double mouseX, double mouseY) {
+        if (this.menu.stationType() != StationType.STOVE) {
+            return -1;
+        }
+        for (int burnerIndex = 0; burnerIndex < Math.min(STOVE_BURNER_COUNT, this.menu.activeInputCount()); burnerIndex++) {
+            LayoutRegion burner = this.stoveBurnerRegion(burnerIndex);
+            if (this.isHovering(burner.x(), burner.y(), burner.width(), burner.height(), mouseX, mouseY)) {
+                return burnerIndex;
+            }
+        }
+        return -1;
     }
 
     @Override
@@ -1955,6 +1989,12 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             int baseDuration = this.pendingMicrowaveDuration > 0 ? this.pendingMicrowaveDuration : this.menu.microwaveDurationSeconds();
             int nextDuration = baseDuration + (scrollY > 0.0D ? 10 : -10);
             this.applyMicrowaveDuration(nextDuration);
+            return true;
+        }
+        int hoveredBurner = this.hoveredStoveBurner(mouseX, mouseY);
+        if (hoveredBurner >= 0 && scrollY != 0.0D) {
+            int nextLevel = this.menu.stoveBurnerLevel(hoveredBurner) + (scrollY > 0.0D ? 1 : -1);
+            this.applyStoveBurnerLevel(hoveredBurner, nextLevel);
             return true;
         }
         if (this.usesScrollableHeat()

@@ -33,6 +33,11 @@ public final class JazzyBlocks {
     public static final DeferredBlock<Block> WHEAT_PATCH = source("wheat_patch", KitchenSourceProfile.WHEAT_PATCH, MapColor.COLOR_YELLOW, SoundType.CROP);
     public static final DeferredBlock<Block> CABBAGE_PATCH = source("cabbage_patch", KitchenSourceProfile.CABBAGE_PATCH, MapColor.COLOR_GREEN, SoundType.CROP);
     public static final DeferredBlock<Block> ONION_PATCH = source("onion_patch", KitchenSourceProfile.ONION_PATCH, MapColor.COLOR_LIGHT_GRAY, SoundType.CROP);
+    public static final DeferredBlock<Block> ROOT_VEGETABLE_PATCH = source("root_vegetable_patch", KitchenSourceProfile.ROOT_VEGETABLE_PATCH, MapColor.DIRT, SoundType.CROP);
+    public static final DeferredBlock<Block> LEAFY_GREENS_BED = source("leafy_greens_bed", KitchenSourceProfile.LEAFY_GREENS_BED, MapColor.COLOR_LIGHT_GREEN, SoundType.CROP);
+    public static final DeferredBlock<Block> PEPPER_BUSH = source("pepper_bush", KitchenSourceProfile.PEPPER_BUSH, MapColor.COLOR_GREEN, SoundType.CROP);
+    public static final DeferredBlock<Block> PEA_TRELLIS = source("pea_trellis", KitchenSourceProfile.PEA_TRELLIS, MapColor.COLOR_GREEN, SoundType.CROP);
+    public static final DeferredBlock<Block> CITRUS_SAPLING = source("citrus_sapling", KitchenSourceProfile.CITRUS_SAPLING, MapColor.COLOR_YELLOW, SoundType.GRASS);
     public static final DeferredBlock<Block> CHICKEN_COOP = source("chicken_coop", KitchenSourceProfile.CHICKEN_COOP, MapColor.WOOD, SoundType.WOOD);
     public static final DeferredBlock<Block> DAIRY_STALL = source("dairy_stall", KitchenSourceProfile.DAIRY_STALL, MapColor.WOOD, SoundType.WOOD);
     public static final DeferredBlock<Block> FISHING_TRAP = source("fishing_trap", KitchenSourceProfile.FISHING_TRAP, MapColor.WOOD, SoundType.WOOD);

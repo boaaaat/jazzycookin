@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "jazzycookin:block/pepper_bush_stage6"
+  }
+}

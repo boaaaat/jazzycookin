@@ -1,0 +1,21 @@
+b=6E8E3F
+d=4C5A25
+l=D58A3A
+a=5B3520
+
+d b b b d b b b d b b b d b b b
+b b b d b b b d b b b d b b b d
+b b d b b b d b b b d b b b d b
+b d b b b l b b b d l b b d b b
+d b b b d l b b d b l b d b b b
+b b b d l l l l l l l l b b b d
+b b d b b l d b b b l b b b d b
+b d b b b l b b b d l b b d b b
+d b b b d l b b d b l b d b b b
+b b b d b l b d b b l d b b b d
+b b d b l l l l l l l l b b d b
+b d b b b d b b b d b b b d b b
+a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a

@@ -27,6 +27,11 @@ BLOCKS = {
     "wheat_patch": ("plant", "B99535", "7A6227", "E2C15A", "5E4025"),
     "cabbage_patch": ("plant", "6FA85D", "3D7538", "9BD27A", "4C3520"),
     "onion_patch": ("plant", "A5B75D", "6F7D38", "D7C68A", "5E4025"),
+    "root_vegetable_patch": ("plant", "6E8E3F", "4C5A25", "D58A3A", "5B3520"),
+    "leafy_greens_bed": ("plant", "4E9B42", "245E2A", "A3D77A", "3C2B18"),
+    "pepper_bush": ("plant", "3F8A35", "234F25", "C63E2E", "5D3922"),
+    "pea_trellis": ("plant", "5D9A44", "2F6330", "A6D864", "6E4A28"),
+    "citrus_sapling": ("plant", "5D9B43", "315E2E", "E0C241", "6A4424"),
     "forage_shrub": ("plant", "5B8E45", "345E32", "8A5DA8", "4C3520"),
     "chicken_coop": ("wood", "B0783E", "704722", "D9B27A", "8E5A2C"),
     "dairy_stall": ("wood", "B88A56", "6F4C2D", "E4D5B7", "8E5A2C"),
@@ -62,6 +67,11 @@ STAGED_PLANTS = {
     "wheat_patch",
     "cabbage_patch",
     "onion_patch",
+    "root_vegetable_patch",
+    "leafy_greens_bed",
+    "pepper_bush",
+    "pea_trellis",
+    "citrus_sapling",
     "forage_shrub",
 }
 
@@ -178,8 +188,6 @@ def write_staged_plant_textures(name: str, spec: tuple[str, str, str, str, str])
 
 def write_model(name: str) -> None:
     model_path = MODEL_DIR / f"{name}.json"
-    if not model_path.exists():
-        return
     if name in CROSS_PLANTS:
         write_cross_model(name)
         return
