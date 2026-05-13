@@ -156,13 +156,25 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         if (matter == null) {
             return ItemStack.EMPTY;
         }
+        ItemStack fallbackInput = singleFoodInput(access);
+        if (access.simulationStationType() == StationType.OVEN
+                && fallbackInput.getItem() instanceof KitchenIngredientItem ingredientItem
+                && ingredientItem.defaultState() == IngredientState.BREAD
+                && FoodMaterialProfiles.hasTrait(fallbackInput, FoodTrait.BREAD)) {
+            return SimulationOutputFactory.createOutput(
+                    ingredientItem,
+                    access.simulationLevel().getGameTime(),
+                    analysis,
+                    matter,
+                    IngredientState.BAKED_BREAD
+            );
+        }
         ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, HeatChamberSimulationDomain::isHeatSchema);
         if (!schemaOutput.isEmpty()) {
             return access.simulationStationType() == StationType.MICROWAVE ? applyMicrowavePenalty(schemaOutput, access.simulationLevel().getGameTime()) : schemaOutput;
         }
         ItemStack output = CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
         if (output.isEmpty()) {
-            ItemStack fallbackInput = singleFoodInput(access);
             if (fallbackInput.getItem() instanceof KitchenIngredientItem ingredientItem) {
                 output = SimulationOutputFactory.createOutput(
                         ingredientItem,

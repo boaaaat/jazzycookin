@@ -11,15 +11,18 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
+import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookPlanner;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookSelection;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 
 public class JazzyRecipeBookScreen extends Screen {
@@ -585,6 +588,7 @@ public class JazzyRecipeBookScreen extends Screen {
         this.renderItemList(guiGraphics, mouseX, mouseY);
         this.renderDetails(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        this.renderStepTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
@@ -771,14 +775,121 @@ public class JazzyRecipeBookScreen extends Screen {
             if (option.requiresPreheat()) {
                 parts.add("Preheat");
             }
+            if (!option.notes().isEmpty()) {
+                parts.add(option.notes().get(0));
+            }
             if (!parts.isEmpty()) {
                 return String.join(" | ", parts);
             }
-            if (!option.notes().isEmpty()) {
-                return option.notes().get(0);
-            }
         }
         return Component.translatable("screen.jazzycookin.recipe_book.step").getString();
+    }
+
+    private void renderStepTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        Optional<VisibleStep> hoveredStep = this.hoveredVisibleStep(mouseX, mouseY);
+        if (hoveredStep.isEmpty()) {
+            return;
+        }
+        List<Component> tooltip = this.stepTooltip(hoveredStep.get());
+        if (!tooltip.isEmpty()) {
+            List<FormattedCharSequence> lines = tooltip.stream().map(Component::getVisualOrderText).toList();
+            guiGraphics.renderTooltip(this.font, lines, mouseX, mouseY);
+        }
+    }
+
+    private Optional<VisibleStep> hoveredVisibleStep(double mouseX, double mouseY) {
+        if (!this.isMouseOverStepList(mouseX, mouseY)) {
+            return Optional.empty();
+        }
+        List<VisibleStep> visibleSteps = this.currentVisibleSteps();
+        int row = this.clickedStepRow(mouseY);
+        int index = this.stepScroll + row;
+        if (row < 0 || row >= this.visibleStepRows() || index < 0 || index >= visibleSteps.size()) {
+            return Optional.empty();
+        }
+        return Optional.of(visibleSteps.get(index));
+    }
+
+    private List<Component> stepTooltip(VisibleStep visibleStep) {
+        JazzyRecipeBookPlanner.PlanStep step = visibleStep.step();
+        List<Component> tooltip = new ArrayList<>();
+        tooltip.add(step.outputStack().getHoverName().copy().withStyle(ChatFormatting.GOLD));
+        if (step.expandable() && !visibleStep.expanded()) {
+            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.expand_hint").withStyle(ChatFormatting.GRAY));
+        }
+        if (step.options().isEmpty()) {
+            return tooltip;
+        }
+
+        JazzyRecipeBookPlanner.StepOption option = step.options().get(0);
+        if (option.station() != null) {
+            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.station", option.station().displayName()).withStyle(ChatFormatting.AQUA));
+        } else if (option.method() != null) {
+            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.method", option.method().displayName()).withStyle(ChatFormatting.AQUA));
+        }
+        if (option.preferredTool() != null && option.preferredTool() != ToolProfile.NONE) {
+            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.preferred_tool", toolName(option.preferredTool())).withStyle(ChatFormatting.DARK_AQUA));
+        }
+        if (option.allowedTools().size() > 1) {
+            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.valid_tools", toolList(option.allowedTools())).withStyle(ChatFormatting.DARK_AQUA));
+        }
+        if (option.durationTicks() > 0) {
+            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.duration", option.durationTicks()).withStyle(ChatFormatting.GRAY));
+        }
+        if (option.preferredHeat() != null && !"off".equals(option.preferredHeat().getSerializedName())) {
+            tooltip.add(Component.translatable(
+                    "screen.jazzycookin.recipe_book.tooltip.heat",
+                    Component.translatable("heat.jazzycookin." + option.preferredHeat().getSerializedName())
+            ).withStyle(ChatFormatting.RED));
+        }
+        for (JazzyRecipeBookPlanner.Requirement requirement : option.requirements()) {
+            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.needs", requirementLabel(requirement)).withStyle(ChatFormatting.GRAY));
+        }
+        for (String note : option.notes()) {
+            tooltip.add(Component.literal(note).withStyle(ChatFormatting.YELLOW));
+        }
+        return tooltip;
+    }
+
+    private static String requirementLabel(JazzyRecipeBookPlanner.Requirement requirement) {
+        StringBuilder builder = new StringBuilder();
+        if (requirement.count() > 1) {
+            builder.append(requirement.count()).append("x ");
+        }
+        if (requirement.choices().isEmpty()) {
+            builder.append(Component.translatable("screen.jazzycookin.recipe_book.step").getString());
+            return builder.toString();
+        }
+        int shown = Math.min(3, requirement.choices().size());
+        for (int i = 0; i < shown; i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(requirement.choices().get(i).getHoverName().getString());
+        }
+        if (requirement.choices().size() > shown) {
+            builder.append(" +").append(requirement.choices().size() - shown);
+        }
+        return builder.toString();
+    }
+
+    private static String toolList(List<ToolProfile> tools) {
+        StringBuilder builder = new StringBuilder();
+        int shown = Math.min(4, tools.size());
+        for (int i = 0; i < shown; i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(toolName(tools.get(i)));
+        }
+        if (tools.size() > shown) {
+            builder.append(" +").append(tools.size() - shown);
+        }
+        return builder.toString();
+    }
+
+    private static String toolName(ToolProfile tool) {
+        return Component.translatable("tool.jazzycookin." + tool.getSerializedName()).getString();
     }
 
     private boolean isMouseOverItemList(double mouseX, double mouseY) {

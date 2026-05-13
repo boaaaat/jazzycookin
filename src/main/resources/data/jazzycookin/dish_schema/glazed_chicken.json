@@ -1,9 +1,8 @@
 {
-  "key": "glazed_chicken",
+  "key": "glazed_chicken_prep",
   "preview_id": 1344,
-  "result": "jazzycookin:glazed_chicken",
+  "result": "jazzycookin:glazed_chicken_prep",
   "category": "pan_dish",
-  "meal": true,
   "preview_threshold": 0.52,
   "finalize_threshold": 0.58,
   "desirability": 0.82,
@@ -37,10 +36,7 @@
     }
   ],
   "required_techniques": [
-    "plated"
-  ],
-  "serving_items": [
-    "jazzycookin:ceramic_plate"
+    "pan_fried"
   ],
   "targets": {
     "water": {
@@ -172,9 +168,14 @@
   ],
   "steps": [
     {
-      "id": "plated",
-      "station": "plating_station",
-      "technique": "plated",
+      "id": "pan_fried",
+      "station": "stove",
+      "technique": "pan_fried",
+      "tools": [
+        "pan",
+        "skillet",
+        "frying_skillet"
+      ],
       "prerequisites": [],
       "progress_target": 1.0
     }

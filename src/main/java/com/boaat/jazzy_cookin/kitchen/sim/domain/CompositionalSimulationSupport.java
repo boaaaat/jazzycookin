@@ -4,6 +4,7 @@ import java.util.function.Predicate;
 
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.item.KitchenMealItem;
+import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
@@ -114,6 +115,7 @@ final class CompositionalSimulationSupport {
                 default -> 1.0F;
             };
         }
+        modifier /= toolSpeedMultiplier(access);
         return Math.max(20, Math.round(baseDuration * modifier));
     }
 
@@ -150,6 +152,9 @@ final class CompositionalSimulationSupport {
         float inheritedChar = analysis.avgCharLevelCarry();
         float desiredWater = Mth.clamp(inheritedWater + waterBias, 0.02F, 1.0F);
         float water = Mth.clamp(Mth.lerp(0.28F + carryFactor * 0.34F, desiredWater, inheritedWater), 0.02F, 1.0F);
+        if (state == IngredientState.FREEZE_DRIED || state == IngredientState.DRIED_FRUIT) {
+            water = Mth.clamp(Math.min(water, 0.10F), 0.02F, 1.0F);
+        }
         float actualAeration = Mth.clamp(Mth.lerp(0.24F + carryFactor * 0.42F, aeration, inheritedAeration), 0.0F, 1.0F);
         float actualFragmentation = Mth.clamp(Mth.lerp(0.28F + carryFactor * 0.40F, fragmentation, inheritedFragmentation), 0.0F, 1.0F);
         float actualCohesiveness = Mth.clamp(Mth.lerp(0.30F + carryFactor * 0.40F, cohesiveness, inheritedCohesiveness), 0.0F, 1.0F);
@@ -305,7 +310,8 @@ final class CompositionalSimulationSupport {
                 0.55F
         );
         float moisturePenalty = moisturePenalty(access.simulationStationType(), matter);
-        float stationPenalty = Mth.clamp((1.0F - toolFit) * 0.22F + loadPenalty + inputPenalty + moisturePenalty, 0.0F, 0.75F);
+        float toolQuality = toolQualityBonus(access) * toolFit;
+        float stationPenalty = Mth.clamp((1.0F - toolFit) * 0.22F + loadPenalty + inputPenalty + moisturePenalty - toolQuality * 0.35F, 0.0F, 0.75F);
         if (stationPenalty <= 0.001F && underwork <= 0.001F && overwork <= 0.001F) {
             return matter;
         }
@@ -407,6 +413,27 @@ final class CompositionalSimulationSupport {
         };
     }
 
+    private static float toolSpeedMultiplier(StationSimulationAccess access) {
+        ItemStack tool = access.simulationItem(access.toolSlot());
+        if (tool.getItem() instanceof KitchenToolItem toolItem) {
+            return Mth.clamp(toolItem.speedMultiplier(), 0.65F, 1.35F);
+        }
+        return 1.0F;
+    }
+
+    private static float toolQualityBonus(StationSimulationAccess access) {
+        ItemStack tool = access.simulationItem(access.toolSlot());
+        if (tool.getItem() instanceof KitchenToolItem toolItem) {
+            return Mth.clamp(toolItem.qualityBonus(), 0.0F, 0.18F);
+        }
+        return 0.0F;
+    }
+
+    private static float stationQuality(StationSimulationAccess access, FoodMatterData matter, float baseQuality) {
+        IngredientState state = matter != null ? KitchenStackUtil.inferStateFromMatter(matter) : IngredientState.RAW;
+        return Mth.clamp(baseQuality + toolQualityBonus(access) * toolFit(access, state), 0.0F, 1.0F);
+    }
+
     static ItemStack recognizedPreparedOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter) {
         DishRecognitionResult result = DishSchema.finalizePrepared(matter);
         if (result == null
@@ -423,12 +450,13 @@ final class CompositionalSimulationSupport {
             FoodMatterData matter,
             Predicate<DishSchemaDefinition> schemaFilter
     ) {
-        DishSchemaScore score = bestSchemaScore(access, matter, schemaFilter, true, 0.85F);
+        float quality = stationQuality(access, matter, 0.85F);
+        DishSchemaScore score = bestSchemaScore(access, matter, schemaFilter, true, quality);
         if (score == null || !(score.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
             return ItemStack.EMPTY;
         }
         ItemStack output = SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
-        KitchenStackUtil.setDishAttempt(output, DishAttemptAssembler.build(score.schema(), DishAttemptAssembler.view(access), 0.85F));
+        KitchenStackUtil.setDishAttempt(output, DishAttemptAssembler.build(score.schema(), DishAttemptAssembler.view(access), quality));
         return output;
     }
 
@@ -438,12 +466,54 @@ final class CompositionalSimulationSupport {
     }
 
     static ItemStack recognizedMealOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter, Predicate<Item> filter) {
-        DishSchemaScore score = bestSchemaScore(access, matter, schema -> schema.meal() && filter.test(BuiltInRegistries.ITEM.get(schema.result())), true, 0.82F);
+        float quality = stationQuality(access, matter, 0.82F);
+        DishSchemaScore score = bestSchemaScore(access, matter, schema -> schema.meal() && filter.test(BuiltInRegistries.ITEM.get(schema.result())), true, quality);
         if (score == null || !(score.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
             return ItemStack.EMPTY;
         }
         ItemStack output = SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
-        KitchenStackUtil.setDishAttempt(output, DishAttemptAssembler.build(score.schema(), DishAttemptAssembler.view(access), 0.82F));
+        KitchenStackUtil.setDishAttempt(output, DishAttemptAssembler.build(score.schema(), DishAttemptAssembler.view(access), quality));
+        return output;
+    }
+
+    static ItemStack directPreparedOutput(
+            StationSimulationAccess access,
+            SimulationIngredientAnalysis analysis,
+            FoodMatterData matter,
+            KitchenIngredientItem item,
+            IngredientState outputState,
+            String schemaKey
+    ) {
+        if (access.simulationLevel() == null || item == null || matter == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack output = SimulationOutputFactory.createOutput(
+                item,
+                access.simulationLevel().getGameTime(),
+                analysis,
+                matter,
+                outputState
+        );
+        if (!schemaKey.isBlank()) {
+            String equipmentStep = DishSchemaScorer.schemas().stream()
+                    .filter(schema -> schema.key().equals(schemaKey))
+                    .flatMap(schema -> schema.steps().stream())
+                    .findFirst()
+                    .map(com.boaat.jazzy_cookin.kitchen.sim.schema.DishStepRequirement::id)
+                    .orElse("");
+            KitchenStackUtil.setDishAttempt(output, new DishAttemptData(
+                    schemaKey,
+                    equipmentStep.isBlank() ? java.util.List.of() : java.util.List.of(equipmentStep),
+                    1.0F,
+                    false,
+                    false,
+                    false,
+                    Mth.clamp(1.0F - stationQuality(access, matter, 0.90F), 0.0F, 1.0F),
+                    equipmentStep,
+                    access.simulationStationType().getSerializedName(),
+                    ToolProfile.fromStack(access.simulationItem(access.toolSlot())).getSerializedName()
+            ));
+        }
         return output;
     }
 

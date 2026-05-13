@@ -1,7 +1,9 @@
 package com.boaat.jazzy_cookin;
 
 import com.boaat.jazzy_cookin.registry.JazzyMenus;
+import com.boaat.jazzy_cookin.client.KitchenStationBlockEntityRenderer;
 import com.boaat.jazzy_cookin.recipebook.client.RecipeBookClientState;
+import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
 import com.boaat.jazzy_cookin.screen.KitchenStationScreen;
 import com.boaat.jazzy_cookin.screen.KitchenStorageScreen;
 
@@ -9,13 +11,14 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 
 @Mod(value = JazzyCookin.MODID, dist = Dist.CLIENT)
 public class JazzyCookinClient {
     public JazzyCookinClient(IEventBus modEventBus) {
         modEventBus.addListener(this::onRegisterMenuScreens);
+        modEventBus.addListener(this::onRegisterEntityRenderers);
         modEventBus.addListener(RecipeBookClientState::onRegisterKeyMappings);
 
         NeoForge.EVENT_BUS.addListener(RecipeBookClientState::onClientTick);
@@ -26,5 +29,9 @@ public class JazzyCookinClient {
     private void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(JazzyMenus.KITCHEN_STATION.get(), KitchenStationScreen::new);
         event.register(JazzyMenus.KITCHEN_STORAGE.get(), KitchenStorageScreen::new);
+    }
+
+    private void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(JazzyBlockEntities.KITCHEN_STATION.get(), KitchenStationBlockEntityRenderer::new);
     }
 }

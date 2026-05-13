@@ -63,7 +63,10 @@ public class KitchenSourceBlock extends BushBlock implements BonemealableBlock {
 
     @Override
     protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
-        return state.is(BlockTags.DIRT) || state.is(net.minecraft.world.level.block.Blocks.GRASS_BLOCK) || state.is(BlockTags.SAND);
+        return state.is(BlockTags.DIRT)
+                || state.is(net.minecraft.world.level.block.Blocks.GRASS_BLOCK)
+                || state.is(net.minecraft.world.level.block.Blocks.FARMLAND)
+                || state.is(BlockTags.SAND);
     }
 
     @Override

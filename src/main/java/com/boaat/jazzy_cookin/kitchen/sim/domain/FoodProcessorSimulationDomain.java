@@ -5,9 +5,11 @@ import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
+import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.world.item.ItemStack;
 
@@ -53,9 +55,7 @@ public final class FoodProcessorSimulationDomain implements StationSimulationDom
         if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
             return false;
         }
-        access.simulationSetBatch(new CookingBatchState(previewMatter(access)));
-        access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, 56), true);
-        access.simulationMarkChanged();
+        finish(access);
         return true;
     }
 
@@ -104,6 +104,16 @@ public final class FoodProcessorSimulationDomain implements StationSimulationDom
         FoodMatterData matter = previewMatter(access);
         if (matter == null) {
             return ItemStack.EMPTY;
+        }
+        if (analysis.hasTrait(FoodTrait.NUT)) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    JazzyItems.NUT_BUTTER.get(),
+                    IngredientState.PASTE,
+                    ""
+            );
         }
         return CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, FoodProcessorSimulationDomain::isProcessorSchema);
     }

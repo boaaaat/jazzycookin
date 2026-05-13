@@ -1,0 +1,103 @@
+{
+  "key": "glazed_chicken",
+  "preview_id": 1357,
+  "result": "jazzycookin:glazed_chicken",
+  "category": "pan_dish",
+  "meal": true,
+  "preview_threshold": 0.54,
+  "finalize_threshold": 0.6,
+  "desirability": 0.84,
+  "required_roles": [
+    {
+      "role": "protein",
+      "any_traits": [
+        "chicken",
+        "animal_protein"
+      ],
+      "weight": 0.88
+    }
+  ],
+  "optional_roles": [
+    {
+      "role": "garnish",
+      "any_traits": [
+        "salt",
+        "spice",
+        "acidic"
+      ],
+      "weight": 0.24
+    }
+  ],
+  "required_techniques": [
+    "plated"
+  ],
+  "prerequisite_schemas": [
+    "glazed_chicken_prep"
+  ],
+  "serving_items": [
+    "jazzycookin:ceramic_plate"
+  ],
+  "weights": {
+    "roles": 0.26,
+    "composition": 0.1,
+    "seasoning": 0.14,
+    "cooking": 0.18,
+    "texture": 0.12,
+    "technique": 0.08,
+    "presentation": 0.12,
+    "process": 0.06,
+    "thermal": 0.06
+  },
+  "ingredients": [
+    {
+      "role": "protein",
+      "any_traits": [
+        "chicken",
+        "animal_protein"
+      ],
+      "all_traits": [],
+      "ideal_amount": 1.0,
+      "min_amount": 0.5,
+      "max_amount": 64.0,
+      "unit": "count",
+      "core": true,
+      "measured_required": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "plated",
+      "station": "plating_station",
+      "technique": "plated",
+      "prerequisites": [],
+      "progress_target": 1.0
+    }
+  ],
+  "targets": {
+    "surface_temp_c": {
+      "min": 45.0,
+      "max": 92.0,
+      "softness": 14.0
+    },
+    "core_temp_c": {
+      "min": 42.0,
+      "max": 90.0,
+      "softness": 14.0
+    },
+    "browning": {
+      "min": 0.0,
+      "max": 0.48,
+      "softness": 0.2
+    },
+    "char_level": {
+      "min": 0.0,
+      "max": 0.12,
+      "softness": 0.06
+    },
+    "process_depth": {
+      "min": 1.0,
+      "max": 6.0,
+      "softness": 1.0
+    }
+  }
+}

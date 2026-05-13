@@ -5,6 +5,7 @@ import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 
@@ -107,6 +108,36 @@ public final class PlateAssemblySimulationDomain implements StationSimulationDom
         FoodMatterData matter = previewMatter(access);
         if (matter == null) {
             return ItemStack.EMPTY;
+        }
+        if (analysis.has(com.boaat.jazzy_cookin.registry.JazzyItems.CHICKEN_CURRY_PREP.get())
+                && contains(access, com.boaat.jazzy_cookin.registry.JazzyItems.CERAMIC_BOWL.get())) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    com.boaat.jazzy_cookin.registry.JazzyItems.CHICKEN_CURRY.get(),
+                    IngredientState.PLATED,
+                    "chicken_curry"
+            );
+        }
+        if (analysis.has(com.boaat.jazzy_cookin.registry.JazzyItems.ASSEMBLED_SANDWICH.get())
+                && contains(access, com.boaat.jazzy_cookin.registry.JazzyItems.CERAMIC_PLATE.get())) {
+            ItemStack output = CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    com.boaat.jazzy_cookin.registry.JazzyItems.SANDWICH_PLATE.get(),
+                    IngredientState.PLATED,
+                    "sandwich_plate"
+            );
+            DishSchemaScorer.schemas().stream()
+                    .filter(schema -> schema.key().equals("sandwich_plate"))
+                    .findFirst()
+                    .ifPresent(schema -> com.boaat.jazzy_cookin.kitchen.KitchenStackUtil.setDishAttempt(
+                            output,
+                            DishAttemptAssembler.build(schema, DishAttemptAssembler.view(access), 0.90F)
+                    ));
+            return output;
         }
         return CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, schema ->
                 schema.meal()

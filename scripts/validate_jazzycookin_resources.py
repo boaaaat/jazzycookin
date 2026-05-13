@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 import re
+import struct
+import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,12 +19,23 @@ ASSETS = RESOURCES / "assets/jazzycookin"
 DATA = RESOURCES / "data/jazzycookin"
 JAVA_ITEMS = ROOT / "src/main/java/com/boaat/jazzy_cookin/registry/JazzyItems.java"
 JAVA_BLOCKS = ROOT / "src/main/java/com/boaat/jazzy_cookin/registry/JazzyBlocks.java"
+JAVA_SOURCE_BLOCK = ROOT / "src/main/java/com/boaat/jazzy_cookin/block/KitchenSourceBlock.java"
 JAVA_SOURCE_PROFILES = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/KitchenSourceProfile.java"
 JAVA_FOOD_PROFILES = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/sim/FoodMaterialProfiles.java"
 JAVA_STATION_BLOCK = ROOT / "src/main/java/com/boaat/jazzy_cookin/block/KitchenStationBlock.java"
 JAVA_STATION_ENTITY = ROOT / "src/main/java/com/boaat/jazzy_cookin/block/entity/KitchenStationBlockEntity.java"
+JAVA_STORAGE_ENTITY = ROOT / "src/main/java/com/boaat/jazzy_cookin/block/entity/KitchenStorageBlockEntity.java"
 JAVA_GAMETESTS = ROOT / "src/main/java/com/boaat/jazzy_cookin/gametest/KitchenGameTests.java"
 JAVA_TOOL_PROFILE = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/ToolProfile.java"
+JAVA_STATION_UI = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/StationUiProfile.java"
+JAVA_STORAGE_UI = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/StorageUiProfile.java"
+JAVA_STATION_SCREEN = ROOT / "src/main/java/com/boaat/jazzy_cookin/screen/KitchenStationScreen.java"
+JAVA_CLIENT_ENTRYPOINT = ROOT / "src/main/java/com/boaat/jazzy_cookin/JazzyCookinClient.java"
+JAVA_STATION_BER = ROOT / "src/main/java/com/boaat/jazzy_cookin/client/KitchenStationBlockEntityRenderer.java"
+JAVA_SOURCE_GUIDE_REGISTRY = ROOT / "src/main/java/com/boaat/jazzy_cookin/recipebook/SourceGuideRegistry.java"
+JAVA_RECIPE_BOOK_PLANNER = ROOT / "src/main/java/com/boaat/jazzy_cookin/recipebook/JazzyRecipeBookPlanner.java"
+JAVA_RECIPE_BOOK_SCREEN = ROOT / "src/main/java/com/boaat/jazzy_cookin/recipebook/client/JazzyRecipeBookScreen.java"
+JAVA_COMPOSITIONAL_SIM = ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/sim/domain/CompositionalSimulationSupport.java"
 
 ROLES = {
     "protein", "grain", "fat", "aromatic", "acid", "sweetener", "herb", "salt", "spice", "binder",
@@ -52,12 +65,21 @@ def main() -> int:
     validate_models(parsed_json, errors)
     validate_blockstates(parsed_json, errors)
     validate_source_blocks(parsed_json, errors)
+    validate_source_harvest_contract(errors)
     validate_redstone_automation(errors)
+    validate_sided_automation(errors)
+    validate_responsive_ui_profiles(errors)
+    validate_station_grade_feedback(errors)
+    validate_station_interaction_feedback(errors)
+    validate_recipe_book_guidance(errors)
     validate_schemas(parsed_json, errors)
+    validate_goal_delivery_contract(parsed_json, errors)
     validate_tool_contract(parsed_json, errors)
+    validate_tool_runtime_contract(errors)
     validate_recipe_simulation_depth(parsed_json, errors)
     validate_sandwich_contract(parsed_json, errors)
     validate_meal_schema_coverage(errors)
+    validate_no_placeholder_markers(errors)
     validate_pngs(errors)
 
     if errors:
@@ -197,6 +219,39 @@ def validate_source_blocks(parsed: dict[Path, dict], errors: list[str]) -> None:
             errors.append(f"source block {block_name}: missing block model")
 
 
+def validate_source_harvest_contract(errors: list[str]) -> None:
+    profile_java = JAVA_SOURCE_PROFILES.read_text(encoding="utf-8")
+    source_block_java = JAVA_SOURCE_BLOCK.read_text(encoding="utf-8")
+    source_guide_java = JAVA_SOURCE_GUIDE_REGISTRY.read_text(encoding="utf-8")
+    item_java = JAVA_ITEMS.read_text(encoding="utf-8")
+
+    for token, message in {
+        "Blocks.FARMLAND": "farm sources must be placeable on farmland",
+        "isRandomlyTicking": "farm sources must grow over time",
+        "randomTick": "farm sources must age on random ticks",
+        "performBonemeal": "farm sources must support bonemeal growth",
+        "useWithoutItem": "ripe farm sources must be harvestable by interaction",
+        "Containers.dropItemStack": "harvested source outputs must drop into the world",
+        "recordSourceHarvest": "harvests must advance recipe-book source guides",
+        "withPreservationState": "harvest quality must affect generated ingredient matter",
+    }.items():
+        if token not in source_block_java:
+            errors.append(f"{rel(JAVA_SOURCE_BLOCK)}: missing {message}")
+
+    profiles = re.findall(r'([A-Z0-9_]+)\("([a-z0-9_]+)",', profile_java)
+    registered_ingredients = set(re.findall(r'([A-Z0-9_]+)\("([a-z0-9_]+)",', item_java))
+    ingredient_enums = {enum_name for enum_name, _ in registered_ingredients}
+    for profile_name, serialized_name in profiles:
+        if profile_name not in source_guide_java:
+            errors.append(f"{rel(JAVA_SOURCE_GUIDE_REGISTRY)}: missing source guide for {serialized_name}")
+        if f'"{serialized_name}"' not in source_guide_java:
+            errors.append(f"{rel(JAVA_SOURCE_GUIDE_REGISTRY)}: missing source guide key {serialized_name}")
+
+    for output_name in re.findall(r'IngredientId\.([A-Z0-9_]+)', source_guide_java):
+        if output_name not in ingredient_enums:
+            errors.append(f"{rel(JAVA_SOURCE_GUIDE_REGISTRY)}: source guide references unknown ingredient {output_name}")
+
+
 def validate_redstone_automation(errors: list[str]) -> None:
     block_java = JAVA_STATION_BLOCK.read_text(encoding="utf-8")
     entity_java = JAVA_STATION_ENTITY.read_text(encoding="utf-8")
@@ -236,6 +291,177 @@ def validate_redstone_automation(errors: list[str]) -> None:
         "stove.stoveDialLevel() == 6": "redstone GameTest must verify stove analog maximum",
         "stove.stoveDialLevel() == 0": "redstone GameTest must verify stove shutoff",
         "oven.simulationPreheatProgress() > 0": "redstone GameTest must verify oven preheat",
+    }
+    for token, message in required_gametest_tokens.items():
+        if token not in gametest_java:
+            errors.append(f"{rel(JAVA_GAMETESTS)}: missing {message}")
+
+
+def validate_sided_automation(errors: list[str]) -> None:
+    station_java = JAVA_STATION_ENTITY.read_text(encoding="utf-8")
+    storage_java = JAVA_STORAGE_ENTITY.read_text(encoding="utf-8")
+    gametest_java = JAVA_GAMETESTS.read_text(encoding="utf-8")
+
+    required_station_tokens = {
+        "implements WorldlyContainer": "stations must expose sided container automation",
+        "getSlotsForFace(Direction side)": "stations must declare side-visible slots",
+        "Direction.DOWN": "stations must distinguish extraction from insertion sides",
+        "new int[] { OUTPUT_SLOT, BYPRODUCT_SLOT }": "station bottom side must expose only output slots",
+        "StationCapacityProfile.FUEL_SLOT": "fueled stations must expose a fuel insertion slot",
+        "slots[index] = TOOL_SLOT": "stations must expose tool insertion for automation",
+        "canPlaceItemThroughFace": "stations must validate automated insertion",
+        "return this.canPlaceItem(slot, stack)": "automated insertion must reuse normal slot rules",
+        "canTakeItemThroughFace": "stations must validate automated extraction",
+        "slot == OUTPUT_SLOT || slot == BYPRODUCT_SLOT": "automation extraction must be limited to outputs/byproducts",
+    }
+    for token, message in required_station_tokens.items():
+        if token not in station_java:
+            errors.append(f"{rel(JAVA_STATION_ENTITY)}: missing {message}")
+
+    required_storage_tokens = {
+        "implements WorldlyContainer": "storage blocks must expose sided container automation",
+        "getSlotsForFace(Direction side)": "storage blocks must expose inventory slots to automation",
+        "new int[this.items.size()]": "storage automation should expose every storage slot",
+        "canPlaceItemThroughFace": "storage blocks must validate automated insertion",
+        "StorageRules.canStore": "storage automated insertion must respect pantry/fridge/freezer rules",
+        "canTakeItemThroughFace": "storage blocks must validate automated extraction",
+        "return true": "storage automation should permit extraction from stored slots",
+    }
+    for token, message in required_storage_tokens.items():
+        if token not in storage_java:
+            errors.append(f"{rel(JAVA_STORAGE_ENTITY)}: missing {message}")
+
+    required_gametest_tokens = {
+        "sidedAutomationRespectsKitchenSlotRoles": "sided automation must have a GameTest",
+        "canPlaceItemThroughFace(0, tomatoes, Direction.UP)": "automation GameTest must verify station input insertion",
+        "canPlaceItemThroughFace(KitchenStationBlockEntity.TOOL_SLOT": "automation GameTest must verify station tool insertion",
+        "canPlaceItemThroughFace(KitchenStationBlockEntity.OUTPUT_SLOT": "automation GameTest must reject output insertion",
+        "canTakeItemThroughFace(0, tomatoes, Direction.DOWN)": "automation GameTest must reject unfinished input extraction",
+        "canTakeItemThroughFace(KitchenStationBlockEntity.OUTPUT_SLOT": "automation GameTest must allow output extraction",
+        "canPlaceItemThroughFace(StationCapacityProfile.FUEL_SLOT": "automation GameTest must verify fueled station insertion",
+        "canPlaceItemThroughFace(0, chicken, Direction.UP)": "automation GameTest must verify storage insertion",
+        "canPlaceItemThroughFace(0, sugar, Direction.UP)": "automation GameTest must reject storage-invalid food",
+    }
+    for token, message in required_gametest_tokens.items():
+        if token not in gametest_java:
+            errors.append(f"{rel(JAVA_GAMETESTS)}: missing {message}")
+
+
+def validate_responsive_ui_profiles(errors: list[str]) -> None:
+    station_java = JAVA_STATION_UI.read_text(encoding="utf-8")
+    storage_java = JAVA_STORAGE_UI.read_text(encoding="utf-8")
+    for path, java in ((JAVA_STATION_UI, station_java), (JAVA_STORAGE_UI, storage_java)):
+        if "width = VANILLA_WIDTH" in java or "height = VANILLA_HEIGHT" in java:
+            errors.append(f"{rel(path)}: UI profile must not force vanilla container dimensions")
+        if "resolveWidth(screenWidth, this.width)" not in java:
+            errors.append(f"{rel(path)}: resolve() must use available screen width")
+        if "resolveHeight(screenHeight" not in java:
+            errors.append(f"{rel(path)}: resolve() must use available screen height")
+        if "inventoryStartY = Math.max(150, height - 86)" not in java:
+            errors.append(f"{rel(path)}: inventory shelf must be anchored to resolved height")
+    if "arrangeInputSlots(resolvedCapacity.inputCount(), resolvedWorkspaceRegion, resolvedToolRegion)" not in station_java:
+        errors.append(f"{rel(JAVA_STATION_UI)}: station inputs must be arranged inside the resolved workspace")
+    if "centeredInventoryStart(width)" not in station_java:
+        errors.append(f"{rel(JAVA_STATION_UI)}: station inventory must be horizontally centered")
+    if "buildProfile(storageType, BASE_WIDTH, BASE_HEIGHT)" not in storage_java:
+        errors.append(f"{rel(JAVA_STORAGE_UI)}: storage base profile must use finished themed dimensions")
+
+
+def validate_station_grade_feedback(errors: list[str]) -> None:
+    screen_java = JAVA_STATION_SCREEN.read_text(encoding="utf-8")
+    required_tokens = {
+        "DishEvaluation.evaluateStack(output, level)": "station preview must evaluate finished output quality",
+        "outputQualityBreakdown()": "station preview must expose output quality helper",
+        "outputBreakdown.summary()": "station preview must show grade summary text",
+        "gradeColor(outputBreakdown.finalScore())": "station preview must color-code grade feedback",
+        "this.outputStack()": "station preview must read the actual output slot",
+    }
+    for token, message in required_tokens.items():
+        if token not in screen_java:
+            errors.append(f"{rel(JAVA_STATION_SCREEN)}: missing {message}")
+
+
+def validate_station_interaction_feedback(errors: list[str]) -> None:
+    screen_java = JAVA_STATION_SCREEN.read_text(encoding="utf-8")
+    client_java = JAVA_CLIENT_ENTRYPOINT.read_text(encoding="utf-8")
+    renderer_java = JAVA_STATION_BER.read_text(encoding="utf-8") if JAVA_STATION_BER.exists() else ""
+    station_java = JAVA_STATION_ENTITY.read_text(encoding="utf-8")
+    required_tokens = {
+        "renderItemFlow(guiGraphics, left, top, partialTick)": "station UI must render animated item flow",
+        "shouldShowItemFlow()": "station UI must gate flow feedback on active cooking state",
+        "drawFlowPath": "station UI must draw paths between ingredients and output",
+        "this.menu.activeInputCount()": "item flow must consider station input slots",
+        "this.menu.outputMenuSlotIndex()": "item flow must lead toward the output slot",
+        "this.menu.simulationWorking()": "item flow must react to simulation work state",
+    }
+    for token, message in required_tokens.items():
+        if token not in screen_java:
+            errors.append(f"{rel(JAVA_STATION_SCREEN)}: missing {message}")
+
+    required_renderer_tokens = {
+        "registerBlockEntityRenderer(JazzyBlockEntities.KITCHEN_STATION.get()": "kitchen stations must register an in-world block entity renderer",
+        "KitchenStationBlockEntityRenderer": "kitchen station block entity renderer must exist",
+        "ItemDisplayContext.GROUND": "in-world station renderer must draw actual item stacks",
+        "station.simulationActive()": "in-world station renderer must animate while station work is active",
+        "lerp(position[0], 0.50F": "in-world station renderer must move inputs toward the work area",
+        "getUpdatePacket()": "station block entity must sync contents to clients for in-world rendering",
+        "syncClientInventoryState()": "station inventory changes must notify nearby clients",
+    }
+    for token, message in required_renderer_tokens.items():
+        haystack = client_java + renderer_java + station_java
+        if token not in haystack:
+            errors.append(f"in-world station renderer contract: missing {message}")
+
+
+def validate_recipe_book_guidance(errors: list[str]) -> None:
+    planner_java = JAVA_RECIPE_BOOK_PLANNER.read_text(encoding="utf-8")
+    screen_java = JAVA_RECIPE_BOOK_SCREEN.read_text(encoding="utf-8")
+    gametest_java = JAVA_GAMETESTS.read_text(encoding="utf-8")
+    required_planner_tokens = {
+        "Process targets:": "recipe book planner must emit visible process target guidance",
+        "Thermal targets:": "recipe book planner must emit visible thermal target guidance",
+        "schema.targets().timeInPan()": "recipe book planner must derive durations from schema timing targets",
+        "schema.targets().surfaceTempC()": "recipe book planner must expose surface temperature targets",
+        "allowedTools": "recipe book planner must expose alternate valid cooking tools",
+    }
+    for token, message in required_planner_tokens.items():
+        if token not in planner_java:
+            errors.append(f"{rel(JAVA_RECIPE_BOOK_PLANNER)}: missing {message}")
+
+    required_screen_tokens = {
+        "parts.add(option.notes().get(0))": "recipe book step rows must display planner notes alongside station/tool context",
+        "renderStepTooltip(guiGraphics, mouseX, mouseY)": "recipe book must expose full step guidance in a hover tooltip",
+        "stepTooltip(VisibleStep visibleStep)": "recipe book must build detailed step tooltips",
+        "Component::getVisualOrderText": "recipe book tooltip lines must use the Minecraft formatted tooltip API",
+        "for (String note : option.notes())": "recipe book tooltips must include every planner note",
+        "option.allowedTools()": "recipe book tooltips must expose alternate valid tools",
+        "screen.jazzycookin.recipe_book.tooltip.station": "recipe book tooltip labels must be translated",
+        "screen.jazzycookin.recipe_book.tooltip.valid_tools": "recipe book valid tool labels must be translated",
+        "heat.jazzycookin.": "recipe book tooltip heat values must use translated heat labels",
+    }
+    for token, message in required_screen_tokens.items():
+        if token not in screen_java:
+            errors.append(f"{rel(JAVA_RECIPE_BOOK_SCREEN)}: missing {message}")
+    if 'Component.literal("Station:' in screen_java or 'Component.literal("Method:' in screen_java:
+        errors.append(f"{rel(JAVA_RECIPE_BOOK_SCREEN)}: recipe book tooltip labels must not be hardcoded English literals")
+
+    lang = (ASSETS / "lang/en_us.json").read_text(encoding="utf-8")
+    for key in (
+            "screen.jazzycookin.recipe_book.tooltip.station",
+            "screen.jazzycookin.recipe_book.tooltip.method",
+            "screen.jazzycookin.recipe_book.tooltip.preferred_tool",
+            "screen.jazzycookin.recipe_book.tooltip.valid_tools",
+            "screen.jazzycookin.recipe_book.tooltip.duration",
+            "screen.jazzycookin.recipe_book.tooltip.heat",
+            "screen.jazzycookin.recipe_book.tooltip.needs",
+    ):
+        if key not in lang:
+            errors.append(f"{rel(ASSETS / 'lang/en_us.json')}: missing recipe book tooltip translation {key}")
+
+    required_gametest_tokens = {
+        "cook 150-280 ticks": "recipe guide GameTest must verify process targets are explained",
+        "surface 125-190C": "recipe guide GameTest must verify thermal targets are explained",
+        "Sandwich guide should explain toast, cheese, and seasoning variations": "recipe guide GameTest must verify flexible sandwich notes",
     }
     for token, message in required_gametest_tokens.items():
         if token not in gametest_java:
@@ -283,6 +509,50 @@ def validate_schemas(parsed: dict[Path, dict], errors: list[str]) -> None:
                         errors.append(f"{rel(path)}: target {key} missing {required}")
 
 
+def validate_goal_delivery_contract(parsed: dict[Path, dict], errors: list[str]) -> None:
+    item_java = JAVA_ITEMS.read_text(encoding="utf-8")
+    source_java = JAVA_SOURCE_PROFILES.read_text(encoding="utf-8")
+    station_java = (ROOT / "src/main/java/com/boaat/jazzy_cookin/kitchen/StationType.java").read_text(encoding="utf-8")
+
+    meal_items = re.findall(r'meal\("([a-z0-9_]+)"', item_java)
+    if len(meal_items) < 20:
+        errors.append(f"registered meal count {len(meal_items)} is below the requested 20+ recipes")
+
+    schema_paths = list((DATA / "dish_schema").glob("*.json"))
+    schema_keys = {
+        data.get("key")
+        for path in schema_paths
+        if (data := parsed.get(path)) is not None
+    }
+    missing_schema_meals = [
+        meal for meal in meal_items
+        if meal not in schema_keys and f"{meal}_meal" not in schema_keys
+    ]
+    if missing_schema_meals:
+        errors.append(f"registered meals missing dish schemas: {', '.join(sorted(missing_schema_meals))}")
+
+    source_profiles = re.findall(r'([A-Z0-9_]+)\("([a-z0-9_]+)",\s*(true|false),', source_java)
+    plant_sources = [serialized for _, serialized, plant_like in source_profiles if plant_like == "true"]
+    if len(source_profiles) < 8:
+        errors.append(f"source profile count {len(source_profiles)} is below the farming/source coverage target")
+    if len(plant_sources) < 5:
+        errors.append(f"plant-like source count {len(plant_sources)} is below the veggie farming coverage target")
+
+    station_names = re.findall(r'^\s*([A-Z0-9_]+)\("([a-z0-9_]+)"', station_java, flags=re.M)
+    if len(station_names) < 12:
+        errors.append(f"station count {len(station_names)} is below the interactive cooking station coverage target")
+
+    texture_generators = [
+        ROOT / "texture_sources/generate_meal_textures.py",
+        ROOT / "texture_sources/generate_block_textures.py",
+        ROOT / "texture_sources/generate_ingredient_textures.py",
+        ROOT / "texture_sources/generate_remaining_item_textures.py",
+    ]
+    for generator in texture_generators:
+        if not generator.exists():
+            errors.append(f"missing generated texture source script {rel(generator)}")
+
+
 def validate_recipe_simulation_depth(parsed: dict[Path, dict], errors: list[str]) -> None:
     schema_paths = sorted((DATA / "dish_schema").glob("*.json"))
     if len(schema_paths) < 20:
@@ -300,6 +570,33 @@ def validate_recipe_simulation_depth(parsed: dict[Path, dict], errors: list[str]
     if len(meal_paths) < 20:
         errors.append(f"meal-like schema count {len(meal_paths)} is below required 20+ complex recipes")
 
+    meal_categories = {
+        data.get("category")
+        for path in meal_paths
+        if (data := parsed.get(path)) is not None
+    }
+    if len(meal_categories) < 5:
+        errors.append(f"meal schema categories are too narrow for a varied cooking catalog: {', '.join(sorted(meal_categories))}")
+
+    recipe_families = {
+        recipe_family(data.get("key", path.stem))
+        for path in meal_paths
+        if (data := parsed.get(path)) is not None
+    }
+    if len(recipe_families) < 20:
+        errors.append(f"distinct recipe family count {len(recipe_families)} is below required 20+ varied recipes")
+
+    required_cooking_techniques = {"pan_fried", "simmered", "baked", "mixed", "plated"}
+    catalog_techniques = {
+        technique
+        for path in meal_paths
+        if (data := parsed.get(path)) is not None
+        for technique in data.get("required_techniques", [])
+    }
+    missing_techniques = sorted(required_cooking_techniques - catalog_techniques)
+    if missing_techniques:
+        errors.append(f"meal schema catalog is missing core cooking technique(s): {', '.join(missing_techniques)}")
+
     for path in meal_paths:
         data = parsed.get(path)
         if data is None:
@@ -316,6 +613,13 @@ def validate_recipe_simulation_depth(parsed: dict[Path, dict], errors: list[str]
             errors.append(f"{rel(path)}: process target is present but process weight is not positive")
         if weights.get("thermal", 0) <= 0:
             errors.append(f"{rel(path)}: thermal target is present but thermal weight is not positive")
+
+
+def recipe_family(key: str) -> str:
+    for suffix in ("_prep", "_meal", "_plate", "_filling", "_batter", "_soaked"):
+        if key.endswith(suffix):
+            return key[: -len(suffix)]
+    return key
 
 
 def validate_tool_contract(parsed: dict[Path, dict], errors: list[str]) -> None:
@@ -345,6 +649,59 @@ def validate_tool_contract(parsed: dict[Path, dict], errors: list[str]) -> None:
                 errors.append(f"{rel(path)}: step {step.get('id')} has no registered in-game tool profile")
             if step.get("tools") and step["tools"][0] not in registered_profiles:
                 errors.append(f"{rel(path)}: step {step.get('id')} primary tool {step['tools'][0]} is not registered; first tool gets the best grade")
+
+
+def validate_tool_runtime_contract(errors: list[str]) -> None:
+    station_java = JAVA_STATION_ENTITY.read_text(encoding="utf-8")
+    simulation_java = JAVA_COMPOSITIONAL_SIM.read_text(encoding="utf-8")
+    tool_java = (ROOT / "src/main/java/com/boaat/jazzy_cookin/item/KitchenToolItem.java").read_text(encoding="utf-8")
+    gametest_java = JAVA_GAMETESTS.read_text(encoding="utf-8")
+    required_station_tokens = {
+        "damageToolOnAction()": "station actions must wear tools at runtime",
+        "tool.isDamageableItem()": "tool wear must respect damageable item state",
+        "tool.getDamageValue() + 1": "tool wear must advance durability damage",
+        "tool.setDamageValue(nextDamage)": "tool wear must save partial damage",
+        "tool.shrink(1)": "tool wear must break tools that reach max damage",
+        "risingEdge && StationSimulationResolver.handleAction(this, 6)": "redstone-triggered station actions must share the normal simulation path",
+    }
+    for token, message in required_station_tokens.items():
+        if token not in station_java:
+            errors.append(f"{rel(JAVA_STATION_ENTITY)}: missing {message}")
+
+    required_simulation_tokens = {
+        "toolSpeedMultiplier(access)": "tool speed stats must affect station timing",
+        "toolQualityBonus(access)": "tool quality stats must affect station results",
+        "toolItem.speedMultiplier()": "station simulation must read tool speed multipliers",
+        "toolItem.qualityBonus()": "station simulation must read tool quality bonuses",
+        "modifier /= toolSpeedMultiplier(access)": "tool speed multipliers must shorten station action durations",
+        "stationQuality(access, matter": "tool quality bonuses must feed schema attempt quality",
+    }
+    for token, message in required_simulation_tokens.items():
+        if token not in simulation_java:
+            errors.append(f"{rel(JAVA_COMPOSITIONAL_SIM)}: missing {message}")
+
+    required_tool_tooltip_tokens = {
+        "tooltip.jazzycookin.tool_quality_bonus": "tool tooltip must expose quality bonus",
+        "tooltip.jazzycookin.tool_speed_multiplier": "tool tooltip must expose work speed",
+        "Math.round(this.qualityBonus * 100.0F)": "tool quality tooltip must display a player-readable percent",
+        "Math.round(this.speedMultiplier * 100.0F)": "tool speed tooltip must display a player-readable percent",
+    }
+    for token, message in required_tool_tooltip_tokens.items():
+        if token not in tool_java:
+            errors.append(f"src/main/java/com/boaat/jazzy_cookin/item/KitchenToolItem.java: missing {message}")
+
+    required_gametest_tokens = {
+        "stationActionsWearTools": "tool wear must have a GameTest",
+        "toolStatsAffectStationSpeedAndQuality": "tool stat effects must have a GameTest",
+        "getDamageValue() == 1": "tool wear GameTest must verify incremental damage",
+        "setDamageValue(nearlyBrokenScale.getMaxDamage() - 1)": "tool wear GameTest must exercise near-break durability",
+        "getItem(KitchenStationBlockEntity.TOOL_SLOT).isEmpty()": "tool wear GameTest must verify breaking tools",
+        "chefPrep.simulationMaxProgress() < tablePrep.simulationMaxProgress()": "tool stat GameTest must verify speed differences",
+        "chefMatter.cohesiveness() > tableMatter.cohesiveness()": "tool stat GameTest must verify quality differences",
+    }
+    for token, message in required_gametest_tokens.items():
+        if token not in gametest_java:
+            errors.append(f"{rel(JAVA_GAMETESTS)}: missing {message}")
 
 
 def registered_tool_item_names() -> set[str]:
@@ -531,10 +888,122 @@ def validate_pngs(errors: list[str]) -> None:
     png_signature = b"\x89PNG\r\n\x1a\n"
     for path in (ASSETS / "textures").rglob("*.png"):
         try:
-            if path.read_bytes()[:8] != png_signature:
+            data = path.read_bytes()
+            if data[:8] != png_signature:
                 errors.append(f"{rel(path)}: invalid PNG signature")
+                continue
+            info = png_info(data)
+            if info is None:
+                errors.append(f"{rel(path)}: missing PNG metadata")
+                continue
+            width, height, bit_depth, color_type, visible_pixels, visible_colors = info
+            if (width, height) != (16, 16):
+                errors.append(f"{rel(path)}: texture must be 16x16, got {width}x{height}")
+            if bit_depth != 8 or color_type != 6:
+                errors.append(f"{rel(path)}: texture must be 8-bit RGBA PNG, got bit depth {bit_depth}, color type {color_type}")
+            if visible_pixels < 8:
+                errors.append(f"{rel(path)}: texture has too few visible pixels ({visible_pixels})")
+            if visible_colors < 2:
+                errors.append(f"{rel(path)}: texture appears blank or flat ({visible_colors} visible colors)")
         except OSError as exc:
             errors.append(f"{rel(path)}: cannot read PNG: {exc}")
+        except (struct.error, zlib.error, ValueError) as exc:
+            errors.append(f"{rel(path)}: invalid PNG data: {exc}")
+
+
+def png_info(data: bytes) -> tuple[int, int, int, int, int, int] | None:
+    pos = 8
+    width = height = bit_depth = color_type = None
+    idat_chunks: list[bytes] = []
+    while pos + 12 <= len(data):
+        length = struct.unpack(">I", data[pos:pos + 4])[0]
+        chunk_type = data[pos + 4:pos + 8]
+        chunk = data[pos + 8:pos + 8 + length]
+        pos += 12 + length
+        if chunk_type == b"IHDR":
+            width, height, bit_depth, color_type, _, _, _ = struct.unpack(">IIBBBBB", chunk)
+        elif chunk_type == b"IDAT":
+            idat_chunks.append(chunk)
+        elif chunk_type == b"IEND":
+            break
+    if width is None or height is None or bit_depth is None or color_type is None:
+        return None
+    if bit_depth != 8 or color_type != 6 or not idat_chunks:
+        return width, height, bit_depth, color_type, 0, 0
+    pixels = decode_rgba_png_pixels(width, height, b"".join(idat_chunks))
+    visible = [pixel for pixel in pixels if pixel[3] > 0]
+    return width, height, bit_depth, color_type, len(visible), len(set(visible))
+
+
+def decode_rgba_png_pixels(width: int, height: int, compressed: bytes) -> list[tuple[int, int, int, int]]:
+    raw = zlib.decompress(compressed)
+    bytes_per_pixel = 4
+    stride = width * bytes_per_pixel
+    expected = height * (stride + 1)
+    if len(raw) < expected:
+        raise ValueError(f"decompressed PNG data is too short: {len(raw)} < {expected}")
+    previous = bytearray(stride)
+    pixels: list[tuple[int, int, int, int]] = []
+    pos = 0
+    for _ in range(height):
+        filter_type = raw[pos]
+        pos += 1
+        row = bytearray(raw[pos:pos + stride])
+        pos += stride
+        for index in range(stride):
+            left = row[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+            above = previous[index]
+            upper_left = previous[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+            if filter_type == 1:
+                row[index] = (row[index] + left) & 0xFF
+            elif filter_type == 2:
+                row[index] = (row[index] + above) & 0xFF
+            elif filter_type == 3:
+                row[index] = (row[index] + ((left + above) // 2)) & 0xFF
+            elif filter_type == 4:
+                row[index] = (row[index] + paeth_predictor(left, above, upper_left)) & 0xFF
+            elif filter_type != 0:
+                raise ValueError(f"unknown PNG filter {filter_type}")
+        pixels.extend(tuple(row[index:index + 4]) for index in range(0, stride, bytes_per_pixel))
+        previous = row
+    return pixels
+
+
+def paeth_predictor(left: int, above: int, upper_left: int) -> int:
+    estimate = left + above - upper_left
+    left_distance = abs(estimate - left)
+    above_distance = abs(estimate - above)
+    upper_left_distance = abs(estimate - upper_left)
+    if left_distance <= above_distance and left_distance <= upper_left_distance:
+        return left
+    if above_distance <= upper_left_distance:
+        return above
+    return upper_left
+
+
+def validate_no_placeholder_markers(errors: list[str]) -> None:
+    scanned_roots = [
+        ROOT / "src/main/java",
+        ROOT / "src/main/resources",
+        ROOT / "scripts",
+        ROOT / "texture_sources",
+    ]
+    pattern = re.compile(r"\b(TODO|FIXME|placeholder|stub|not implemented)\b", re.IGNORECASE)
+    for root in scanned_roots:
+        if not root.exists():
+            continue
+        for path in root.rglob("*"):
+            if path == Path(__file__).resolve():
+                continue
+            if not path.is_file() or path.suffix.lower() in {".png", ".jar", ".class"}:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            for line_number, line in enumerate(text.splitlines(), start=1):
+                if pattern.search(line):
+                    errors.append(f"{rel(path)}:{line_number}: placeholder marker remains: {line.strip()}")
 
 
 def validate_item_ref(path: Path, ref: str, label: str, known_items: set[str], errors: list[str]) -> None:

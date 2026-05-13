@@ -149,6 +149,17 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
         if (matter == null) {
             return ItemStack.EMPTY;
         }
+        if (analysis.has(JazzyItems.ingredient(IngredientId.BREADCRUMBS).get()) && analysis.has(JazzyItems.SANDWICH_FILLING.get())) {
+            return ItemStack.EMPTY;
+        }
+        if (contains(access, JazzyItems.SANDWICH_FILLING.get()) && !hasValidSandwichFilling(access)) {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack directOutput = directLegacyOutput(access, analysis, matter, primarySlot);
+        if (!directOutput.isEmpty()) {
+            return directOutput;
+        }
 
         ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, schema ->
                 !schema.meal() && (schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.CUT)
@@ -167,6 +178,40 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             );
         }
         return CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
+    }
+
+    private static ItemStack directLegacyOutput(
+            StationSimulationAccess access,
+            SimulationIngredientAnalysis analysis,
+            FoodMatterData matter,
+            int primarySlot
+    ) {
+        if (primarySlot >= 0 && access.simulationItem(primarySlot).is(JazzyItems.ingredient(IngredientId.LEMONS).get())) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    JazzyItems.ingredient(IngredientId.LEMONS).get(),
+                    IngredientState.SLICED,
+                    ""
+            );
+        }
+        if (analysis.has(JazzyItems.ingredient(IngredientId.BEEF).get())
+                && analysis.has(JazzyItems.ingredient(IngredientId.TOMATO_PASTE).get())
+                && analysis.has(JazzyItems.ingredient(IngredientId.GARLIC).get())
+                && analysis.has(JazzyItems.ingredient(IngredientId.ONIONS).get())
+                && analysis.hasTrait(FoodTrait.PEPPER)
+                && analysis.hasTrait(FoodTrait.SALT)) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    JazzyItems.BRAISED_BEEF_BASE.get(),
+                    IngredientState.ROUGH_CUT,
+                    "braised_beef_base"
+            );
+        }
+        return ItemStack.EMPTY;
     }
 
     private static FoodMatterData previewMatter(StationSimulationAccess access) {
@@ -302,6 +347,40 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             }
         }
         return primarySlot;
+    }
+
+    private static boolean hasValidSandwichFilling(StationSimulationAccess access) {
+        boolean foundFilling = false;
+        long gameTime = access.simulationLevel() != null ? access.simulationLevel().getGameTime() : 0L;
+        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
+            ItemStack stack = access.simulationItem(slot);
+            if (!stack.is(JazzyItems.SANDWICH_FILLING.get())) {
+                continue;
+            }
+            foundFilling = true;
+            FoodMatterData matter = KitchenStackUtil.getOrCreateFoodMatter(stack, gameTime);
+            if (matter == null || !hasSandwichVegetableTraits(matter)) {
+                return false;
+            }
+        }
+        return foundFilling;
+    }
+
+    private static boolean hasBreadLoafInput(StationSimulationAccess access) {
+        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
+            ItemStack stack = access.simulationItem(slot);
+            if (!stack.isEmpty() && FoodMaterialProfiles.hasTrait(stack, FoodTrait.BREAD_LOAF)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasSandwichVegetableTraits(FoodMatterData matter) {
+        return matter.hasTrait(FoodTrait.VEGETABLE)
+                || matter.hasTrait(FoodTrait.LEAFY_GREEN)
+                || matter.hasTrait(FoodTrait.ALLIUM)
+                || matter.hasTrait(FoodTrait.TOMATO);
     }
 
     private static int significantFoodInputCount(StationSimulationAccess access) {

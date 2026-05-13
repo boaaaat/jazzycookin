@@ -20,15 +20,18 @@ import com.boaat.jazzy_cookin.menu.KitchenStationMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.entity.player.Inventory;
@@ -39,7 +42,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class KitchenStationBlockEntity extends BlockEntity implements Container, MenuProvider, StationSimulationAccess {
+public class KitchenStationBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider, StationSimulationAccess {
     public static final int INPUT_START = StationCapacityProfile.INPUT_START;
     public static final int INPUT_END = StationCapacityProfile.MAX_INPUT_SLOT;
     public static final int TOOL_SLOT = StationCapacityProfile.TOOL_SLOT;
@@ -234,7 +237,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             return HeatLevel.MEDIUM;
         }
         if (this.getStationType() == StationType.STOVE) {
-            return this.hasActiveFuel() ? heatLevelForStoveDial(this.stoveDialLevel()) : HeatLevel.OFF;
+            return heatLevelForStoveDial(this.stoveDialLevel());
         }
         return this.getStationType() == StationType.OVEN
                 ? (this.ovenHeatDegrees >= HeatLevel.MIN_OVEN_TEMPERATURE
@@ -248,6 +251,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             boolean handled = StationSimulationResolver.handleAction(this, 6);
             if (handled) {
                 this.activeGuidePlayerId = player.getUUID();
+                this.damageToolOnAction();
             }
             return handled;
         }
@@ -255,6 +259,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             boolean handled = StationSimulationResolver.handleAction(this, buttonId);
             if (handled) {
                 this.activeGuidePlayerId = player.getUUID();
+                this.damageToolOnAction();
             }
             return handled;
         }
@@ -287,6 +292,16 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         }
         if (this.getStationType() == StationType.STOVE && buttonId >= STOVE_BURNER_BUTTON_BASE) {
             this.setStoveDialLevel(buttonId - STOVE_BURNER_BUTTON_BASE);
+            this.tryIgniteFuel();
+            this.setChanged();
+            return true;
+        }
+        if (this.getStationType() == StationType.STOVE && buttonId >= 1 && buttonId <= 3) {
+            this.setStoveDialLevel(switch (buttonId) {
+                case 1 -> 2;
+                case 2 -> 4;
+                default -> 6;
+            });
             this.tryIgniteFuel();
             this.setChanged();
             return true;
@@ -352,11 +367,26 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         }
 
         if (risingEdge && StationSimulationResolver.handleAction(this, 6)) {
+            this.damageToolOnAction();
             changed = true;
         }
         if (changed) {
             this.setChanged();
         }
+    }
+
+    private void damageToolOnAction() {
+        ItemStack tool = this.getItem(TOOL_SLOT);
+        if (!(tool.getItem() instanceof KitchenToolItem) || !tool.isDamageableItem()) {
+            return;
+        }
+        int nextDamage = tool.getDamageValue() + 1;
+        if (nextDamage >= tool.getMaxDamage()) {
+            tool.shrink(1);
+        } else {
+            tool.setDamageValue(nextDamage);
+        }
+        this.setChanged();
     }
 
     private void resetSimulationState() {
@@ -407,6 +437,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
 
         existing.grow(stack.getCount());
         this.setChanged();
+        this.syncClientInventoryState();
     }
 
     private int environmentStatus() {
@@ -444,6 +475,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         if (!removed.isEmpty()) {
             KitchenStackUtil.setCookingDisplay(removed, false);
             this.setChanged();
+            this.syncClientInventoryState();
         }
         return removed;
     }
@@ -453,6 +485,10 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         ItemStack removed = this.items.get(slot);
         this.items.set(slot, ItemStack.EMPTY);
         KitchenStackUtil.setCookingDisplay(removed, false);
+        if (!removed.isEmpty()) {
+            this.setChanged();
+            this.syncClientInventoryState();
+        }
         return removed;
     }
 
@@ -467,6 +503,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             this.resetSimulationState();
         }
         this.setChanged();
+        this.syncClientInventoryState();
     }
 
     @Override
@@ -495,6 +532,38 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
     }
 
     @Override
+    public int[] getSlotsForFace(Direction side) {
+        if (side == Direction.DOWN) {
+            return new int[] { OUTPUT_SLOT, BYPRODUCT_SLOT };
+        }
+        StationCapacityProfile capacity = this.capacityProfile();
+        int extraSlots = 1 + (this.getStationType().usesFuel() ? 1 : 0);
+        int[] slots = new int[capacity.inputCount() + extraSlots];
+        for (int inputSlot = 0; inputSlot < capacity.inputCount(); inputSlot++) {
+            slots[inputSlot] = inputSlot;
+        }
+        int index = capacity.inputCount();
+        if (this.getStationType().usesFuel()) {
+            slots[index++] = StationCapacityProfile.FUEL_SLOT;
+        }
+        slots[index] = TOOL_SLOT;
+        return slots;
+    }
+
+    @Override
+    public boolean canPlaceItemThroughFace(int slot, ItemStack stack, Direction direction) {
+        if (direction == Direction.DOWN) {
+            return false;
+        }
+        return this.canPlaceItem(slot, stack);
+    }
+
+    @Override
+    public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction direction) {
+        return direction == Direction.DOWN && (slot == OUTPUT_SLOT || slot == BYPRODUCT_SLOT);
+    }
+
+    @Override
     public void clearContent() {
         for (int slot = 0; slot < this.items.size(); slot++) {
             this.items.set(slot, ItemStack.EMPTY);
@@ -516,6 +585,7 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
             this.syncStoveBurnerDerivedState();
         }
         this.setChanged();
+        this.syncClientInventoryState();
     }
 
     @Override
@@ -597,6 +667,22 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.syncOvenPreheatProgress();
     }
 
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return this.saveWithoutMetadata(registries);
+    }
+
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    private void syncClientInventoryState() {
+        if (this.level != null && !this.level.isClientSide) {
+            this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        }
+    }
+
     private void serverTickSimulation() {
         StationSimulationResolver.serverTick(this);
     }
@@ -647,6 +733,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
                 this.stoveFuelBurnRemainder = 0.0F;
                 return true;
             }
+            return false;
+        }
+        if (this.getItem(StationCapacityProfile.FUEL_SLOT).isEmpty() && !this.hasActiveFuel()) {
             return false;
         }
         return this.consumeStoveFuelTicks(dialLevel / 2.0F);
@@ -960,6 +1049,9 @@ public class KitchenStationBlockEntity extends BlockEntity implements Container,
         this.processing = active;
         if (this.getStationType() == StationType.OVEN && wasProcessing && !active) {
             this.ovenPreheating = false;
+        }
+        if (wasProcessing != active) {
+            this.syncClientInventoryState();
         }
     }
 

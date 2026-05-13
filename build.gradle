@@ -92,6 +92,7 @@ neoForge {
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             logLevel = org.slf4j.event.Level.DEBUG
+
         }
     }
 
@@ -176,6 +177,59 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.fork = true
+    options.forkOptions.executable = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }.get().executablePath.asFile.absolutePath
+}
+
+def rewriteModDevRunPathsForMappedDrive = {
+    String launchRoot = System.getenv('JAZZYCOOKIN_LAUNCH_ROOT') ?: projectDir.absolutePath
+    if (launchRoot ==~ /(?i)^[a-z]:[\\\/]$/) {
+        launchRoot = launchRoot.substring(0, 2)
+    } else {
+        launchRoot = launchRoot.replaceAll(/[\\\/]+$/, '')
+    }
+    String comparableLaunchRoot = launchRoot.replace('/', '\\')
+    List<String> originalRoots = [projectDir.canonicalPath, System.getenv('JAZZYCOOKIN_CANONICAL_ROOT')]
+            .findAll { it != null && !it.isBlank() }
+            .findAll { String root ->
+                !root.replace('/', '\\').replaceAll(/[\\]+$/, '').equalsIgnoreCase(comparableLaunchRoot)
+            }
+            .unique { it.toLowerCase(Locale.ROOT) }
+    if (originalRoots.every { it.equalsIgnoreCase(launchRoot) }) {
+        return
+    }
+    fileTree(layout.buildDirectory.dir('moddev')) {
+        include '*.txt'
+    }.each { File launchFile ->
+        String text = launchFile.getText('UTF-8')
+        String rewritten = text
+        for (String originalRoot : originalRoots) {
+            rewritten = rewritten.replace(originalRoot, launchRoot)
+            rewritten = rewritten.replace(originalRoot.replace('\\', '\\\\'), launchRoot.replace('\\', '\\\\'))
+        }
+        if (rewritten != text) {
+            launchFile.write(rewritten, 'UTF-8')
+        }
+    }
+}
+
+tasks.matching { task ->
+    task.name in ['runClient', 'runServer', 'runGameTestServer', 'runData']
+}.configureEach {
+    if (it.hasProperty('classpathProvider')) {
+        def launchClasspath = it.classpathProvider.filter { File entry ->
+            entry.name.startsWith('DevLaunch-') ||
+                    entry.name == "neoforge-${project.neo_version}.jar" ||
+                    entry.name == new File(project.uilib_jar).name ||
+                    entry.name == new File(project.architectury_jar).name
+        }
+        it.classpathProvider.setFrom(launchClasspath)
+    }
+    doFirst {
+        rewriteModDevRunPathsForMappedDrive()
+    }
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

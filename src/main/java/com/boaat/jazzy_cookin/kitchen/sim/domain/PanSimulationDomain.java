@@ -19,13 +19,12 @@ public final class PanSimulationDomain implements StationSimulationDomain {
         if (access.simulationStationType() != StationType.STOVE) {
             return false;
         }
+        ToolProfile toolProfile = ToolProfile.fromStack(access.simulationItem(access.toolSlot()));
+        if (toolProfile != ToolProfile.PAN && toolProfile != ToolProfile.SKILLET && toolProfile != ToolProfile.FRYING_SKILLET) {
+            return false;
+        }
         if (access.simulationBatch() != null) {
             return true;
-        }
-
-        ToolProfile toolProfile = ToolProfile.fromStack(access.simulationItem(access.toolSlot()));
-        if (toolProfile != ToolProfile.PAN && toolProfile != ToolProfile.FRYING_SKILLET) {
-            return false;
         }
 
         return PanSchemaSimulationActions.hasInputCandidate(access)

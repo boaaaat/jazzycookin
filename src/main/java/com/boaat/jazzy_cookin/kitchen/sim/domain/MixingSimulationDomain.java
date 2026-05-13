@@ -9,6 +9,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
+import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationResolver;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.util.Mth;
@@ -61,6 +62,10 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
         ItemStack output = previewOutput(access);
         if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
             return false;
+        }
+        if (isImmediateMixOutput(output)) {
+            finish(access);
+            return true;
         }
         access.simulationSetBatch(new CookingBatchState(previewMatter(access)));
         access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, 72), true);
@@ -119,8 +124,73 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
         if (matter == null) {
             return ItemStack.EMPTY;
         }
+        ItemStack direct = directOutput(access, analysis, matter);
+        if (!direct.isEmpty()) {
+            return direct;
+        }
         ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, MixingSimulationDomain::isMixSchema);
         return schemaOutput.isEmpty() ? CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter) : schemaOutput;
+    }
+
+    private static ItemStack directOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter) {
+        if (StationSimulationResolver.supportsEggMixing(access)) {
+            FoodMatterData whisked = matter.withWorkingState(
+                    matter.water(),
+                    Math.max(matter.aeration(), 0.24F),
+                    matter.fragmentation(),
+                    matter.cohesiveness(),
+                    matter.proteinSet(),
+                    matter.browning(),
+                    matter.charLevel(),
+                    Math.max(matter.whiskWork(), 0.36F),
+                    matter.stirCount(),
+                    matter.flipCount(),
+                    matter.timeInPan(),
+                    Math.max(1, matter.processDepth()),
+                    false
+            );
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    whisked,
+                    JazzyItems.EGG_MIXTURE.get(),
+                    IngredientState.SMOOTH_MIXTURE,
+                    ""
+            );
+        }
+        if (analysis.hasTrait(FoodTrait.FLOUR)
+                && analysis.hasTrait(FoodTrait.FAT)
+                && !analysis.hasTrait(FoodTrait.LEAVENER)) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    JazzyItems.PIE_DOUGH.get(),
+                    IngredientState.DOUGH,
+                    "pie_dough"
+            );
+        }
+        if (analysis.hasTrait(FoodTrait.FLOUR)
+                && analysis.hasTrait(FoodTrait.LEAVENER)
+                && analysis.hasTrait(FoodTrait.SWEETENER)
+                && analysis.hasTrait(FoodTrait.DAIRY)
+                && analysis.hasTrait(FoodTrait.SALT)) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    JazzyItems.PANCAKE_DRY_MIX.get(),
+                    IngredientState.COARSE_POWDER,
+                    ""
+            );
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private static boolean isImmediateMixOutput(ItemStack output) {
+        return output.is(JazzyItems.EGG_MIXTURE.get())
+                || output.is(JazzyItems.PIE_DOUGH.get())
+                || output.is(JazzyItems.PANCAKE_DRY_MIX.get());
     }
 
     private static FoodMatterData previewMatter(StationSimulationAccess access) {

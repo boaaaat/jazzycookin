@@ -121,6 +121,19 @@ public final class PreserveSimulationDomain implements StationSimulationDomain {
         if (matter == null) {
             return ItemStack.EMPTY;
         }
+        if (access.simulationStationType() == StationType.CANNING_STATION
+                && (analysis.has(JazzyItems.SYRUP_MIXTURE.get())
+                || analysis.hasTrait(FoodTrait.SWEETENER)
+                || analysis.hasTrait(FoodTrait.SYRUP))) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    JazzyItems.HOT_SYRUP_PRESERVE.get(),
+                    IngredientState.HOT_PRESERVE,
+                    ""
+            );
+        }
         ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, schema ->
                 !schema.meal() && (schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.PREPPED)
                         || schema.requiredTechniques().isEmpty()));

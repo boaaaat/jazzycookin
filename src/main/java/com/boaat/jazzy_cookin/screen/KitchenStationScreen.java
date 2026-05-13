@@ -5,8 +5,10 @@ import java.util.List;
 import org.lwjgl.glfw.GLFW;
 
 import com.boaat.jazzy_cookin.block.entity.KitchenStationBlockEntity;
+import com.boaat.jazzy_cookin.kitchen.DishEvaluation;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
+import com.boaat.jazzy_cookin.kitchen.QualityBreakdown;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.StationUiProfile;
 import com.boaat.jazzy_cookin.kitchen.StationUiProfile.KitchenScreenLayout;
@@ -24,6 +26,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 public class KitchenStationScreen extends AbstractContainerScreen<KitchenStationMenu> {
     private static final int STOVE_BURNER_COUNT = 6;
@@ -772,8 +776,63 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
             }
         }
 
+        this.renderItemFlow(guiGraphics, left, top, partialTick);
         this.renderSimulationMetrics(guiGraphics, left, top);
         this.renderStatusLane(guiGraphics, left, top);
+    }
+
+    private void renderItemFlow(GuiGraphics guiGraphics, int left, int top, float partialTick) {
+        if (!this.shouldShowItemFlow()) {
+            return;
+        }
+
+        Slot outputSlot = this.menu.getSlot(this.menu.outputMenuSlotIndex());
+        int outputX = left + outputSlot.x + 8;
+        int outputY = top + outputSlot.y + 8;
+        float time = ((this.minecraft == null || this.minecraft.level == null ? 0L : this.minecraft.level.getGameTime()) + partialTick) / 18.0F;
+        int drawn = 0;
+        for (int slotIndex = 0; slotIndex < this.menu.activeInputCount(); slotIndex++) {
+            Slot inputSlot = this.menu.getSlot(slotIndex);
+            if (!inputSlot.hasItem()) {
+                continue;
+            }
+            this.drawFlowPath(guiGraphics, left + inputSlot.x + 8, top + inputSlot.y + 8, outputX, outputY, time + slotIndex * 0.19F);
+            drawn++;
+        }
+
+        Slot toolSlot = this.menu.getSlot(this.menu.toolMenuSlotIndex());
+        if (toolSlot.hasItem()) {
+            this.drawFlowPath(guiGraphics, left + toolSlot.x + 8, top + toolSlot.y + 8, outputX, outputY, time + 0.41F);
+            drawn++;
+        }
+
+        if (drawn == 0 && this.menu.simRecognizerId() > 0) {
+            LayoutRegion workspace = this.layout.workspaceRegion();
+            this.drawFlowPath(guiGraphics, left + workspace.centerX(), top + workspace.centerY(), outputX, outputY, time);
+        }
+    }
+
+    private boolean shouldShowItemFlow() {
+        return this.menu.simulationWorking()
+                || this.menu.maxProgress() > 0
+                || this.menu.simRecognizerId() > 0
+                || (this.isPanSimulation() && this.menu.simulationBatchPresent());
+    }
+
+    private void drawFlowPath(GuiGraphics guiGraphics, int startX, int startY, int endX, int endY, float phase) {
+        for (int marker = 1; marker < 6; marker++) {
+            float progress = marker / 6.0F;
+            int x = Math.round(startX + (endX - startX) * progress);
+            int y = Math.round(startY + (endY - startY) * progress);
+            guiGraphics.fill(x, y, x + 1, y + 1, 0x5546D9B6);
+        }
+        for (int pip = 0; pip < 3; pip++) {
+            float progress = phase + pip / 3.0F;
+            progress = progress - (float) Math.floor(progress);
+            int x = Math.round(startX + (endX - startX) * progress);
+            int y = Math.round(startY + (endY - startY) * progress);
+            guiGraphics.fill(x - 1, y - 1, x + 2, y + 2, 0xCC46D9B6);
+        }
     }
 
     private void renderApplianceBackground(GuiGraphics guiGraphics, int left, int top, StationUiProfile.Theme theme) {
@@ -1140,6 +1199,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
     }
 
     private Component simulationPreviewLine() {
+        QualityBreakdown outputBreakdown = this.outputQualityBreakdown();
+        if (outputBreakdown != null) {
+            return outputBreakdown.summary();
+        }
         if (this.menu.simRecognizerId() > 0) {
             return Component.translatable("screen.jazzycookin.sim_preview", this.menu.simulationPreviewName());
         }
@@ -1485,6 +1548,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (!this.hasPreviewContent() && !helper.getString().isEmpty()) {
             return helper;
         }
+        ItemStack output = this.outputStack();
+        if (!output.isEmpty()) {
+            return output.getHoverName();
+        }
         if (this.menu.simRecognizerId() > 0) {
             return this.menu.simulationPreviewName();
         }
@@ -1495,6 +1562,10 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         SimulationStatusView statusView = this.simulationStatusView();
         if (!this.hasPreviewContent()) {
             return Component.empty();
+        }
+        QualityBreakdown outputBreakdown = this.outputQualityBreakdown();
+        if (outputBreakdown != null) {
+            return outputBreakdown.summary();
         }
         if (this.menu.simRecognizerId() > 0) {
             return this.menu.currentMethod().displayName();
@@ -1512,7 +1583,31 @@ public class KitchenStationScreen extends AbstractContainerScreen<KitchenStation
         if (!helper.getString().isEmpty() && this.previewHeadline().getString().equals(helper.getString())) {
             return JazzyGuiRenderer.TEXT_SOFT;
         }
+        QualityBreakdown outputBreakdown = this.outputQualityBreakdown();
+        if (outputBreakdown != null) {
+            return gradeColor(outputBreakdown.finalScore());
+        }
         return this.menu.simRecognizerId() > 0 ? JazzyGuiRenderer.READY_TEXT : statusView.primaryColor();
+    }
+
+    private QualityBreakdown outputQualityBreakdown() {
+        ItemStack output = this.outputStack();
+        Level level = this.minecraft == null ? null : this.minecraft.level;
+        return !output.isEmpty() && level != null ? DishEvaluation.evaluateStack(output, level) : null;
+    }
+
+    private ItemStack outputStack() {
+        return this.menu.getSlot(this.menu.outputMenuSlotIndex()).getItem();
+    }
+
+    private static int gradeColor(float score) {
+        if (score >= 0.80F) {
+            return JazzyGuiRenderer.READY_TEXT;
+        }
+        if (score >= 0.45F) {
+            return JazzyGuiRenderer.ACCENT_WARM;
+        }
+        return JazzyGuiRenderer.BLOCKED_TEXT;
     }
 
     private Component visibleHelperText() {

@@ -8,6 +8,7 @@ import com.boaat.jazzy_cookin.menu.KitchenStorageMenu;
 import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -15,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -23,7 +25,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class KitchenStorageBlockEntity extends BlockEntity implements Container, MenuProvider {
+public class KitchenStorageBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider {
     private static final int PANTRY_CONTAINER_SIZE = 54;
     private static final int COLD_STORAGE_CONTAINER_SIZE = 18;
 
@@ -185,6 +187,25 @@ public class KitchenStorageBlockEntity extends BlockEntity implements Container,
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
         return StorageRules.canStore(this.getStorageType(), stack);
+    }
+
+    @Override
+    public int[] getSlotsForFace(Direction side) {
+        int[] slots = new int[this.items.size()];
+        for (int slot = 0; slot < slots.length; slot++) {
+            slots[slot] = slot;
+        }
+        return slots;
+    }
+
+    @Override
+    public boolean canPlaceItemThroughFace(int slot, ItemStack stack, Direction direction) {
+        return this.canPlaceItem(slot, stack);
+    }
+
+    @Override
+    public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction direction) {
+        return true;
     }
 
     @Override

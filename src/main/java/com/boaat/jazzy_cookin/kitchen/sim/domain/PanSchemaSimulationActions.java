@@ -19,6 +19,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScore;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
+import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Mth;
@@ -63,6 +64,9 @@ final class PanSchemaSimulationActions {
     }
 
     static int previewId(StationSimulationAccess access, FoodMatterData matter) {
+        if (com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.has(matter.traitMask(), com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.EGG)) {
+            return eggPreviewId(matter);
+        }
         return bestPanScore(access, matter, false)
                 .map(score -> score.schema().previewId())
                 .orElse(0);
@@ -70,6 +74,9 @@ final class PanSchemaSimulationActions {
 
     static boolean primaryAction(StationSimulationAccess access) {
         syncBatchFromInputs(access);
+        if (access.simulationBatch() != null && !readiness(access).allReady() && !canFinishEggEarly(access)) {
+            return true;
+        }
         return finish(access);
     }
 
@@ -81,22 +88,44 @@ final class PanSchemaSimulationActions {
         return mutatePanMatter(access, false);
     }
 
+    private static boolean canFinishEggEarly(StationSimulationAccess access) {
+        if (access.simulationBatch() == null) {
+            return false;
+        }
+        FoodMatterData matter = access.simulationBatch().matter();
+        return com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.has(matter.traitMask(), com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.EGG)
+                && isEggReadyEnoughToRemove(matter, readiness(access));
+    }
+
+    private static boolean isEggReadyEnoughToRemove(FoodMatterData matter, PanReadiness readiness) {
+        return readiness.progress() >= 0.45F || matter.timeInPan() >= 60 || matter.proteinSet() >= 0.45F;
+    }
+
     private static boolean finish(StationSimulationAccess access) {
         if (access.simulationLevel() == null || access.simulationBatch() == null) {
             return false;
         }
         PanReadiness readiness = readiness(access);
-        if (!readiness.hasCookableFood() || !readiness.allReady()) {
+        if (!readiness.hasCookableFood()) {
             return false;
         }
 
         FoodMatterData matter = access.simulationBatch().matter();
-        Optional<DishSchemaScore> score = bestPanScore(access, matter, true);
-        if (score.isEmpty()) {
+        if (com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.has(matter.traitMask(), com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.EGG)) {
+            if (!readiness.allReady() && !isEggReadyEnoughToRemove(matter, readiness)) {
+                return false;
+            }
+            return finishEggFallback(access, matter, readiness);
+        }
+        if (!readiness.allReady()) {
             return false;
         }
+        Optional<DishSchemaScore> score = bestPanScore(access, matter, true);
+        if (score.isEmpty()) {
+            return finishEggFallback(access, matter, readiness);
+        }
         if (!(score.get().resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
-            return false;
+            return finishEggFallback(access, matter, readiness);
         }
 
         FoodMatterData finalized = matter.withWorkingState(
@@ -126,16 +155,90 @@ final class PanSchemaSimulationActions {
             return false;
         }
 
+        removePanFoodInputs(access);
+        access.simulationMergeIntoSlot(access.outputSlot(), output);
+        access.simulationSetBatch(null);
+        access.simulationMarkChanged();
+        return true;
+    }
+
+    private static boolean finishEggFallback(StationSimulationAccess access, FoodMatterData matter, PanReadiness readiness) {
+        if (!com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.has(matter.traitMask(), com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.EGG)) {
+            return false;
+        }
+        KitchenIngredientItem resultItem = eggResultItem(matter);
+        FoodMatterData finalized = applyQualityPenalty(matter.withWorkingState(
+                matter.water(),
+                matter.aeration(),
+                matter.fragmentation(),
+                matter.cohesiveness(),
+                matter.proteinSet(),
+                matter.browning(),
+                matter.charLevel(),
+                matter.whiskWork(),
+                matter.stirCount(),
+                matter.flipCount(),
+                matter.timeInPan(),
+                Math.max(2, matter.processDepth()),
+                true
+        ), readiness);
+        ItemStack output = SimulationOutputFactory.createOutput(
+                resultItem,
+                access.simulationLevel().getGameTime(),
+                SimulationIngredientAnalysis.analyzeStacks(foodInputStacks(access), access.simulationLevel().getGameTime()),
+                finalized,
+                IngredientState.PAN_FRIED
+        );
+        if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
+            return false;
+        }
+        removePanFoodInputs(access);
+        access.simulationMergeIntoSlot(access.outputSlot(), output);
+        access.simulationSetBatch(null);
+        access.simulationMarkChanged();
+        return true;
+    }
+
+    private static KitchenIngredientItem eggResultItem(FoodMatterData matter) {
+        if (matter.flipCount() <= 0 && (matter.charLevel() >= 0.38F || matter.browning() >= 0.90F)) {
+            return JazzyItems.BURNT_EGGS.get();
+        }
+        if (matter.flipCount() >= 1) {
+            return JazzyItems.OMELET.get();
+        }
+        if (matter.stirCount() <= 1) {
+            return JazzyItems.SOFT_SCRAMBLED_EGGS.get();
+        }
+        if (matter.stirCount() >= 1 || matter.fragmentation() >= 0.34F) {
+            return JazzyItems.SCRAMBLED_EGGS.get();
+        }
+        return JazzyItems.SOFT_SCRAMBLED_EGGS.get();
+    }
+
+    private static int eggPreviewId(FoodMatterData matter) {
+        KitchenIngredientItem item = eggResultItem(matter);
+        if (item == JazzyItems.SOFT_SCRAMBLED_EGGS.get()) {
+            return 1;
+        }
+        if (item == JazzyItems.SCRAMBLED_EGGS.get()) {
+            return 2;
+        }
+        if (item == JazzyItems.OMELET.get()) {
+            return 3;
+        }
+        if (item == JazzyItems.BURNT_EGGS.get()) {
+            return 5;
+        }
+        return 0;
+    }
+
+    private static void removePanFoodInputs(StationSimulationAccess access) {
         for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
             ItemStack stack = access.simulationItem(slot);
             if (!stack.isEmpty() && stack.getItem() instanceof KitchenIngredientItem) {
                 access.simulationRemoveItem(slot, stack.getCount());
             }
         }
-        access.simulationMergeIntoSlot(access.outputSlot(), output);
-        access.simulationSetBatch(null);
-        access.simulationMarkChanged();
-        return true;
     }
 
     private static boolean mutatePanMatter(StationSimulationAccess access, boolean stir) {

@@ -326,6 +326,7 @@ public final class JazzyRecipeBookPlanner {
         for (KitchenSourceProfile profile : KitchenSourceProfile.values()) {
             addSourceGuide(builders, SourceGuideRegistry.guideFor(profile), profile.getSerializedName());
         }
+        addLegacyGuideAliases(builders);
 
         Map<OutputKey, Map<String, List<StepOption>>> groupedOptions = new HashMap<>();
         for (StepOptionBuilder builder : builders) {
@@ -483,17 +484,18 @@ public final class JazzyRecipeBookPlanner {
 
     private List<String> dependencyStepIds(OptionGroup group) {
         LinkedHashSet<String> dependencyIds = new LinkedHashSet<>();
-        StepOption canonicalOption = group.options().get(0);
-        for (OutputKey prerequisite : canonicalOption.prerequisites()) {
-            OptionGroup dependency = this.resolveGroup(prerequisite, group.chainKey());
-            if (dependency != null) {
-                dependencyIds.add(dependency.stepId());
+        for (StepOption option : group.options()) {
+            for (OutputKey prerequisite : option.prerequisites()) {
+                OptionGroup dependency = this.resolveGroup(prerequisite, group.chainKey());
+                if (dependency != null) {
+                    dependencyIds.add(dependency.stepId());
+                }
             }
-        }
-        for (Requirement requirement : canonicalOption.recursiveRequirements()) {
-            OptionGroup dependency = this.resolveGroup(requirement.dependencyKey(), group.chainKey());
-            if (dependency != null) {
-                dependencyIds.add(dependency.stepId());
+            for (Requirement requirement : option.recursiveRequirements()) {
+                OptionGroup dependency = this.resolveGroup(requirement.dependencyKey(), group.chainKey());
+                if (dependency != null) {
+                    dependencyIds.add(dependency.stepId());
+                }
             }
         }
         return List.copyOf(dependencyIds);
@@ -506,6 +508,14 @@ public final class JazzyRecipeBookPlanner {
         }
         if (preferredChainKey != null && !preferredChainKey.isBlank() && groups.containsKey(preferredChainKey)) {
             return groups.get(preferredChainKey);
+        }
+        if (preferredChainKey != null && !preferredChainKey.isBlank()) {
+            String schemaAlias = preferredChainKey.startsWith("schema:")
+                    ? preferredChainKey.substring("schema:".length())
+                    : "schema:" + preferredChainKey;
+            if (groups.containsKey(schemaAlias)) {
+                return groups.get(schemaAlias);
+            }
         }
         if (groups.size() == 1) {
             return groups.values().iterator().next();
@@ -1063,6 +1073,97 @@ public final class JazzyRecipeBookPlanner {
         }
     }
 
+    private static void addLegacyGuideAliases(List<StepOptionBuilder> builders) {
+        addSimpleProcessAlias(builders, "savory_pie", JazzyItems.PIE_DOUGH.get(), IngredientState.SMOOTH_DOUGH);
+        addSimpleProcessAlias(builders, "tray_pie", JazzyItems.PIE_DOUGH.get(), IngredientState.SMOOTH_DOUGH);
+
+        addSimpleProcessAlias(builders, "pan_seared_chicken", JazzyItems.SEASONING_BLEND.get(), IngredientState.FINE_POWDER);
+        addSimpleProcessAlias(builders, "golden_rice", JazzyItems.SEASONING_BLEND.get(), IngredientState.FINE_POWDER);
+        addSimpleProcessAlias(builders, "fried_jalapeno_bites", JazzyItems.SEASONING_BLEND.get(), IngredientState.FINE_POWDER);
+
+        Item bread = JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get();
+        addSimpleProcessAlias(builders, "jam_on_toast", bread, IngredientState.BAKED_BREAD, "legacy:jam_on_toast:oven");
+        addSimpleProcessAlias(builders, "jam_on_toast", bread, IngredientState.BAKED_BREAD, "legacy:jam_on_toast:stove");
+
+        Item breadcrumbs = JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get();
+        OutputKey crumbKey = RecipeBookDisplayUtil.outputKey(breadcrumbs, IngredientState.COARSE_POWDER);
+        builders.add(simpleBuilder(
+                "legacy:breadcrumbs:process",
+                StepKind.PROCESS,
+                "breadcrumbs",
+                breadcrumbs,
+                IngredientState.COARSE_POWDER,
+                List.of()
+        ));
+        builders.add(simpleBuilder(
+                "legacy:breadcrumbs:pack",
+                StepKind.PLATE,
+                "breadcrumbs",
+                JazzyItems.PACKED_BREADCRUMBS.get(),
+                IngredientState.COARSE_POWDER,
+                List.of(crumbKey)
+        ));
+
+        OutputKey spaghettiPrep = RecipeBookDisplayUtil.outputKey(JazzyItems.SPAGHETTI_POMODORO_PREP.get(), IngredientState.MIXED);
+        builders.add(simpleBuilder(
+                "legacy:spaghetti_pomodoro:prep",
+                StepKind.PROCESS,
+                "spaghetti_pomodoro",
+                JazzyItems.SPAGHETTI_POMODORO_PREP.get(),
+                IngredientState.MIXED,
+                List.of()
+        ));
+        builders.add(simpleBuilder(
+                "legacy:spaghetti_pomodoro:plate",
+                StepKind.PLATE,
+                "spaghetti_pomodoro",
+                JazzyItems.SPAGHETTI_POMODORO.get(),
+                IngredientState.PLATED,
+                List.of(spaghettiPrep)
+        ));
+    }
+
+    private static void addSimpleProcessAlias(List<StepOptionBuilder> builders, String chainKey, Item item, IngredientState state) {
+        addSimpleProcessAlias(builders, chainKey, item, state, "legacy:" + chainKey + ":" + BuiltInRegistries.ITEM.getKey(item).getPath());
+    }
+
+    private static void addSimpleProcessAlias(List<StepOptionBuilder> builders, String chainKey, Item item, IngredientState state, String optionId) {
+        builders.add(simpleBuilder(optionId, StepKind.PROCESS, chainKey, item, state, List.of()));
+    }
+
+    private static StepOptionBuilder simpleBuilder(
+            String optionId,
+            StepKind kind,
+            String chainKey,
+            Item item,
+            IngredientState state,
+            List<OutputKey> prerequisites
+    ) {
+        return new StepOptionBuilder(
+                optionId,
+                kind,
+                chainKey,
+                RecipeBookDisplayUtil.outputKey(item, state),
+                RecipeBookDisplayUtil.displayStack(new ItemStack(item), state, 1),
+                List.of(),
+                prerequisites,
+                null,
+                null,
+                null,
+                List.of(),
+                false,
+                0,
+                HeatLevel.OFF,
+                HeatLevel.OFF,
+                HeatLevel.OFF,
+                false,
+                false,
+                false,
+                ProcessMode.ACTIVE,
+                List.of("Legacy kitchen guide.")
+        );
+    }
+
     private static List<String> sourceNotes(SourceGuideRegistry.SourceGuide guide) {
         List<String> notes = new ArrayList<>();
         notes.add(guide.summary());
@@ -1124,7 +1225,7 @@ public final class JazzyRecipeBookPlanner {
         return groups.values().stream()
                 .flatMap(group -> group.options().stream())
                 .map(StepOption::kind)
-                .anyMatch(kind -> kind == StepKind.PROCESS || kind == StepKind.PLATE);
+                .anyMatch(kind -> kind == StepKind.CRAFT || kind == StepKind.SOURCE || kind == StepKind.PROCESS || kind == StepKind.PLATE);
     }
 
     private static int stateRank(IngredientState state) {

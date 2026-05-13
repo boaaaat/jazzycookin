@@ -134,7 +134,31 @@ public final class DishSchemaScorer {
         }
         score = Mth.clamp(score + optionalRoleBonus, 0.0F, 1.0F);
         float cap = scoreCap(schema, context, ingredientEvaluation);
+        boolean completeLineage = hasCompleteStepLineage(schema, context.attempt());
+        if (schema.requiredTechniques().contains(DishTechnique.PAN_FRIED)) {
+            if (context.state() == com.boaat.jazzy_cookin.kitchen.IngredientState.PAN_FRIED
+                    && matter.timeInPan() > 0
+                    && (matter.proteinSet() >= 0.45F || matter.browning() >= 0.08F)) {
+                score = Mth.clamp(score + 0.14F, 0.0F, 1.0F);
+            } else if (context.state() != com.boaat.jazzy_cookin.kitchen.IngredientState.PAN_FRIED && matter.timeInPan() <= 0) {
+                score *= 0.65F;
+            }
+        }
+        if (context.attempt() != null && schema.key().equals(context.attempt().schemaKey()) && !schema.steps().isEmpty()) {
+            float equipmentFit = equipmentScore(schema, context.attempt());
+            if (equipmentFit < 0.50F) {
+                score = Math.max(0.0F, score - 0.08F);
+            } else if (equipmentFit > 0.95F) {
+                score = Mth.clamp(score + 0.03F, 0.0F, 1.0F);
+            }
+        }
+        if (completeLineage && ingredientEvaluation.score() >= 0.95F) {
+            score = Math.max(score, Math.min(1.0F, schema.finalizeThreshold() + 0.03F));
+        }
         score = Math.min(score, cap);
+        if (completeLineage && ingredientEvaluation.score() >= 0.95F) {
+            score = Math.max(score, Math.min(1.0F, schema.finalizeThreshold() + 0.03F));
+        }
         return Optional.of(new DishSchemaScore(
                 schema,
                 () -> item,
@@ -151,6 +175,23 @@ public final class DishSchemaScorer {
                 ingredientEvaluation.score(),
                 cap
         ));
+    }
+
+    private static boolean hasCompleteStepLineage(DishSchemaDefinition schema, DishAttemptData attempt) {
+        if (attempt == null || !schema.key().equals(attempt.schemaKey()) || schema.steps().isEmpty()) {
+            return false;
+        }
+        for (DishStepRequirement step : schema.steps()) {
+            if (!attempt.hasStep(step.id())) {
+                return false;
+            }
+            for (String prerequisite : step.prerequisites()) {
+                if (!attempt.hasStep(prerequisite)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static float scoreCap(DishSchemaDefinition schema, DishAttemptContext context, IngredientEvaluation ingredients) {
@@ -214,6 +255,9 @@ public final class DishSchemaScorer {
             } else if (thermalScore < 0.45F) {
                 cap = Math.min(cap, 0.78F);
             }
+        }
+        if (hasCompleteStepLineage(schema, attempt) && !ingredients.missingCore() && !ingredients.unmeasured()) {
+            cap = Math.max(cap, 0.95F);
         }
         return Mth.clamp(cap, 0.0F, 1.0F);
     }
@@ -364,7 +408,7 @@ public final class DishSchemaScorer {
         }
         float techniqueFit = total / schema.requiredTechniques().size();
         float equipmentFit = equipmentScore(schema, context.attempt());
-        return Mth.clamp(techniqueFit * 0.78F + equipmentFit * 0.22F, 0.0F, 1.0F);
+        return Mth.clamp(techniqueFit * 0.60F + equipmentFit * 0.40F, 0.0F, 1.0F);
     }
 
     private static float equipmentScore(DishSchemaDefinition schema, DishAttemptData attempt) {
@@ -431,7 +475,7 @@ public final class DishSchemaScorer {
     }
 
     private static float equipmentScoreFor(DishStepRequirement step, String stationName, String toolName) {
-        float stationScore = step.station().getSerializedName().equals(stationName) ? 1.0F : 0.25F;
+        float stationScore = step.station().getSerializedName().equals(stationName) ? 1.0F : 0.0F;
         float toolScore = toolScore(step, toolName);
         return Mth.clamp(stationScore * 0.55F + toolScore * 0.45F, 0.0F, 1.0F);
     }
@@ -449,9 +493,9 @@ public final class DishSchemaScorer {
                     return index == 0 ? 1.0F : 0.88F;
                 }
             }
-            return 0.30F;
+            return 0.08F;
         }
-        return step.tool().filter(tool -> tool.getSerializedName().equals(toolName)).isPresent() ? 1.0F : 0.30F;
+        return step.tool().filter(tool -> tool.getSerializedName().equals(toolName)).isPresent() ? 1.0F : 0.08F;
     }
 
     private record EquipmentEvent(String station, String tool) {

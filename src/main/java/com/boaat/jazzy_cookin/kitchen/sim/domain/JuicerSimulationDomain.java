@@ -5,8 +5,10 @@ import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
+import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.world.item.ItemStack;
 
@@ -52,9 +54,7 @@ public final class JuicerSimulationDomain implements StationSimulationDomain {
         if (output.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), output)) {
             return false;
         }
-        access.simulationSetBatch(new CookingBatchState(previewMatter(access)));
-        access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, 58), true);
-        access.simulationMarkChanged();
+        finish(access);
         return true;
     }
 
@@ -90,6 +90,10 @@ public final class JuicerSimulationDomain implements StationSimulationDomain {
         }
         CompositionalSimulationSupport.removeAllFoodInputs(access);
         access.simulationMergeIntoSlot(access.outputSlot(), output);
+        ItemStack byproduct = JazzyItems.FRUIT_PULP.get().createStack(1, access.simulationLevel().getGameTime());
+        if (access.simulationCanAcceptStack(access.byproductSlot(), byproduct)) {
+            access.simulationMergeIntoSlot(access.byproductSlot(), byproduct);
+        }
         access.simulationSetBatch(null);
         access.simulationSetProgress(0, 0, false);
         access.simulationMarkChanged();
@@ -103,6 +107,16 @@ public final class JuicerSimulationDomain implements StationSimulationDomain {
         FoodMatterData matter = previewMatter(access);
         if (matter == null) {
             return ItemStack.EMPTY;
+        }
+        if (analysis.hasTrait(FoodTrait.FRUIT) && analysis.hasTrait(FoodTrait.ACIDIC)) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    JazzyItems.LEMON_JUICE.get(),
+                    IngredientState.FRESH_JUICE,
+                    ""
+            );
         }
         return CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, JuicerSimulationDomain::isJuiceSchema);
     }

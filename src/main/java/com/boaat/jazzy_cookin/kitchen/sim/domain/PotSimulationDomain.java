@@ -12,6 +12,7 @@ import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishRecognitionResult;
 import com.boaat.jazzy_cookin.kitchen.sim.recognition.DishSchema;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishCategory;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
@@ -33,7 +34,7 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         }
         ToolProfile tool = ToolProfile.fromStack(access.simulationItem(access.toolSlot()));
         return switch (tool) {
-            case POT, SAUCEPAN, STOCK_POT -> access.simulationActive() || CompositionalSimulationSupport.hasFoodInputs(access);
+            case NONE, POT, SAUCEPAN, STOCK_POT -> access.simulationActive() || CompositionalSimulationSupport.hasFoodInputs(access);
             default -> false;
         };
     }
@@ -53,6 +54,8 @@ public final class PotSimulationDomain implements StationSimulationDomain {
             return SimulationSnapshot.inactive(executionMode);
         }
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
+        SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeInputs(access);
+        int directPreviewId = directLegacyPreviewId(access, analysis, matter);
         int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(matter, PotSimulationDomain::isPotSchema);
         return new SimulationSnapshot(
                 executionMode,
@@ -66,7 +69,7 @@ public final class PotSimulationDomain implements StationSimulationDomain {
                 Math.round(matter.charLevel() * 100.0F),
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                schemaPreviewId != 0 ? schemaPreviewId : preview != null ? preview.previewId() : 0
+                directPreviewId != 0 ? directPreviewId : schemaPreviewId != 0 ? schemaPreviewId : preview != null ? preview.previewId() : 0
         );
     }
 
@@ -84,7 +87,8 @@ public final class PotSimulationDomain implements StationSimulationDomain {
                 SimulationIngredientAnalysis.analyzeInputs(access),
                 0.0F
         )));
-        access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, 180), true);
+        int baseDuration = preview.is(JazzyItems.GLAZED_CHICKEN_PREP.get()) ? 150 : 180;
+        access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, baseDuration), true);
         access.simulationMarkChanged();
         return true;
     }
@@ -133,11 +137,76 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         if (matter == null) {
             return ItemStack.EMPTY;
         }
+        ItemStack directOutput = directLegacyOutput(access, analysis, matter);
+        if (!directOutput.isEmpty()) {
+            return directOutput;
+        }
         ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, PotSimulationDomain::isPotSchema);
         if (!schemaOutput.isEmpty()) {
             return schemaOutput;
         }
         return CompositionalSimulationSupport.recognizedPreparedOutput(access, analysis, matter);
+    }
+
+    private static ItemStack directLegacyOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter) {
+        if (hasInput(access, JazzyItems.ingredient(IngredientId.CHICKPEAS).get())
+                && hasInput(access, JazzyItems.ingredient(IngredientId.TOMATOES).get())
+                && hasInput(access, JazzyItems.ingredient(IngredientId.ONIONS).get())
+                && hasInput(access, JazzyItems.ingredient(IngredientId.GARLIC).get())
+                && hasInput(access, JazzyItems.ingredient(IngredientId.CURRY_POWDER).get())) {
+            return CompositionalSimulationSupport.directPreparedOutput(access, analysis, matter, JazzyItems.CHANA_MASALA_PREP.get(), IngredientState.SIMMERED, "chana_masala");
+        }
+        if (hasInput(access, JazzyItems.ingredient(IngredientId.PASTA).get())
+                && hasInput(access, JazzyItems.ingredient(IngredientId.BLACK_BEANS).get())
+                && hasInput(access, JazzyItems.ingredient(IngredientId.CANNED_TOMATOES).get())
+                && (hasInput(access, JazzyItems.ingredient(IngredientId.STOCK).get()) || hasInput(access, JazzyItems.ingredient(IngredientId.BROTH).get()))
+                && hasInput(access, JazzyItems.ingredient(IngredientId.GARLIC).get())) {
+            return CompositionalSimulationSupport.directPreparedOutput(access, analysis, matter, JazzyItems.PASTA_E_FAGIOLI_PREP.get(), IngredientState.SIMMERED, "pasta_e_fagioli");
+        }
+        if (hasInput(access, JazzyItems.ingredient(IngredientId.LENTILS).get())
+                && (hasInput(access, JazzyItems.ingredient(IngredientId.STOCK).get()) || hasInput(access, JazzyItems.ingredient(IngredientId.BROTH).get()))
+                && hasInput(access, JazzyItems.ingredient(IngredientId.ONIONS).get())) {
+            return CompositionalSimulationSupport.directPreparedOutput(access, analysis, matter, JazzyItems.LENTIL_SOUP_PREP.get(), IngredientState.SIMMERED, "lentil_soup");
+        }
+        if ((hasInput(access, JazzyItems.ingredient(IngredientId.CHICKEN).get()) || analysis.hasTrait(com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.CHICKEN))
+                && (hasInput(access, JazzyItems.LEMON_JUICE.get()) || hasInput(access, JazzyItems.JARRED_LEMON_JUICE.get()) || analysis.hasTrait(com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.ACIDIC))
+                && (hasInput(access, JazzyItems.ingredient(IngredientId.BUTTER).get()) || analysis.hasTrait(com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.FAT))
+                && (hasInput(access, JazzyItems.ingredient(IngredientId.WHITE_SUGAR).get()) || analysis.hasTrait(com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.SWEETENER))) {
+            return CompositionalSimulationSupport.directPreparedOutput(access, analysis, matter, JazzyItems.GLAZED_CHICKEN_PREP.get(), IngredientState.GLAZED, "glazed_chicken_prep");
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private static boolean hasInput(StationSimulationAccess access, net.minecraft.world.item.Item item) {
+        for (int slot = access.inputStart(); slot <= access.inputEnd(); slot++) {
+            if (access.simulationItem(slot).is(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int directLegacyPreviewId(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter) {
+        ItemStack directOutput = directLegacyOutput(access, analysis, matter);
+        if (directOutput.isEmpty()) {
+            return 0;
+        }
+        String schemaKey = com.boaat.jazzy_cookin.kitchen.KitchenStackUtil.dishAttempt(directOutput).schemaKey();
+        if (schemaKey.isBlank()) {
+            return 0;
+        }
+        return DishSchemaScorer.schemas().stream()
+                .filter(schema -> schema.key().equals(schemaKey))
+                .findFirst()
+                .map(DishSchemaDefinition::previewId)
+                .orElse(0);
+    }
+
+    private static boolean hasSalt(SimulationIngredientAnalysis analysis) {
+        return analysis.hasTrait(com.boaat.jazzy_cookin.kitchen.sim.FoodTrait.SALT)
+                || analysis.has(JazzyItems.ingredient(IngredientId.TABLE_SALT).get())
+                || analysis.has(JazzyItems.ingredient(IngredientId.SEA_SALT).get())
+                || analysis.has(JazzyItems.ingredient(IngredientId.KOSHER_SALT).get());
     }
 
     private static FoodMatterData previewMatter(StationSimulationAccess access) {

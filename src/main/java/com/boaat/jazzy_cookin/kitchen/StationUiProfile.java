@@ -33,8 +33,6 @@ public record StationUiProfile(
     private static final int MIN_HEIGHT = 244;
     private static final int MAX_WIDTH = 384;
     private static final int MAX_HEIGHT = 324;
-    private static final int VANILLA_WIDTH = 176;
-    private static final int VANILLA_HEIGHT = 222;
     private static final int SLOT_SIZE = 18;
 
     public StationUiProfile {
@@ -314,8 +312,8 @@ public record StationUiProfile(
         return buildProfile(
                 this.stationType,
                 this.theme,
-                VANILLA_WIDTH,
-                VANILLA_HEIGHT,
+                resolveWidth(screenWidth, this.width),
+                resolveHeight(screenHeight, this.height),
                 this.inputPositions,
                 this.toolPosition,
                 this.outputPosition,
@@ -597,52 +595,66 @@ public record StationUiProfile(
             LayoutRegion byproductRegion,
             LayoutRegion metricRegion
     ) {
-        width = VANILLA_WIDTH;
-        height = VANILLA_HEIGHT;
         StationCapacityProfile resolvedCapacity = StationCapacityProfile.forStation(stationType);
-        int inventoryStartY = 140;
-        int hotbarY = 198;
-        LayoutRegion inventoryShelf = new LayoutRegion(0, 126, 176, 96);
+        int inventoryStartX = centeredInventoryStart(width);
+        int inventoryStartY = Math.max(150, height - 86);
+        int hotbarY = inventoryStartY + 58;
+        LayoutRegion inventoryShelf = new LayoutRegion(inventoryStartX - 8, inventoryStartY - 14, 178, 96);
 
-        LayoutRegion resolvedWorkspaceRegion = new LayoutRegion(8, 18, 122, 58);
-        LayoutRegion resolvedPreviewRegion = new LayoutRegion(134, 18, 34, 58);
-        LayoutRegion resolvedMetricRegion = new LayoutRegion(8, 80, 160, 14);
-        LayoutRegion controlStrip = new LayoutRegion(8, 100, 160, 22);
+        int contentTop = 34;
+        int sideWidth = width >= 330 ? 108 : 94;
+        int sideX = width - sideWidth - 14;
+        int controlHeight = 22;
+        int controlY = Math.max(112, inventoryShelf.y() - controlHeight - 6);
+        int metricHeight = clamp(controlY - contentTop - 70, 18, 42);
+        int previewHeight = clamp(controlY - contentTop - metricHeight - 10, 58, 82);
+        LayoutRegion resolvedPreviewRegion = new LayoutRegion(sideX, contentTop, sideWidth, previewHeight);
+        LayoutRegion resolvedMetricRegion = new LayoutRegion(sideX, resolvedPreviewRegion.bottom() + 6, sideWidth, metricHeight);
+        LayoutRegion controlStrip = new LayoutRegion(14, controlY, width - 28, controlHeight);
+        LayoutRegion resolvedWorkspaceRegion = new LayoutRegion(14, contentTop, Math.max(128, sideX - 28), Math.max(70, controlY - contentTop - 4));
 
-        LayoutRegion resolvedToolRegion = stationType.usesTools() ? new LayoutRegion(108, 32, 26, 26) : null;
-        Point[] resolvedInputs = vanillaInputSlots(resolvedCapacity.inputCount());
-        Point resolvedToolPoint = new Point(113, 37);
-        Point resolvedOutputPoint = new Point(144, 30);
-        Point resolvedByproductPoint = new Point(144, 56);
+        int toolWidth = stationType.usesFuel() ? 30 : 26;
+        LayoutRegion resolvedToolRegion = stationType.usesTools() || stationType.usesFuel()
+                ? new LayoutRegion(resolvedWorkspaceRegion.right() - toolWidth - 8, resolvedWorkspaceRegion.y() + resolvedWorkspaceRegion.height() / 2 - 13, toolWidth, 26)
+                : null;
+        Point[] resolvedInputs = arrangeInputSlots(resolvedCapacity.inputCount(), resolvedWorkspaceRegion, resolvedToolRegion);
+        Point resolvedToolPoint = resolvedToolRegion == null ? new Point(resolvedWorkspaceRegion.right() - 30, resolvedWorkspaceRegion.centerY() - 8) : slotPoint(resolvedToolRegion);
+        Point[] previewSlots = previewSlotPoints(resolvedPreviewRegion);
+        Point resolvedOutputPoint = previewSlots[0];
+        Point resolvedByproductPoint = previewSlots[1];
         LayoutRegion resolvedOutputRegion = slotFrame(resolvedOutputPoint);
         LayoutRegion resolvedByproductRegion = slotFrame(resolvedByproductPoint);
 
-        LayoutRegion titleRegion = new LayoutRegion(8, 6, 88, 10);
-        LayoutRegion chipRegion = new LayoutRegion(98, 6, 70, 12);
-        LayoutRegion previewStatusRegion = new LayoutRegion(108, 80, 60, 14);
-        LayoutRegion inventoryLabelRegion = new LayoutRegion(8, 128, 96, 10);
-        LayoutRegion helperRegion = new LayoutRegion(8, 95, 160, 8);
-        int primaryX = 126;
-        int primaryWidth = 42;
-        int auxWidth = 26;
-        int secondaryX = stationType == StationType.STOVE ? 98 : 82;
-        int tertiaryX = stationType == StationType.STOVE ? 70 : 110;
-        int actionClusterLeft = stationType == StationType.STOVE ? tertiaryX : primaryX;
-        LayoutRegion actionCluster = new LayoutRegion(actionClusterLeft, 102, controlStrip.right() - actionClusterLeft, 18);
-        LayoutRegion controlLabel = new LayoutRegion(52, 105, 70, 10);
-        LayoutRegion statusLane = new LayoutRegion(12, 82, 152, 10);
+        LayoutRegion chipRegion = new LayoutRegion(width - 84, 9, 70, 12);
+        LayoutRegion titleRegion = new LayoutRegion(14, 9, Math.max(64, chipRegion.x() - 18), 10);
+        LayoutRegion previewStatusRegion = new LayoutRegion(resolvedPreviewRegion.x() + 8, resolvedPreviewRegion.y() + 8,
+                Math.max(30, resolvedPreviewRegion.width() - 16), 14);
+        LayoutRegion inventoryLabelRegion = new LayoutRegion(inventoryStartX, inventoryStartY - 12, 96, 10);
+        LayoutRegion helperRegion = new LayoutRegion(resolvedWorkspaceRegion.x() + 8, resolvedWorkspaceRegion.bottom() - 13,
+                Math.max(80, resolvedWorkspaceRegion.width() - 16), 8);
+        int primaryWidth = Math.max(46, Math.min(60, controlStrip.width() / 5));
+        int auxWidth = Math.max(24, Math.min(34, controlStrip.width() / 8));
+        int primaryX = controlStrip.right() - primaryWidth;
+        int secondaryX = primaryX - auxWidth - 4;
+        int tertiaryX = secondaryX - auxWidth - 4;
+        int actionClusterLeft = stationType == StationType.STOVE ? tertiaryX : Math.min(primaryX, controlStrip.x() + 68);
+        LayoutRegion actionCluster = new LayoutRegion(actionClusterLeft, controlStrip.y() + 2, controlStrip.right() - actionClusterLeft, 18);
+        LayoutRegion controlLabel = new LayoutRegion(controlStrip.x() + 48, controlStrip.y() + 5,
+                Math.max(42, actionCluster.x() - controlStrip.x() - 54), 10);
+        LayoutRegion statusLane = new LayoutRegion(resolvedMetricRegion.x() + 6, resolvedMetricRegion.y() + 4,
+                Math.max(40, resolvedMetricRegion.width() - 12), 10);
 
-        int actionY = 102;
+        int actionY = controlStrip.y() + 2;
         ActionWidgetSpec primaryAction = button(primaryX, actionY, primaryWidth, 18);
         ActionWidgetSpec secondaryAction = button(secondaryX, actionY, auxWidth, 18);
         ActionWidgetSpec tertiaryAction = button(tertiaryX, actionY, auxWidth, 18);
-        ActionWidgetSpec lowHeatAction = button(8, actionY, 18, 18);
-        ActionWidgetSpec mediumHeatAction = button(28, actionY, 18, 18);
-        ActionWidgetSpec highHeatAction = button(48, actionY, 18, 18);
-        ActionWidgetSpec lowerControlAction = button(8, actionY, 18, 18);
-        ActionWidgetSpec raiseControlAction = button(30, actionY, 18, 18);
+        ActionWidgetSpec lowHeatAction = button(controlStrip.x(), actionY, 18, 18);
+        ActionWidgetSpec mediumHeatAction = button(controlStrip.x() + 20, actionY, 18, 18);
+        ActionWidgetSpec highHeatAction = button(controlStrip.x() + 40, actionY, 18, 18);
+        ActionWidgetSpec lowerControlAction = button(controlStrip.x(), actionY, 18, 18);
+        ActionWidgetSpec raiseControlAction = button(controlStrip.x() + 22, actionY, 18, 18);
         LayoutRegion controlChip = new LayoutRegion(controlLabel.x(), actionY, controlLabel.width(), 18);
-        LayoutRegion ovenField = new LayoutRegion(50, actionY, 36, 18);
+        LayoutRegion ovenField = new LayoutRegion(controlStrip.x() + 44, actionY, 42, 18);
 
         KitchenScreenLayout layout = new KitchenScreenLayout(
                 family,
@@ -684,7 +696,7 @@ public record StationUiProfile(
                 resolvedToolPoint,
                 resolvedOutputPoint,
                 resolvedByproductPoint,
-                8,
+                inventoryStartX,
                 inventoryStartY,
                 hotbarY,
                 layout

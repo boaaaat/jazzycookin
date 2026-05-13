@@ -90,6 +90,9 @@ public final class KitchenStackUtil {
                 0,
                 isFinalizedServing(stack)
         );
+        if (stack.is(com.boaat.jazzy_cookin.registry.JazzyItems.FREEZE_DRIED_MEAL_PACK.get())) {
+            created = created.withPreservationState(0.92F, Math.min(created.oxidation(), 0.04F), Math.min(created.microbialLoad(), 0.02F));
+        }
         setFoodMatter(stack, created, gameTime);
         return created;
     }
@@ -231,7 +234,11 @@ public final class KitchenStackUtil {
         if (state != null) {
             setFoodState(stack, state);
         }
-        setFoodMatter(stack, FoodMaterialProfiles.createCanonicalMatter(stack, gameTime, isFinalizedServing(stack)), gameTime);
+        FoodMatterData matter = FoodMaterialProfiles.createCanonicalMatter(stack, gameTime, isFinalizedServing(stack));
+        if (stack.is(JazzyItems.FREEZE_DRIED_MEAL_PACK.get()) && matter != null) {
+            matter = matter.withPreservationState(0.92F, Math.min(matter.oxidation(), 0.04F), Math.min(matter.microbialLoad(), 0.02F));
+        }
+        setFoodMatter(stack, matter, gameTime);
     }
 
     public static boolean isWorkedFood(ItemStack stack) {
@@ -458,6 +465,23 @@ public final class KitchenStackUtil {
                 matter.createdTick(),
                 isFinalizedServing(stack)
         );
+        if (matter.createdTick() >= Long.MAX_VALUE / 8L) {
+            return fallback.withMetrics(
+                    fallback.state(),
+                    matter.createdTick(),
+                    1.0F,
+                    1.0F,
+                    fallback.flavor(),
+                    fallback.texture(),
+                    fallback.structure(),
+                    fallback.moisture(),
+                    fallback.purity(),
+                    fallback.aeration(),
+                    fallback.processDepth(),
+                    fallback.nourishment(),
+                    fallback.enjoyment()
+            );
+        }
 
         if (!matter.finalizedServing()
                 && matter.processDepth() == 0

@@ -38,5 +38,9 @@ public class KitchenToolItem extends Item {
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         tooltipComponents.add(Component.translatable("tooltip.jazzycookin.tool_profile", Component.translatable("tool.jazzycookin." + this.profile.getSerializedName()))
                 .withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.translatable("tooltip.jazzycookin.tool_quality_bonus", Math.round(this.qualityBonus * 100.0F))
+                .withStyle(ChatFormatting.GOLD));
+        tooltipComponents.add(Component.translatable("tooltip.jazzycookin.tool_speed_multiplier", Math.round(this.speedMultiplier * 100.0F))
+                .withStyle(ChatFormatting.AQUA));
     }
 }

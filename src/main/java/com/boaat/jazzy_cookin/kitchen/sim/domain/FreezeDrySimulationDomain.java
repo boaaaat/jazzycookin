@@ -4,8 +4,10 @@ import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
+import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.station.StationSimulationAccess;
+import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.world.item.ItemStack;
 
@@ -65,6 +67,26 @@ public final class FreezeDrySimulationDomain implements StationSimulationDomain 
         if (matter == null) {
             return ItemStack.EMPTY;
         }
+        if (analysis.has(JazzyItems.PORTIONED_MEAL.get()) || analysis.hasTrait(FoodTrait.PROTEIN)) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter.withPreservationState(0.92F, Math.min(matter.oxidation(), 0.04F), Math.min(matter.microbialLoad(), 0.02F)),
+                    JazzyItems.FREEZE_DRIED_MEAL.get(),
+                    IngredientState.FREEZE_DRIED,
+                    "freeze_dried_meal"
+            );
+        }
+        if (analysis.hasTrait(FoodTrait.FRUIT)) {
+            return CompositionalSimulationSupport.directPreparedOutput(
+                    access,
+                    analysis,
+                    matter,
+                    JazzyItems.PACKED_FREEZE_DRY_APPLES.get(),
+                    IngredientState.FREEZE_DRIED,
+                    ""
+            );
+        }
         return CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, FreezeDrySimulationDomain::isFreezeDrySchema);
     }
 
@@ -74,7 +96,8 @@ public final class FreezeDrySimulationDomain implements StationSimulationDomain 
             return null;
         }
         return CompositionalSimulationSupport.composeMatter(access, analysis, IngredientState.FREEZE_DRIED, false, 0.90F,
-                -0.70F, 0.02F, 0.34F, 0.26F, 0.0F, 0.0F, 0.0F);
+                -0.70F, 0.02F, 0.34F, 0.26F, 0.0F, 0.0F, 0.0F)
+                .withPreservationState(0.92F, 0.02F, 0.01F);
     }
 
     private static boolean isFreezeDrySchema(com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition schema) {

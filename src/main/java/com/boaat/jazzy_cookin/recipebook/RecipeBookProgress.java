@@ -9,6 +9,7 @@ import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
+import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -115,7 +116,7 @@ public final class RecipeBookProgress {
     }
 
     public static boolean recordKitchenOutput(ServerPlayer player, ItemStack outputStack, String chainKey) {
-        return recordOutput(player, RecipeBookDisplayUtil.outputKeyFromActualStack(outputStack, player.level().getGameTime()), chainKey);
+        return recordOutput(player, outputStack, chainKey);
     }
 
     public static boolean reconcilePinnedGuide(ServerPlayer player) {
@@ -146,6 +147,45 @@ public final class RecipeBookProgress {
         return storeFocusedStepId(player, resolvedFocusedStepId) || changed;
     }
 
+    private static boolean recordOutput(ServerPlayer player, ItemStack outputStack, String chainKey) {
+        Optional<JazzyRecipeBookSelection> selection = selection(player);
+        if (selection.isEmpty()) {
+            return false;
+        }
+
+        JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(player.level());
+        Optional<JazzyRecipeBookPlanner.Plan> optionalPlan = planner.planFor(selection.get());
+        if (optionalPlan.isEmpty()) {
+            return false;
+        }
+
+        JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
+        Set<String> completed = completedSteps(player);
+        JazzyRecipeBookPlanner.PlanStep matchedStep = null;
+        for (JazzyRecipeBookPlanner.PlanStep step : plan.steps()) {
+            if (!stackMatchesOutputKey(outputStack, player.level().getGameTime(), step.outputKey())) {
+                continue;
+            }
+            if (!chainKeyMatches(step.chainKey(), chainKey)) {
+                continue;
+            }
+            matchedStep = step;
+            break;
+        }
+        if (matchedStep == null) {
+            return false;
+        }
+        if (completed.contains(matchedStep.id())) {
+            return true;
+        }
+
+        completed.add(matchedStep.id());
+        storeCompletedSteps(player, completed);
+        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, focusedStepId(player).orElse(matchedStep.id()));
+        storeFocusedStepId(player, resolvedFocusedStepId);
+        return true;
+    }
+
     private static boolean recordOutput(ServerPlayer player, JazzyRecipeBookPlanner.OutputKey outputKey, String chainKey) {
         Optional<JazzyRecipeBookSelection> selection = selection(player);
         if (selection.isEmpty()) {
@@ -165,14 +205,17 @@ public final class RecipeBookProgress {
             if (!step.outputKey().equals(outputKey)) {
                 continue;
             }
-            if (!chainKey.isBlank() && !step.chainKey().equals(chainKey) && !step.chainKey().isBlank()) {
+            if (!chainKeyMatches(step.chainKey(), chainKey)) {
                 continue;
             }
             matchedStep = step;
             break;
         }
-        if (matchedStep == null || completed.contains(matchedStep.id())) {
+        if (matchedStep == null) {
             return false;
+        }
+        if (completed.contains(matchedStep.id())) {
+            return true;
         }
 
         completed.add(matchedStep.id());
@@ -182,10 +225,23 @@ public final class RecipeBookProgress {
         return true;
     }
 
+    private static boolean chainKeyMatches(String stepChainKey, String recordedChainKey) {
+        if (recordedChainKey.isBlank() || stepChainKey.isBlank()) {
+            return true;
+        }
+        if (stepChainKey.equals(recordedChainKey)) {
+            return true;
+        }
+        return stepChainKey.equals("schema:" + recordedChainKey) || recordedChainKey.equals("schema:" + stepChainKey);
+    }
+
     private static boolean markInventorySatisfiedSteps(ServerPlayer player, JazzyRecipeBookPlanner.Plan plan, Set<String> completed) {
         boolean changed = false;
         for (JazzyRecipeBookPlanner.PlanStep step : plan.steps()) {
             if (completed.contains(step.id())) {
+                if (inventoryHasOutput(player, step)) {
+                    changed = true;
+                }
                 continue;
             }
             if (inventoryHasOutput(player, step)) {
@@ -205,8 +261,16 @@ public final class RecipeBookProgress {
             if (stack.isEmpty()) {
                 continue;
             }
-            JazzyRecipeBookPlanner.OutputKey stackKey = RecipeBookDisplayUtil.outputKeyFromActualStack(stack, gameTime);
-            if (!stackKey.equals(step.outputKey())) {
+            if ("breadcrumbs".equals(step.chainKey())
+                    && step.kind() == JazzyRecipeBookPlanner.StepKind.PROCESS
+                    && stack.is(JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get())) {
+                foundCount += stack.getCount();
+                if (foundCount >= requiredCount) {
+                    return true;
+                }
+                continue;
+            }
+            if (!stackMatchesOutputKey(stack, gameTime, step.outputKey())) {
                 continue;
             }
             foundCount += stack.getCount();
@@ -215,6 +279,21 @@ public final class RecipeBookProgress {
             }
         }
         return false;
+    }
+
+    private static boolean stackMatchesOutputKey(ItemStack stack, long gameTime, JazzyRecipeBookPlanner.OutputKey outputKey) {
+        if (RecipeBookDisplayUtil.outputKeyFromActualStack(stack, gameTime).equals(outputKey)) {
+            return true;
+        }
+        if (!RecipeBookDisplayUtil.itemId(stack.getItem()).equals(outputKey.itemId())) {
+            return false;
+        }
+        IngredientState storedState = com.boaat.jazzy_cookin.kitchen.KitchenStackUtil.getFoodState(stack);
+        if (storedState == outputKey.state()) {
+            return true;
+        }
+        return stack.is(JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get())
+                && outputKey.state() == IngredientState.COARSE_POWDER;
     }
 
     private static String resolveFocusedStepId(JazzyRecipeBookPlanner.Plan plan, Set<String> completedStepIds, @Nullable String preferredStepId) {

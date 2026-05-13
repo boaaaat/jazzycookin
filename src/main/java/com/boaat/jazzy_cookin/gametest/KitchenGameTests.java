@@ -47,6 +47,7 @@ import com.boaat.jazzy_cookin.registry.JazzyDataComponents;
 import com.boaat.jazzy_cookin.registry.JazzyItems;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -299,6 +300,36 @@ public final class KitchenGameTests {
         level.setBlockAndUpdate(ovenPos.east(), Blocks.REDSTONE_BLOCK.defaultBlockState());
         tickStation(level, oven, 20);
         require(oven.simulationPreheatProgress() > 0, "Redstone power should start oven preheating");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void sidedAutomationRespectsKitchenSlotRoles(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        long gameTime = level.getGameTime();
+
+        KitchenStationBlockEntity prepTable = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        ItemStack tomatoes = JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, gameTime);
+        ItemStack chefKnife = new ItemStack(JazzyItems.CHEF_KNIFE.get());
+        require(prepTable.canPlaceItemThroughFace(0, tomatoes, Direction.UP), "Automation should insert ingredients into active input slots");
+        require(prepTable.canPlaceItemThroughFace(KitchenStationBlockEntity.TOOL_SLOT, chefKnife, Direction.NORTH), "Automation should insert valid tools into the tool slot");
+        require(!prepTable.canPlaceItemThroughFace(KitchenStationBlockEntity.OUTPUT_SLOT, tomatoes, Direction.UP), "Automation should not insert into station output slots");
+        require(!prepTable.canTakeItemThroughFace(0, tomatoes, Direction.DOWN), "Automation should not pull unfinished inputs from the bottom");
+        require(prepTable.canTakeItemThroughFace(KitchenStationBlockEntity.OUTPUT_SLOT, tomatoes, Direction.DOWN), "Automation should extract finished station outputs from the bottom");
+
+        KitchenStationBlockEntity stove = placeStation(level, helper.absolutePos(new BlockPos(3, 1, 0)), JazzyBlocks.STOVE.get());
+        require(stove.canPlaceItemThroughFace(StationCapacityProfile.FUEL_SLOT, new ItemStack(Items.COAL), Direction.NORTH), "Automation should insert fuel into fueled stations");
+        require(!stove.canPlaceItemThroughFace(StationCapacityProfile.FUEL_SLOT, tomatoes, Direction.NORTH), "Automation should reject non-fuel in the fuel slot");
+
+        BlockPos fridgePos = helper.absolutePos(new BlockPos(6, 1, 0));
+        level.setBlockAndUpdate(fridgePos, JazzyBlocks.FRIDGE.get().defaultBlockState());
+        KitchenStorageBlockEntity fridge = (KitchenStorageBlockEntity) level.getBlockEntity(fridgePos);
+        require(fridge != null, "Expected fridge block entity to exist");
+        ItemStack chicken = JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, gameTime);
+        ItemStack sugar = JazzyItems.ingredient(JazzyItems.IngredientId.WHITE_SUGAR).get().createStack(1, gameTime);
+        require(fridge.canPlaceItemThroughFace(0, chicken, Direction.UP), "Automation should insert fridge-safe food into cold storage");
+        require(!fridge.canPlaceItemThroughFace(0, sugar, Direction.UP), "Automation should reject storage-invalid food through hoppers");
+        require(fridge.canTakeItemThroughFace(0, chicken, Direction.DOWN), "Automation should extract stored food from storage blocks");
         helper.succeed();
     }
 
@@ -1441,6 +1472,59 @@ public final class KitchenGameTests {
         ItemStack mergedPortion = prepTable.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
         require(closeTo(KitchenStackUtil.measuredAmount(mergedPortion, MeasureUnit.GRAM), 60.0F, 0.01F), "Compatible measured portions should merge by amount");
         require(prepTable.getItem(0).isEmpty(), "Measuring should consume the source ingredient stack");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void stationActionsWearTools(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+        KitchenStationBlockEntity prepTable = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        prepTable.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ALL_PURPOSE_FLOUR).get().createStack(1, level.getGameTime()));
+        ItemStack scale = new ItemStack(JazzyItems.KITCHEN_SCALE.get());
+        prepTable.setItem(KitchenStationBlockEntity.TOOL_SLOT, scale);
+
+        require(prepTable.handleButton(6, fakePlayer), "Station action should succeed with a matching tool");
+        require(prepTable.getItem(KitchenStationBlockEntity.TOOL_SLOT).getDamageValue() == 1,
+                "Successful station actions should wear damageable tools");
+
+        KitchenStationBlockEntity breakingTable = placeStation(level, helper.absolutePos(new BlockPos(2, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        breakingTable.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.ALL_PURPOSE_FLOUR).get().createStack(1, level.getGameTime()));
+        ItemStack nearlyBrokenScale = new ItemStack(JazzyItems.KITCHEN_SCALE.get());
+        nearlyBrokenScale.setDamageValue(nearlyBrokenScale.getMaxDamage() - 1);
+        breakingTable.setItem(KitchenStationBlockEntity.TOOL_SLOT, nearlyBrokenScale);
+
+        require(breakingTable.handleButton(6, fakePlayer), "Station action should succeed with a nearly broken tool");
+        require(breakingTable.getItem(KitchenStationBlockEntity.TOOL_SLOT).isEmpty(),
+                "Station actions should break tools that reach max damage");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void toolStatsAffectStationSpeedAndQuality(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        KitchenStationBlockEntity chefPrep = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        chefPrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, level.getGameTime()));
+        chefPrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.CHEF_KNIFE.get()));
+        require(chefPrep.handleButton(6, fakePlayer), "Chef knife should start tomato prep");
+
+        KitchenStationBlockEntity tablePrep = placeStation(level, helper.absolutePos(new BlockPos(2, 1, 0)), JazzyBlocks.PREP_TABLE.get());
+        tablePrep.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, level.getGameTime()));
+        tablePrep.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.TABLE_KNIFE.get()));
+        require(tablePrep.handleButton(6, fakePlayer), "Table knife should start tomato prep");
+
+        require(chefPrep.simulationMaxProgress() < tablePrep.simulationMaxProgress(),
+                "Tool speed multipliers should make better prep tools finish faster");
+
+        tickStation(level, chefPrep, chefPrep.simulationMaxProgress() + 1);
+        tickStation(level, tablePrep, tablePrep.simulationMaxProgress() + 1);
+        FoodMatterData chefMatter = KitchenStackUtil.getFoodMatter(chefPrep.getItem(KitchenStationBlockEntity.OUTPUT_SLOT));
+        FoodMatterData tableMatter = KitchenStackUtil.getFoodMatter(tablePrep.getItem(KitchenStationBlockEntity.OUTPUT_SLOT));
+        require(chefMatter != null && tableMatter != null, "Prepared outputs should carry food matter for quality comparison");
+        require(chefMatter.cohesiveness() > tableMatter.cohesiveness(),
+                "Tool quality and fit should preserve better texture on prepared food");
         helper.succeed();
     }
 
