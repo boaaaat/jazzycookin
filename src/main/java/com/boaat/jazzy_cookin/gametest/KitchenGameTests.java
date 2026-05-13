@@ -1022,32 +1022,31 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void recipeBookPlannerDisambiguatesDuplicatesAndMergesAlternatives(GameTestHelper helper) {
+    public static void recipeBookPlannerUsesSchemaGuidesWithoutLegacyAliases(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
 
-        Set<String> pieChains = planner.plansFor(itemId(JazzyItems.PIE_DOUGH.get()), IngredientState.SMOOTH_DOUGH).stream()
-                .map(JazzyRecipeBookPlanner.Plan::chainKey)
-                .collect(java.util.stream.Collectors.toSet());
-        require(pieChains.contains("savory_pie") && pieChains.contains("tray_pie") && pieChains.size() == 2,
-                "Pie dough should expose distinct savory-pie and tray-pie paths");
-
-        Set<String> seasoningChains = planner.plansFor(itemId(JazzyItems.SEASONING_BLEND.get()), IngredientState.FINE_POWDER).stream()
-                .map(JazzyRecipeBookPlanner.Plan::chainKey)
-                .collect(java.util.stream.Collectors.toSet());
-        require(seasoningChains.contains("pan_seared_chicken")
-                        && seasoningChains.contains("golden_rice")
-                        && seasoningChains.contains("fried_jalapeno_bites")
-                        && seasoningChains.size() == 3,
-                "Seasoning blend should stay disambiguated by chain key");
+        JazzyRecipeBookPlanner.Plan piePlan = requirePlan(
+                planner,
+                selection(JazzyItems.PIE_DOUGH.get(), IngredientState.DOUGH, "schema:pie_dough")
+        );
+        require(piePlan.steps().size() == 1 && piePlan.steps().get(0).kind() == JazzyRecipeBookPlanner.StepKind.PROCESS,
+                "Pie dough should be exposed through the schema process guide");
 
         JazzyRecipeBookPlanner.Plan toastPlan = requirePlan(
                 planner,
-                selection(JazzyItems.ingredient(JazzyItems.IngredientId.BREAD).get(), IngredientState.BAKED_BREAD, "jam_on_toast")
+                selection(JazzyItems.JAM_TOAST.get(), IngredientState.PLATED, "schema:jam_toast")
         );
-        require(toastPlan.steps().size() == 1, "Jam on toast bread step should stay merged into a single guide step");
-        require(toastPlan.steps().get(0).options().size() == 2,
-                "Jam on toast should merge oven and stove toast alternatives into one step");
+        require(toastPlan.steps().size() == 1 && toastPlan.steps().get(0).kind() == JazzyRecipeBookPlanner.StepKind.PLATE,
+                "Jam toast should be exposed through the schema plating guide");
+
+        boolean hasLegacyOption = planner.catalog().stream()
+                .flatMap(entry -> entry.producibleStates().stream()
+                        .flatMap(state -> planner.plansFor(entry.itemId(), state).stream()))
+                .flatMap(plan -> plan.steps().stream())
+                .flatMap(step -> step.options().stream())
+                .anyMatch(option -> option.optionId().startsWith("legacy:"));
+        require(!hasLegacyOption, "Recipe book planner should not register legacy kitchen guide aliases");
         helper.succeed();
     }
 
@@ -1272,21 +1271,21 @@ public final class KitchenGameTests {
         ServerLevel level = helper.getLevel();
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
         JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
-        JazzyRecipeBookSelection selection = selection(JazzyItems.PACKED_BREADCRUMBS.get(), IngredientState.COARSE_POWDER, "breadcrumbs");
+        JazzyRecipeBookSelection selection = selection(JazzyItems.HUMMUS_PLATE.get(), IngredientState.PLATED, "schema:hummus_plate");
         JazzyRecipeBookPlanner.Plan plan = requirePlan(planner, selection);
 
         RecipeBookProgress.pin(fakePlayer, selection);
         require(RecipeBookProgress.recordKitchenOutput(fakePlayer,
-                        stackWithState(JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get(), IngredientState.COARSE_POWDER),
-                        "breadcrumbs"),
-                "Prep output should complete the upstream process step");
+                        stackWithState(JazzyItems.HUMMUS_PREP.get(), IngredientState.SMOOTH_PASTE),
+                        "schema:hummus_plate"),
+                "Schema prep output should complete the upstream process step");
 
         Set<String> completedAfterPrep = RecipeBookProgress.completedSteps(fakePlayer);
         require(completedAfterPrep.size() == 1, "Recording the prep output should complete exactly one step");
         require(plan.currentStep(completedAfterPrep) != null && plan.currentStep(completedAfterPrep).kind() == JazzyRecipeBookPlanner.StepKind.PLATE,
                 "After prep completion the guide should advance to the plating step");
 
-        require(RecipeBookProgress.recordKitchenOutput(fakePlayer, stackWithState(JazzyItems.PACKED_BREADCRUMBS.get(), IngredientState.COARSE_POWDER), "breadcrumbs"),
+        require(RecipeBookProgress.recordKitchenOutput(fakePlayer, stackWithState(JazzyItems.HUMMUS_PLATE.get(), IngredientState.PLATED), "schema:hummus_plate"),
                 "Plated output should complete the final serve step");
 
         Set<String> completedAfterPlate = RecipeBookProgress.completedSteps(fakePlayer);
@@ -1294,7 +1293,7 @@ public final class KitchenGameTests {
         RecipeBookSyncPayload sync = RecipeBookSyncPayload.from(RecipeBookProgress.syncState(fakePlayer));
         require(sync.selection() != null && sync.selection().itemId().equals(selection.itemId()),
                 "Sync payload should keep the active pinned selection");
-        require(sync.completedStepIds().size() == 2, "Sync payload should include both completed kitchen steps");
+        require(sync.completedStepIds().size() == 2, "Sync payload should include both completed schema steps");
         helper.succeed();
     }
 
@@ -1304,28 +1303,32 @@ public final class KitchenGameTests {
         var fakePlayer = FakePlayerFactory.getMinecraft(level);
         fakePlayer.getInventory().clearContent();
         JazzyRecipeBookPlanner planner = JazzyRecipeBookPlanner.create(level);
-        JazzyRecipeBookSelection selection = selection(JazzyItems.PACKED_BREADCRUMBS.get(), IngredientState.COARSE_POWDER, "breadcrumbs");
+        JazzyRecipeBookSelection selection = selection(JazzyItems.HUMMUS_PLATE.get(), IngredientState.PLATED, "schema:hummus_plate");
         JazzyRecipeBookPlanner.Plan plan = requirePlan(planner, selection);
         JazzyRecipeBookPlanner.PlanStep processStep = plan.steps().stream()
                 .filter(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.PROCESS)
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("Breadcrumb guide should include a process step"));
+                .orElseThrow(() -> new AssertionError("Hummus guide should include a process step"));
         JazzyRecipeBookPlanner.PlanStep plateStep = plan.steps().stream()
                 .filter(step -> step.kind() == JazzyRecipeBookPlanner.StepKind.PLATE)
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("Breadcrumb guide should include a plating step"));
+                .orElseThrow(() -> new AssertionError("Hummus guide should include a plating step"));
 
         RecipeBookProgress.pin(fakePlayer, selection, plateStep.id());
         require(plateStep.id().equals(RecipeBookProgress.syncState(fakePlayer).focusedStepId()),
                 "Pinning with a manual step should store the chosen focused step");
 
-        fakePlayer.getInventory().setItem(0, stackWithState(JazzyItems.ingredient(JazzyItems.IngredientId.BREADCRUMBS).get(), IngredientState.COARSE_POWDER));
+        fakePlayer.getInventory().setItem(0, stackWithState(JazzyItems.HUMMUS_PREP.get(), IngredientState.SMOOTH_PASTE));
         require(RecipeBookProgress.reconcilePinnedGuide(fakePlayer),
                 "Matching inventory items should still complete earlier steps when a later step is focused");
         require(RecipeBookProgress.completedSteps(fakePlayer).contains(processStep.id()),
                 "Inventory reconciliation should still complete upstream steps");
         require(plateStep.id().equals(RecipeBookProgress.syncState(fakePlayer).focusedStepId()),
                 "Completing earlier steps should preserve a manually focused later step");
+
+        RecipeBookProgress.pin(fakePlayer, selection, processStep.id());
+        require(processStep.id().equals(RecipeBookProgress.syncState(fakePlayer).focusedStepId()),
+                "Manual navigation should be able to go back to a completed step");
         helper.succeed();
     }
 

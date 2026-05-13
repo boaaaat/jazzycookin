@@ -9,11 +9,13 @@ import java.util.Map;
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.item.KitchenMealItem;
+import com.boaat.jazzy_cookin.item.KitchenTutorialBlockItem;
 import com.boaat.jazzy_cookin.item.KitchenToolItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.PantrySortTab;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -25,39 +27,39 @@ public final class JazzyItems {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(JazzyCookin.MODID);
 
-    public static final DeferredItem<BlockItem> APPLE_SAPLING_ITEM = ITEMS.registerSimpleBlockItem("apple_sapling", JazzyBlocks.APPLE_SAPLING);
-    public static final DeferredItem<BlockItem> TOMATO_VINE_ITEM = ITEMS.registerSimpleBlockItem("tomato_vine", JazzyBlocks.TOMATO_VINE);
-    public static final DeferredItem<BlockItem> HERB_BED_ITEM = ITEMS.registerSimpleBlockItem("herb_bed", JazzyBlocks.HERB_BED);
-    public static final DeferredItem<BlockItem> WHEAT_PATCH_ITEM = ITEMS.registerSimpleBlockItem("wheat_patch", JazzyBlocks.WHEAT_PATCH);
-    public static final DeferredItem<BlockItem> CABBAGE_PATCH_ITEM = ITEMS.registerSimpleBlockItem("cabbage_patch", JazzyBlocks.CABBAGE_PATCH);
-    public static final DeferredItem<BlockItem> ONION_PATCH_ITEM = ITEMS.registerSimpleBlockItem("onion_patch", JazzyBlocks.ONION_PATCH);
-    public static final DeferredItem<BlockItem> CHICKEN_COOP_ITEM = ITEMS.registerSimpleBlockItem("chicken_coop", JazzyBlocks.CHICKEN_COOP);
-    public static final DeferredItem<BlockItem> DAIRY_STALL_ITEM = ITEMS.registerSimpleBlockItem("dairy_stall", JazzyBlocks.DAIRY_STALL);
-    public static final DeferredItem<BlockItem> FISHING_TRAP_ITEM = ITEMS.registerSimpleBlockItem("fishing_trap", JazzyBlocks.FISHING_TRAP);
-    public static final DeferredItem<BlockItem> FORAGE_SHRUB_ITEM = ITEMS.registerSimpleBlockItem("forage_shrub", JazzyBlocks.FORAGE_SHRUB);
-    public static final DeferredItem<BlockItem> PANTRY_ITEM = ITEMS.registerSimpleBlockItem("pantry", JazzyBlocks.PANTRY);
-    public static final DeferredItem<BlockItem> FRIDGE_ITEM = ITEMS.registerSimpleBlockItem("fridge", JazzyBlocks.FRIDGE);
-    public static final DeferredItem<BlockItem> FREEZER_ITEM = ITEMS.registerSimpleBlockItem("freezer", JazzyBlocks.FREEZER);
-    public static final DeferredItem<BlockItem> CELLAR_ITEM = ITEMS.registerSimpleBlockItem("cellar", JazzyBlocks.CELLAR);
-    public static final DeferredItem<BlockItem> PREP_TABLE_ITEM = ITEMS.registerSimpleBlockItem("prep_table", JazzyBlocks.PREP_TABLE);
-    public static final DeferredItem<BlockItem> SPICE_GRINDER_ITEM = ITEMS.registerSimpleBlockItem("spice_grinder", JazzyBlocks.SPICE_GRINDER);
-    public static final DeferredItem<BlockItem> STRAINER_ITEM = ITEMS.registerSimpleBlockItem("strainer", JazzyBlocks.STRAINER);
-    public static final DeferredItem<BlockItem> MIXING_BOWL_ITEM = ITEMS.registerSimpleBlockItem("mixing_bowl", JazzyBlocks.MIXING_BOWL);
-    public static final DeferredItem<BlockItem> MICROWAVE_ITEM = ITEMS.registerSimpleBlockItem("microwave", JazzyBlocks.MICROWAVE);
-    public static final DeferredItem<BlockItem> FOOD_PROCESSOR_ITEM = ITEMS.registerSimpleBlockItem("food_processor", JazzyBlocks.FOOD_PROCESSOR);
-    public static final DeferredItem<BlockItem> BLENDER_ITEM = ITEMS.registerSimpleBlockItem("blender", JazzyBlocks.BLENDER);
-    public static final DeferredItem<BlockItem> JUICER_ITEM = ITEMS.registerSimpleBlockItem("juicer", JazzyBlocks.JUICER);
-    public static final DeferredItem<BlockItem> FREEZE_DRYER_ITEM = ITEMS.registerSimpleBlockItem("freeze_dryer", JazzyBlocks.FREEZE_DRYER);
-    public static final DeferredItem<BlockItem> CANNING_STATION_ITEM = ITEMS.registerSimpleBlockItem("canning_station", JazzyBlocks.CANNING_STATION);
-    public static final DeferredItem<BlockItem> DRYING_RACK_ITEM = ITEMS.registerSimpleBlockItem("drying_rack", JazzyBlocks.DRYING_RACK);
-    public static final DeferredItem<BlockItem> SMOKER_ITEM = ITEMS.registerSimpleBlockItem("smoker", JazzyBlocks.SMOKER);
-    public static final DeferredItem<BlockItem> FERMENTATION_CROCK_ITEM = ITEMS.registerSimpleBlockItem("fermentation_crock", JazzyBlocks.FERMENTATION_CROCK);
-    public static final DeferredItem<BlockItem> STEAMER_ITEM = ITEMS.registerSimpleBlockItem("steamer", JazzyBlocks.STEAMER);
-    public static final DeferredItem<BlockItem> STOVE_ITEM = ITEMS.registerSimpleBlockItem("stove", JazzyBlocks.STOVE);
-    public static final DeferredItem<BlockItem> OVEN_ITEM = ITEMS.registerSimpleBlockItem("oven", JazzyBlocks.OVEN);
-    public static final DeferredItem<BlockItem> COOLING_RACK_ITEM = ITEMS.registerSimpleBlockItem("cooling_rack", JazzyBlocks.COOLING_RACK);
-    public static final DeferredItem<BlockItem> RESTING_BOARD_ITEM = ITEMS.registerSimpleBlockItem("resting_board", JazzyBlocks.RESTING_BOARD);
-    public static final DeferredItem<BlockItem> PLATING_STATION_ITEM = ITEMS.registerSimpleBlockItem("plating_station", JazzyBlocks.PLATING_STATION);
+    public static final DeferredItem<BlockItem> APPLE_SAPLING_ITEM = tutorialBlockItem("apple_sapling", JazzyBlocks.APPLE_SAPLING);
+    public static final DeferredItem<BlockItem> TOMATO_VINE_ITEM = tutorialBlockItem("tomato_vine", JazzyBlocks.TOMATO_VINE);
+    public static final DeferredItem<BlockItem> HERB_BED_ITEM = tutorialBlockItem("herb_bed", JazzyBlocks.HERB_BED);
+    public static final DeferredItem<BlockItem> WHEAT_PATCH_ITEM = tutorialBlockItem("wheat_patch", JazzyBlocks.WHEAT_PATCH);
+    public static final DeferredItem<BlockItem> CABBAGE_PATCH_ITEM = tutorialBlockItem("cabbage_patch", JazzyBlocks.CABBAGE_PATCH);
+    public static final DeferredItem<BlockItem> ONION_PATCH_ITEM = tutorialBlockItem("onion_patch", JazzyBlocks.ONION_PATCH);
+    public static final DeferredItem<BlockItem> CHICKEN_COOP_ITEM = tutorialBlockItem("chicken_coop", JazzyBlocks.CHICKEN_COOP);
+    public static final DeferredItem<BlockItem> DAIRY_STALL_ITEM = tutorialBlockItem("dairy_stall", JazzyBlocks.DAIRY_STALL);
+    public static final DeferredItem<BlockItem> FISHING_TRAP_ITEM = tutorialBlockItem("fishing_trap", JazzyBlocks.FISHING_TRAP);
+    public static final DeferredItem<BlockItem> FORAGE_SHRUB_ITEM = tutorialBlockItem("forage_shrub", JazzyBlocks.FORAGE_SHRUB);
+    public static final DeferredItem<BlockItem> PANTRY_ITEM = tutorialBlockItem("pantry", JazzyBlocks.PANTRY);
+    public static final DeferredItem<BlockItem> FRIDGE_ITEM = tutorialBlockItem("fridge", JazzyBlocks.FRIDGE);
+    public static final DeferredItem<BlockItem> FREEZER_ITEM = tutorialBlockItem("freezer", JazzyBlocks.FREEZER);
+    public static final DeferredItem<BlockItem> CELLAR_ITEM = tutorialBlockItem("cellar", JazzyBlocks.CELLAR);
+    public static final DeferredItem<BlockItem> PREP_TABLE_ITEM = tutorialBlockItem("prep_table", JazzyBlocks.PREP_TABLE);
+    public static final DeferredItem<BlockItem> SPICE_GRINDER_ITEM = tutorialBlockItem("spice_grinder", JazzyBlocks.SPICE_GRINDER);
+    public static final DeferredItem<BlockItem> STRAINER_ITEM = tutorialBlockItem("strainer", JazzyBlocks.STRAINER);
+    public static final DeferredItem<BlockItem> MIXING_BOWL_ITEM = tutorialBlockItem("mixing_bowl", JazzyBlocks.MIXING_BOWL);
+    public static final DeferredItem<BlockItem> MICROWAVE_ITEM = tutorialBlockItem("microwave", JazzyBlocks.MICROWAVE);
+    public static final DeferredItem<BlockItem> FOOD_PROCESSOR_ITEM = tutorialBlockItem("food_processor", JazzyBlocks.FOOD_PROCESSOR);
+    public static final DeferredItem<BlockItem> BLENDER_ITEM = tutorialBlockItem("blender", JazzyBlocks.BLENDER);
+    public static final DeferredItem<BlockItem> JUICER_ITEM = tutorialBlockItem("juicer", JazzyBlocks.JUICER);
+    public static final DeferredItem<BlockItem> FREEZE_DRYER_ITEM = tutorialBlockItem("freeze_dryer", JazzyBlocks.FREEZE_DRYER);
+    public static final DeferredItem<BlockItem> CANNING_STATION_ITEM = tutorialBlockItem("canning_station", JazzyBlocks.CANNING_STATION);
+    public static final DeferredItem<BlockItem> DRYING_RACK_ITEM = tutorialBlockItem("drying_rack", JazzyBlocks.DRYING_RACK);
+    public static final DeferredItem<BlockItem> SMOKER_ITEM = tutorialBlockItem("smoker", JazzyBlocks.SMOKER);
+    public static final DeferredItem<BlockItem> FERMENTATION_CROCK_ITEM = tutorialBlockItem("fermentation_crock", JazzyBlocks.FERMENTATION_CROCK);
+    public static final DeferredItem<BlockItem> STEAMER_ITEM = tutorialBlockItem("steamer", JazzyBlocks.STEAMER);
+    public static final DeferredItem<BlockItem> STOVE_ITEM = tutorialBlockItem("stove", JazzyBlocks.STOVE);
+    public static final DeferredItem<BlockItem> OVEN_ITEM = tutorialBlockItem("oven", JazzyBlocks.OVEN);
+    public static final DeferredItem<BlockItem> COOLING_RACK_ITEM = tutorialBlockItem("cooling_rack", JazzyBlocks.COOLING_RACK);
+    public static final DeferredItem<BlockItem> RESTING_BOARD_ITEM = tutorialBlockItem("resting_board", JazzyBlocks.RESTING_BOARD);
+    public static final DeferredItem<BlockItem> PLATING_STATION_ITEM = tutorialBlockItem("plating_station", JazzyBlocks.PLATING_STATION);
 
     public enum IngredientId {
         WHITE_SUGAR("white_sugar", sweetener(0, 1)),
@@ -659,6 +661,10 @@ public final class JazzyItems {
     );
 
     private JazzyItems() {
+    }
+
+    private static DeferredItem<BlockItem> tutorialBlockItem(String name, java.util.function.Supplier<? extends Block> block) {
+        return ITEMS.register(name, () -> new KitchenTutorialBlockItem(block.get(), new Item.Properties()));
     }
 
     public static DeferredItem<KitchenIngredientItem> ingredient(IngredientId ingredientId) {

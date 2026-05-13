@@ -40,6 +40,16 @@ public final class RecipeBookClientState {
             GLFW.GLFW_KEY_J,
             "key.categories.jazzycookin"
     );
+    private static final KeyMapping PREVIOUS_STEP_KEY = new KeyMapping(
+            "key.jazzycookin.recipe_book_previous_step",
+            GLFW.GLFW_KEY_LEFT_BRACKET,
+            "key.categories.jazzycookin"
+    );
+    private static final KeyMapping NEXT_STEP_KEY = new KeyMapping(
+            "key.jazzycookin.recipe_book_next_step",
+            GLFW.GLFW_KEY_RIGHT_BRACKET,
+            "key.categories.jazzycookin"
+    );
 
     private static JazzyRecipeBookPlanner planner;
     private static JazzyRecipeBookSelection activeSelection;
@@ -54,6 +64,8 @@ public final class RecipeBookClientState {
 
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(OPEN_BOOK_KEY);
+        event.register(PREVIOUS_STEP_KEY);
+        event.register(NEXT_STEP_KEY);
     }
 
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -62,6 +74,12 @@ public final class RecipeBookClientState {
             if (minecraft.player != null) {
                 minecraft.setScreen(new JazzyRecipeBookScreen());
             }
+        }
+        while (PREVIOUS_STEP_KEY.consumeClick()) {
+            focusPinnedStep(-1);
+        }
+        while (NEXT_STEP_KEY.consumeClick()) {
+            focusPinnedStep(1);
         }
     }
 
@@ -86,7 +104,7 @@ public final class RecipeBookClientState {
 
         JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
         Set<String> completed = completedStepIds();
-        JazzyRecipeBookPlanner.PlanStep currentStep = plan.focusedStep(completed, focusedStepId());
+        JazzyRecipeBookPlanner.PlanStep currentStep = exactOrCurrentStep(plan, completed);
         if (currentStep == null) {
             return;
         }
@@ -202,6 +220,60 @@ public final class RecipeBookClientState {
     public static void pinSelection(JazzyRecipeBookSelection selection, @Nullable String stepId) {
         rememberSelection(selection);
         PacketDistributor.sendToServer(RecipeBookSelectionPayload.pin(selection, stepId));
+    }
+
+    public static boolean previousStepKeyMatches(int keyCode, int scanCode) {
+        return PREVIOUS_STEP_KEY.matches(keyCode, scanCode);
+    }
+
+    public static boolean nextStepKeyMatches(int keyCode, int scanCode) {
+        return NEXT_STEP_KEY.matches(keyCode, scanCode);
+    }
+
+    public static boolean focusPinnedStep(int delta) {
+        if (activeSelection == null) {
+            return false;
+        }
+        Optional<JazzyRecipeBookPlanner.Plan> optionalPlan = activePlan();
+        if (optionalPlan.isEmpty()) {
+            return false;
+        }
+        JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
+        if (plan.steps().isEmpty()) {
+            return false;
+        }
+        int currentIndex = focusedStepIndex(plan, completedStepIds(), focusedStepId());
+        if (currentIndex < 0) {
+            currentIndex = 0;
+        }
+        int nextIndex = Math.max(0, Math.min(plan.steps().size() - 1, currentIndex + delta));
+        if (nextIndex == currentIndex) {
+            return false;
+        }
+        focusedStepId = plan.steps().get(nextIndex).id();
+        pinSelection(activeSelection, focusedStepId);
+        return true;
+    }
+
+    private static int focusedStepIndex(JazzyRecipeBookPlanner.Plan plan, Set<String> completed, @Nullable String preferredStepId) {
+        if (preferredStepId != null && !preferredStepId.isBlank()) {
+            int exactIndex = plan.indexOfStep(preferredStepId);
+            if (exactIndex >= 0) {
+                return exactIndex;
+            }
+        }
+        return plan.focusedStepIndex(completed, preferredStepId);
+    }
+
+    private static @Nullable JazzyRecipeBookPlanner.PlanStep exactOrCurrentStep(JazzyRecipeBookPlanner.Plan plan, Set<String> completed) {
+        String preferredStepId = focusedStepId();
+        if (preferredStepId != null && !preferredStepId.isBlank()) {
+            Optional<JazzyRecipeBookPlanner.PlanStep> exactStep = plan.step(preferredStepId);
+            if (exactStep.isPresent()) {
+                return exactStep.get();
+            }
+        }
+        return plan.focusedStep(completed, preferredStepId);
     }
 
     public static void unpinSelection() {

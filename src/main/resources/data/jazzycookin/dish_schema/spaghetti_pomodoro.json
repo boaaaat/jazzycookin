@@ -39,6 +39,9 @@
   "required_techniques": [
     "plated"
   ],
+  "prerequisite_schemas": [
+    "spaghetti_pomodoro_prep"
+  ],
   "serving_items": [
     "jazzycookin:ceramic_bowl"
   ],

@@ -349,6 +349,9 @@ public class JazzyRecipeBookScreen extends Screen {
         String preferredStepId = this.isPinnedSelection()
                 ? Objects.requireNonNullElse(RecipeBookClientState.focusedStepId(), "")
                 : this.selectedStepId;
+        if (!preferredStepId.isBlank() && plan.step(preferredStepId).isPresent()) {
+            return preferredStepId;
+        }
         JazzyRecipeBookPlanner.PlanStep step = plan.focusedStep(this.currentCompletedStepIds(), preferredStepId);
         if (step != null) {
             return step.id();
@@ -564,7 +567,34 @@ public class JazzyRecipeBookScreen extends Screen {
         if (this.searchBox != null && this.searchBox.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
         }
+        if (RecipeBookClientState.previousStepKeyMatches(keyCode, scanCode)) {
+            return this.focusRelativeStep(-1);
+        }
+        if (RecipeBookClientState.nextStepKeyMatches(keyCode, scanCode)) {
+            return this.focusRelativeStep(1);
+        }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    private boolean focusRelativeStep(int delta) {
+        Optional<JazzyRecipeBookPlanner.Plan> optionalPlan = this.currentPlan();
+        if (optionalPlan.isEmpty()) {
+            return false;
+        }
+        JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
+        if (plan.steps().isEmpty()) {
+            return false;
+        }
+        int currentIndex = this.selectedStepId.isBlank() ? -1 : plan.indexOfStep(this.selectedStepId);
+        if (currentIndex < 0) {
+            currentIndex = Math.max(0, plan.focusedStepIndex(this.currentCompletedStepIds(), RecipeBookClientState.focusedStepId()));
+        }
+        int nextIndex = Math.max(0, Math.min(plan.steps().size() - 1, currentIndex + delta));
+        if (nextIndex == currentIndex) {
+            return true;
+        }
+        this.selectStep(plan.steps().get(nextIndex).id());
+        return true;
     }
 
     @Override

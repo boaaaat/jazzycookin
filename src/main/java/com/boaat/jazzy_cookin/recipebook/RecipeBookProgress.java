@@ -143,7 +143,7 @@ public final class RecipeBookProgress {
         }
 
         String preferredStepId = requestedFocusedStepId != null ? requestedFocusedStepId : focusedStepId(player).orElse("");
-        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, preferredStepId);
+        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, preferredStepId, requestedFocusedStepId != null);
         return storeFocusedStepId(player, resolvedFocusedStepId) || changed;
     }
 
@@ -181,7 +181,7 @@ public final class RecipeBookProgress {
 
         completed.add(matchedStep.id());
         storeCompletedSteps(player, completed);
-        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, focusedStepId(player).orElse(matchedStep.id()));
+        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, focusedStepId(player).orElse(matchedStep.id()), false);
         storeFocusedStepId(player, resolvedFocusedStepId);
         return true;
     }
@@ -220,7 +220,7 @@ public final class RecipeBookProgress {
 
         completed.add(matchedStep.id());
         storeCompletedSteps(player, completed);
-        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, focusedStepId(player).orElse(matchedStep.id()));
+        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, focusedStepId(player).orElse(matchedStep.id()), false);
         storeFocusedStepId(player, resolvedFocusedStepId);
         return true;
     }
@@ -296,7 +296,15 @@ public final class RecipeBookProgress {
                 && outputKey.state() == IngredientState.COARSE_POWDER;
     }
 
-    private static String resolveFocusedStepId(JazzyRecipeBookPlanner.Plan plan, Set<String> completedStepIds, @Nullable String preferredStepId) {
+    private static String resolveFocusedStepId(
+            JazzyRecipeBookPlanner.Plan plan,
+            Set<String> completedStepIds,
+            @Nullable String preferredStepId,
+            boolean allowCompletedPreferred
+    ) {
+        if (allowCompletedPreferred && preferredStepId != null && !preferredStepId.isBlank() && plan.step(preferredStepId).isPresent()) {
+            return preferredStepId;
+        }
         JazzyRecipeBookPlanner.PlanStep focusedStep = plan.focusedStep(completedStepIds, preferredStepId);
         return focusedStep == null ? "" : focusedStep.id();
     }

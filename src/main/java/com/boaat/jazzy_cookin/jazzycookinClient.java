@@ -6,6 +6,7 @@ import com.boaat.jazzy_cookin.recipebook.client.RecipeBookClientState;
 import com.boaat.jazzy_cookin.registry.JazzyBlockEntities;
 import com.boaat.jazzy_cookin.screen.KitchenStationScreen;
 import com.boaat.jazzy_cookin.screen.KitchenStorageScreen;
+import com.boaat.jazzy_cookin.tutorial.client.BlockTutorialClientState;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -20,10 +21,12 @@ public class JazzyCookinClient {
         modEventBus.addListener(this::onRegisterMenuScreens);
         modEventBus.addListener(this::onRegisterEntityRenderers);
         modEventBus.addListener(RecipeBookClientState::onRegisterKeyMappings);
+        modEventBus.addListener(BlockTutorialClientState::onRegisterKeyMappings);
 
         NeoForge.EVENT_BUS.addListener(RecipeBookClientState::onClientTick);
         NeoForge.EVENT_BUS.addListener(RecipeBookClientState::onRecipesUpdated);
         NeoForge.EVENT_BUS.addListener(RecipeBookClientState::onRenderHud);
+        NeoForge.EVENT_BUS.addListener(BlockTutorialClientState::onClientTick);
     }
 
     private void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
