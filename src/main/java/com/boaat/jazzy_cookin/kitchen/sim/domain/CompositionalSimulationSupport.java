@@ -450,6 +450,13 @@ final class CompositionalSimulationSupport {
             FoodMatterData matter,
             Predicate<DishSchemaDefinition> schemaFilter
     ) {
+        String activeSchemaKey = activeSchemaKey(access);
+        if (!activeSchemaKey.isBlank()) {
+            ItemStack exactOutput = recognizedSchemaOutput(access, analysis, matter, schemaFilter, activeSchemaKey);
+            if (!exactOutput.isEmpty()) {
+                return exactOutput;
+            }
+        }
         float quality = stationQuality(access, matter, 0.85F);
         DishSchemaScore score = bestSchemaScore(access, matter, schemaFilter, true, quality);
         if (score == null || !(score.resultItem().get() instanceof KitchenIngredientItem ingredientItem)) {
@@ -460,9 +467,64 @@ final class CompositionalSimulationSupport {
         return output;
     }
 
+    static ItemStack recognizedSchemaOutput(
+            StationSimulationAccess access,
+            SimulationIngredientAnalysis analysis,
+            FoodMatterData matter,
+            Predicate<DishSchemaDefinition> schemaFilter,
+            String schemaKey
+    ) {
+        if (schemaKey == null || schemaKey.isBlank() || access.simulationLevel() == null || matter == null) {
+            return ItemStack.EMPTY;
+        }
+        DishSchemaDefinition schema = DishSchemaScorer.schemas().stream()
+                .filter(schemaFilter)
+                .filter(candidate -> candidate.key().equals(schemaKey))
+                .findFirst()
+                .orElse(null);
+        if (schema == null || !(BuiltInRegistries.ITEM.get(schema.result()) instanceof KitchenIngredientItem ingredientItem)) {
+            return ItemStack.EMPTY;
+        }
+        float quality = stationQuality(access, matter, 0.85F);
+        ItemStack output = SimulationOutputFactory.createOutput(ingredientItem, access.simulationLevel().getGameTime(), analysis, matter);
+        KitchenStackUtil.setDishAttempt(output, DishAttemptAssembler.build(schema, DishAttemptAssembler.view(access), quality));
+        return output;
+    }
+
     static int schemaPreviewId(FoodMatterData matter, Predicate<DishSchemaDefinition> schemaFilter) {
         DishSchemaScore score = bestSchemaScore(matter, schemaFilter, false);
         return score != null ? score.schema().previewId() : 0;
+    }
+
+    static int schemaPreviewId(StationSimulationAccess access, FoodMatterData matter, Predicate<DishSchemaDefinition> schemaFilter) {
+        String activeSchemaKey = activeSchemaKey(access);
+        int activePreviewId = schemaPreviewId(activeSchemaKey, schemaFilter);
+        if (activePreviewId != 0) {
+            return activePreviewId;
+        }
+        float quality = stationQuality(access, matter, 0.85F);
+        DishSchemaScore score = bestSchemaScore(access, matter, schemaFilter, true, quality);
+        return score != null ? score.schema().previewId() : 0;
+    }
+
+    static int schemaPreviewId(String schemaKey, Predicate<DishSchemaDefinition> schemaFilter) {
+        if (schemaKey == null || schemaKey.isBlank()) {
+            return 0;
+        }
+        return DishSchemaScorer.schemas().stream()
+                .filter(schemaFilter)
+                .filter(schema -> schema.key().equals(schemaKey))
+                .findFirst()
+                .map(DishSchemaDefinition::previewId)
+                .orElse(0);
+    }
+
+    static String schemaKey(ItemStack stack) {
+        return stack.isEmpty() ? "" : KitchenStackUtil.dishAttempt(stack).schemaKey();
+    }
+
+    private static String activeSchemaKey(StationSimulationAccess access) {
+        return access.simulationBatch() != null ? access.simulationBatch().schemaKey() : "";
     }
 
     static ItemStack recognizedMealOutput(StationSimulationAccess access, SimulationIngredientAnalysis analysis, FoodMatterData matter, Predicate<Item> filter) {
@@ -573,7 +635,7 @@ final class CompositionalSimulationSupport {
     static void advanceTimedBatch(StationSimulationAccess access, IngredientState state, boolean finalizedServing, float waterBias, float aeration, float fragmentation, float cohesiveness, float proteinSet, float browning, float charLevel) {
         SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeInputs(access);
         float completion = access.simulationMaxProgress() > 0 ? Mth.clamp((access.simulationProgress() + 1) / (float) access.simulationMaxProgress(), 0.0F, 1.0F) : 0.0F;
-        access.simulationSetBatch(new CookingBatchState(composeMatter(
+        FoodMatterData matter = composeMatter(
                 access,
                 analysis,
                 state,
@@ -586,6 +648,7 @@ final class CompositionalSimulationSupport {
                 proteinSet,
                 browning,
                 charLevel
-        )));
+        );
+        access.simulationSetBatch(CookingBatchState.preservingSchema(access.simulationBatch(), matter));
     }
 }

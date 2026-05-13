@@ -40,7 +40,7 @@ public final class FreezeDrySimulationDomain implements StationSimulationDomain 
                 0,
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                CompositionalSimulationSupport.schemaPreviewId(matter, FreezeDrySimulationDomain::isFreezeDrySchema));
+                CompositionalSimulationSupport.schemaPreviewId(access, matter, FreezeDrySimulationDomain::isFreezeDrySchema));
     }
 
     @Override

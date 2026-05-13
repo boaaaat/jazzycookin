@@ -28,21 +28,39 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 
 public class JazzyRecipeBookScreen extends Screen {
-    private record VisibleStep(JazzyRecipeBookPlanner.PlanStep step, int depth, boolean expanded) {
+    private record VisibleStep(
+            JazzyRecipeBookPlanner.PlanStep step,
+            int instructionIndex,
+            ItemStack icon,
+            String title,
+            String detail
+    ) {
+        public String id() {
+            return this.step.id() + "#" + this.instructionIndex;
+        }
+
+        public int depth() {
+            return 0;
+        }
+
+        public boolean expanded() {
+            return true;
+        }
+
         public boolean expandable() {
-            return this.step.expandable();
+            return false;
         }
     }
 
-    private static final int DESIGN_PANEL_WIDTH = 374;
-    private static final int DESIGN_PANEL_HEIGHT = 222;
+    private static final int DESIGN_PANEL_WIDTH = 500;
+    private static final int DESIGN_PANEL_HEIGHT = 286;
     private static final int HEADER_HEIGHT = 20;
-    private static final int DESIGN_LEFT_WIDTH = 144;
+    private static final int DESIGN_LEFT_WIDTH = 132;
     private static final int ITEM_ROW_HEIGHT = 18;
     private static final int SEARCH_TOP = 38;
     private static final int ITEM_LIST_TOP = 60;
     private static final int STEP_LIST_TOP = 78;
-    private static final int STEP_ROW_HEIGHT = 24;
+    private static final int STEP_ROW_HEIGHT = 22;
     private static final int STEP_INDENT = 12;
     private static final int STEP_EXPAND_SIZE = 10;
 
@@ -69,6 +87,7 @@ public class JazzyRecipeBookScreen extends Screen {
     private IngredientState selectedState;
     private String selectedChainKey = "";
     private String selectedStepId = "";
+    private String selectedInstructionId = "";
     private String displayedPlanKey = "";
 
     public JazzyRecipeBookScreen() {
@@ -151,6 +170,7 @@ public class JazzyRecipeBookScreen extends Screen {
             this.selectedState = null;
             this.selectedChainKey = "";
             this.selectedStepId = "";
+            this.selectedInstructionId = "";
             this.displayedPlanKey = "";
             return;
         }
@@ -198,6 +218,7 @@ public class JazzyRecipeBookScreen extends Screen {
             this.selectedState = IngredientState.PANTRY_READY;
             this.selectedChainKey = "";
             this.selectedStepId = "";
+            this.selectedInstructionId = "";
             this.expandedSteps.clear();
             this.displayedPlanKey = "";
             return;
@@ -210,6 +231,7 @@ public class JazzyRecipeBookScreen extends Screen {
         if (plans.isEmpty()) {
             this.selectedChainKey = "";
             this.selectedStepId = "";
+            this.selectedInstructionId = "";
             this.expandedSteps.clear();
             this.displayedPlanKey = "";
         } else if (plans.stream().noneMatch(plan -> Objects.equals(plan.chainKey(), this.selectedChainKey))) {
@@ -223,6 +245,7 @@ public class JazzyRecipeBookScreen extends Screen {
         if (optionalPlan.isEmpty()) {
             this.displayedPlanKey = "";
             this.selectedStepId = "";
+            this.selectedInstructionId = "";
             this.expandedSteps.clear();
             this.stepScroll = 0;
             return;
@@ -236,6 +259,7 @@ public class JazzyRecipeBookScreen extends Screen {
         }
         if (this.selectedStepId.isBlank() || plan.step(this.selectedStepId).isEmpty()) {
             this.selectedStepId = this.defaultSelectedStepId(plan);
+            this.selectedInstructionId = "";
         }
         this.ensureExpandedPath(plan, this.selectedStepId);
         this.ensureSelectedStepVisible();
@@ -282,6 +306,7 @@ public class JazzyRecipeBookScreen extends Screen {
         this.selectedState = states.get(Math.floorMod(index + delta, states.size()));
         this.selectedChainKey = "";
         this.selectedStepId = "";
+        this.selectedInstructionId = "";
         this.refreshSelection();
     }
 
@@ -299,6 +324,7 @@ public class JazzyRecipeBookScreen extends Screen {
         }
         this.selectedChainKey = plans.get(Math.floorMod(index + delta, plans.size())).chainKey();
         this.selectedStepId = "";
+        this.selectedInstructionId = "";
         this.refreshSelection();
     }
 
@@ -369,8 +395,36 @@ public class JazzyRecipeBookScreen extends Screen {
 
         JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
         List<VisibleStep> visibleSteps = new ArrayList<>();
-        this.appendVisibleStep(plan, plan.rootStepId(), 0, visibleSteps, new HashSet<>());
+        for (JazzyRecipeBookPlanner.PlanStep step : plan.steps()) {
+            visibleSteps.addAll(this.instructionRowsFor(step));
+        }
         return visibleSteps;
+    }
+
+    private List<VisibleStep> instructionRowsFor(JazzyRecipeBookPlanner.PlanStep step) {
+        if (step.options().isEmpty()) {
+            return List.of(new VisibleStep(step, 0, step.outputStack().copy(),
+                    "Obtain " + step.outputStack().getHoverName().getString(),
+                    "Make or collect this item."));
+        }
+
+        JazzyRecipeBookPlanner.StepOption option = step.options().get(0);
+        List<VisibleStep> rows = new ArrayList<>();
+        int row = 0;
+        for (JazzyRecipeBookPlanner.Requirement requirement : option.requirements()) {
+            ItemStack icon = requirement.choices().isEmpty() ? step.outputStack().copy() : requirement.choices().get(0).copy();
+            rows.add(new VisibleStep(step, row++, icon,
+                    requirementTitle(step, requirement),
+                    requirementDetail(requirement)));
+        }
+        String setup = controlSummary(option);
+        if (option.station() != null || !setup.isBlank()) {
+            rows.add(new VisibleStep(step, row++, step.outputStack().copy(),
+                    setupTitle(option),
+                    setup.isBlank() ? "Prepare the station for this step." : setup));
+        }
+        rows.add(new VisibleStep(step, row, step.outputStack().copy(), stepActionTitle(step, option), stepActionDetail(step, option)));
+        return rows;
     }
 
     private void appendVisibleStep(
@@ -391,7 +445,8 @@ public class JazzyRecipeBookScreen extends Screen {
 
         JazzyRecipeBookPlanner.PlanStep step = optionalStep.get();
         boolean expanded = this.expandedSteps.getOrDefault(step.id(), step.id().equals(plan.rootStepId()));
-        visibleSteps.add(new VisibleStep(step, depth, expanded));
+        visibleSteps.add(new VisibleStep(step, visibleSteps.size(), step.outputStack().copy(),
+                step.outputStack().getHoverName().getString(), Component.translatable("screen.jazzycookin.recipe_book.step").getString()));
         if (expanded) {
             for (String dependencyStepId : step.dependencyStepIds()) {
                 this.appendVisibleStep(plan, dependencyStepId, depth + 1, visibleSteps, path);
@@ -451,8 +506,10 @@ public class JazzyRecipeBookScreen extends Screen {
         }
         List<VisibleStep> visibleSteps = this.currentVisibleSteps();
         int rowIndex = -1;
+        String selectedVisibleId = this.selectedVisibleStepId(visibleSteps);
         for (int index = 0; index < visibleSteps.size(); index++) {
-            if (visibleSteps.get(index).step().id().equals(this.selectedStepId)) {
+            VisibleStep visibleStep = visibleSteps.get(index);
+            if (visibleStep.id().equals(selectedVisibleId)) {
                 rowIndex = index;
                 break;
             }
@@ -474,7 +531,12 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private void selectStep(String stepId) {
+        this.selectStep(stepId, "");
+    }
+
+    private void selectStep(String stepId, String instructionId) {
         this.selectedStepId = stepId;
+        this.selectedInstructionId = instructionId;
         this.currentPlan().ifPresent(plan -> {
             this.ensureExpandedPath(plan, stepId);
             this.ensureSelectedStepVisible();
@@ -483,6 +545,18 @@ public class JazzyRecipeBookScreen extends Screen {
         if (this.isPinnedSelection() && this.selectedItemId != null && this.selectedState != null) {
             RecipeBookClientState.pinSelection(new JazzyRecipeBookSelection(this.selectedItemId, this.selectedState, this.selectedChainKey), stepId);
         }
+    }
+
+    private String selectedVisibleStepId(List<VisibleStep> visibleSteps) {
+        if (!this.selectedInstructionId.isBlank()) {
+            return this.selectedInstructionId;
+        }
+        for (VisibleStep visibleStep : visibleSteps) {
+            if (visibleStep.step().id().equals(this.selectedStepId)) {
+                return visibleStep.id();
+            }
+        }
+        return "";
     }
 
     @Override
@@ -527,6 +601,7 @@ public class JazzyRecipeBookScreen extends Screen {
         this.selectedState = entry.producibleStates().get(0);
         this.selectedChainKey = "";
         this.selectedStepId = "";
+        this.selectedInstructionId = "";
         this.refreshSelection();
         return true;
     }
@@ -560,7 +635,7 @@ public class JazzyRecipeBookScreen extends Screen {
             }
         }
 
-        this.selectStep(visibleStep.step().id());
+        this.selectStep(visibleStep.step().id(), visibleStep.id());
         return true;
     }
 
@@ -584,18 +659,36 @@ public class JazzyRecipeBookScreen extends Screen {
             return false;
         }
         JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
-        if (plan.steps().isEmpty()) {
+        List<VisibleStep> visibleSteps = this.currentVisibleSteps();
+        if (visibleSteps.isEmpty()) {
             return false;
         }
-        int currentIndex = this.selectedStepId.isBlank() ? -1 : plan.indexOfStep(this.selectedStepId);
-        if (currentIndex < 0) {
-            currentIndex = Math.max(0, plan.focusedStepIndex(this.currentCompletedStepIds(), RecipeBookClientState.focusedStepId()));
+        String selectedVisibleId = this.selectedVisibleStepId(visibleSteps);
+        int currentIndex = -1;
+        for (int index = 0; index < visibleSteps.size(); index++) {
+            if (visibleSteps.get(index).id().equals(selectedVisibleId)) {
+                currentIndex = index;
+                break;
+            }
         }
-        int nextIndex = Math.max(0, Math.min(plan.steps().size() - 1, currentIndex + delta));
+        if (currentIndex < 0) {
+            String focusedStepId = Objects.requireNonNullElse(RecipeBookClientState.focusedStepId(), "");
+            for (int index = 0; index < visibleSteps.size(); index++) {
+                if (visibleSteps.get(index).step().id().equals(focusedStepId)) {
+                    currentIndex = index;
+                    break;
+                }
+            }
+            if (currentIndex < 0) {
+                currentIndex = 0;
+            }
+        }
+        int nextIndex = Math.max(0, Math.min(visibleSteps.size() - 1, currentIndex + delta));
         if (nextIndex == currentIndex) {
             return true;
         }
-        this.selectStep(plan.steps().get(nextIndex).id());
+        VisibleStep next = visibleSteps.get(nextIndex);
+        this.selectStep(next.step().id(), next.id());
         return true;
     }
 
@@ -727,7 +820,7 @@ public class JazzyRecipeBookScreen extends Screen {
             VisibleStep visibleStep = visibleSteps.get(index);
             JazzyRecipeBookPlanner.PlanStep step = visibleStep.step();
             boolean complete = completed.contains(step.id());
-            boolean selected = step.id().equals(this.selectedStepId);
+            boolean selected = visibleStep.id().equals(this.selectedVisibleStepId(visibleSteps));
             int cardTop = rowY + row * this.sy(STEP_ROW_HEIGHT);
             guiGraphics.fill(this.stepCardLeft(), cardTop, this.stepCardRight(), cardTop + this.sy(STEP_ROW_HEIGHT) - 2, this.stepBackgroundColor(complete, selected));
             if (selected) {
@@ -752,11 +845,45 @@ public class JazzyRecipeBookScreen extends Screen {
             }
 
             int iconX = afterNum + this.sx(2);
-            guiGraphics.renderItem(step.outputStack(), iconX, cardTop + this.sy(4));
+            guiGraphics.renderItem(visibleStep.icon(), iconX, cardTop + this.sy(3));
             int textX = iconX + this.sx(18);
             int textWidth = Math.max(10, this.stepCardRight() - textX - this.sx(4));
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(step.outputStack().getHoverName().getString(), textWidth), textX, cardTop + this.sy(3), 0xFFE8EDF6, false);
-            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(this.stepDetail(step, visibleStep), textWidth), textX, cardTop + this.sy(13), 0xFFAEB8C9, false);
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(visibleStep.title(), textWidth), textX, cardTop + this.sy(2), 0xFFE8EDF6, false);
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(visibleStep.detail(), textWidth), textX, cardTop + this.sy(12), 0xFFAEB8C9, false);
+        }
+    }
+
+    private void renderSelectedStepInstructions(GuiGraphics guiGraphics, JazzyRecipeBookPlanner.Plan plan) {
+        JazzyRecipeBookPlanner.PlanStep step = plan.step(this.selectedStepId).orElseGet(() -> plan.focusedStep(this.currentCompletedStepIds(), this.selectedStepId));
+        if (step == null) {
+            return;
+        }
+
+        int left = this.stepCardLeft();
+        int right = this.stepCardRight();
+        int top = this.panelTop + this.stepListBottom + this.sy(6);
+        int bottom = this.panelTop + this.panelH - this.sy(34);
+        guiGraphics.fill(left, top, right, bottom, 0xAA101418);
+        guiGraphics.fill(left, top, left + 2, bottom, 0xFF67CED7);
+
+        int stepIndex = Math.max(0, plan.indexOfStep(step.id()));
+        int textX = left + this.sx(8);
+        int textWidth = Math.max(20, right - textX - this.sx(8));
+        guiGraphics.drawString(
+                this.font,
+                this.font.plainSubstrByWidth("Step " + (stepIndex + 1) + " of " + plan.steps().size() + ": " + step.outputStack().getHoverName().getString(), textWidth),
+                textX,
+                top + this.sy(5),
+                0xFFF4F7FB,
+                false
+        );
+
+        List<String> lines = this.stepInstructionLines(step);
+        int lineY = top + this.sy(17);
+        int maxLines = Math.max(1, (bottom - lineY - this.sy(2)) / 10);
+        for (int index = 0; index < Math.min(maxLines, lines.size()); index++) {
+            int color = index == lines.size() - 1 ? 0xFF8CDBB5 : 0xFFAEB8C9;
+            guiGraphics.drawString(this.font, this.font.plainSubstrByWidth(lines.get(index), textWidth), textX, lineY + index * 10, color, false);
         }
     }
 
@@ -782,9 +909,6 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private String stepDetail(JazzyRecipeBookPlanner.PlanStep step, VisibleStep visibleStep) {
-        if (step.expandable() && !visibleStep.expanded()) {
-            return Component.translatable("screen.jazzycookin.recipe_book.expand_hint").getString();
-        }
         if (!step.options().isEmpty()) {
             JazzyRecipeBookPlanner.StepOption option = step.options().get(0);
             List<String> parts = new ArrayList<>();
@@ -817,6 +941,130 @@ public class JazzyRecipeBookScreen extends Screen {
         return Component.translatable("screen.jazzycookin.recipe_book.step").getString();
     }
 
+    private List<String> stepInstructionLines(JazzyRecipeBookPlanner.PlanStep step) {
+        if (step.options().isEmpty()) {
+            return List.of("Make or obtain " + step.outputStack().getHoverName().getString() + ".");
+        }
+
+        JazzyRecipeBookPlanner.StepOption option = step.options().get(0);
+        List<String> lines = new ArrayList<>();
+        lines.add(stepActionLine(step, option));
+        String requirements = requirementSummary(option);
+        if (!requirements.isBlank()) {
+            lines.add("Add: " + requirements + ".");
+        }
+        String controls = controlSummary(option);
+        if (!controls.isBlank()) {
+            lines.add(controls + ".");
+        }
+        lines.add("Suggested perfect-score path; matching substitutions can still count.");
+        return lines;
+    }
+
+    private static String requirementTitle(JazzyRecipeBookPlanner.PlanStep step, JazzyRecipeBookPlanner.Requirement requirement) {
+        String item = compactRequirementLabel(requirement);
+        return switch (step.kind()) {
+            case PLATE -> "Add " + item;
+            case PROCESS -> "Add " + item;
+            case CRAFT -> "Get " + item;
+            case SOURCE -> "Have " + item;
+        };
+    }
+
+    private static String requirementDetail(JazzyRecipeBookPlanner.Requirement requirement) {
+        if (requirement.choices().size() > 1) {
+            return requirement.choices().size() + " matching choices; this is the suggested one.";
+        }
+        return requirement.requiredState() == IngredientState.PANTRY_READY
+                ? "Use this in the next action."
+                : "State: " + Component.translatable("state.jazzycookin." + requirement.requiredState().getSerializedName()).getString();
+    }
+
+    private static String setupTitle(JazzyRecipeBookPlanner.StepOption option) {
+        if (option.station() != null) {
+            return "Set up " + option.station().displayName().getString();
+        }
+        if (option.method() != null) {
+            return "Set up " + option.method().displayName().getString();
+        }
+        return "Set controls";
+    }
+
+    private static String stepActionTitle(JazzyRecipeBookPlanner.PlanStep step, JazzyRecipeBookPlanner.StepOption option) {
+        String output = step.outputStack().getHoverName().getString();
+        return switch (step.kind()) {
+            case CRAFT -> "Craft " + output;
+            case SOURCE -> "Collect " + output;
+            case PLATE -> "Plate " + output;
+            case PROCESS -> {
+                if (option.method() != null) {
+                    yield option.method().displayName().getString() + " " + output;
+                }
+                yield "Make " + output;
+            }
+        };
+    }
+
+    private static String stepActionDetail(JazzyRecipeBookPlanner.PlanStep step, JazzyRecipeBookPlanner.StepOption option) {
+        String output = step.outputStack().getHoverName().getString();
+        return switch (step.kind()) {
+            case CRAFT -> "Use the normal crafting recipe.";
+            case SOURCE -> "Harvest the source block or collect this output.";
+            case PLATE -> "Start the Plating Station to finish " + output + ".";
+            case PROCESS -> "Start the station and cook toward the score targets.";
+        };
+    }
+
+    private static String stepActionLine(JazzyRecipeBookPlanner.PlanStep step, JazzyRecipeBookPlanner.StepOption option) {
+        String output = step.outputStack().getHoverName().getString();
+        return switch (step.kind()) {
+            case CRAFT -> "Craft " + output + ".";
+            case SOURCE -> "Harvest or collect " + output + ".";
+            case PLATE -> "Plate " + output + " at the Plating Station.";
+            case PROCESS -> {
+                if (option.station() != null) {
+                    yield "Use the " + option.station().displayName().getString() + " to make " + output + ".";
+                }
+                if (option.method() != null) {
+                    yield "Use " + option.method().displayName().getString() + " to make " + output + ".";
+                }
+                yield "Prepare " + output + ".";
+            }
+        };
+    }
+
+    private static String requirementSummary(JazzyRecipeBookPlanner.StepOption option) {
+        if (option.requirements().isEmpty()) {
+            return "";
+        }
+        List<String> parts = new ArrayList<>();
+        int shown = Math.min(3, option.requirements().size());
+        for (int index = 0; index < shown; index++) {
+            parts.add(requirementLabel(option.requirements().get(index)));
+        }
+        if (option.requirements().size() > shown) {
+            parts.add("+" + (option.requirements().size() - shown) + " more");
+        }
+        return String.join(", ", parts);
+    }
+
+    private static String controlSummary(JazzyRecipeBookPlanner.StepOption option) {
+        List<String> parts = new ArrayList<>();
+        if (option.preferredTool() != null && option.preferredTool() != ToolProfile.NONE) {
+            parts.add("Tool: " + toolName(option.preferredTool()));
+        }
+        if (option.preferredHeat() != null && !"off".equals(option.preferredHeat().getSerializedName())) {
+            parts.add("Heat: " + recipeHeatLabel(option).getString());
+        }
+        if (option.requiresPreheat()) {
+            parts.add("Preheat first");
+        }
+        if (option.durationTicks() > 0) {
+            parts.add(option.durationTicks() + " ticks");
+        }
+        return String.join(" | ", parts);
+    }
+
     private void renderStepTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         Optional<VisibleStep> hoveredStep = this.hoveredVisibleStep(mouseX, mouseY);
         if (hoveredStep.isEmpty()) {
@@ -843,44 +1091,23 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private List<Component> stepTooltip(VisibleStep visibleStep) {
-        JazzyRecipeBookPlanner.PlanStep step = visibleStep.step();
         List<Component> tooltip = new ArrayList<>();
-        tooltip.add(step.outputStack().getHoverName().copy().withStyle(ChatFormatting.GOLD));
-        if (step.expandable() && !visibleStep.expanded()) {
-            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.expand_hint").withStyle(ChatFormatting.GRAY));
-        }
-        if (step.options().isEmpty()) {
-            return tooltip;
-        }
-
-        JazzyRecipeBookPlanner.StepOption option = step.options().get(0);
-        if (option.station() != null) {
-            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.station", option.station().displayName()).withStyle(ChatFormatting.AQUA));
-        } else if (option.method() != null) {
-            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.method", option.method().displayName()).withStyle(ChatFormatting.AQUA));
-        }
-        if (option.preferredTool() != null && option.preferredTool() != ToolProfile.NONE) {
-            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.preferred_tool", toolName(option.preferredTool())).withStyle(ChatFormatting.DARK_AQUA));
-        }
-        if (option.allowedTools().size() > 1) {
-            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.valid_tools", toolList(option.allowedTools())).withStyle(ChatFormatting.DARK_AQUA));
-        }
-        if (option.durationTicks() > 0) {
-            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.duration", option.durationTicks()).withStyle(ChatFormatting.GRAY));
-        }
-        if (option.preferredHeat() != null && !"off".equals(option.preferredHeat().getSerializedName())) {
-            tooltip.add(Component.translatable(
-                    "screen.jazzycookin.recipe_book.tooltip.heat",
-                    recipeHeatLabel(option)
-            ).withStyle(ChatFormatting.RED));
-        }
-        for (JazzyRecipeBookPlanner.Requirement requirement : option.requirements()) {
-            tooltip.add(Component.translatable("screen.jazzycookin.recipe_book.tooltip.needs", requirementLabel(requirement)).withStyle(ChatFormatting.GRAY));
-        }
-        for (String note : option.notes()) {
-            tooltip.add(Component.literal(note).withStyle(ChatFormatting.YELLOW));
-        }
+        tooltip.add(Component.literal(visibleStep.title()).withStyle(ChatFormatting.GOLD));
+        tooltip.add(Component.literal(visibleStep.detail()).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("Part of: " + visibleStep.step().outputStack().getHoverName().getString()).withStyle(ChatFormatting.DARK_GRAY));
         return tooltip;
+    }
+
+    private static String compactRequirementLabel(JazzyRecipeBookPlanner.Requirement requirement) {
+        String count = requirement.count() > 1 ? requirement.count() + "x " : "";
+        if (requirement.choices().isEmpty()) {
+            return count + Component.translatable("screen.jazzycookin.recipe_book.step").getString();
+        }
+        String name = requirement.choices().get(0).getHoverName().getString();
+        if (requirement.choices().size() > 1) {
+            return count + name + " +" + (requirement.choices().size() - 1);
+        }
+        return count + name;
     }
 
     private static String requirementLabel(JazzyRecipeBookPlanner.Requirement requirement) {

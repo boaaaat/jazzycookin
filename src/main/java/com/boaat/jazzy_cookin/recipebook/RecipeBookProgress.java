@@ -137,13 +137,15 @@ public final class RecipeBookProgress {
 
         JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
         Set<String> completed = completedSteps(player);
-        boolean changed = markInventorySatisfiedSteps(player, plan, completed);
+        Set<String> newlyCompleted = new LinkedHashSet<>();
+        boolean changed = markInventorySatisfiedSteps(player, plan, completed, newlyCompleted);
         if (changed) {
             storeCompletedSteps(player, completed);
         }
 
         String preferredStepId = requestedFocusedStepId != null ? requestedFocusedStepId : focusedStepId(player).orElse("");
-        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, preferredStepId, requestedFocusedStepId != null);
+        boolean advanceFromPreferred = requestedFocusedStepId == null && newlyCompleted.contains(preferredStepId);
+        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, preferredStepId, requestedFocusedStepId != null || !advanceFromPreferred);
         return storeFocusedStepId(player, resolvedFocusedStepId) || changed;
     }
 
@@ -175,13 +177,15 @@ public final class RecipeBookProgress {
         if (matchedStep == null) {
             return false;
         }
-        if (completed.contains(matchedStep.id())) {
-            return true;
+        Set<String> newlyCompleted = new LinkedHashSet<>();
+        markStepAndDependenciesComplete(plan, matchedStep, completed, newlyCompleted);
+        if (newlyCompleted.isEmpty()) {
+            return false;
         }
-
-        completed.add(matchedStep.id());
         storeCompletedSteps(player, completed);
-        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, focusedStepId(player).orElse(matchedStep.id()), false);
+        String currentFocus = focusedStepId(player).orElse("");
+        boolean advanceFromFocus = currentFocus.isBlank() || newlyCompleted.contains(currentFocus);
+        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, currentFocus, !advanceFromFocus);
         storeFocusedStepId(player, resolvedFocusedStepId);
         return true;
     }
@@ -214,13 +218,15 @@ public final class RecipeBookProgress {
         if (matchedStep == null) {
             return false;
         }
-        if (completed.contains(matchedStep.id())) {
-            return true;
+        Set<String> newlyCompleted = new LinkedHashSet<>();
+        markStepAndDependenciesComplete(plan, matchedStep, completed, newlyCompleted);
+        if (newlyCompleted.isEmpty()) {
+            return false;
         }
-
-        completed.add(matchedStep.id());
         storeCompletedSteps(player, completed);
-        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, focusedStepId(player).orElse(matchedStep.id()), false);
+        String currentFocus = focusedStepId(player).orElse("");
+        boolean advanceFromFocus = currentFocus.isBlank() || newlyCompleted.contains(currentFocus);
+        String resolvedFocusedStepId = resolveFocusedStepId(plan, completed, currentFocus, !advanceFromFocus);
         storeFocusedStepId(player, resolvedFocusedStepId);
         return true;
     }
@@ -235,21 +241,32 @@ public final class RecipeBookProgress {
         return stepChainKey.equals("schema:" + recordedChainKey) || recordedChainKey.equals("schema:" + stepChainKey);
     }
 
-    private static boolean markInventorySatisfiedSteps(ServerPlayer player, JazzyRecipeBookPlanner.Plan plan, Set<String> completed) {
-        boolean changed = false;
+    private static boolean markInventorySatisfiedSteps(
+            ServerPlayer player,
+            JazzyRecipeBookPlanner.Plan plan,
+            Set<String> completed,
+            Set<String> newlyCompleted
+    ) {
         for (JazzyRecipeBookPlanner.PlanStep step : plan.steps()) {
-            if (completed.contains(step.id())) {
-                if (inventoryHasOutput(player, step)) {
-                    changed = true;
-                }
-                continue;
-            }
             if (inventoryHasOutput(player, step)) {
-                completed.add(step.id());
-                changed = true;
+                markStepAndDependenciesComplete(plan, step, completed, newlyCompleted);
             }
         }
-        return changed;
+        return !newlyCompleted.isEmpty();
+    }
+
+    private static void markStepAndDependenciesComplete(
+            JazzyRecipeBookPlanner.Plan plan,
+            JazzyRecipeBookPlanner.PlanStep step,
+            Set<String> completed,
+            Set<String> newlyCompleted
+    ) {
+        if (completed.add(step.id())) {
+            newlyCompleted.add(step.id());
+        }
+        for (String dependencyStepId : step.dependencyStepIds()) {
+            plan.step(dependencyStepId).ifPresent(dependency -> markStepAndDependenciesComplete(plan, dependency, completed, newlyCompleted));
+        }
     }
 
     private static boolean inventoryHasOutput(ServerPlayer player, JazzyRecipeBookPlanner.PlanStep step) {

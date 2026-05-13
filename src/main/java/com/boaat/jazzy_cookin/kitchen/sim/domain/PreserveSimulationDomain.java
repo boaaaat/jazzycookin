@@ -4,6 +4,7 @@ import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodTrait;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
@@ -47,6 +48,7 @@ public final class PreserveSimulationDomain implements StationSimulationDomain {
             return SimulationSnapshot.inactive(executionMode);
         }
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
+        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(access, matter, PreserveSimulationDomain::isPreserveSchema);
         return new SimulationSnapshot(
                 executionMode,
                 access.simulationActive() ? 1 : 0,
@@ -59,7 +61,7 @@ public final class PreserveSimulationDomain implements StationSimulationDomain {
                 Math.round(matter.charLevel() * 100.0F),
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                preview != null ? preview.previewId() : 0
+                schemaPreviewId != 0 ? schemaPreviewId : preview != null ? preview.previewId() : 0
         );
     }
 
@@ -78,6 +80,7 @@ public final class PreserveSimulationDomain implements StationSimulationDomain {
             case DRYING_RACK -> 100;
             default -> 80;
         };
+        access.simulationSetBatch(new CookingBatchState(previewMatter(access), CompositionalSimulationSupport.schemaKey(preview)));
         access.simulationSetProgress(0, duration, true);
         access.simulationMarkChanged();
         return true;
@@ -134,9 +137,7 @@ public final class PreserveSimulationDomain implements StationSimulationDomain {
                     ""
             );
         }
-        ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, schema ->
-                !schema.meal() && (schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.PREPPED)
-                        || schema.requiredTechniques().isEmpty()));
+        ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, PreserveSimulationDomain::isPreserveSchema);
         if (!schemaOutput.isEmpty()) {
             return schemaOutput;
         }
@@ -210,5 +211,10 @@ public final class PreserveSimulationDomain implements StationSimulationDomain {
                     : IngredientState.COARSE_POWDER;
             default -> IngredientState.FERMENTED;
         };
+    }
+
+    private static boolean isPreserveSchema(com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition schema) {
+        return !schema.meal() && (schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.PREPPED)
+                || schema.requiredTechniques().isEmpty());
     }
 }

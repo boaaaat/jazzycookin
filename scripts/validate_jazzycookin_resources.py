@@ -430,13 +430,13 @@ def validate_recipe_book_guidance(errors: list[str]) -> None:
 
     required_screen_tokens = {
         "parts.add(option.notes().get(0))": "recipe book step rows must display planner notes alongside station/tool context",
-        "renderStepTooltip(guiGraphics, mouseX, mouseY)": "recipe book must expose full step guidance in a hover tooltip",
-        "stepTooltip(VisibleStep visibleStep)": "recipe book must build detailed step tooltips",
+        "instructionRowsFor(JazzyRecipeBookPlanner.PlanStep step)": "recipe book must expand planner steps into actionable instruction rows",
+        "compactRequirementLabel": "recipe book instruction rows must keep requirement text compact",
+        "visibleStep.title()": "recipe book rows must render action-specific titles",
+        "visibleStep.detail()": "recipe book rows must render action-specific details",
+        "renderStepTooltip(guiGraphics, mouseX, mouseY)": "recipe book must expose focused action guidance in a hover tooltip",
+        "stepTooltip(VisibleStep visibleStep)": "recipe book must build action-specific step tooltips",
         "Component::getVisualOrderText": "recipe book tooltip lines must use the Minecraft formatted tooltip API",
-        "for (String note : option.notes())": "recipe book tooltips must include every planner note",
-        "option.allowedTools()": "recipe book tooltips must expose alternate valid tools",
-        "screen.jazzycookin.recipe_book.tooltip.station": "recipe book tooltip labels must be translated",
-        "screen.jazzycookin.recipe_book.tooltip.valid_tools": "recipe book valid tool labels must be translated",
         "heat.jazzycookin.": "recipe book tooltip heat values must use translated heat labels",
     }
     for token, message in required_screen_tokens.items():

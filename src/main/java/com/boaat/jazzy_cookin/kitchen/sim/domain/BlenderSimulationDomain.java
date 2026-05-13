@@ -43,7 +43,7 @@ public final class BlenderSimulationDomain implements StationSimulationDomain {
                 0,
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                CompositionalSimulationSupport.schemaPreviewId(matter, BlenderSimulationDomain::isBlendSchema));
+                CompositionalSimulationSupport.schemaPreviewId(access, matter, BlenderSimulationDomain::isBlendSchema));
     }
 
     @Override

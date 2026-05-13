@@ -3,6 +3,7 @@ package com.boaat.jazzy_cookin.kitchen.sim.domain;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
 import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.sim.CookingBatchState;
 import com.boaat.jazzy_cookin.kitchen.sim.FoodMatterData;
 import com.boaat.jazzy_cookin.kitchen.sim.SimulationSnapshot;
 import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaScorer;
@@ -35,7 +36,7 @@ public final class PlateAssemblySimulationDomain implements StationSimulationDom
         if (matter == null) {
             return SimulationSnapshot.inactive(executionMode);
         }
-        int previewId = CompositionalSimulationSupport.schemaPreviewId(matter, schema ->
+        int previewId = CompositionalSimulationSupport.schemaPreviewId(access, matter, schema ->
                 schema.meal() && schema.requiredTechniques().contains(DishTechnique.PLATED));
         return new SimulationSnapshot(
                 executionMode,
@@ -62,6 +63,7 @@ public final class PlateAssemblySimulationDomain implements StationSimulationDom
         if (preview.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), preview)) {
             return false;
         }
+        access.simulationSetBatch(new CookingBatchState(previewMatter(access), CompositionalSimulationSupport.schemaKey(preview)));
         access.simulationSetProgress(0, 18, true);
         access.simulationMarkChanged();
         return true;

@@ -50,6 +50,7 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             return SimulationSnapshot.inactive(executionMode);
         }
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
+        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(access, matter, PrepSimulationDomain::isPrepSchema);
         return new SimulationSnapshot(
                 executionMode,
                 access.simulationActive() ? 1 : 0,
@@ -62,7 +63,7 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
                 0,
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                preview != null ? preview.previewId() : 0
+                schemaPreviewId != 0 ? schemaPreviewId : preview != null ? preview.previewId() : 0
         );
     }
 
@@ -75,7 +76,7 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
         if (preview.isEmpty() || !access.simulationCanAcceptStack(access.outputSlot(), preview)) {
             return false;
         }
-        access.simulationSetBatch(new CookingBatchState(previewMatter(access)));
+        access.simulationSetBatch(new CookingBatchState(previewMatter(access), CompositionalSimulationSupport.schemaKey(preview)));
         access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, 48), true);
         access.simulationMarkChanged();
         return true;
@@ -94,7 +95,7 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             return;
         }
 
-        access.simulationSetBatch(new CookingBatchState(matter));
+        access.simulationSetBatch(CookingBatchState.preservingSchema(access.simulationBatch(), matter));
         int nextProgress = access.simulationProgress() + 1;
         if (nextProgress >= access.simulationMaxProgress()) {
             finish(access);
@@ -161,9 +162,7 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             return directOutput;
         }
 
-        ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, schema ->
-                !schema.meal() && (schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.CUT)
-                        || schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.PREPPED)));
+        ItemStack schemaOutput = CompositionalSimulationSupport.recognizedSchemaOutput(access, analysis, matter, PrepSimulationDomain::isPrepSchema);
         if (!schemaOutput.isEmpty()) {
             return schemaOutput;
         }
@@ -392,5 +391,10 @@ public final class PrepSimulationDomain implements StationSimulationDomain {
             }
         }
         return count;
+    }
+
+    private static boolean isPrepSchema(com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaDefinition schema) {
+        return !schema.meal() && (schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.CUT)
+                || schema.requiredTechniques().contains(com.boaat.jazzy_cookin.kitchen.sim.schema.DishTechnique.PREPPED));
     }
 }

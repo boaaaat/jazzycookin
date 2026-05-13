@@ -56,7 +56,7 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
         SimulationIngredientAnalysis analysis = SimulationIngredientAnalysis.analyzeInputs(access);
         int directPreviewId = directLegacyPreviewId(access, analysis, matter);
-        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(matter, PotSimulationDomain::isPotSchema);
+        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(access, matter, PotSimulationDomain::isPotSchema);
         return new SimulationSnapshot(
                 executionMode,
                 access.simulationActive() ? 1 : 0,
@@ -86,7 +86,7 @@ public final class PotSimulationDomain implements StationSimulationDomain {
                 access,
                 SimulationIngredientAnalysis.analyzeInputs(access),
                 0.0F
-        )));
+        ), CompositionalSimulationSupport.schemaKey(preview)));
         int baseDuration = preview.is(JazzyItems.GLAZED_CHICKEN_PREP.get()) ? 150 : 180;
         access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, baseDuration), true);
         access.simulationMarkChanged();
@@ -101,7 +101,7 @@ public final class PotSimulationDomain implements StationSimulationDomain {
         int next = access.simulationProgress() + 1;
         access.simulationSetProgress(next, access.simulationMaxProgress(), true);
         access.simulationSetStationPhysics(new com.boaat.jazzy_cookin.kitchen.sim.StationPhysicsState(CompositionalSimulationSupport.targetTempC(access.simulationHeatLevel())));
-        access.simulationSetBatch(new CookingBatchState(transformedMatter(
+        access.simulationSetBatch(CookingBatchState.preservingSchema(access.simulationBatch(), transformedMatter(
                 access,
                 SimulationIngredientAnalysis.analyzeInputs(access),
                 access.simulationMaxProgress() > 0 ? Mth.clamp(next / (float) access.simulationMaxProgress(), 0.0F, 1.0F) : 1.0F

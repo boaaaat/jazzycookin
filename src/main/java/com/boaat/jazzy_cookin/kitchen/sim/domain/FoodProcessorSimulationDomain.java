@@ -43,7 +43,7 @@ public final class FoodProcessorSimulationDomain implements StationSimulationDom
                 0,
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                CompositionalSimulationSupport.schemaPreviewId(matter, FoodProcessorSimulationDomain::isProcessorSchema));
+                CompositionalSimulationSupport.schemaPreviewId(access, matter, FoodProcessorSimulationDomain::isProcessorSchema));
     }
 
     @Override

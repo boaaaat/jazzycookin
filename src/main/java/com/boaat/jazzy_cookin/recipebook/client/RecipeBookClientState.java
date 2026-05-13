@@ -11,7 +11,10 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
+import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
+import com.boaat.jazzy_cookin.kitchen.StationType;
+import com.boaat.jazzy_cookin.kitchen.ToolProfile;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookPlanner;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookSelection;
 import com.boaat.jazzy_cookin.recipebook.RecipeBookDisplayUtil;
@@ -33,8 +36,17 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class RecipeBookClientState {
-    private static final int OVERLAY_WIDTH = 168;
-    private static final int OVERLAY_HEIGHT = 86;
+    private record InstructionRow(
+            JazzyRecipeBookPlanner.PlanStep step,
+            int instructionIndex,
+            ItemStack icon,
+            String title,
+            String detail
+    ) {
+    }
+
+    private static final int OVERLAY_WIDTH = 196;
+    private static final int OVERLAY_HEIGHT = 96;
     private static final KeyMapping OPEN_BOOK_KEY = new KeyMapping(
             "key.jazzycookin.open_recipe_book",
             GLFW.GLFW_KEY_J,
@@ -54,6 +66,7 @@ public final class RecipeBookClientState {
     private static JazzyRecipeBookPlanner planner;
     private static JazzyRecipeBookSelection activeSelection;
     private static String focusedStepId = "";
+    private static int focusedInstructionIndex;
     private static ResourceLocation lastViewedItemId;
     private static IngredientState lastViewedState;
     private static String lastViewedChainKey = "";
@@ -104,12 +117,13 @@ public final class RecipeBookClientState {
 
         JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
         Set<String> completed = completedStepIds();
-        JazzyRecipeBookPlanner.PlanStep currentStep = exactOrCurrentStep(plan, completed);
-        if (currentStep == null) {
+        List<InstructionRow> rows = instructionRows(plan);
+        if (rows.isEmpty()) {
             return;
         }
 
-        int currentIndex = Math.max(0, plan.focusedStepIndex(completed, focusedStepId()));
+        int currentIndex = focusedInstructionIndex(plan, rows, completed);
+        InstructionRow currentRow = rows.get(currentIndex);
         GuiGraphics guiGraphics = event.getGuiGraphics();
         int x = 8;
         int y = minecraft.getWindow().getGuiScaledHeight() - OVERLAY_HEIGHT - 48;
@@ -123,39 +137,20 @@ public final class RecipeBookClientState {
         guiGraphics.drawString(minecraft.font, trim(minecraft, targetStack.getHoverName().getString(), OVERLAY_WIDTH - 30), x + 26, y + 20, 0xFFDCE0E8, false);
         guiGraphics.drawString(
                 minecraft.font,
-                Component.literal((currentIndex + 1) + "/" + plan.steps().size()),
-                x + OVERLAY_WIDTH - 20,
+                Component.literal((currentIndex + 1) + "/" + rows.size()),
+                x + OVERLAY_WIDTH - 34,
                 y + 20,
                 0xFF8C95A6,
                 false
         );
 
-        ItemStack stepStack = currentStep.outputStack();
-        guiGraphics.renderItem(stepStack, x + 6, y + 38);
-        guiGraphics.drawString(minecraft.font, trim(minecraft, stepStack.getHoverName().getString(), OVERLAY_WIDTH - 30), x + 26, y + 40, 0xFFDCE0E8, false);
-
-        JazzyRecipeBookPlanner.StepOption option = currentStep.options().get(0);
-        int lineY = y + 54;
-        if (!option.requirements().isEmpty()) {
-            guiGraphics.drawString(minecraft.font, trim(minecraft, firstRequirementLine(option), OVERLAY_WIDTH - 12), x + 6, lineY, 0xFF8C95A6, false);
-            lineY += 10;
-        }
-        String note = firstNoteLine(option);
-        if (!note.isEmpty()) {
-            guiGraphics.drawString(minecraft.font, trim(minecraft, note, OVERLAY_WIDTH - 12), x + 6, lineY, 0xFF4ADE80, false);
-            lineY += 10;
-        }
-        if (currentStep.options().size() > 1) {
-            guiGraphics.drawString(
-                    minecraft.font,
-                    Component.translatable("screen.jazzycookin.recipe_book.alternatives", currentStep.options().size()),
-                    x + 6,
-                    lineY,
-                    0xFFF0B429,
-                    false
-            );
-        } else if (plan.isComplete(completed)) {
-            guiGraphics.drawString(minecraft.font, Component.translatable("screen.jazzycookin.recipe_book.complete"), x + 6, lineY, 0xFF4ADE80, false);
+        guiGraphics.renderItem(currentRow.icon(), x + 6, y + 38);
+        int titleColor = completed.contains(currentRow.step().id()) ? 0xFF4ADE80 : 0xFFDCE0E8;
+        guiGraphics.drawString(minecraft.font, trim(minecraft, currentRow.title(), OVERLAY_WIDTH - 30), x + 26, y + 40, titleColor, false);
+        guiGraphics.drawString(minecraft.font, trim(minecraft, currentRow.detail(), OVERLAY_WIDTH - 12), x + 6, y + 56, 0xFF8C95A6, false);
+        guiGraphics.drawString(minecraft.font, trim(minecraft, "Goal: " + currentRow.step().outputStack().getHoverName().getString(), OVERLAY_WIDTH - 12), x + 6, y + 68, 0xFF6FAAB0, false);
+        if (plan.isComplete(completed)) {
+            guiGraphics.drawString(minecraft.font, Component.translatable("screen.jazzycookin.recipe_book.complete"), x + 6, y + 80, 0xFF4ADE80, false);
         }
     }
 
@@ -175,8 +170,12 @@ public final class RecipeBookClientState {
     }
 
     public static void applySync(RecipeBookSyncPayload payload) {
+        String previousFocusedStepId = focusedStepId;
         activeSelection = payload.selection();
         focusedStepId = payload.focusedStepId() == null ? "" : payload.focusedStepId();
+        if (!focusedStepId.equals(previousFocusedStepId)) {
+            focusedInstructionIndex = 0;
+        }
         completedStepIds.clear();
         completedStepIds.addAll(payload.completedStepIds());
         if (activeSelection != null) {
@@ -239,20 +238,50 @@ public final class RecipeBookClientState {
             return false;
         }
         JazzyRecipeBookPlanner.Plan plan = optionalPlan.get();
-        if (plan.steps().isEmpty()) {
+        List<InstructionRow> rows = instructionRows(plan);
+        if (rows.isEmpty()) {
             return false;
         }
-        int currentIndex = focusedStepIndex(plan, completedStepIds(), focusedStepId());
-        if (currentIndex < 0) {
-            currentIndex = 0;
-        }
-        int nextIndex = Math.max(0, Math.min(plan.steps().size() - 1, currentIndex + delta));
+        int currentIndex = focusedInstructionIndex(plan, rows, completedStepIds());
+        int nextIndex = Math.max(0, Math.min(rows.size() - 1, currentIndex + delta));
         if (nextIndex == currentIndex) {
             return false;
         }
-        focusedStepId = plan.steps().get(nextIndex).id();
+        InstructionRow row = rows.get(nextIndex);
+        focusedStepId = row.step().id();
+        focusedInstructionIndex = row.instructionIndex();
         pinSelection(activeSelection, focusedStepId);
         return true;
+    }
+
+    private static int focusedInstructionIndex(JazzyRecipeBookPlanner.Plan plan, List<InstructionRow> rows, Set<String> completed) {
+        String preferredStepId = focusedStepId();
+        int firstMatchingStep = -1;
+        if (preferredStepId != null && !preferredStepId.isBlank()) {
+            for (int index = 0; index < rows.size(); index++) {
+                InstructionRow row = rows.get(index);
+                if (row.step().id().equals(preferredStepId)) {
+                    if (row.instructionIndex() == focusedInstructionIndex) {
+                        return index;
+                    }
+                    if (firstMatchingStep < 0) {
+                        firstMatchingStep = index;
+                    }
+                }
+            }
+            if (firstMatchingStep >= 0) {
+                return firstMatchingStep;
+            }
+        }
+        JazzyRecipeBookPlanner.PlanStep focusedStep = plan.focusedStep(completed, preferredStepId);
+        if (focusedStep != null) {
+            for (int index = 0; index < rows.size(); index++) {
+                if (rows.get(index).step().id().equals(focusedStep.id())) {
+                    return index;
+                }
+            }
+        }
+        return 0;
     }
 
     private static int focusedStepIndex(JazzyRecipeBookPlanner.Plan plan, Set<String> completed, @Nullable String preferredStepId) {
@@ -278,6 +307,137 @@ public final class RecipeBookClientState {
 
     public static void unpinSelection() {
         PacketDistributor.sendToServer(RecipeBookSelectionPayload.unpin());
+    }
+
+    private static List<InstructionRow> instructionRows(JazzyRecipeBookPlanner.Plan plan) {
+        java.util.ArrayList<InstructionRow> rows = new java.util.ArrayList<>();
+        for (JazzyRecipeBookPlanner.PlanStep step : plan.steps()) {
+            rows.addAll(instructionRowsFor(step));
+        }
+        return rows;
+    }
+
+    private static List<InstructionRow> instructionRowsFor(JazzyRecipeBookPlanner.PlanStep step) {
+        if (step.options().isEmpty()) {
+            return List.of(new InstructionRow(step, 0, step.outputStack().copy(),
+                    "Obtain " + step.outputStack().getHoverName().getString(),
+                    "Make or collect this item."));
+        }
+        JazzyRecipeBookPlanner.StepOption option = step.options().get(0);
+        java.util.ArrayList<InstructionRow> rows = new java.util.ArrayList<>();
+        int row = 0;
+        for (JazzyRecipeBookPlanner.Requirement requirement : option.requirements()) {
+            ItemStack icon = requirement.choices().isEmpty() ? step.outputStack().copy() : requirement.choices().get(0).copy();
+            rows.add(new InstructionRow(step, row++, icon,
+                    requirementTitle(step, requirement),
+                    requirementDetail(requirement)));
+        }
+        String setup = controlSummary(option);
+        if (option.station() != null || !setup.isBlank()) {
+            rows.add(new InstructionRow(step, row++, step.outputStack().copy(),
+                    setupTitle(option),
+                    setup.isBlank() ? "Prepare the station for this step." : setup));
+        }
+        rows.add(new InstructionRow(step, row, step.outputStack().copy(), stepActionTitle(step, option), stepActionDetail(step)));
+        return rows;
+    }
+
+    private static String requirementTitle(JazzyRecipeBookPlanner.PlanStep step, JazzyRecipeBookPlanner.Requirement requirement) {
+        String item = compactRequirementLabel(requirement);
+        return switch (step.kind()) {
+            case PLATE, PROCESS -> "Add " + item;
+            case CRAFT -> "Get " + item;
+            case SOURCE -> "Have " + item;
+        };
+    }
+
+    private static String requirementDetail(JazzyRecipeBookPlanner.Requirement requirement) {
+        if (requirement.choices().size() > 1) {
+            return requirement.choices().size() + " matching choices; this is suggested.";
+        }
+        return requirement.requiredState() == IngredientState.PANTRY_READY
+                ? "Use this in the next action."
+                : "State: " + Component.translatable("state.jazzycookin." + requirement.requiredState().getSerializedName()).getString();
+    }
+
+    private static String setupTitle(JazzyRecipeBookPlanner.StepOption option) {
+        if (option.station() != null) {
+            return "Set up " + option.station().displayName().getString();
+        }
+        if (option.method() != null) {
+            return "Set up " + option.method().displayName().getString();
+        }
+        return "Set controls";
+    }
+
+    private static String stepActionTitle(JazzyRecipeBookPlanner.PlanStep step, JazzyRecipeBookPlanner.StepOption option) {
+        String output = step.outputStack().getHoverName().getString();
+        return switch (step.kind()) {
+            case CRAFT -> "Craft " + output;
+            case SOURCE -> "Collect " + output;
+            case PLATE -> "Plate " + output;
+            case PROCESS -> option.method() != null ? option.method().displayName().getString() + " " + output : "Make " + output;
+        };
+    }
+
+    private static String stepActionDetail(JazzyRecipeBookPlanner.PlanStep step) {
+        String output = step.outputStack().getHoverName().getString();
+        return switch (step.kind()) {
+            case CRAFT -> "Use the normal crafting recipe.";
+            case SOURCE -> "Harvest or collect this output.";
+            case PLATE -> "Start plating to finish " + output + ".";
+            case PROCESS -> "Start the station and cook to target.";
+        };
+    }
+
+    private static String controlSummary(JazzyRecipeBookPlanner.StepOption option) {
+        java.util.ArrayList<String> parts = new java.util.ArrayList<>();
+        if (option.preferredTool() != null && option.preferredTool() != ToolProfile.NONE) {
+            parts.add("Tool: " + toolName(option.preferredTool()));
+        }
+        if (option.preferredHeat() != null && !"off".equals(option.preferredHeat().getSerializedName())) {
+            parts.add("Heat: " + recipeHeatLabel(option).getString());
+        }
+        if (option.requiresPreheat()) {
+            parts.add("Preheat");
+        }
+        if (option.durationTicks() > 0) {
+            parts.add(option.durationTicks() + " ticks");
+        }
+        return String.join(" | ", parts);
+    }
+
+    private static String toolName(ToolProfile tool) {
+        return Component.translatable("tool.jazzycookin." + tool.getSerializedName()).getString();
+    }
+
+    private static String compactRequirementLabel(JazzyRecipeBookPlanner.Requirement requirement) {
+        String count = requirement.count() > 1 ? requirement.count() + "x " : "";
+        if (requirement.choices().isEmpty()) {
+            return count + Component.translatable("screen.jazzycookin.recipe_book.step").getString();
+        }
+        String name = requirement.choices().get(0).getHoverName().getString();
+        if (requirement.choices().size() > 1) {
+            return count + name + " +" + (requirement.choices().size() - 1);
+        }
+        return count + name;
+    }
+
+    private static Component recipeHeatLabel(JazzyRecipeBookPlanner.StepOption option) {
+        if (usesNumberedHeat(option.station())) {
+            return Component.literal(switch (option.preferredHeat()) {
+                case LOW -> "1-2";
+                case MEDIUM -> "3-4";
+                case HIGH -> "5-6";
+                default -> "1";
+            });
+        }
+        HeatLevel heatLevel = option.preferredHeat();
+        return Component.translatable("heat.jazzycookin." + heatLevel.getSerializedName());
+    }
+
+    private static boolean usesNumberedHeat(StationType stationType) {
+        return stationType == StationType.STOVE || stationType == StationType.SMOKER || stationType == StationType.STEAMER;
     }
 
     public static String chainLabel(String chainKey) {

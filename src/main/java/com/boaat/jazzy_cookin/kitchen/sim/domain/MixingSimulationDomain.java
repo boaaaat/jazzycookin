@@ -50,7 +50,7 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
                 Math.round(matter.charLevel() * 100.0F),
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                CompositionalSimulationSupport.schemaPreviewId(matter, MixingSimulationDomain::isMixSchema)
+                CompositionalSimulationSupport.schemaPreviewId(access, matter, MixingSimulationDomain::isMixSchema)
         );
     }
 
@@ -67,7 +67,7 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
             finish(access);
             return true;
         }
-        access.simulationSetBatch(new CookingBatchState(previewMatter(access)));
+        access.simulationSetBatch(new CookingBatchState(previewMatter(access), CompositionalSimulationSupport.schemaKey(output)));
         access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, 72), true);
         access.simulationMarkChanged();
         return true;
@@ -85,7 +85,7 @@ public final class MixingSimulationDomain implements StationSimulationDomain {
             access.simulationMarkChanged();
             return;
         }
-        access.simulationSetBatch(new CookingBatchState(matter));
+        access.simulationSetBatch(CookingBatchState.preservingSchema(access.simulationBatch(), matter));
         int nextProgress = access.simulationProgress() + 1;
         if (nextProgress >= access.simulationMaxProgress()) {
             finish(access);

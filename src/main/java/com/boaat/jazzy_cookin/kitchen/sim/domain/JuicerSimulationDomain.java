@@ -42,7 +42,7 @@ public final class JuicerSimulationDomain implements StationSimulationDomain {
                 0,
                 Math.round(matter.aeration() * 100.0F),
                 Math.round(matter.fragmentation() * 100.0F),
-                CompositionalSimulationSupport.schemaPreviewId(matter, JuicerSimulationDomain::isJuiceSchema));
+                CompositionalSimulationSupport.schemaPreviewId(access, matter, JuicerSimulationDomain::isJuiceSchema));
     }
 
     @Override

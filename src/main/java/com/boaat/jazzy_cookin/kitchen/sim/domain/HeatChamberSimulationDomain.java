@@ -53,7 +53,7 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
             return SimulationSnapshot.inactive(executionMode);
         }
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
-        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(matter, HeatChamberSimulationDomain::isHeatSchema);
+        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(access, matter, HeatChamberSimulationDomain::isHeatSchema);
         int chamberTempF = access.simulationStationType() == StationType.OVEN
                 ? Math.max(72, Math.round(Math.max(200, access.simulationTargetTemperatureF()) * (access.simulationPreheatProgress() / 100.0F)))
                 : Math.round(Mth.clamp(CompositionalSimulationSupport.targetTempC(access.simulationHeatLevel()) * 1.8F + 32.0F, 72.0F, 500.0F));
@@ -98,7 +98,7 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
                 access,
                 SimulationIngredientAnalysis.analyzeInputs(access),
                 0.0F
-        )));
+        ), CompositionalSimulationSupport.schemaKey(preview)));
         access.simulationSetProgress(0, CompositionalSimulationSupport.timedDuration(access, duration), true);
         access.simulationMarkChanged();
         return true;
@@ -112,7 +112,7 @@ public final class HeatChamberSimulationDomain implements StationSimulationDomai
         int next = access.simulationProgress() + 1;
         access.simulationSetProgress(next, access.simulationMaxProgress(), true);
         access.simulationSetStationPhysics(new com.boaat.jazzy_cookin.kitchen.sim.StationPhysicsState(CompositionalSimulationSupport.targetTempC(access.simulationHeatLevel())));
-        access.simulationSetBatch(new CookingBatchState(transformedMatter(
+        access.simulationSetBatch(CookingBatchState.preservingSchema(access.simulationBatch(), transformedMatter(
                 access,
                 SimulationIngredientAnalysis.analyzeInputs(access),
                 access.simulationMaxProgress() > 0 ? Mth.clamp(next / (float) access.simulationMaxProgress(), 0.0F, 1.0F) : 1.0F

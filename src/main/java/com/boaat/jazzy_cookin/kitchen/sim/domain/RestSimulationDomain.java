@@ -47,7 +47,7 @@ public final class RestSimulationDomain implements StationSimulationDomain {
             return SimulationSnapshot.inactive(executionMode);
         }
         DishRecognitionResult preview = DishSchema.previewPrepared(matter);
-        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(matter, RestSimulationDomain::isRestSchema);
+        int schemaPreviewId = CompositionalSimulationSupport.schemaPreviewId(access, matter, RestSimulationDomain::isRestSchema);
         return new SimulationSnapshot(
                 executionMode,
                 access.simulationActive() ? 1 : 0,
@@ -77,7 +77,7 @@ public final class RestSimulationDomain implements StationSimulationDomain {
                 access,
                 SimulationIngredientAnalysis.analyzeInputs(access),
                 0.0F
-        )));
+        ), CompositionalSimulationSupport.schemaKey(preview)));
         access.simulationSetProgress(0, access.simulationStationType() == StationType.COOLING_RACK ? 40 : 28, true);
         access.simulationMarkChanged();
         return true;
@@ -90,7 +90,7 @@ public final class RestSimulationDomain implements StationSimulationDomain {
         }
         int next = access.simulationProgress() + 1;
         access.simulationSetProgress(next, access.simulationMaxProgress(), true);
-        access.simulationSetBatch(new CookingBatchState(transformedMatter(
+        access.simulationSetBatch(CookingBatchState.preservingSchema(access.simulationBatch(), transformedMatter(
                 access,
                 SimulationIngredientAnalysis.analyzeInputs(access),
                 access.simulationMaxProgress() > 0 ? Math.min(1.0F, next / (float) access.simulationMaxProgress()) : 1.0F

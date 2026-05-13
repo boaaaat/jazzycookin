@@ -693,6 +693,31 @@ public final class KitchenGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void stoveSchemaPreviewStaysPinnedThroughCooking(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        KitchenStationBlockEntity stove = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.STOVE.get());
+        var fakePlayer = FakePlayerFactory.getMinecraft(level);
+
+        stove.setItem(0, JazzyItems.ingredient(JazzyItems.IngredientId.CHICKEN).get().createStack(1, level.getGameTime()));
+        stove.setItem(1, JazzyItems.ingredient(JazzyItems.IngredientId.BUTTER).get().createStack(1, level.getGameTime()));
+        stove.setItem(2, JazzyItems.ingredient(JazzyItems.IngredientId.TOMATOES).get().createStack(1, level.getGameTime()));
+        stove.setItem(KitchenStationBlockEntity.TOOL_SLOT, new ItemStack(JazzyItems.SAUCEPAN.get()));
+        stove.handleButton(3104, fakePlayer);
+
+        requireSchemaPreview(stove, "butter_chicken_prep", "Butter chicken should win the stove preview before simmering");
+        require(stove.handleButton(0, fakePlayer), "Butter chicken should start simmering");
+        tickStation(level, stove, 1);
+        requireSchemaPreview(stove, "butter_chicken_prep", "Butter chicken should stay pinned while simmering");
+        tickStation(level, stove, stove.simulationMaxProgress() + 1);
+
+        ItemStack output = stove.getItem(KitchenStationBlockEntity.OUTPUT_SLOT);
+        require(output.is(JazzyItems.BUTTER_CHICKEN_PREP.get()), "Butter chicken inputs should finish as butter chicken, not another curry");
+        require("butter_chicken_prep".equals(KitchenStackUtil.dishAttempt(output).schemaKey()),
+                "Finished butter chicken output should keep its selected schema key");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void ovenSimulationRequiresPreheatAndBakesGarlicBread(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         KitchenStationBlockEntity oven = placeStation(level, helper.absolutePos(new BlockPos(0, 1, 0)), JazzyBlocks.OVEN.get());
@@ -1406,6 +1431,16 @@ public final class KitchenGameTests {
                 "Guide progress should update when the harvested ingredient appears in inventory");
         require(applePlan.isComplete(RecipeBookProgress.completedSteps(fakePlayer)),
                 "Matching items in inventory should be able to finish a pinned guide");
+
+        RecipeBookProgress.unpin(fakePlayer);
+        fakePlayer.getInventory().clearContent();
+        RecipeBookProgress.pin(fakePlayer, appleSelection);
+        fakePlayer.getInventory().setItem(0, stackWithState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get(),
+                defaultState(JazzyItems.ingredient(JazzyItems.IngredientId.APPLES).get())));
+        require(RecipeBookProgress.reconcilePinnedGuide(fakePlayer),
+                "Creative or command-granted final outputs should update pinned guide progress");
+        require(applePlan.isComplete(RecipeBookProgress.completedSteps(fakePlayer)),
+                "Having the final output should satisfy skipped prerequisite guide steps");
         helper.succeed();
     }
 
@@ -2123,6 +2158,12 @@ public final class KitchenGameTests {
         DishRecognitionResult recognition = DishSchema.preview(stack, level.getGameTime());
         require(recognition != null, "Expected recognizer result for " + stack.getItemHolder().unwrapKey().map(key -> key.location().getPath()).orElse("unknown_stack"));
         require(expectedKey.equals(recognition.key()), "Expected recognizer key " + expectedKey + " but got " + recognition.key());
+    }
+
+    private static void requireSchemaPreview(KitchenStationBlockEntity station, String expectedKey, String message) {
+        DishRecognitionResult preview = DishSchema.descriptor(station.dataAccess().get(19));
+        require(preview != null, message + ": no preview");
+        require(expectedKey.equals(preview.key()), message + ": got " + preview.key());
     }
 
     private static void requireRecipeOutputSimulation(String key, ItemStack template, long gameTime, ServerLevel level) {
