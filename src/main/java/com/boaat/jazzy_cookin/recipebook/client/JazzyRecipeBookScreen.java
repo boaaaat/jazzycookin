@@ -28,6 +28,35 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 
 public class JazzyRecipeBookScreen extends Screen {
+    private enum CatalogFilter {
+        ALL(null, "screen.jazzycookin.recipe_book.filter.all"),
+        DISHES(JazzyRecipeBookPlanner.CatalogCategory.DISHES, "screen.jazzycookin.recipe_book.filter.dishes"),
+        BASE_INGREDIENTS(JazzyRecipeBookPlanner.CatalogCategory.BASE_INGREDIENTS, "screen.jazzycookin.recipe_book.filter.base_ingredients"),
+        FARMING(JazzyRecipeBookPlanner.CatalogCategory.FARMING, "screen.jazzycookin.recipe_book.filter.farming"),
+        KITCHEN(JazzyRecipeBookPlanner.CatalogCategory.KITCHEN, "screen.jazzycookin.recipe_book.filter.kitchen");
+
+        private final JazzyRecipeBookPlanner.CatalogCategory category;
+        private final String translationKey;
+
+        CatalogFilter(JazzyRecipeBookPlanner.CatalogCategory category, String translationKey) {
+            this.category = category;
+            this.translationKey = translationKey;
+        }
+
+        private boolean matches(JazzyRecipeBookPlanner.CatalogEntry entry) {
+            return this.category == null || entry.category() == this.category;
+        }
+
+        private Component label() {
+            return Component.translatable(this.translationKey);
+        }
+
+        private CatalogFilter next() {
+            CatalogFilter[] values = values();
+            return values[(this.ordinal() + 1) % values.length];
+        }
+    }
+
     private record VisibleStep(
             JazzyRecipeBookPlanner.PlanStep step,
             int instructionIndex,
@@ -58,13 +87,15 @@ public class JazzyRecipeBookScreen extends Screen {
     private static final int DESIGN_LEFT_WIDTH = 132;
     private static final int ITEM_ROW_HEIGHT = 18;
     private static final int SEARCH_TOP = 38;
-    private static final int ITEM_LIST_TOP = 60;
+    private static final int FILTER_TOP = 58;
+    private static final int ITEM_LIST_TOP = 82;
     private static final int STEP_LIST_TOP = 78;
     private static final int STEP_ROW_HEIGHT = 22;
     private static final int STEP_INDENT = 12;
     private static final int STEP_EXPAND_SIZE = 10;
 
     private EditBox searchBox;
+    private Button filterButton;
     private Button pinButton;
     private Button stateBackButton;
     private Button stateForwardButton;
@@ -81,6 +112,7 @@ public class JazzyRecipeBookScreen extends Screen {
     private final List<JazzyRecipeBookPlanner.CatalogEntry> filteredEntries = new ArrayList<>();
     private final Map<String, Integer> catalogNameCounts = new HashMap<>();
     private final Map<String, Boolean> expandedSteps = new HashMap<>();
+    private CatalogFilter catalogFilter = CatalogFilter.ALL;
     private int itemScroll;
     private int stepScroll;
     private ResourceLocation selectedItemId;
@@ -119,6 +151,10 @@ public class JazzyRecipeBookScreen extends Screen {
             this.refreshEntries();
             this.refreshSelection();
         });
+
+        this.filterButton = this.addRenderableWidget(Button.builder(this.filterButtonMessage(), button -> this.cycleCatalogFilter())
+                .bounds(this.panelLeft + this.sx(10), this.panelTop + this.sy(FILTER_TOP), this.leftW - this.sx(20), this.sy(18))
+                .build());
 
         this.stateBackButton = this.addRenderableWidget(Button.builder(Component.literal("<"), button -> this.cycleState(-1))
                 .bounds(this.panelLeft + this.leftW + this.sx(18), this.panelTop + this.sy(34), this.sx(18), this.sy(18))
@@ -161,7 +197,7 @@ public class JazzyRecipeBookScreen extends Screen {
 
         String query = this.searchQuery();
         for (JazzyRecipeBookPlanner.CatalogEntry entry : planner.catalog()) {
-            if (query.isBlank() || this.catalogMatches(entry, query)) {
+            if (this.catalogFilter.matches(entry) && (query.isBlank() || this.catalogMatches(entry, query))) {
                 this.filteredEntries.add(entry);
             }
         }
@@ -191,6 +227,20 @@ public class JazzyRecipeBookScreen extends Screen {
         String normalizedPath = entry.itemId().getPath().replace('_', ' ').toLowerCase(Locale.ROOT);
         String normalizedDisplay = entry.displayName().toLowerCase(Locale.ROOT);
         return normalizedDisplay.contains(query) || normalizedPath.contains(query);
+    }
+
+    private Component filterButtonMessage() {
+        return this.catalogFilter.label();
+    }
+
+    private void cycleCatalogFilter() {
+        this.catalogFilter = this.catalogFilter.next();
+        if (this.filterButton != null) {
+            this.filterButton.setMessage(this.filterButtonMessage());
+        }
+        this.itemScroll = 0;
+        this.refreshEntries();
+        this.refreshSelection();
     }
 
     private void restoreSelection() {
@@ -266,9 +316,10 @@ public class JazzyRecipeBookScreen extends Screen {
     }
 
     private void refreshButtons() {
-        if (this.pinButton == null || this.stateBackButton == null || this.stateForwardButton == null || this.chainBackButton == null || this.chainForwardButton == null) {
+        if (this.pinButton == null || this.filterButton == null || this.stateBackButton == null || this.stateForwardButton == null || this.chainBackButton == null || this.chainForwardButton == null) {
             return;
         }
+        this.filterButton.setMessage(this.filterButtonMessage());
 
         JazzyRecipeBookPlanner planner = RecipeBookClientState.planner();
         if (planner == null || this.selectedItemId == null || this.selectedState == null) {

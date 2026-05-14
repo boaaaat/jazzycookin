@@ -1334,7 +1334,19 @@ public final class KitchenGameTests {
             if (schema.meal() || schema.requiredTechniques().stream().anyMatch(technique -> "plated".equals(technique.getSerializedName()))) {
                 require(planner.hasPlan(outputKey(result.getItem(), state), "schema:" + schema.key()),
                         "Meal schema should expose a recipe-book guide for " + schema.key());
+                require(planner.catalogEntry(itemId(result.getItem()))
+                                .filter(entry -> entry.category() == JazzyRecipeBookPlanner.CatalogCategory.DISHES)
+                                .isPresent(),
+                        "Meal schema should appear in the dish recipe-book category for " + schema.key());
             }
+        }
+        boolean sawNonDish = false;
+        for (var entry : planner.catalog()) {
+            if (entry.category() != JazzyRecipeBookPlanner.CatalogCategory.DISHES) {
+                sawNonDish = true;
+            }
+            require(!sawNonDish || entry.category() != JazzyRecipeBookPlanner.CatalogCategory.DISHES,
+                    "Dish recipe-book entries should be sorted above base ingredients and farming");
         }
         helper.succeed();
     }

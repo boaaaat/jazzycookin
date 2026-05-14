@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.boaat.jazzy_cookin.item.KitchenIngredientItem;
+import com.boaat.jazzy_cookin.item.KitchenMealItem;
 import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.KitchenMethod;
@@ -58,6 +60,14 @@ public final class JazzyRecipeBookPlanner {
         SOURCE,
         PROCESS,
         PLATE
+    }
+
+    public enum CatalogCategory {
+        DISHES,
+        BASE_INGREDIENTS,
+        FARMING,
+        KITCHEN,
+        OTHER
     }
 
     public record OutputKey(ResourceLocation itemId, IngredientState state) {
@@ -189,7 +199,7 @@ public final class JazzyRecipeBookPlanner {
         }
     }
 
-    public record CatalogEntry(ResourceLocation itemId, Item item, String displayName, List<IngredientState> producibleStates) {
+    public record CatalogEntry(ResourceLocation itemId, Item item, String displayName, List<IngredientState> producibleStates, CatalogCategory category) {
     }
 
     private record OptionGroup(OutputKey outputKey, String chainKey, List<StepOption> options) {
@@ -348,10 +358,14 @@ public final class JazzyRecipeBookPlanner {
         });
 
         Map<ResourceLocation, Set<IngredientState>> statesByItem = new HashMap<>();
+        Map<ResourceLocation, CatalogCategory> categoryByItem = new HashMap<>();
         groupsByOutput.keySet().stream()
                 .filter(output -> !consumedOutputKeys.contains(output))
                 .filter(output -> shouldCatalogOutput(groupsByOutput.get(output)))
-                .forEach(output -> statesByItem.computeIfAbsent(output.itemId(), key -> new LinkedHashSet<>()).add(output.state()));
+                .forEach(output -> {
+                    statesByItem.computeIfAbsent(output.itemId(), key -> new LinkedHashSet<>()).add(output.state());
+                    categoryByItem.merge(output.itemId(), catalogCategoryFor(output.itemId(), groupsByOutput.get(output)), JazzyRecipeBookPlanner::higherPriorityCategory);
+                });
 
         List<CatalogEntry> catalog = statesByItem.entrySet().stream()
                 .map(entry -> {
@@ -360,10 +374,13 @@ public final class JazzyRecipeBookPlanner {
                             entry.getKey(),
                             item,
                             new ItemStack(item).getHoverName().getString(),
-                            entry.getValue().stream().sorted(STATE_ORDER).toList()
+                            entry.getValue().stream().sorted(STATE_ORDER).toList(),
+                            categoryByItem.getOrDefault(entry.getKey(), CatalogCategory.OTHER)
                     );
                 })
-                .sorted(Comparator.comparing(CatalogEntry::displayName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(Comparator
+                        .comparingInt((CatalogEntry entry) -> categoryRank(entry.category()))
+                        .thenComparing(CatalogEntry::displayName, String.CASE_INSENSITIVE_ORDER))
                 .toList();
 
         Map<ResourceLocation, CatalogEntry> catalogByItem = catalog.stream()
@@ -1134,6 +1151,59 @@ public final class JazzyRecipeBookPlanner {
                 .flatMap(group -> group.options().stream())
                 .map(StepOption::kind)
                 .anyMatch(kind -> kind == StepKind.CRAFT || kind == StepKind.SOURCE || kind == StepKind.PROCESS || kind == StepKind.PLATE);
+    }
+
+    private static CatalogCategory catalogCategoryFor(ResourceLocation itemId, @Nullable Map<String, OptionGroup> groups) {
+        Item item = BuiltInRegistries.ITEM.get(itemId);
+        if (item instanceof KitchenMealItem || hasStepKind(groups, StepKind.PLATE)) {
+            return CatalogCategory.DISHES;
+        }
+        if (hasStepKind(groups, StepKind.SOURCE) || isSourceItem(itemId)) {
+            return CatalogCategory.FARMING;
+        }
+        if (item instanceof KitchenIngredientItem) {
+            return CatalogCategory.BASE_INGREDIENTS;
+        }
+        if (RecipeBookDisplayUtil.isModItem(item)) {
+            return CatalogCategory.KITCHEN;
+        }
+        return CatalogCategory.OTHER;
+    }
+
+    private static boolean isSourceItem(ResourceLocation itemId) {
+        if (BuiltInRegistries.ITEM.getKey(SourceGuideRegistry.appleSaplingGuide().sourceItem().get()).equals(itemId)) {
+            return true;
+        }
+        for (KitchenSourceProfile profile : KitchenSourceProfile.values()) {
+            if (BuiltInRegistries.ITEM.getKey(SourceGuideRegistry.guideFor(profile).sourceItem().get()).equals(itemId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasStepKind(@Nullable Map<String, OptionGroup> groups, StepKind kind) {
+        if (groups == null || groups.isEmpty()) {
+            return false;
+        }
+        return groups.values().stream()
+                .flatMap(group -> group.options().stream())
+                .map(StepOption::kind)
+                .anyMatch(kind::equals);
+    }
+
+    private static CatalogCategory higherPriorityCategory(CatalogCategory left, CatalogCategory right) {
+        return categoryRank(left) <= categoryRank(right) ? left : right;
+    }
+
+    private static int categoryRank(CatalogCategory category) {
+        return switch (category) {
+            case DISHES -> 0;
+            case BASE_INGREDIENTS -> 1;
+            case FARMING -> 2;
+            case KITCHEN -> 3;
+            case OTHER -> 4;
+        };
     }
 
     private static int stateRank(IngredientState state) {
