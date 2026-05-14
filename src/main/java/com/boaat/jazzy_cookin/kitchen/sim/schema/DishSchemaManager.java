@@ -1,10 +1,23 @@
 package com.boaat.jazzy_cookin.kitchen.sim.schema;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.JarURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import com.boaat.jazzy_cookin.JazzyCookin;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
@@ -23,7 +36,10 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 public final class DishSchemaManager {
     private static final Gson GSON = new Gson();
     private static final String DIRECTORY = "dish_schema";
+    private static final String BUNDLED_DIRECTORY = "data/" + JazzyCookin.MODID + "/" + DIRECTORY;
     private static volatile List<DishSchemaDefinition> loadedSchemas = List.of();
+    private static volatile boolean loadedFromResourceReload;
+    private static volatile boolean attemptedBundledFallback;
 
     private DishSchemaManager() {
     }
@@ -33,7 +49,131 @@ public final class DishSchemaManager {
     }
 
     public static List<DishSchemaDefinition> schemas() {
+        if (loadedSchemas.isEmpty() && !loadedFromResourceReload) {
+            loadBundledFallback();
+        }
         return loadedSchemas;
+    }
+
+    public static List<String> schemaJson() {
+        return schemas().stream()
+                .map(schema -> DishSchemaDefinition.CODEC.encodeStart(JsonOps.INSTANCE, schema)
+                        .resultOrPartial(message -> JazzyCookin.LOGGER.warn("Failed to encode dish schema {}: {}", schema.key(), message))
+                        .map(GSON::toJson)
+                        .orElse(""))
+                .filter(json -> !json.isBlank())
+                .toList();
+    }
+
+    public static void loadSyncedSchemas(List<String> schemaJson) {
+        Map<ResourceLocation, JsonElement> elements = new LinkedHashMap<>();
+        for (int index = 0; index < schemaJson.size(); index++) {
+            elements.put(ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, "synced_" + index), GSON.fromJson(schemaJson.get(index), JsonElement.class));
+        }
+        loadedSchemas = parseSchemas(elements, "server-synced");
+        loadedFromResourceReload = true;
+        attemptedBundledFallback = true;
+    }
+
+    private static synchronized void loadBundledFallback() {
+        if (attemptedBundledFallback || !loadedSchemas.isEmpty() || loadedFromResourceReload) {
+            return;
+        }
+        attemptedBundledFallback = true;
+
+        Map<ResourceLocation, JsonElement> elements = new LinkedHashMap<>();
+        try {
+            URL directory = DishSchemaManager.class.getClassLoader().getResource(BUNDLED_DIRECTORY);
+            if (directory != null && "file".equals(directory.getProtocol())) {
+                loadBundledDirectory(Path.of(directory.toURI()), elements);
+            } else if (directory != null && "jar".equals(directory.getProtocol())) {
+                loadBundledJar(((JarURLConnection) directory.openConnection()).getJarFile(), elements);
+            } else {
+                loadBundledCodeSource(elements);
+            }
+        } catch (Exception exception) {
+            JazzyCookin.LOGGER.warn("Failed to load bundled dish schemas for recipe-book fallback", exception);
+        }
+
+        if (!elements.isEmpty()) {
+            loadedSchemas = parseSchemas(elements, "bundled");
+        }
+    }
+
+    private static void loadBundledDirectory(Path directory, Map<ResourceLocation, JsonElement> elements) throws IOException {
+        if (!Files.isDirectory(directory)) {
+            return;
+        }
+        try (var paths = Files.walk(directory)) {
+            paths.filter(path -> Files.isRegularFile(path) && path.getFileName().toString().endsWith(".json"))
+                    .forEach(path -> {
+                        try (InputStream stream = Files.newInputStream(path)) {
+                            elements.put(bundledSchemaId(path.getFileName().toString()), readJson(stream));
+                        } catch (IOException exception) {
+                            JazzyCookin.LOGGER.warn("Failed to read bundled dish schema {}", path, exception);
+                        }
+                    });
+        }
+    }
+
+    private static void loadBundledJar(JarFile jarFile, Map<ResourceLocation, JsonElement> elements) throws IOException {
+        Enumeration<JarEntry> entries = jarFile.entries();
+        String prefix = BUNDLED_DIRECTORY + "/";
+        while (entries.hasMoreElements()) {
+            JarEntry entry = entries.nextElement();
+            if (entry.isDirectory() || !entry.getName().startsWith(prefix) || !entry.getName().endsWith(".json")) {
+                continue;
+            }
+            try (InputStream stream = jarFile.getInputStream(entry)) {
+                elements.put(bundledSchemaId(Path.of(entry.getName()).getFileName().toString()), readJson(stream));
+            }
+        }
+    }
+
+    private static void loadBundledCodeSource(Map<ResourceLocation, JsonElement> elements) throws Exception {
+        URL source = DishSchemaManager.class.getProtectionDomain().getCodeSource().getLocation();
+        if (source == null) {
+            return;
+        }
+        URI sourceUri = source.toURI();
+        Path sourcePath = Path.of(sourceUri);
+        if (Files.isDirectory(sourcePath)) {
+            loadBundledDirectory(sourcePath.resolve(BUNDLED_DIRECTORY), elements);
+            loadBundledDirectory(sourcePath.resolveSibling("resources").resolve("main").resolve(BUNDLED_DIRECTORY), elements);
+            Path buildPath = sourcePath.getParent() != null
+                    && sourcePath.getParent().getParent() != null
+                    && sourcePath.getParent().getParent().getParent() != null
+                    ? sourcePath.getParent().getParent().getParent()
+                    : null;
+            if (buildPath != null) {
+                loadBundledDirectory(buildPath.resolve("resources").resolve("main").resolve(BUNDLED_DIRECTORY), elements);
+            }
+        } else if (Files.isRegularFile(sourcePath)) {
+            try (JarFile jarFile = new JarFile(sourcePath.toFile())) {
+                loadBundledJar(jarFile, elements);
+            }
+        }
+    }
+
+    private static JsonElement readJson(InputStream stream) {
+        return GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), JsonElement.class);
+    }
+
+    private static ResourceLocation bundledSchemaId(String fileName) {
+        String key = fileName.endsWith(".json") ? fileName.substring(0, fileName.length() - ".json".length()) : fileName;
+        return ResourceLocation.fromNamespaceAndPath(JazzyCookin.MODID, key);
+    }
+
+    private static List<DishSchemaDefinition> parseSchemas(Map<ResourceLocation, JsonElement> elements, String sourceLabel) {
+        List<DishSchemaDefinition> parsed = new ArrayList<>();
+        for (Map.Entry<ResourceLocation, JsonElement> entry : elements.entrySet()) {
+            DishSchemaDefinition.CODEC.parse(JsonOps.INSTANCE, entry.getValue())
+                    .resultOrPartial(message -> JazzyCookin.LOGGER.warn("Failed to load dish schema {}: {}", entry.getKey(), message))
+                    .ifPresent(parsed::add);
+        }
+        validationProblems(parsed).forEach(problem -> JazzyCookin.LOGGER.warn("Dish schema validation: {}", problem));
+        JazzyCookin.LOGGER.info("Loaded {} {} dish schemas", parsed.size(), sourceLabel);
+        return List.copyOf(parsed);
     }
 
     public static List<String> validationProblems(List<DishSchemaDefinition> schemas) {
@@ -189,15 +329,8 @@ public final class DishSchemaManager {
 
         @Override
         protected void apply(Map<ResourceLocation, JsonElement> elements, ResourceManager resourceManager, ProfilerFiller profiler) {
-            List<DishSchemaDefinition> parsed = new ArrayList<>();
-            for (Map.Entry<ResourceLocation, JsonElement> entry : elements.entrySet()) {
-                DishSchemaDefinition.CODEC.parse(JsonOps.INSTANCE, entry.getValue())
-                        .resultOrPartial(message -> JazzyCookin.LOGGER.warn("Failed to load dish schema {}: {}", entry.getKey(), message))
-                        .ifPresent(parsed::add);
-            }
-            validationProblems(parsed).forEach(problem -> JazzyCookin.LOGGER.warn("Dish schema validation: {}", problem));
-            loadedSchemas = List.copyOf(parsed);
-            JazzyCookin.LOGGER.info("Loaded {} dish schemas", loadedSchemas.size());
+            loadedSchemas = parseSchemas(elements, "data-pack");
+            loadedFromResourceReload = true;
         }
     }
 }

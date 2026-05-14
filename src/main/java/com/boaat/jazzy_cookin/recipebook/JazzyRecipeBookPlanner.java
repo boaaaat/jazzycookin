@@ -53,6 +53,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.registries.DeferredItem;
 
 public final class JazzyRecipeBookPlanner {
     public enum StepKind {
@@ -357,8 +358,8 @@ public final class JazzyRecipeBookPlanner {
             groupsByOutput.put(outputKey, groups);
         });
 
-        Map<ResourceLocation, Set<IngredientState>> statesByItem = new HashMap<>();
-        Map<ResourceLocation, CatalogCategory> categoryByItem = new HashMap<>();
+        Map<ResourceLocation, Set<IngredientState>> statesByItem = seededCatalogStates();
+        Map<ResourceLocation, CatalogCategory> categoryByItem = seededCatalogCategories();
         groupsByOutput.keySet().stream()
                 .filter(output -> !consumedOutputKeys.contains(output))
                 .filter(output -> shouldCatalogOutput(groupsByOutput.get(output)))
@@ -366,6 +367,7 @@ public final class JazzyRecipeBookPlanner {
                     statesByItem.computeIfAbsent(output.itemId(), key -> new LinkedHashSet<>()).add(output.state());
                     categoryByItem.merge(output.itemId(), catalogCategoryFor(output.itemId(), groupsByOutput.get(output)), JazzyRecipeBookPlanner::higherPriorityCategory);
                 });
+        addFallbackGuides(groupsByOutput, statesByItem, categoryByItem);
 
         List<CatalogEntry> catalog = statesByItem.entrySet().stream()
                 .map(entry -> {
@@ -1151,6 +1153,104 @@ public final class JazzyRecipeBookPlanner {
                 .flatMap(group -> group.options().stream())
                 .map(StepOption::kind)
                 .anyMatch(kind -> kind == StepKind.CRAFT || kind == StepKind.SOURCE || kind == StepKind.PROCESS || kind == StepKind.PLATE);
+    }
+
+    private static Map<ResourceLocation, Set<IngredientState>> seededCatalogStates() {
+        Map<ResourceLocation, Set<IngredientState>> statesByItem = new HashMap<>();
+        seedCatalogStates(statesByItem, JazzyItems.mealItems());
+        seedCatalogStates(statesByItem, JazzyItems.ingredientItems());
+        return statesByItem;
+    }
+
+    private static void seedCatalogStates(Map<ResourceLocation, Set<IngredientState>> statesByItem, List<? extends DeferredItem<? extends Item>> items) {
+        for (DeferredItem<? extends Item> deferredItem : items) {
+            Item item = deferredItem.get();
+            if (item == Items.AIR) {
+                continue;
+            }
+            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(item);
+            statesByItem.computeIfAbsent(itemId, key -> new LinkedHashSet<>()).add(RecipeBookDisplayUtil.defaultStateForItem(item));
+        }
+    }
+
+    private static Map<ResourceLocation, CatalogCategory> seededCatalogCategories() {
+        Map<ResourceLocation, CatalogCategory> categoryByItem = new HashMap<>();
+        for (DeferredItem<? extends Item> meal : JazzyItems.mealItems()) {
+            categoryByItem.put(BuiltInRegistries.ITEM.getKey(meal.get()), CatalogCategory.DISHES);
+        }
+        for (DeferredItem<? extends Item> ingredient : JazzyItems.ingredientItems()) {
+            categoryByItem.put(BuiltInRegistries.ITEM.getKey(ingredient.get()), CatalogCategory.BASE_INGREDIENTS);
+        }
+        return categoryByItem;
+    }
+
+    private static void addFallbackGuides(
+            Map<OutputKey, Map<String, OptionGroup>> groupsByOutput,
+            Map<ResourceLocation, Set<IngredientState>> statesByItem,
+            Map<ResourceLocation, CatalogCategory> categoryByItem
+    ) {
+        for (Map.Entry<ResourceLocation, Set<IngredientState>> entry : statesByItem.entrySet()) {
+            Item item = BuiltInRegistries.ITEM.get(entry.getKey());
+            if (item == Items.AIR) {
+                continue;
+            }
+            CatalogCategory category = categoryByItem.getOrDefault(entry.getKey(), CatalogCategory.OTHER);
+            for (IngredientState state : entry.getValue()) {
+                OutputKey outputKey = new OutputKey(entry.getKey(), state);
+                if (groupsByOutput.containsKey(outputKey)) {
+                    continue;
+                }
+                ItemStack outputStack = RecipeBookDisplayUtil.displayStack(new ItemStack(item), state, 1);
+                StepKind kind = category == CatalogCategory.DISHES ? StepKind.PROCESS : StepKind.SOURCE;
+                StepOption option = new StepOption(
+                        "catalog:fallback:" + outputKey.stableId(),
+                        kind,
+                        "",
+                        outputKey,
+                        List.of(),
+                        List.of(),
+                        outputStack,
+                        null,
+                        null,
+                        null,
+                        List.of(),
+                        false,
+                        0,
+                        HeatLevel.OFF,
+                        HeatLevel.OFF,
+                        HeatLevel.OFF,
+                        false,
+                        false,
+                        false,
+                        ProcessMode.ACTIVE,
+                        fallbackNotes(category, outputStack)
+                );
+                groupsByOutput.put(outputKey, Map.of("", new OptionGroup(outputKey, "", List.of(option))));
+            }
+        }
+    }
+
+    private static List<String> fallbackNotes(CatalogCategory category, ItemStack outputStack) {
+        String itemName = outputStack.getHoverName().getString();
+        return switch (category) {
+            case DISHES -> List.of(
+                    "Make " + itemName + " by following its dish steps; if this is the only step, reload the world so dish schema data can populate the full path.",
+                    "The recipe book keeps this dish visible even before detailed schema data finishes loading."
+            );
+            case BASE_INGREDIENTS -> List.of(
+                    "Stock " + itemName + " as a base ingredient.",
+                    "Ingredients without a kitchen process are gathered from farms, source blocks, storage, loot, or trade."
+            );
+            case FARMING -> List.of(
+                    "Craft or place the source for " + itemName + ", then harvest it when mature."
+            );
+            case KITCHEN -> List.of(
+                    "Craft or obtain " + itemName + " before using it in kitchen recipes."
+            );
+            case OTHER -> List.of(
+                    "Obtain " + itemName + " before using it in recipes."
+            );
+        };
     }
 
     private static CatalogCategory catalogCategoryFor(ResourceLocation itemId, @Nullable Map<String, OptionGroup> groups) {

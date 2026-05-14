@@ -15,9 +15,12 @@ import com.boaat.jazzy_cookin.kitchen.HeatLevel;
 import com.boaat.jazzy_cookin.kitchen.IngredientState;
 import com.boaat.jazzy_cookin.kitchen.StationType;
 import com.boaat.jazzy_cookin.kitchen.ToolProfile;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaManager;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookPlanner;
 import com.boaat.jazzy_cookin.recipebook.JazzyRecipeBookSelection;
 import com.boaat.jazzy_cookin.recipebook.RecipeBookDisplayUtil;
+import com.boaat.jazzy_cookin.recipebook.network.RecipeBookSchemaRequestPayload;
+import com.boaat.jazzy_cookin.recipebook.network.RecipeBookSchemaSyncPayload;
 import com.boaat.jazzy_cookin.recipebook.network.RecipeBookSelectionPayload;
 import com.boaat.jazzy_cookin.recipebook.network.RecipeBookSyncPayload;
 
@@ -70,6 +73,7 @@ public final class RecipeBookClientState {
     private static ResourceLocation lastViewedItemId;
     private static IngredientState lastViewedState;
     private static String lastViewedChainKey = "";
+    private static boolean requestedServerSchemas;
     private static final Set<String> completedStepIds = new LinkedHashSet<>();
 
     private RecipeBookClientState() {
@@ -83,6 +87,13 @@ public final class RecipeBookClientState {
 
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.level == null) {
+            requestedServerSchemas = false;
+        }
+        if (minecraft.player != null && minecraft.level != null && !requestedServerSchemas) {
+            requestedServerSchemas = true;
+            PacketDistributor.sendToServer(RecipeBookSchemaRequestPayload.INSTANCE);
+        }
         while (OPEN_BOOK_KEY.consumeClick()) {
             if (minecraft.player != null) {
                 minecraft.setScreen(new JazzyRecipeBookScreen());
@@ -99,6 +110,10 @@ public final class RecipeBookClientState {
     public static void onRecipesUpdated(RecipesUpdatedEvent event) {
         Minecraft minecraft = Minecraft.getInstance();
         planner = minecraft.level != null ? JazzyRecipeBookPlanner.create(minecraft.level) : null;
+        if (minecraft.player != null) {
+            requestedServerSchemas = true;
+            PacketDistributor.sendToServer(RecipeBookSchemaRequestPayload.INSTANCE);
+        }
     }
 
     public static void onRenderHud(RenderGuiLayerEvent.Post event) {
@@ -181,6 +196,12 @@ public final class RecipeBookClientState {
         if (activeSelection != null) {
             rememberSelection(activeSelection);
         }
+    }
+
+    public static void applySchemaSync(RecipeBookSchemaSyncPayload payload) {
+        DishSchemaManager.loadSyncedSchemas(payload.schemas());
+        Minecraft minecraft = Minecraft.getInstance();
+        planner = minecraft.level != null ? JazzyRecipeBookPlanner.create(minecraft.level) : null;
     }
 
     public static void rememberSelection(JazzyRecipeBookSelection selection) {

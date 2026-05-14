@@ -1348,6 +1348,26 @@ public final class KitchenGameTests {
             require(!sawNonDish || entry.category() != JazzyRecipeBookPlanner.CatalogCategory.DISHES,
                     "Dish recipe-book entries should be sorted above base ingredients and farming");
         }
+        for (var meal : JazzyItems.mealItems()) {
+            require(planner.catalogEntry(itemId(meal.get()))
+                            .filter(entry -> entry.category() == JazzyRecipeBookPlanner.CatalogCategory.DISHES)
+                            .isPresent(),
+                    "Registered meal should appear in the dish recipe-book category: " + itemId(meal.get()).getPath());
+        }
+        for (var ingredient : JazzyItems.ingredientItems()) {
+            require(planner.catalogEntry(itemId(ingredient.get()))
+                            .filter(entry -> entry.category() == JazzyRecipeBookPlanner.CatalogCategory.BASE_INGREDIENTS)
+                            .isPresent(),
+                    "Registered ingredient should appear in the base ingredient recipe-book category: " + itemId(ingredient.get()).getPath());
+        }
+        for (var entry : planner.catalog()) {
+            for (IngredientState state : entry.producibleStates()) {
+                List<JazzyRecipeBookPlanner.Plan> plans = planner.plansFor(entry.itemId(), state);
+                require(!plans.isEmpty(), "Catalog entry should expose at least one recipe path: " + entry.itemId() + " " + state.getSerializedName());
+                require(plans.stream().allMatch(plan -> !plan.steps().isEmpty()),
+                        "Catalog entry recipe paths should expose visible steps: " + entry.itemId() + " " + state.getSerializedName());
+            }
+        }
         helper.succeed();
     }
 

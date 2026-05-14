@@ -1,6 +1,7 @@
 package com.boaat.jazzy_cookin.recipebook.network;
 
 import com.boaat.jazzy_cookin.recipebook.RecipeBookProgress;
+import com.boaat.jazzy_cookin.kitchen.sim.schema.DishSchemaManager;
 import com.boaat.jazzy_cookin.recipebook.client.RecipeBookClientState;
 
 import net.minecraft.server.level.ServerPlayer;
@@ -16,6 +17,13 @@ public final class RecipeBookNetworking {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("jazzy_recipe_book_v1");
+        registrar.playToServer(RecipeBookSchemaRequestPayload.TYPE, RecipeBookSchemaRequestPayload.STREAM_CODEC, (payload, context) ->
+                context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer serverPlayer) {
+                        syncSchemas(serverPlayer);
+                    }
+                })
+        );
         registrar.playToServer(RecipeBookSelectionPayload.TYPE, RecipeBookSelectionPayload.STREAM_CODEC, (payload, context) ->
                 context.enqueueWork(() -> {
                     if (!(context.player() instanceof ServerPlayer serverPlayer)) {
@@ -32,14 +40,22 @@ public final class RecipeBookNetworking {
         registrar.playToClient(RecipeBookSyncPayload.TYPE, RecipeBookSyncPayload.STREAM_CODEC, (payload, context) ->
                 context.enqueueWork(() -> RecipeBookClientState.applySync(payload))
         );
+        registrar.playToClient(RecipeBookSchemaSyncPayload.TYPE, RecipeBookSchemaSyncPayload.STREAM_CODEC, (payload, context) ->
+                context.enqueueWork(() -> RecipeBookClientState.applySchemaSync(payload))
+        );
     }
 
     public static void sync(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, RecipeBookSyncPayload.from(RecipeBookProgress.syncState(player)));
     }
 
+    public static void syncSchemas(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, new RecipeBookSchemaSyncPayload(DishSchemaManager.schemaJson()));
+    }
+
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            syncSchemas(player);
             RecipeBookProgress.reconcilePinnedGuide(player);
             sync(player);
         }
